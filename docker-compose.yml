@@ -22,6 +22,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    networks:
+      - clubmanager-network
 
   redis:
     image: redis:7-alpine
@@ -37,6 +39,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    networks:
+      - clubmanager-network
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -52,6 +56,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - clubmanager-network
 
   redis-commander:
     image: rediscommander/redis-commander:latest
@@ -64,6 +70,12 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    networks:
+      - clubmanager-network
+
+networks:
+  clubmanager-network:
+    driver: bridge
 
 volumes:
   clubmanager-postgres-data:
