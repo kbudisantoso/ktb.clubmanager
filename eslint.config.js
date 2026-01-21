@@ -21,8 +21,11 @@ export default tseslint.config(
       '**/.next/**',
       '**/coverage/**',
       '**/*.d.ts',
+      // Config files (not part of tsconfig projects)
       'eslint.config.js',
       'prettier.config.js',
+      '**/vitest.config.ts',
+      // Hidden directories (except .github, .devcontainer)
       '.*/**',
     ],
   },
