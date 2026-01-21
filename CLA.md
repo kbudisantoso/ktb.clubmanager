@@ -48,4 +48,4 @@ Your signature will be recorded and you will not need to sign again for future c
 
 ---
 
-*This CLA is based on common open source contributor license agreements and is designed to be simple and fair for both contributors and the project.*
+_This CLA is based on common open source contributor license agreements and is designed to be simple and fair for both contributors and the project._

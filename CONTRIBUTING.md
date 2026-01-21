@@ -26,6 +26,7 @@ That's it! Everything else runs inside the development container.
 **Option 1: VS Code DevContainer (Recommended)**
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/ktb-clubmanager/ktb.clubmanager.git
    cd ktb.clubmanager
@@ -72,6 +73,7 @@ Always create a branch for your work. Use this naming convention:
 ```
 
 **Types:**
+
 - `feat` - New feature
 - `fix` - Bug fix
 - `refactor` - Code refactoring
@@ -80,6 +82,7 @@ Always create a branch for your work. Use this naming convention:
 - `chore` - Maintenance tasks
 
 **Examples:**
+
 ```bash
 git checkout -b feat/42-add-member-search
 git checkout -b fix/87-sepa-validation-error
@@ -104,6 +107,7 @@ We use conventional commits. Format your commit messages like this:
 ```
 
 **Examples:**
+
 ```bash
 git commit -m "feat(members): add household grouping"
 git commit -m "fix(accounting): resolve split booking calculation"
@@ -117,6 +121,7 @@ pnpm prepare-commit
 ```
 
 This command:
+
 - Runs ESLint and Prettier (auto-fixes issues)
 - Checks TypeScript types
 - Runs affected unit tests
@@ -146,6 +151,7 @@ Both frontend and backend use TypeScript. This helps us catch bugs early and pro
 We use **Prettier** for consistent code formatting. If you're using the DevContainer, files are formatted automatically on save.
 
 To format manually:
+
 ```bash
 pnpm format
 ```
@@ -153,11 +159,13 @@ pnpm format
 ### Linting
 
 We use **ESLint** for code quality. Check for issues with:
+
 ```bash
 pnpm lint
 ```
 
 Most issues can be auto-fixed:
+
 ```bash
 pnpm lint --fix
 ```
@@ -165,11 +173,13 @@ pnpm lint --fix
 ### Testing
 
 We use **Vitest** for testing. Run tests with:
+
 ```bash
 pnpm test
 ```
 
 When adding new features:
+
 - Write tests for happy path, edge cases, and error cases
 - Quality over quantity - 3 thorough tests beat 47 shallow ones
 

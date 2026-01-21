@@ -1,6 +1,6 @@
 name: Documentation
 description: Report missing or incorrect documentation
-labels: ["documentation"]
+labels: ['documentation']
 body:
   - type: markdown
     attributes:
