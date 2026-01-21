@@ -13,3 +13,8 @@ pnpm-lock.yaml
 
 # Archives
 *.archive.gitignore/
+
+# Hidden directories (ignore all, whitelist exceptions)
+.*
+!.github/
+!.devcontainer/

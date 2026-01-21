@@ -13,19 +13,6 @@ export default tseslint.config(
   // Disable rules that conflict with Prettier
   prettier,
 
-  // Global settings
-  {
-    languageOptions: {
-      parserOptions: {
-        project: [
-          './packages/*/tsconfig.json',
-          './apps/*/tsconfig.json',
-        ],
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-  },
-
   // Ignore patterns
   {
     ignores: [
@@ -35,12 +22,20 @@ export default tseslint.config(
       '**/coverage/**',
       '**/*.d.ts',
       'eslint.config.js',
+      'prettier.config.js',
+      '.*/**',
     ],
   },
 
   // TypeScript-specific rules
   {
     files: ['**/*.ts', '**/*.tsx'],
+    languageOptions: {
+      parserOptions: {
+        project: ['./packages/*/tsconfig.json', './apps/*/tsconfig.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     rules: {
       // Allow unused vars prefixed with underscore
       '@typescript-eslint/no-unused-vars': [
@@ -48,10 +43,7 @@ export default tseslint.config(
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
       // Enforce consistent type imports
-      '@typescript-eslint/consistent-type-imports': [
-        'error',
-        { prefer: 'type-imports' },
-      ],
+      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
       // Allow explicit any in tests (we'll be stricter in prod code)
       '@typescript-eslint/no-explicit-any': 'warn',
     },
