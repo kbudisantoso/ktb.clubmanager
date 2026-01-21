@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+.next/
+coverage/
+
+# Generated files
+*.d.ts
+pnpm-lock.yaml
+
+# Archives
+*.archive.gitignore/

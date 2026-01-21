@@ -1,0 +1,59 @@
+// @ts-check
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import prettier from 'eslint-config-prettier';
+
+export default tseslint.config(
+  // Base ESLint recommended rules
+  eslint.configs.recommended,
+
+  // TypeScript recommended rules
+  ...tseslint.configs.recommended,
+
+  // Disable rules that conflict with Prettier
+  prettier,
+
+  // Global settings
+  {
+    languageOptions: {
+      parserOptions: {
+        project: [
+          './packages/*/tsconfig.json',
+          './apps/*/tsconfig.json',
+        ],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+
+  // Ignore patterns
+  {
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/.next/**',
+      '**/coverage/**',
+      '**/*.d.ts',
+      'eslint.config.js',
+    ],
+  },
+
+  // TypeScript-specific rules
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    rules: {
+      // Allow unused vars prefixed with underscore
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+      // Enforce consistent type imports
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        { prefer: 'type-imports' },
+      ],
+      // Allow explicit any in tests (we'll be stricter in prod code)
+      '@typescript-eslint/no-explicit-any': 'warn',
+    },
+  }
+);
