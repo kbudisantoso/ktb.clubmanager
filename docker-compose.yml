@@ -4,7 +4,7 @@
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg17
     container_name: clubmanager_postgres
     restart: unless-stopped
     volumes:
@@ -42,20 +42,45 @@ services:
     networks:
       - clubmanager-network
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: clubmanager_pgadmin
+  pgweb:
+    image: sosedoff/pgweb:latest
+    container_name: clubmanager_pgweb
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@clubmanager.local
-      PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      PGWEB_DATABASE_URL: postgresql://clubmanager:clubmanager@postgres:5432/clubmanager?sslmode=disable
     ports:
-      - '35050:80'
+      - '35050:8081'
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:8081']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - clubmanager-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: clubmanager_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: clubmanager
+      MINIO_ROOT_PASSWORD: clubmanager
+    volumes:
+      - clubmanager-minio-data:/data
+    ports:
+      - '35900:9000'
+      - '35901:9001'
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - clubmanager-network
 
@@ -80,3 +105,4 @@ networks:
 volumes:
   clubmanager-postgres-data:
   clubmanager-redis-data:
+  clubmanager-minio-data:

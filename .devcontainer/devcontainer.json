@@ -1,9 +1,11 @@
 {
   "name": "ktb.clubmanager",
-  "dockerComposeFile": "docker-compose.yml",
+  "dockerComposeFile": ["docker-compose.yml", "docker-compose.local.yml"],
   "service": "dev",
   "workspaceFolder": "/workspace",
   "remoteUser": "node",
+
+  "initializeCommand": "[ -f .devcontainer/docker-compose.local.yml ] || echo 'services: {}' > .devcontainer/docker-compose.local.yml",
 
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
@@ -41,12 +43,15 @@
     }
   },
 
-  "forwardPorts": [3000, 3001, 35432, 36379, 35050, 38081],
+  "forwardPorts": [3000, 3001, 35432, 36379, 35050, 35900, 35901, 38081],
 
   "containerEnv": {
     "DATABASE_URL": "postgresql://clubmanager:clubmanager@postgres:5432/clubmanager",
-    "REDIS_URL": "redis://redis:6379"
+    "REDIS_URL": "redis://redis:6379",
+    "MINIO_ENDPOINT": "minio:9000",
+    "MINIO_ACCESS_KEY": "clubmanager",
+    "MINIO_SECRET_KEY": "clubmanager"
   },
 
-  "postCreateCommand": "sudo chown -R node:node /home/node/.local 2>/dev/null || true; if [ -f package.json ]; then pnpm install && pnpm db:migrate 2>/dev/null || true; fi"
+  "postCreateCommand": "sudo chown -R node:node /home/node/.local 2>/dev/null || true; SHELL=/bin/bash pnpm setup 2>/dev/null || true; export PNPM_HOME=\"$HOME/.local/share/pnpm\" && export PATH=\"$PNPM_HOME:$PATH\" && pnpm self-update 2>/dev/null || true; if [ -f package.json ]; then pnpm install && pnpm db:migrate 2>/dev/null || true; fi"
 }

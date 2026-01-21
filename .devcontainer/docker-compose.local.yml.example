@@ -1,0 +1,14 @@
+# Local DevContainer customizations (NOT committed to git)
+# Copy this file to docker-compose.local.yml and customize
+#
+# Usage: cp docker-compose.local.yml.example docker-compose.local.yml
+
+# Uncomment and modify the volumes section as needed:
+#
+# services:
+#   dev:
+#     volumes:
+#       - ~/.config/some-tool:/home/node/.config/some-tool:cached
+
+# Empty placeholder (required for valid YAML)
+services: {}

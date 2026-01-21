@@ -62,3 +62,6 @@ temp/
 
 # Turbo
 .turbo/
+
+# DevContainer local customizations
+.devcontainer/*.local.yml
