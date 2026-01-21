@@ -25,9 +25,9 @@ coverage/
 *.swo
 *.code-workspace
 
-# Naming
-?*.gitignore
-?*.gitignore/
+# Archive folders (suffixed with .gitignore to exclude from repo)
+*.gitignore
+*.gitignore/
 
 # OS
 .DS_Store
