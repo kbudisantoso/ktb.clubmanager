@@ -1,0 +1,24 @@
+{
+  "name": "ktb-clubmanager",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Open-Source Vereinsverwaltung mit doppelter Buchführung (SKR42)",
+  "license": "MIT",
+  "author": "ktb.clubmanager",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "prepare-commit": "pnpm lint && pnpm typecheck && pnpm test",
+    "db:migrate": "pnpm --filter api db:migrate",
+    "db:studio": "pnpm --filter api db:studio",
+    "db:generate": "pnpm --filter api db:generate"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

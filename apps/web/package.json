@@ -1,0 +1,12 @@
+{
+  "name": "@ktb/web",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Next.js not yet configured'",
+    "build": "echo 'Next.js not yet configured'",
+    "lint": "echo 'ESLint not yet configured'",
+    "typecheck": "echo 'TypeScript not yet configured'",
+    "test": "echo 'No tests yet'"
+  }
+}

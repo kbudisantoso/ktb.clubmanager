@@ -1,0 +1,15 @@
+{
+  "name": "@ktb/api",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'NestJS not yet configured'",
+    "build": "echo 'NestJS not yet configured'",
+    "lint": "echo 'ESLint not yet configured'",
+    "typecheck": "echo 'TypeScript not yet configured'",
+    "test": "echo 'No tests yet'",
+    "db:migrate": "echo 'Prisma not yet configured'",
+    "db:studio": "echo 'Prisma not yet configured'",
+    "db:generate": "echo 'Prisma not yet configured'"
+  }
+}
