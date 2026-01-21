@@ -2,6 +2,7 @@
   "name": "ktb-clubmanager",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "description": "Open-Source Vereinsverwaltung mit doppelter Buchführung (SKR42)",
   "license": "MIT",
   "author": "ktb.clubmanager",
@@ -9,8 +10,11 @@
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "lint": "pnpm -r lint",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "prepare-commit": "pnpm lint && pnpm typecheck && pnpm test",
     "db:migrate": "pnpm --filter api db:migrate",
     "db:studio": "pnpm --filter api db:studio",
@@ -26,6 +30,7 @@
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.0",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.1"
   }
 }

@@ -5,8 +5,11 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "lint": "echo 'ESLint not yet configured'",
-    "typecheck": "echo 'TypeScript not yet configured'",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
     "test": "echo 'No tests yet'"
+  },
+  "dependencies": {
+    "zod": "^4.3.5"
   }
 }
