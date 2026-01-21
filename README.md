@@ -4,7 +4,7 @@
 
 **Minimal effort club administration - less work than a spreadsheet**
 
-[![CI](https://img.shields.io/github/actions/workflow/status/ktb-clubmanager/ktb.clubmanager/ci.yml?branch=main&label=CI)](https://github.com/ktb-clubmanager/ktb.clubmanager/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/kbudisantoso/ktb.clubmanager/ci.yml?branch=main&label=CI)](https://github.com/kbudisantoso/ktb.clubmanager/actions/workflows/ci.yml)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff)](https://www.typescriptlang.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
@@ -37,7 +37,7 @@ The fastest way to get started uses VS Code DevContainers:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/ktb-clubmanager/ktb.clubmanager.git
+   git clone https://github.com/kbudisantoso/ktb.clubmanager.git
    cd ktb.clubmanager
    ```
 
@@ -63,7 +63,7 @@ If you prefer not to use DevContainers, set up manually:
 ### Installation
 
 ```bash
-git clone https://github.com/ktb-clubmanager/ktb.clubmanager.git
+git clone https://github.com/kbudisantoso/ktb.clubmanager.git
 cd ktb.clubmanager
 pnpm install
 docker compose up -d
@@ -135,7 +135,7 @@ The project is a **pnpm monorepo** with two applications (`web` and `api`) shari
 
 The project is currently in **pre-MVP** stage, building foundational infrastructure.
 
-See [.planning/ROADMAP.md](.planning/ROADMAP.md) for the full development roadmap.
+Check [GitHub Issues](https://github.com/kbudisantoso/ktb.clubmanager/issues) for planned features and progress.
 
 ## Contributing
 
