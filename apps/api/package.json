@@ -3,8 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "echo 'NestJS not yet configured'",
-    "build": "echo 'NestJS not yet configured'",
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "start:prod": "NODE_ENV=production node dist/main.js",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
     "test": "echo 'No tests yet'",
@@ -13,6 +15,18 @@
     "db:generate": "echo 'Prisma not yet configured'"
   },
   "dependencies": {
-    "@ktb/shared": "workspace:*"
+    "@ktb/shared": "workspace:*",
+    "@nestjs/common": "^11.1.12",
+    "@nestjs/core": "^11.1.12",
+    "@nestjs/platform-express": "^11.1.12",
+    "@nestjs/swagger": "^11.2.5",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.16",
+    "@nestjs/testing": "^11.1.12",
+    "@types/express": "^5.0.6"
   }
 }
