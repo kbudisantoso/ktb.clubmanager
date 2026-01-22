@@ -144,6 +144,14 @@ We welcome contributions from developers of all experience levels. Whether you w
 - Read our [CONTRIBUTING.md](CONTRIBUTING.md) guide to get started
 - First-time contributors: you'll sign a simple CLA when opening your first PR
 
+## Documentation
+
+- [Architecture Decision Records](docs/adr/) - Why we made key technical decisions
+- [API Documentation](docs/api/) - OpenAPI/Swagger documentation (available at `/api/docs` in development)
+- [Database Schema](docs/schema/) - Entity relationship diagrams and schema documentation
+
+See [docs/README.md](docs/README.md) for the full documentation index.
+
 ## License
 
 ktb.clubmanager is licensed under the [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0).
