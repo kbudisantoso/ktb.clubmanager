@@ -4,6 +4,9 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
+    "noEmit": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "paths": {
       "@ktb/shared": ["../../packages/shared/src/index.ts"]
     }
