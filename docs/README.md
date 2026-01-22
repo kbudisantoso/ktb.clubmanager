@@ -21,6 +21,7 @@ Architecture Decision Records (ADRs) document the key technical decisions made i
 | [0007](adr/0007-vitest-testing-framework.md) | Vitest Testing Framework | Accepted |
 | [0008](adr/0008-zod-schema-source-of-truth.md) | Zod Schema as Source of Truth | Accepted |
 | [0009](adr/0009-upgrade-to-prisma-7.md) | Upgrade to Prisma 7 | Accepted |
+| [0010](adr/0010-row-level-tenant-isolation.md) | Row-Level Tenant Isolation | Accepted |
 
 ### API Documentation
 
