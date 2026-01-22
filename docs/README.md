@@ -20,6 +20,7 @@ Architecture Decision Records (ADRs) document the key technical decisions made i
 | [0006](adr/0006-eslint-flat-config.md) | ESLint Flat Config | Accepted |
 | [0007](adr/0007-vitest-testing-framework.md) | Vitest Testing Framework | Accepted |
 | [0008](adr/0008-zod-schema-source-of-truth.md) | Zod Schema as Source of Truth | Accepted |
+| [0009](adr/0009-upgrade-to-prisma-7.md) | Upgrade to Prisma 7 | Accepted |
 
 ### API Documentation
 

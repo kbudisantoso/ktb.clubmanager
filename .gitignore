@@ -55,6 +55,7 @@ coverage/
 # Prisma
 prisma/*.db
 prisma/*.db-journal
+prisma/generated/
 
 # Uploads
 uploads/

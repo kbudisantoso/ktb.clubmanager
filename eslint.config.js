@@ -25,6 +25,9 @@ export default tseslint.config(
       'eslint.config.js',
       'prettier.config.js',
       '**/vitest.config.ts',
+      'prisma.config.ts',
+      // Generated files
+      'prisma/generated/**',
       // Hidden directories (except .github, .devcontainer)
       '.*/**',
     ],
