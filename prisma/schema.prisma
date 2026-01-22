@@ -1,0 +1,138 @@
+// ktb.clubmanager Database Schema
+// Documentation: docs/schema/
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A club or organization managed by the system (tenant).
+/// Each club is completely isolated - members, accounts, and transactions
+/// belong to exactly one club.
+model Club {
+  /// Unique identifier (CUID format)
+  id          String    @id @default(cuid())
+  /// Display name of the club
+  name        String
+  /// Optional description or notes about the club
+  description String?
+
+  /// Soft deletion timestamp (null if not deleted)
+  deletedAt   DateTime?
+  /// User ID who performed the soft deletion
+  deletedBy   String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  members     Member[]
+  accounts    Account[]
+
+  @@map("clubs")
+}
+
+/// Status of a club member
+enum MemberStatus {
+  /// Currently active member with full privileges
+  ACTIVE
+  /// Temporarily inactive (e.g., sabbatical)
+  INACTIVE
+  /// Application pending approval
+  PENDING
+  /// Left the club (historical record)
+  LEFT
+}
+
+/// A member of a club with contact information and membership details.
+/// Members belong to exactly one club (tenant isolation).
+model Member {
+  /// Unique identifier (CUID format)
+  id          String       @id @default(cuid())
+  /// Reference to the parent club (tenant)
+  clubId      String
+  /// The club this member belongs to
+  club        Club         @relation(fields: [clubId], references: [id])
+
+  /// Member's full name
+  name        String
+  /// Email address (unique within club)
+  email       String?
+  /// Phone number
+  phone       String?
+
+  /// Street address
+  street      String?
+  /// Postal/ZIP code
+  postalCode  String?
+  /// City
+  city        String?
+
+  /// Current membership status
+  status      MemberStatus @default(ACTIVE)
+  /// Date when member joined the club
+  joinedAt    DateTime?
+  /// Date when member left (if status is LEFT)
+  leftAt      DateTime?
+
+  /// Soft deletion timestamp
+  deletedAt   DateTime?
+  /// User ID who performed the soft deletion
+  deletedBy   String?
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([clubId, email])
+  @@index([clubId])
+  @@map("members")
+}
+
+/// Type of account in the chart of accounts (SKR42)
+enum AccountType {
+  /// Assets (Aktivkonten) - Class 0-1
+  ASSET
+  /// Liabilities (Passivkonten) - Class 2-3
+  LIABILITY
+  /// Income (Ertragskonten) - Class 4
+  INCOME
+  /// Expense (Aufwandskonten) - Class 5-8
+  EXPENSE
+}
+
+/// An account in the chart of accounts (Kontenrahmen).
+/// Based on SKR42 for German non-profit organizations.
+model Account {
+  /// Unique identifier (CUID format)
+  id          String      @id @default(cuid())
+  /// Reference to the parent club (tenant)
+  clubId      String
+  /// The club this account belongs to
+  club        Club        @relation(fields: [clubId], references: [id])
+
+  /// SKR42 account code (e.g., "1200" for Bank)
+  code        String
+  /// Account name/description
+  name        String
+  /// Type of account (asset, liability, income, expense)
+  type        AccountType
+
+  /// Whether this account is active and can receive postings
+  isActive    Boolean     @default(true)
+
+  /// Soft deletion timestamp
+  deletedAt   DateTime?
+  /// User ID who performed the soft deletion
+  deletedBy   String?
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([clubId, code])
+  @@index([clubId])
+  @@map("accounts")
+}
