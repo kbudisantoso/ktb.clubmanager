@@ -32,8 +32,9 @@ API documentation is available via Swagger UI at `/api/docs` when running the de
 
 Database schema documentation lives alongside the Prisma schema:
 
-- **Prisma schema:** `prisma/schema.prisma` contains model definitions with inline documentation
-- **ER diagrams:** Coming soon in `docs/schema/`
+- **Prisma schema:** [`prisma/schema.prisma`](../prisma/schema.prisma) contains model definitions with inline documentation
+- **Schema overview:** [`docs/schema/README.md`](schema/README.md) explains conventions and data model
+- **ER diagram:** [`docs/schema/er-diagram.md`](schema/er-diagram.md) visual entity-relationship diagram
 
 ## Quick Links
 
