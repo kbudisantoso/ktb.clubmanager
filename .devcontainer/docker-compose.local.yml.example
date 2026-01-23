@@ -1,14 +1,14 @@
 # Local DevContainer customizations (NOT committed to git)
-# Copy this file to docker-compose.local.yml and customize
-#
-# Usage: cp docker-compose.local.yml.example docker-compose.local.yml
+# Copy to docker-compose.local.yml and fill in your values
 
-# Uncomment and modify the volumes section as needed:
-#
-# services:
-#   dev:
-#     volumes:
-#       - ~/.config/some-tool:/home/node/.config/some-tool:cached
-
-# Empty placeholder (required for valid YAML)
-services: {}
+services:
+  dev:
+    environment:
+      # GitHub CLI authentication (Fine-grained PAT with Issues read/write)
+      # Generate at: https://github.com/settings/personal-access-tokens/new
+      # Repository: kbudisantoso/ktb.clubmanager
+      # Permissions: Issues (read/write)
+      - GH_TOKEN=ghp_your_token_here
+    volumes:
+      # Mount Claude config from host for persistent login
+      - ~/.claude:/home/node/.claude:cached
