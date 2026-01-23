@@ -1,8 +1,8 @@
 # Domain Model: ktb.clubmanager
 
-**Status:** Draft
-**Last Updated:** 2026-01-22
-**Approval:** Required before MVP implementation
+**Status:** Approved
+**Last Updated:** 2026-01-23
+**Approved:** 2026-01-23
 
 This document defines the ubiquitous language for ktb.clubmanager - the German terms used in club management, accounting, and banking. It also documents business invariants that code must enforce.
 
