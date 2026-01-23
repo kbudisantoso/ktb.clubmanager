@@ -29,6 +29,10 @@ German accounting terminology based on the DATEV SKR42 standard for non-profit o
 | **Haben** | Credit | Right side of T-account |
 | **Bilanz** | Balance Sheet | Statement of assets and liabilities |
 | **GuV** | Income Statement | Gewinn- und Verlustrechnung (P&L) |
+| **Festschreibung** | Finalization/Lock | Process of making transactions immutable |
+| **Korrekturbuchung** | Correction Entry | Reversal + new entry to fix finalized transactions |
+| **Monatsabschluss** | Monthly Close | Finalizes all transactions in a month |
+| **Jahresabschluss** | Yearly Close | Finalizes all transactions in fiscal year |
 
 ### Tax Spheres (Spharen)
 
@@ -142,7 +146,7 @@ Business rules that code must enforce for correct accounting.
 | Invariant | Description | Enforcement |
 |-----------|-------------|-------------|
 | **Balance Invariant** | Every transaction: sum(debits) = sum(credits) | Database constraint + application validation |
-| **Immutability** | Posted transactions cannot be edited or deleted | Soft delete + correction entries only |
+| **Festschreibung** | Transactions editable until finalized; after finalization, corrections via reversal entries only | Application logic + period locks |
 | **No Orphan Lines** | Every TransactionLine belongs to exactly one Transaction | Foreign key constraint |
 | **Account Required** | Every TransactionLine references a valid Account | Foreign key constraint |
 | **Decimal Precision** | Financial amounts use Decimal, never Float | Prisma Decimal type |
@@ -158,15 +162,20 @@ Business rules that code must enforce for correct accounting.
 | INCOME | (Decreases) | Balance |
 | EXPENSE | Balance | (Decreases) |
 
-### Correction Pattern
+### Festschreibung (Finalization)
 
-**Never modify posted transactions.** When a correction is needed:
+**Transactions can be edited until finalized.** Finalization happens through:
 
-1. Create a reversal entry (opposite debits/credits of original)
-2. Create the correct entry
-3. Link both to original via reference
+1. **Manual period lock** - Treasurer locks a specific date range
+2. **Monthly close** - Monatsabschluss locks the month
+3. **Yearly close** - Jahresabschluss locks the fiscal year
 
-This preserves the complete audit trail.
+**After finalization (festgeschrieben):**
+- Original transaction is immutable
+- Corrections require Korrekturbuchung (reversal + new entry)
+- Audit trail preserved via linked correction entries
+
+This matches standard German bookkeeping practice (GoBD compliance).
 
 ---
 
