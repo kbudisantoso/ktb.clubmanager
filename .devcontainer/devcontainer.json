@@ -53,5 +53,5 @@
     "MINIO_SECRET_KEY": "clubmanager"
   },
 
-  "postCreateCommand": "sudo chown -R node:node /home/node/.local 2>/dev/null || true; SHELL=/bin/bash pnpm setup 2>/dev/null || true; export PNPM_HOME=\"$HOME/.local/share/pnpm\" && export PATH=\"$PNPM_HOME:$PATH\" && pnpm self-update 2>/dev/null || true; if [ -f package.json ]; then pnpm install && pnpm db:migrate 2>/dev/null || true; fi"
+  "postCreateCommand": "sudo chown -R node:node /home/node/.local 2>/dev/null || true; SHELL=/bin/bash pnpm setup 2>/dev/null || true; export PNPM_HOME=\"$HOME/.local/share/pnpm\" && export PATH=\"$PNPM_HOME:$PATH\" && pnpm self-update 2>/dev/null || true; if [ -f package.json ]; then pnpm install && (pnpm db:migrate >/dev/null 2>&1 || echo 'Note: db:migrate skipped - run manually if needed'); fi"
 }
