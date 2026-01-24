@@ -133,9 +133,15 @@ The project is a **pnpm monorepo** with two applications (`web` and `api`) shari
 
 ## Roadmap
 
-The project is currently in **pre-MVP** stage, building foundational infrastructure.
+Track our progress via [GitHub Milestones](https://github.com/kbudisantoso/ktb.clubmanager/milestones):
 
-Check [GitHub Issues](https://github.com/kbudisantoso/ktb.clubmanager/issues) for planned features and progress.
+| Milestone | Status | Description |
+|-----------|--------|-------------|
+| [M0: Pre-MVP](https://github.com/kbudisantoso/ktb.clubmanager/milestone/1) | ✅ Complete | Repository foundation, DevContainer, CI/CD, documentation |
+| [M1: MVP](https://github.com/kbudisantoso/ktb.clubmanager/milestone/2) | 🔄 In Progress | Core features: members, fees, bookkeeping, SEPA |
+| [M2-M6](https://github.com/kbudisantoso/ktb.clubmanager/milestones) | 📋 Planned | Post-MVP: working hours, member portal, FinTS |
+
+See all [open issues](https://github.com/kbudisantoso/ktb.clubmanager/issues) for detailed requirements.
 
 ## Contributing
 
