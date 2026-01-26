@@ -32,7 +32,7 @@ export default function ComponentsDemo() {
   }, []);
 
   return (
-    <div className="container mx-auto py-10 space-y-12">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
       {/* Header with Logo and Theme Toggle */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">

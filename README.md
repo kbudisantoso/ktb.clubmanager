@@ -31,6 +31,20 @@ ktb.clubmanager is open-source club management software built for German *Verein
 - **Bank import** - Import transactions from German bank CSV exports
 - **Multi-tenant** - Manage multiple clubs from one installation
 
+## Screenshots
+
+<div align="center">
+
+### Light Mode
+<img src="docs/assets/components-light.png" alt="Component Library - Light Mode" width="800">
+
+### Dark Mode
+<img src="docs/assets/components-dark.png" alt="Component Library - Dark Mode" width="800">
+
+<em>UI components built with shadcn/ui and Tailwind CSS v4</em>
+
+</div>
+
 ## Quick Start
 
 The fastest way to get started uses VS Code DevContainers:
