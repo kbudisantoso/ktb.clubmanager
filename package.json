@@ -10,6 +10,8 @@
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
     "test": "vitest run",
+    "test:web": "pnpm --filter @ktb/web test",
+    "test:api": "pnpm --filter @ktb/api test",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
