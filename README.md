@@ -34,14 +34,18 @@ ktb.clubmanager is open-source club management software built for German *Verein
 ## Screenshots
 
 <div align="center">
+<table>
+<tr>
+<td align="center"><strong>Light Mode</strong></td>
+<td align="center"><strong>Dark Mode</strong></td>
+</tr>
+<tr>
+<td><a href="docs/assets/components-light.png"><img src="docs/assets/components-light.png" alt="Light Mode" width="400"></a></td>
+<td><a href="docs/assets/components-dark.png"><img src="docs/assets/components-dark.png" alt="Dark Mode" width="400"></a></td>
+</tr>
+</table>
 
-### Light Mode
-<img src="docs/assets/components-light.png" alt="Component Library - Light Mode" width="800">
-
-### Dark Mode
-<img src="docs/assets/components-dark.png" alt="Component Library - Dark Mode" width="800">
-
-<em>UI components built with shadcn/ui and Tailwind CSS v4</em>
+<em>UI components built with shadcn/ui and Tailwind CSS v4 (click to enlarge)</em>
 
 </div>
 
