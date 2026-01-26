@@ -1,3 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,12 +24,60 @@ import {
 } from "@/components/ui/table";
 
 export default function ComponentsDemo() {
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <div className="container mx-auto py-10 space-y-12">
-      <h1 className="font-display text-3xl font-bold">Component Library</h1>
-      <p className="text-muted-foreground">
-        ktb.clubmanager UI components built with shadcn/ui and Tailwind CSS v4.
-      </p>
+      {/* Header with Logo and Theme Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="relative w-[200px] h-[49px]">
+            <Image
+              src="/logo.png"
+              alt="ktb.clubmanager"
+              width={200}
+              height={49}
+              className="absolute dark:hidden"
+            />
+            <Image
+              src="/logo-darkbg.png"
+              alt="ktb.clubmanager"
+              width={200}
+              height={49}
+              className="absolute hidden dark:block"
+            />
+          </div>
+          <div>
+            <h1 className="font-display text-3xl font-bold">Component Library</h1>
+            <p className="text-muted-foreground">
+              ktb.clubmanager UI components built with shadcn/ui and Tailwind CSS v4.
+            </p>
+          </div>
+        </div>
+        <div className={`flex gap-2 ${!mounted ? "invisible" : ""}`}>
+          <Button
+            variant={mounted && theme === "light" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setTheme("light")}
+            className="w-16 border border-transparent"
+          >
+            Light
+          </Button>
+          <Button
+            variant={mounted && theme === "dark" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setTheme("dark")}
+            className="w-14 border border-transparent"
+          >
+            Dark
+          </Button>
+        </div>
+      </div>
 
       {/* Button Variants */}
       <section className="space-y-4">

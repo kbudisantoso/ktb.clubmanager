@@ -22,7 +22,7 @@
   --popover-foreground: oklch(0.15 0.02 265);
   --primary: var(--brand-cobalt);
   --primary-foreground: oklch(0.98 0.01 265);
-  --secondary: var(--brand-alice);
+  --secondary: oklch(0.88 0.02 265);
   --secondary-foreground: var(--brand-cobalt);
   --muted: oklch(0.97 0.01 265);
   --muted-foreground: oklch(0.55 0.02 265);
@@ -45,14 +45,14 @@
   --card-foreground: oklch(0.98 0.01 265);
   --popover: oklch(0.18 0.01 265);
   --popover-foreground: oklch(0.98 0.01 265);
-  --primary: var(--brand-cyan);              /* Cyan pops in dark mode */
-  --primary-foreground: oklch(0.15 0.02 265);
-  --secondary: oklch(0.22 0.02 265);
+  --primary: var(--brand-alice);             /* Alice Blue for primary in dark mode */
+  --primary-foreground: oklch(0.15 0.02 265); /* Dark text on light Alice Blue */
+  --secondary: oklch(0.32 0.02 265);
   --secondary-foreground: oklch(0.98 0.01 265);
   --muted: oklch(0.22 0.02 265);
   --muted-foreground: oklch(0.65 0.02 265);
-  --accent: var(--brand-cyan);
-  --accent-foreground: oklch(0.15 0.02 265);
+  --accent: var(--brand-cyan);               /* Cyan stays as accent (same as light) */
+  --accent-foreground: oklch(0.15 0.02 265); /* Dark text on Cyan */
   --destructive: var(--brand-racing-red);    /* Racing Red for critical actions */
   --destructive-foreground: oklch(0.98 0.01 265);
   --success: var(--brand-green);
@@ -101,4 +101,19 @@ body {
 /* Tabular numbers for financial data */
 .tabular-nums {
   font-feature-settings: "tnum" 1;
+}
+
+/* Gradient border for focused inputs */
+input[data-slot="input"]:focus-visible {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--background), var(--background)) padding-box,
+    linear-gradient(135deg, var(--brand-cobalt), var(--brand-cyan)) border-box;
+  border: 1px solid transparent;
+}
+
+.dark input[data-slot="input"]:focus-visible {
+  background:
+    linear-gradient(var(--card), var(--card)) padding-box,
+    linear-gradient(135deg, var(--brand-cyan), var(--brand-green)) border-box;
 }
