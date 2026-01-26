@@ -1,0 +1,35 @@
+"use client"
+
+import * as React from "react"
+import * as LabelPrimitive from "@radix-ui/react-label"
+
+import { cn } from "@/lib/utils"
+
+/**
+ * Props for the Label component.
+ */
+export type LabelProps = React.ComponentProps<typeof LabelPrimitive.Root>
+
+/**
+ * A label component for form fields.
+ *
+ * @example
+ * ```tsx
+ * <Label htmlFor="email">Email</Label>
+ * <Input id="email" type="email" />
+ * ```
+ */
+function Label({ className, ...props }: LabelProps) {
+  return (
+    <LabelPrimitive.Root
+      data-slot="label"
+      className={cn(
+        "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export { Label }
