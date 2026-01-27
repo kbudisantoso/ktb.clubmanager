@@ -8,7 +8,7 @@ interface PasswordStrengthProps {
   userInputs?: string[]; // email, name for context
 }
 
-const strengthLabels = ["Sehr schwach", "Schwach", "Ok", "Gut", "Sehr gut"];
+const strengthLabels = ["Sehr schwach", "Schwach", "Mäßig", "Stark", "Sehr stark"];
 const strengthColors = [
   "hsl(var(--destructive))",
   "#f97316",
@@ -50,7 +50,7 @@ export function PasswordStrength({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">Passwortstarke:</span>
+        <span className="text-muted-foreground">Passwortstärke:</span>
         <span style={{ color }} className="font-medium">
           {label}
         </span>
