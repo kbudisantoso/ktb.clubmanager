@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
+import { signIn } from "next-auth/react"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,7 +11,11 @@ import { ArrowLeft, Mail, Loader2 } from "lucide-react"
 
 type LoginStep = "email" | "auth-options"
 
-export default function LoginPage() {
+function LoginContent() {
+  const searchParams = useSearchParams()
+  const signedOut = searchParams.get("signedOut") === "true"
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+
   const [step, setStep] = useState<LoginStep>("email")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -36,33 +42,61 @@ export default function LoginPage() {
     setIsLoading(true)
     setError(null)
 
-    // TODO: Implement GoTrue password sign-in via Auth.js
-    // This will be wired up in Plan 04
-    console.log("Password sign-in:", { email, password })
+    try {
+      // GoTrue OIDC handles password validation
+      // The login_hint pre-fills the email on the GoTrue login page
+      const result = await signIn("gotrue", {
+        login_hint: email,
+        redirect: false,
+        callbackUrl,
+      })
 
-    setIsLoading(false)
+      if (result?.error) {
+        setError("E-Mail oder Passwort ist falsch")
+      } else if (result?.ok) {
+        // Notify other tabs
+        const { getAuthBroadcast } = await import("@/lib/broadcast-auth")
+        getAuthBroadcast().notifyLogin()
+        window.location.href = callbackUrl
+      }
+    } catch {
+      setError("Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleMagicLink = async () => {
     setIsLoading(true)
     setError(null)
 
-    // TODO: Implement GoTrue magic link via Auth.js
-    // This will be wired up in Plan 04
-    console.log("Magic link requested for:", email)
-
-    setIsLoading(false)
+    try {
+      // GoTrue magic link via OIDC authorization endpoint
+      // The prompt=login forces re-authentication
+      await signIn("gotrue", {
+        login_hint: email,
+        prompt: "login",
+        callbackUrl,
+      })
+    } catch {
+      setError("Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.")
+      setIsLoading(false)
+    }
   }
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
     setError(null)
 
-    // TODO: Implement Google OAuth via GoTrue
-    // This will be wired up in Plan 04
-    console.log("Google sign-in")
-
-    setIsLoading(false)
+    try {
+      // Redirect to GoTrue which handles Google OAuth
+      await signIn("gotrue", {
+        callbackUrl,
+      })
+    } catch {
+      setError("Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.")
+      setIsLoading(false)
+    }
   }
 
   const goBack = () => {
@@ -118,6 +152,12 @@ export default function LoginPage() {
                   Geben Sie Ihre E-Mail-Adresse ein
                 </p>
               </div>
+
+              {signedOut && (
+                <div className="rounded-md bg-success/10 border border-success/20 p-3 text-sm text-success">
+                  Sie wurden erfolgreich abgemeldet.
+                </div>
+              )}
 
               <form onSubmit={handleEmailSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -265,6 +305,32 @@ export default function LoginPage() {
               Datenschutz
             </a>
           </footer>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageSkeleton />}>
+      <LoginContent />
+    </Suspense>
+  )
+}
+
+function LoginPageSkeleton() {
+  return (
+    <div className="flex min-h-screen">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-primary/80" />
+      <div className="flex w-full lg:w-1/2 items-center justify-center p-8">
+        <div className="w-full max-w-md space-y-8 animate-pulse">
+          <div className="h-8 bg-muted rounded w-32 mx-auto" />
+          <div className="h-4 bg-muted rounded w-48 mx-auto" />
+          <div className="space-y-4">
+            <div className="h-10 bg-muted rounded" />
+            <div className="h-10 bg-muted rounded" />
+          </div>
         </div>
       </div>
     </div>
