@@ -2,14 +2,14 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "./src",
     "outDir": "./dist",
     "noEmit": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "paths": {
-      "@ktb/shared": ["../../packages/shared/src/index.ts"]
+      "@ktb/shared": ["../../packages/shared/src/index.ts"],
+      "@prisma/generated/*": ["../../prisma/generated/prisma/*"]
     }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "../../prisma/generated/prisma/**/*"]
 }
