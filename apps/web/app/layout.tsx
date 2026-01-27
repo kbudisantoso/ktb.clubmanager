@@ -1,6 +1,6 @@
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
-import { ThemeProvider } from "./providers";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -34,14 +34,7 @@ export default function RootLayout({
       className={cn(plusJakartaSans.variable, inter.variable)}
     >
       <body className="font-body antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
