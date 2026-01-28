@@ -2,7 +2,6 @@
 
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 import type { ThemeProviderProps } from "next-themes"
-import { SessionProvider } from "next-auth/react"
 import { useEffect } from "react"
 import { getAuthBroadcast } from "@/lib/broadcast-auth"
 
@@ -50,20 +49,21 @@ function AuthSyncProvider({ children }: { children: React.ReactNode }) {
 
 /**
  * Root providers component that wraps the application.
- * Includes SessionProvider for Auth.js, ThemeProvider for dark mode,
- * and AuthSyncProvider for cross-tab authentication sync.
+ * Includes ThemeProvider for dark mode and AuthSyncProvider
+ * for cross-tab authentication sync.
+ *
+ * Note: Better Auth doesn't need SessionProvider - sessions
+ * are managed via cookies and server-side API.
  */
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
-      <NextThemesProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-      >
-        <AuthSyncProvider>{children}</AuthSyncProvider>
-      </NextThemesProvider>
-    </SessionProvider>
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <AuthSyncProvider>{children}</AuthSyncProvider>
+    </NextThemesProvider>
   )
 }

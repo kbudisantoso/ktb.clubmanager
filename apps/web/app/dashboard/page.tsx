@@ -1,4 +1,5 @@
-import { auth } from "@/auth"
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 export const metadata = {
@@ -7,7 +8,10 @@ export const metadata = {
 }
 
 export default async function DashboardPage() {
-  const session = await auth()
+  // Get session from Better Auth
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
 
   // Middleware should handle this, but double-check
   if (!session?.user) {
