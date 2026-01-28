@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, Suspense } from "react"
-import { signIn } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { GoogleIcon } from "@/components/icons"
-import { ArrowLeft, Mail, Loader2 } from "lucide-react"
+import { authClient } from "@/lib/auth-client"
+import { getAuthBroadcast } from "@/lib/broadcast-auth"
+import { ArrowLeft, Loader2 } from "lucide-react"
 
 type LoginStep = "email" | "auth-options"
 
@@ -21,6 +22,9 @@ function LoginContent() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Check if Google OAuth is enabled (client-side check via env var)
+  const googleEnabled = !!process.env.NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,41 +47,23 @@ function LoginContent() {
     setError(null)
 
     try {
-      // GoTrue OIDC handles password validation
-      // The login_hint pre-fills the email on the GoTrue login page
-      const result = await signIn("gotrue", {
-        login_hint: email,
-        redirect: false,
-        callbackUrl,
+      const { data, error: signInError } = await authClient.signIn.email({
+        email,
+        password,
       })
 
-      if (result?.error) {
+      if (signInError) {
         setError("E-Mail oder Passwort ist falsch")
-      } else if (result?.ok) {
+        setIsLoading(false)
+        return
+      }
+
+      if (data) {
         // Notify other tabs
-        const { getAuthBroadcast } = await import("@/lib/broadcast-auth")
         getAuthBroadcast().notifyLogin()
+        // Redirect to callback URL
         window.location.href = callbackUrl
       }
-    } catch {
-      setError("Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleMagicLink = async () => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      // GoTrue magic link via OIDC authorization endpoint
-      // The prompt=login forces re-authentication
-      await signIn("gotrue", {
-        login_hint: email,
-        prompt: "login",
-        callbackUrl,
-      })
     } catch {
       setError("Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.")
       setIsLoading(false)
@@ -89,9 +75,9 @@ function LoginContent() {
     setError(null)
 
     try {
-      // Redirect to GoTrue which handles Google OAuth
-      await signIn("gotrue", {
-        callbackUrl,
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: callbackUrl,
       })
     } catch {
       setError("Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.")
@@ -185,30 +171,34 @@ function LoginContent() {
                 </Button>
               </form>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    oder
-                  </span>
-                </div>
-              </div>
+              {googleEnabled && (
+                <>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        oder
+                      </span>
+                    </div>
+                  </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleGoogleSignIn}
-                disabled={isLoading}
-              >
-                <GoogleIcon className="mr-2 h-5 w-5" />
-                Mit Google anmelden
-              </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoading}
+                  >
+                    <GoogleIcon className="mr-2 h-5 w-5" />
+                    Mit Google anmelden
+                  </Button>
+                </>
+              )}
             </div>
           ) : (
-            /* Step 2: Authentication options */
+            /* Step 2: Password input */
             <div className="space-y-6">
               <button
                 onClick={goBack}
@@ -220,31 +210,8 @@ function LoginContent() {
 
               <div className="text-center">
                 <h2 className="text-2xl font-display font-bold">
-                  Wie mochten Sie sich anmelden?
+                  Passwort eingeben
                 </h2>
-              </div>
-
-              {/* Magic Link Option */}
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full h-12"
-                onClick={handleMagicLink}
-                disabled={isLoading}
-              >
-                <Mail className="mr-2 h-5 w-5" />
-                Link per E-Mail senden
-              </Button>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    oder mit Passwort
-                  </span>
-                </div>
               </div>
 
               {/* Password Option */}
