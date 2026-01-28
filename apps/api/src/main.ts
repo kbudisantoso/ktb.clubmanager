@@ -28,7 +28,9 @@ async function bootstrap() {
     });
   }
 
-  const port = process.env.PORT ?? 3001;
+  // API port: use API_PORT if set, otherwise PORT+1, otherwise 3001
+  const basePort = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+  const port = process.env.API_PORT ?? basePort + 1;
   await app.listen(port);
 
   console.log(`Application is running on: http://localhost:${port}`);
