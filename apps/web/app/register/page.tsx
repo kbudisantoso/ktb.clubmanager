@@ -1,65 +1,91 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { PasswordStrength } from "@/components/auth/password-strength";
-import { validatePassword } from "@/lib/password-validation";
-import { ArrowLeft, Loader2, Check } from "lucide-react";
+import { useState } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { PasswordStrength } from "@/components/auth/password-strength"
+import { validatePassword } from "@/lib/password-validation"
+import { authClient } from "@/lib/auth-client"
+import { getAuthBroadcast } from "@/lib/broadcast-auth"
+import { ArrowLeft, Loader2, Check } from "lucide-react"
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const router = useRouter()
+  const [email, setEmail] = useState("")
+  const [name, setName] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
-  const userInputs = [email, name].filter(Boolean);
+  const userInputs = [email, name].filter(Boolean)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
+    e.preventDefault()
+    setError(null)
+    setIsLoading(true)
 
     // Validate email
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Bitte geben Sie eine gultige E-Mail-Adresse ein");
-      setIsLoading(false);
-      return;
+      setError("Bitte geben Sie eine gultige E-Mail-Adresse ein")
+      setIsLoading(false)
+      return
     }
 
     // Validate passwords match
     if (password !== confirmPassword) {
-      setError("Die Passworter stimmen nicht uberein");
-      setIsLoading(false);
-      return;
+      setError("Die Passworter stimmen nicht uberein")
+      setIsLoading(false)
+      return
     }
 
     // Validate password strength
-    const validation = await validatePassword(password, userInputs);
+    const validation = await validatePassword(password, userInputs)
     if (!validation.valid) {
-      setError(validation.errors[0]);
-      setIsLoading(false);
-      return;
+      setError(validation.errors[0])
+      setIsLoading(false)
+      return
     }
 
     try {
-      // TODO: Implement GoTrue user registration
-      // This will call GoTrue /signup endpoint
-      console.log("Register:", { email, name, password });
+      // Register with Better Auth
+      const { data, error: signUpError } = await authClient.signUp.email({
+        email,
+        password,
+        name: name || undefined,
+      })
 
-      // Show success state
-      setSuccess(true);
+      if (signUpError) {
+        // Handle specific error cases
+        if (signUpError.message?.includes("already exists") || signUpError.code === "USER_ALREADY_EXISTS") {
+          setError("Ein Konto mit dieser E-Mail-Adresse existiert bereits")
+        } else {
+          setError(signUpError.message || "Registrierung fehlgeschlagen")
+        }
+        setIsLoading(false)
+        return
+      }
+
+      if (data) {
+        // Registration successful - Better Auth auto-signs in
+        // Notify other tabs
+        getAuthBroadcast().notifyLogin()
+
+        // Show success state briefly then redirect
+        setSuccess(true)
+        setTimeout(() => {
+          router.push("/dashboard")
+        }, 1500)
+      }
     } catch {
-      setError("Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.");
-    } finally {
-      setIsLoading(false);
+      setError("Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.")
+      setIsLoading(false)
     }
-  };
+  }
 
   if (success) {
     return (
@@ -70,15 +96,11 @@ export default function RegisterPage() {
           </div>
           <h2 className="text-2xl font-display font-bold">Konto erstellt!</h2>
           <p className="text-muted-foreground">
-            Wir haben Ihnen eine E-Mail gesendet. Bitte bestatigen Sie Ihre
-            E-Mail-Adresse, um sich anzumelden.
+            Sie werden zum Dashboard weitergeleitet...
           </p>
-          <Link href="/login">
-            <Button className="w-full">Zur Anmeldung</Button>
-          </Link>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -193,5 +215,5 @@ export default function RegisterPage() {
         </footer>
       </div>
     </div>
-  );
+  )
 }
