@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, useRef, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -25,11 +25,29 @@ function LoginContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Refs for focus management
+  const emailInputRef = useRef<HTMLInputElement>(null)
+  const passwordInputRef = useRef<HTMLInputElement>(null)
+
   // Check if Google OAuth is enabled (client-side check via env var)
   const googleEnabled = !!process.env.NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  // Focus email input on mount
+  useEffect(() => {
+    emailInputRef.current?.focus()
+  }, [])
+
+  // Focus password input when switching to password step
+  useEffect(() => {
+    if (step === "auth-options") {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        passwordInputRef.current?.focus()
+      }, 50)
+    }
+  }, [step])
+
+  const validateAndProceed = () => {
     if (!email.trim()) {
       setError("Bitte gib deine E-Mail-Adresse ein")
       return
@@ -43,8 +61,36 @@ function LoginContent() {
     setStep("auth-options")
   }
 
+  const handleEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    validateAndProceed()
+  }
+
+  const handleEmailKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      validateAndProceed()
+    }
+  }
+
   const handlePasswordSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
+    await submitPassword()
+  }
+
+  const handlePasswordKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      submitPassword()
+    }
+  }
+
+  const submitPassword = async () => {
+    if (!password.trim()) {
+      setError("Bitte gib dein Passwort ein")
+      return
+    }
+
     setIsLoading(true)
     setError(null)
 
@@ -91,6 +137,10 @@ function LoginContent() {
     setStep("email")
     setPassword("")
     setError(null)
+    // Focus email input after going back
+    setTimeout(() => {
+      emailInputRef.current?.focus()
+    }, 50)
   }
 
   return (
@@ -143,13 +193,14 @@ function LoginContent() {
                 <div className="space-y-2">
                   <Label htmlFor="email">E-Mail-Adresse</Label>
                   <Input
+                    ref={emailInputRef}
                     id="email"
                     type="email"
                     placeholder="name@example.de"
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                    onKeyDown={handleEmailKeyDown}
                     autoComplete="email"
-                    autoFocus
                     className="glass-input"
                   />
                 </div>
@@ -217,16 +268,17 @@ function LoginContent() {
                 </h1>
               </div>
 
-              <form onSubmit={handlePasswordSignIn} className="space-y-4">
+              <form onSubmit={handlePasswordSignIn} className="space-y-4" noValidate>
                 <div className="space-y-2">
                   <Label htmlFor="password">Passwort</Label>
                   <Input
+                    ref={passwordInputRef}
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                    onKeyDown={handlePasswordKeyDown}
                     autoComplete="current-password"
-                    autoFocus
                     className="glass-input"
                   />
                 </div>
