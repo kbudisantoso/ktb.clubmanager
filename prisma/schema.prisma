@@ -138,29 +138,28 @@ model Account {
 }
 
 // =============================================================================
-// Authentication Models
+// Authentication Models (Better Auth)
 // =============================================================================
-// These models support Auth.js (NextAuth.js v5) with Prisma adapter.
-// User linking to GoTrue IdP is via externalId (GoTrue user UUID).
-// Reference: https://authjs.dev/reference/adapter/prisma
+// These models support Better Auth with Prisma adapter.
+// User externalId preserved for future Zitadel migration.
+// Reference: https://www.better-auth.com/docs/adapters/prisma
 
-/// Application user. Links to GoTrue via externalId.
+/// Application user. Managed by Better Auth.
 /// Soft-deletion supported per CONV-006.
 model User {
   id            String    @id @default(cuid())
 
-  /// GoTrue user UUID (from OIDC profile.sub claim)
-  /// Used to link app user to identity provider
+  /// External ID for future Zitadel migration (OIDC profile.sub claim)
   externalId    String?   @unique
 
-  /// User's email address (from GoTrue or registration)
+  /// User's email address (from registration or OAuth)
   email         String    @unique
 
-  /// Display name (from GoTrue profile or user-provided)
-  name          String?
+  /// Whether email has been verified
+  emailVerified Boolean   @default(false)
 
-  /// Email verification timestamp (set when email confirmed)
-  emailVerified DateTime?
+  /// Display name (from registration or OAuth profile)
+  name          String?
 
   /// Profile image URL (from OAuth provider or uploaded)
   image         String?
@@ -168,58 +167,76 @@ model User {
   /// Terms & Conditions acceptance timestamp
   termsAcceptedAt DateTime?
 
+  /// Password hash for email/password auth (bcrypt)
+  /// Null for OAuth-only users
+  passwordHash  String?
+
   /// Soft-deletion fields (CONV-006)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
   deletedBy     String?
 
-  /// Auth.js relations
-  oauthAccounts OAuthAccount[]
+  /// Better Auth relations
+  accounts      OAuthAccount[]
   sessions      Session[]
 
   @@map("users")
 }
 
-/// OAuth account linked to a user (Auth.js adapter requirement)
+/// OAuth account linked to a user (Better Auth adapter requirement)
 /// Stores tokens and provider info for each linked OAuth account
 /// Note: Named OAuthAccount to avoid conflict with Chart of Accounts model
 model OAuthAccount {
-  id                String  @id @default(cuid())
+  id                String    @id @default(cuid())
   userId            String
 
-  /// OAuth provider type (usually "oidc" for GoTrue)
-  type              String
+  /// Provider identifier (e.g., "google", "github")
+  providerId        String
 
-  /// Provider identifier (e.g., "gotrue", "google")
-  provider          String
+  /// Provider's account ID (user ID at provider)
+  accountId         String
 
-  /// Provider's account ID (GoTrue user UUID for OIDC)
-  providerAccountId String
+  /// OAuth tokens
+  accessToken       String?   @db.Text
+  refreshToken      String?   @db.Text
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
 
-  /// OAuth tokens (snake_case per Auth.js convention)
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
+  /// Token metadata
   scope             String?
-  id_token          String? @db.Text
-  session_state     String?
+  idToken           String?   @db.Text
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, providerAccountId])
+  @@unique([providerId, accountId])
   @@index([userId])
   @@map("oauth_accounts")
 }
 
-/// User session (Auth.js adapter requirement)
+/// User session (Better Auth adapter requirement)
 /// Database-backed sessions for revocation support
 model Session {
   id           String   @id @default(cuid())
-  sessionToken String   @unique
+
+  /// Session token for cookie validation
+  token        String   @unique
+
+  /// User who owns this session
   userId       String
-  expires      DateTime
+
+  /// When the session expires
+  expiresAt    DateTime
+
+  /// Client metadata
+  ipAddress    String?
+  userAgent    String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -227,13 +244,22 @@ model Session {
   @@map("sessions")
 }
 
-/// Email verification token (Auth.js adapter requirement)
-/// Used for magic link authentication
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
+/// Email verification token (Better Auth)
+/// Used for email verification and password reset
+model Verification {
+  id         String   @id @default(cuid())
 
-  @@unique([identifier, token])
-  @@map("verification_tokens")
+  /// What is being verified (email address, phone, etc.)
+  identifier String
+
+  /// The verification token/code
+  value      String
+
+  /// When this verification expires
+  expiresAt  DateTime
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verifications")
 }
