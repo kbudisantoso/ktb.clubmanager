@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
+import { createRef } from "react";
 import { Input } from "./input";
 
 describe("Input", () => {
@@ -43,5 +44,21 @@ describe("Input", () => {
   it("applies custom className", () => {
     render(<Input className="custom-class" placeholder="Custom" />);
     expect(screen.getByPlaceholderText("Custom")).toHaveClass("custom-class");
+  });
+
+  it("forwards ref to input element", () => {
+    const ref = createRef<HTMLInputElement>();
+    render(<Input ref={ref} placeholder="With ref" />);
+
+    expect(ref.current).toBeInstanceOf(HTMLInputElement);
+    expect(ref.current?.placeholder).toBe("With ref");
+  });
+
+  it("allows programmatic focus via ref", () => {
+    const ref = createRef<HTMLInputElement>();
+    render(<Input ref={ref} placeholder="Focusable" />);
+
+    ref.current?.focus();
+    expect(document.activeElement).toBe(ref.current);
   });
 });

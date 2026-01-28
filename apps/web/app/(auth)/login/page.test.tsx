@@ -138,6 +138,39 @@ describe("LoginPage", () => {
       // Wait for email step to return
       await screen.findByLabelText(/e-mail-adresse/i);
     });
+
+    it("proceeds to password step when Enter is pressed in email input", async () => {
+      const user = userEvent.setup();
+      render(<LoginPage />);
+
+      const emailInput = await screen.findByLabelText(/e-mail-adresse/i);
+      await user.type(emailInput, "test@example.de{Enter}");
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/passwort/i)).toBeInTheDocument();
+      });
+    });
+
+    it("submits login when Enter is pressed in password input", async () => {
+      const user = userEvent.setup();
+      mockSignInEmail.mockResolvedValue({ data: { session: {} }, error: null });
+      render(<LoginPage />);
+
+      // Go to password step
+      const emailInput = await screen.findByLabelText(/e-mail-adresse/i);
+      await user.type(emailInput, "test@example.de{Enter}");
+
+      // Enter password and press Enter
+      const passwordInput = await screen.findByLabelText(/passwort/i);
+      await user.type(passwordInput, "password123{Enter}");
+
+      await waitFor(() => {
+        expect(mockSignInEmail).toHaveBeenCalledWith({
+          email: "test@example.de",
+          password: "password123",
+        });
+      });
+    });
   });
 
   describe("error cases", () => {
