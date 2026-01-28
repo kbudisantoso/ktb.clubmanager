@@ -1,5 +1,6 @@
 "use client"
 
+import { useTheme } from "next-themes"
 import { authClient, useSession } from "@/lib/auth-client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -11,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getAuthBroadcast } from "@/lib/broadcast-auth"
-import { LogOut, User, Settings } from "lucide-react"
+import { LogOut, User, Settings, Moon, Sun } from "lucide-react"
 
 /**
  * User menu dropdown component.
@@ -20,10 +21,15 @@ import { LogOut, User, Settings } from "lucide-react"
  */
 export function UserMenu() {
   const { data: session, isPending } = useSession()
+  const { theme, setTheme } = useTheme()
 
   // Don't render during loading or when not authenticated
   if (isPending || !session?.user) {
     return null
+  }
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark")
   }
 
   const { user } = session
@@ -91,6 +97,14 @@ export function UserMenu() {
             <Settings className="mr-2 h-4 w-4" />
             <span>Sicherheit</span>
           </a>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer">
+          {theme === "dark" ? (
+            <Sun className="mr-2 h-4 w-4" />
+          ) : (
+            <Moon className="mr-2 h-4 w-4" />
+          )}
+          <span>{theme === "dark" ? "Hell" : "Dunkel"}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
