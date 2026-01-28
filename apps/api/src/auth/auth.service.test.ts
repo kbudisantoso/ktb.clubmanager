@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AuthService } from "./auth.service";
-import { PrismaService } from "../prisma/prisma.service";
+import type { PrismaService } from "../prisma/prisma.service";
 
 // Mock PrismaService
 const mockPrisma = {

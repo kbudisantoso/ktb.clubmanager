@@ -1,6 +1,6 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { Request } from 'express';
-import { SessionUser } from '../guards/session-auth.guard';
+import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
+import type { Request } from 'express';
+import type { SessionUser } from '../guards/session-auth.guard';
 
 /**
  * Parameter decorator to extract the current authenticated user from request.

@@ -115,7 +115,6 @@ describe("password-validation", () => {
       it("rejects compromised passwords (HaveIBeenPwned)", async () => {
         // Mock API to return a hash that matches our test password
         // SHA-1 of "password" starts with 5BAA6
-        const passwordHash = "5BAA6"; // First 5 chars of SHA-1("password")
         mockFetch.mockResolvedValue({
           ok: true,
           text: () =>
@@ -124,7 +123,7 @@ describe("password-validation", () => {
             ),
         });
 
-        const result = await validatePassword("password");
+        await validatePassword("password");
         // This will trigger the pwned check
         expect(mockFetch).toHaveBeenCalled();
       });

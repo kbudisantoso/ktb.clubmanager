@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ExecutionContext, UnauthorizedException } from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { SessionAuthGuard, SessionUser } from "./session-auth.guard";
-import { PrismaService } from "../../prisma/prisma.service";
+import { type ExecutionContext, UnauthorizedException } from "@nestjs/common";
+import type { Reflector } from "@nestjs/core";
+import { SessionAuthGuard, type SessionUser } from "./session-auth.guard";
+import type { PrismaService } from "../../prisma/prisma.service";
 
 // Mock PrismaService
 const mockPrisma = {
