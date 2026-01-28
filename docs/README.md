@@ -27,8 +27,10 @@ Architecture Decision Records (ADRs) document the key technical decisions made i
 
 API documentation is available via Swagger UI at `/api/docs` when running the development server.
 
-- **Development:** Start with `pnpm dev`, then visit `http://localhost:3001/api/docs`
+- **Development:** Start with `pnpm dev`, then visit `http://localhost:3001/api/docs` (or your configured API port)
 - **OpenAPI spec:** Available at `/api/docs-json` for client code generation
+
+> **Note:** The API runs on port 3001 by default, or `PORT+1` if you set a custom `PORT`. See [Port Configuration](../README.md#port-configuration) in the main README.
 
 ### Schema Documentation
 

@@ -1,9 +1,25 @@
 import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
-import { PrismaClient } from "@prisma/generated/client"
+import { PrismaClient } from "../../../prisma/generated/client/index.js"
+import { PrismaPg } from "@prisma/adapter-pg"
+import { Pool } from "pg"
 
-// Create singleton Prisma client for auth
-const prisma = new PrismaClient()
+// Lazy-initialized singleton to avoid SSG issues
+let prismaInstance: PrismaClient | null = null
+
+function getPrisma(): PrismaClient {
+  if (!prismaInstance) {
+    const pool = new Pool({
+      connectionString:
+        process.env.DATABASE_URL ||
+        "postgresql://clubmanager:clubmanager@localhost:35432/clubmanager",
+    })
+    prismaInstance = new PrismaClient({
+      adapter: new PrismaPg(pool),
+    })
+  }
+  return prismaInstance
+}
 
 /**
  * Better Auth server configuration.
@@ -13,9 +29,11 @@ const prisma = new PrismaClient()
  * - Optional Google OAuth (when GOOGLE_CLIENT_ID is set)
  * - Database sessions via Prisma
  * - Session cookies with secure defaults
+ *
+ * Note: Prisma is lazily initialized to avoid SSG issues.
  */
 export const auth = betterAuth({
-  database: prismaAdapter(prisma, {
+  database: prismaAdapter(getPrisma(), {
     provider: "postgresql",
   }),
 

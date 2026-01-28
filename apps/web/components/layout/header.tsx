@@ -1,5 +1,14 @@
+"use client"
+
 import Link from "next/link"
-import { UserMenu } from "@/components/auth/user-menu"
+import dynamic from "next/dynamic"
+
+// Dynamically import UserMenu to avoid SSG issues with useSession hook
+// The UserMenu uses better-auth's useSession which requires client-side context
+const UserMenu = dynamic(
+  () => import("@/components/auth/user-menu").then((mod) => mod.UserMenu),
+  { ssr: false }
+)
 
 /**
  * Application header component.

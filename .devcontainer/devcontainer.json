@@ -43,7 +43,7 @@
     }
   },
 
-  "forwardPorts": [3000, 3001, 35432, 36379, 35050, 35900, 35901, 38081],
+  "forwardPorts": [33000, 33001, 35432, 36379, 35050, 35900, 35901, 38081, 39999],
 
   "containerEnv": {
     "DATABASE_URL": "postgresql://clubmanager:clubmanager@postgres:5432/clubmanager",

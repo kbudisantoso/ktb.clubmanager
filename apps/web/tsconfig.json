@@ -21,10 +21,9 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@ktb/shared": ["../../packages/shared/src/index.ts"],
-      "@prisma/generated/*": ["../../prisma/generated/prisma/*"]
+      "@ktb/shared": ["../../packages/shared/src/index.ts"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "../../prisma/generated/prisma/**/*"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules", "vitest.config.ts"]
 }

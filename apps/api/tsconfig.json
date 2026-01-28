@@ -7,9 +7,8 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "paths": {
-      "@ktb/shared": ["../../packages/shared/src/index.ts"],
-      "@prisma/generated/*": ["../../prisma/generated/prisma/*"]
+      "@ktb/shared": ["../../packages/shared/src/index.ts"]
     }
   },
-  "include": ["src/**/*", "../../prisma/generated/prisma/**/*"]
+  "include": ["src/**/*"]
 }

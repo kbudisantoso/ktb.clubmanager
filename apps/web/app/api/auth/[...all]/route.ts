@@ -1,6 +1,9 @@
 import { auth } from "@/lib/auth"
 import { toNextJsHandler } from "better-auth/next-js"
 
+// Force dynamic - auth endpoints can't be statically generated
+export const dynamic = "force-dynamic"
+
 /**
  * Better Auth API route handler.
  *

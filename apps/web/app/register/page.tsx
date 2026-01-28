@@ -53,10 +53,11 @@ export default function RegisterPage() {
 
     try {
       // Register with Better Auth
+      // Note: name is required by Better Auth, use email prefix as fallback
       const { data, error: signUpError } = await authClient.signUp.email({
         email,
         password,
-        name: name || undefined,
+        name: name.trim() || email.split("@")[0],
       })
 
       if (signUpError) {

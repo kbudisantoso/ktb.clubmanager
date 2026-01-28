@@ -92,11 +92,35 @@ pnpm dev
 
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start development servers |
+| `pnpm dev` | Start all development servers (web + api) |
+| `pnpm dev:web` | Start only the web frontend |
+| `pnpm dev:api` | Start only the API backend |
 | `pnpm test` | Run all tests |
 | `pnpm lint` | Check code quality |
 | `pnpm typecheck` | Verify TypeScript types |
 | `pnpm prepare-commit` | Run all checks before committing |
+
+### Port Configuration
+
+By default, the web app runs on port 3000 and the API on port 3001. You can customize ports via `.env.local` or command line:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | 3000 | Base port (web uses this, API uses PORT+1) |
+| `WEB_PORT` | - | Override web port explicitly |
+| `API_PORT` | - | Override API port explicitly |
+
+**Examples:**
+
+| Configuration | Web Port | API Port |
+|---------------|----------|----------|
+| Default | 3000 | 3001 |
+| `PORT=4000` | 4000 | 4001 |
+| `WEB_PORT=8000` | 8000 | 3001 |
+| `API_PORT=9000` | 3000 | 9000 |
+| `WEB_PORT=8000 API_PORT=9000` | 8000 | 9000 |
+
+> **Tip:** Set variables in `.env.local` for persistent configuration. The dev scripts automatically load this file via `dotenv-cli`.
 
 ## Local Customizations
 

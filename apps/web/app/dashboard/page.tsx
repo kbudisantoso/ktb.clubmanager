@@ -2,6 +2,9 @@ import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
+// Force dynamic rendering - this page requires authentication
+export const dynamic = "force-dynamic"
+
 export const metadata = {
   title: "Dashboard | ktb.clubmanager",
   description: "Ihr Vereins-Dashboard",

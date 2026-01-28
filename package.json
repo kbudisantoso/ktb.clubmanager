@@ -7,7 +7,9 @@
   "license": "MIT",
   "author": "ktb.clubmanager",
   "scripts": {
-    "dev": "pnpm -r --parallel dev",
+    "dev": "dotenv -e .env.local -- pnpm -r --parallel dev",
+    "dev:web": "dotenv -e .env.local -- pnpm --filter @ktb/web dev",
+    "dev:api": "dotenv -e .env.local -- pnpm --filter @ktb/api dev",
     "build": "pnpm -r build",
     "test": "vitest run",
     "test:web": "pnpm --filter @ktb/web test",
@@ -28,9 +30,10 @@
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
   },
-  "packageManager": "pnpm@10.28.1",
+  "packageManager": "pnpm@10.28.2",
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.0",
@@ -39,5 +42,8 @@
     "typescript-eslint": "^8.53.1",
     "vite-tsconfig-paths": "^6.0.4",
     "vitest": "^4.0.17"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.3.0"
   }
 }
