@@ -6,9 +6,14 @@ export default function MainLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="relative min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1">{children}</main>
-    </div>
+    <>
+      {/* Subtle gradient background for in-app pages */}
+      <div className="app-background" />
+
+      <div className="relative min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1">{children}</main>
+      </div>
+    </>
   )
 }
