@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -16,8 +18,8 @@ const inter = Inter({
   display: "swap",
 });
 
-export const metadata = {
-  title: "ktb.clubmanager",
+export const metadata: Metadata = {
+  title: "ClubManager",
   description: "Open-source club management with integrated bookkeeping",
 };
 
@@ -33,9 +35,7 @@ export default function RootLayout({
       className={cn(plusJakartaSans.variable, inter.variable)}
     >
       <body className="font-body antialiased">
-        <div className="relative min-h-screen flex flex-col">
-          <main className="flex-1">{children}</main>
-        </div>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

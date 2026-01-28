@@ -117,3 +117,155 @@ input[data-slot="input"]:focus-visible {
     linear-gradient(var(--card), var(--card)) padding-box,
     linear-gradient(135deg, var(--brand-cyan), var(--brand-green)) border-box;
 }
+
+/* ============================================
+   GLASSMORPHISM DESIGN SYSTEM
+   Based on brand-manifest.md "Glass & Flow"
+   ============================================ */
+
+/* Auth page background with gradient overlay */
+.auth-background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--background);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.auth-background::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    oklch(0.25 0.12 265 / 0.7),  /* Cobalt with transparency */
+    oklch(0.78 0.13 195 / 0.3)   /* Cyan with transparency */
+  );
+}
+
+/* Light mode: soft gradient background */
+.auth-background {
+  background-image: url('/bg-light.png');
+}
+
+/* Dark mode: aurora waves background */
+.dark .auth-background {
+  background-image: url('/bg-dark.png');
+}
+
+.dark .auth-background::before {
+  background: linear-gradient(
+    135deg,
+    oklch(0.15 0.01 60 / 0.85),   /* Onyx with transparency */
+    oklch(0.78 0.13 195 / 0.2)    /* Cyan hint */
+  );
+}
+
+/* Glass Panel - Primary container style */
+.glass-panel {
+  background: oklch(1 0 0 / 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid oklch(1 0 0 / 0.2);
+  box-shadow:
+    0 4px 6px -1px oklch(0 0 0 / 0.1),
+    0 2px 4px -2px oklch(0 0 0 / 0.1),
+    inset 0 1px 0 oklch(1 0 0 / 0.5);
+}
+
+.dark .glass-panel {
+  background: oklch(0.18 0.01 265 / 0.6);
+  border: 1px solid oklch(1 0 0 / 0.1);
+  box-shadow:
+    0 4px 6px -1px oklch(0 0 0 / 0.3),
+    0 2px 4px -2px oklch(0 0 0 / 0.2),
+    inset 0 1px 0 oklch(1 0 0 / 0.1);
+}
+
+/* Glass Card - For content cards within glass panels */
+.glass-card {
+  background: oklch(1 0 0 / 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid oklch(0 0 0 / 0.05);
+}
+
+.dark .glass-card {
+  background: oklch(0.22 0.02 265 / 0.5);
+  border: 1px solid oklch(1 0 0 / 0.05);
+}
+
+/* Glass Input - For form inputs on glass backgrounds */
+.glass-input {
+  background: oklch(1 0 0 / 0.7);
+  border: 1px solid oklch(0 0 0 / 0.1);
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  background: oklch(1 0 0 / 0.9);
+  border-color: var(--brand-cyan);
+  box-shadow: 0 0 0 3px oklch(0.78 0.13 195 / 0.2);
+}
+
+.dark .glass-input {
+  background: oklch(0.15 0.01 60 / 0.6);
+  border: 1px solid oklch(1 0 0 / 0.1);
+}
+
+.dark .glass-input:focus {
+  background: oklch(0.15 0.01 60 / 0.8);
+  border-color: var(--brand-cyan);
+  box-shadow: 0 0 0 3px oklch(0.78 0.13 195 / 0.25);
+}
+
+/* Gradient Text - For headings */
+.gradient-text {
+  background: linear-gradient(135deg, var(--brand-cobalt), var(--brand-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .gradient-text {
+  background: linear-gradient(135deg, var(--brand-cyan), var(--brand-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Gradient Border - For special elements */
+.gradient-border {
+  position: relative;
+  background: var(--background);
+  border-radius: var(--radius);
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--radius) + 1px);
+  background: linear-gradient(135deg, var(--brand-cobalt), var(--brand-cyan));
+  z-index: -1;
+}
+
+.dark .gradient-border::before {
+  background: linear-gradient(135deg, var(--brand-cyan), var(--brand-green));
+}
+
+/* Subtle glow effect for primary buttons */
+.glow-primary {
+  box-shadow:
+    0 0 20px -5px var(--brand-cyan),
+    0 4px 6px -1px oklch(0 0 0 / 0.1);
+  transition: box-shadow 0.2s ease;
+}
+
+.glow-primary:hover {
+  box-shadow:
+    0 0 30px -5px var(--brand-cyan),
+    0 10px 15px -3px oklch(0 0 0 / 0.1);
+}
