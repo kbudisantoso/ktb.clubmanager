@@ -260,22 +260,6 @@ function LoginContent() {
           )}
         </div>
 
-        {/* Features - Below glass panel */}
-        <div className="mt-8 grid grid-cols-3 gap-4 text-center">
-          <div className="glass-card rounded-xl p-4">
-            <div className="text-2xl mb-1">👥</div>
-            <p className="text-xs text-muted-foreground">Mitglieder</p>
-          </div>
-          <div className="glass-card rounded-xl p-4">
-            <div className="text-2xl mb-1">📊</div>
-            <p className="text-xs text-muted-foreground">Buchhaltung</p>
-          </div>
-          <div className="glass-card rounded-xl p-4">
-            <div className="text-2xl mb-1">💳</div>
-            <p className="text-xs text-muted-foreground">SEPA</p>
-          </div>
-        </div>
-
         {/* Footer */}
         <footer className="mt-8 text-xs text-center text-muted-foreground/70 space-x-4">
           <Link href="/impressum" className="hover:text-foreground transition-colors">
