@@ -139,7 +139,7 @@ function LoginContent() {
                 </div>
               )}
 
-              <form onSubmit={handleEmailSubmit} className="space-y-4">
+              <form onSubmit={handleEmailSubmit} className="space-y-4" noValidate>
                 <div className="space-y-2">
                   <Label htmlFor="email">E-Mail-Adresse</Label>
                   <Input
@@ -203,6 +203,7 @@ function LoginContent() {
             /* Step 2: Password input */
             <div className="space-y-6">
               <button
+                type="button"
                 onClick={goBack}
                 className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
