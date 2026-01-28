@@ -6,8 +6,8 @@ import { redirect } from "next/navigation"
 export const dynamic = "force-dynamic"
 
 export const metadata = {
-  title: "Dashboard | ktb.clubmanager",
-  description: "Ihr Vereins-Dashboard",
+  title: "Dashboard | ClubManager",
+  description: "Dein Vereins-Dashboard",
 }
 
 export default async function DashboardPage() {
@@ -28,7 +28,7 @@ export default async function DashboardPage() {
           Willkommen{session.user.name ? `, ${session.user.name}` : ""}!
         </h1>
         <p className="text-muted-foreground mt-2">
-          Dies ist Ihr persoenliches Dashboard.
+          Dies ist dein persönliches Dashboard.
         </p>
       </div>
 
@@ -37,8 +37,8 @@ export default async function DashboardPage() {
         <div className="mx-auto max-w-md">
           <h2 className="text-xl font-semibold mb-2">Kein Verein zugewiesen</h2>
           <p className="text-muted-foreground mb-4">
-            Sie sind noch keinem Verein zugeordnet. Warten Sie auf eine
-            Einladung oder fordern Sie Zugang an.
+            Du bist noch keinem Verein zugeordnet. Warte auf eine
+            Einladung oder fordere Zugang an.
           </p>
           <p className="text-sm text-muted-foreground">
             Eingeloggt als: {session.user.email}

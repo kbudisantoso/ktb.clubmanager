@@ -31,14 +31,14 @@ export default function RegisterPage() {
 
     // Validate email
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Bitte geben Sie eine gultige E-Mail-Adresse ein")
+      setError("Bitte gib eine gültige E-Mail-Adresse ein")
       setIsLoading(false)
       return
     }
 
     // Validate passwords match
     if (password !== confirmPassword) {
-      setError("Die Passworter stimmen nicht uberein")
+      setError("Die Passwörter stimmen nicht überein")
       setIsLoading(false)
       return
     }
@@ -83,7 +83,7 @@ export default function RegisterPage() {
         }, 1500)
       }
     } catch {
-      setError("Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.")
+      setError("Ein Fehler ist aufgetreten. Bitte versuche es erneut.")
       setIsLoading(false)
     }
   }
@@ -97,7 +97,7 @@ export default function RegisterPage() {
           </div>
           <h2 className="text-2xl font-display font-bold">Konto erstellt!</h2>
           <p className="text-muted-foreground">
-            Sie werden zum Dashboard weitergeleitet...
+            Du wirst zum Dashboard weitergeleitet...
           </p>
         </div>
       </div>
@@ -113,14 +113,14 @@ export default function RegisterPage() {
             className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
-            Zuruck zur Anmeldung
+            Zurück zur Anmeldung
           </Link>
         </div>
 
         <div className="text-center">
           <h1 className="text-2xl font-display font-bold">Konto erstellen</h1>
           <p className="text-muted-foreground mt-2">
-            Erstellen Sie ein Konto, um ktb.clubmanager zu nutzen
+            Erstelle ein Konto, um ClubManager zu nutzen
           </p>
         </div>
 
@@ -132,7 +132,7 @@ export default function RegisterPage() {
               type="email"
               placeholder="name@example.de"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setError(null); }}
               autoComplete="email"
               required
             />
@@ -145,7 +145,7 @@ export default function RegisterPage() {
               type="text"
               placeholder="Max Mustermann"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); setError(null); }}
               autoComplete="name"
             />
           </div>
@@ -156,7 +156,7 @@ export default function RegisterPage() {
               id="password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); setError(null); }}
               autoComplete="new-password"
               required
             />
@@ -164,18 +164,18 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Passwort bestatigen</Label>
+            <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
             <Input
               id="confirmPassword"
               type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => { setConfirmPassword(e.target.value); setError(null); }}
               autoComplete="new-password"
               required
             />
             {confirmPassword && password !== confirmPassword && (
               <p className="text-sm text-destructive">
-                Die Passworter stimmen nicht uberein
+                Die Passwörter stimmen nicht überein
               </p>
             )}
           </div>
@@ -191,12 +191,12 @@ export default function RegisterPage() {
         </form>
 
         <p className="text-xs text-center text-muted-foreground">
-          Mit der Registrierung akzeptieren Sie unsere{" "}
+          Mit der Registrierung akzeptierst du unsere{" "}
           <Link
             href="/datenschutz"
             className="underline hover:text-foreground"
           >
-            Datenschutzerklarung
+            Datenschutzerklärung
           </Link>
         </p>
 

@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -29,12 +30,12 @@ function LoginContent() {
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.trim()) {
-      setError("Bitte geben Sie Ihre E-Mail-Adresse ein")
+      setError("Bitte gib deine E-Mail-Adresse ein")
       return
     }
     // Basic email validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Bitte geben Sie eine gultige E-Mail-Adresse ein")
+      setError("Bitte gib eine gültige E-Mail-Adresse ein")
       return
     }
     setError(null)
@@ -65,7 +66,7 @@ function LoginContent() {
         window.location.href = callbackUrl
       }
     } catch {
-      setError("Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.")
+      setError("Ein Fehler ist aufgetreten. Bitte versuche es erneut.")
       setIsLoading(false)
     }
   }
@@ -80,7 +81,7 @@ function LoginContent() {
         callbackURL: callbackUrl,
       })
     } catch {
-      setError("Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.")
+      setError("Ein Fehler ist aufgetreten. Bitte versuche es erneut.")
       setIsLoading(false)
     }
   }
@@ -96,9 +97,14 @@ function LoginContent() {
       {/* Left: Brand visual - hidden on mobile */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-primary/80 items-center justify-center p-12">
         <div className="max-w-md text-primary-foreground">
-          <h1 className="text-4xl font-display font-bold mb-4">
-            ktb.clubmanager
-          </h1>
+          <Image
+            src="/logo-darkbg.png"
+            alt="ClubManager"
+            width={280}
+            height={70}
+            className="h-14 w-auto mb-4"
+            priority
+          />
           <p className="text-lg opacity-90">
             Moderne Vereinsverwaltung mit integrierter Buchhaltung
           </p>
@@ -109,7 +115,7 @@ function LoginContent() {
             </li>
             <li className="flex items-center gap-2">
               <CheckIcon className="h-5 w-5" />
-              <span>Doppelte Buchfuhrung (SKR42)</span>
+              <span>Doppelte Buchführung (SKR42)</span>
             </li>
             <li className="flex items-center gap-2">
               <CheckIcon className="h-5 w-5" />
@@ -123,10 +129,15 @@ function LoginContent() {
       <div className="flex w-full lg:w-1/2 items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
           {/* Mobile-only logo */}
-          <div className="lg:hidden text-center mb-8">
-            <h1 className="text-2xl font-display font-bold text-primary">
-              ktb.clubmanager
-            </h1>
+          <div className="lg:hidden flex justify-center mb-8">
+            <Image
+              src="/logo.png"
+              alt="ClubManager"
+              width={200}
+              height={50}
+              className="h-10 w-auto"
+              priority
+            />
           </div>
 
           {step === "email" ? (
@@ -135,13 +146,13 @@ function LoginContent() {
               <div className="text-center">
                 <h2 className="text-2xl font-display font-bold">Anmelden</h2>
                 <p className="text-muted-foreground mt-2">
-                  Geben Sie Ihre E-Mail-Adresse ein
+                  Gib deine E-Mail-Adresse ein
                 </p>
               </div>
 
               {signedOut && (
                 <div className="rounded-md bg-success/10 border border-success/20 p-3 text-sm text-success">
-                  Sie wurden erfolgreich abgemeldet.
+                  Du wurdest erfolgreich abgemeldet.
                 </div>
               )}
 
@@ -153,7 +164,7 @@ function LoginContent() {
                     type="email"
                     placeholder="name@example.de"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => { setEmail(e.target.value); setError(null); }}
                     autoComplete="email"
                     autoFocus
                   />
@@ -222,7 +233,7 @@ function LoginContent() {
                     id="password"
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => { setPassword(e.target.value); setError(null); }}
                     autoComplete="current-password"
                     autoFocus
                   />
@@ -258,9 +269,9 @@ function LoginContent() {
           )}
 
           <p className="text-xs text-center text-muted-foreground">
-            Mit der Anmeldung akzeptieren Sie unsere{" "}
+            Mit der Anmeldung akzeptierst du unsere{" "}
             <a href="/datenschutz" className="underline hover:text-foreground">
-              Datenschutzerklarung
+              Datenschutzerklärung
             </a>
           </p>
 

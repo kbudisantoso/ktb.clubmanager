@@ -62,7 +62,7 @@ export async function validatePassword(
   // Require minimum strength score
   if (result.score < minScore) {
     errors.push(
-      "Passwort ist zu schwach. Bitte wahlen Sie ein starkeres Passwort."
+      "Passwort ist zu schwach. Bitte wähle ein stärkeres Passwort."
     );
   }
 
@@ -70,7 +70,7 @@ export async function validatePassword(
   const isCompromised = await checkPwnedPassword(password);
   if (isCompromised) {
     errors.push(
-      "Dieses Passwort wurde in einem Datenleck gefunden. Bitte wahlen Sie ein anderes."
+      "Dieses Passwort wurde in einem Datenleck gefunden. Bitte wähle ein anderes."
     );
   }
 
