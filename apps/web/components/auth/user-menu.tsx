@@ -1,6 +1,6 @@
 "use client"
 
-import { signOut, useSession } from "next-auth/react"
+import { authClient, useSession } from "@/lib/auth-client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -19,10 +19,10 @@ import { LogOut, User, Settings } from "lucide-react"
  * Per CONTEXT.md: Primary sign-out location in header.
  */
 export function UserMenu() {
-  const { data: session, status } = useSession()
+  const { data: session, isPending } = useSession()
 
   // Don't render during loading or when not authenticated
-  if (status === "loading" || !session?.user) {
+  if (isPending || !session?.user) {
     return null
   }
 
@@ -32,7 +32,7 @@ export function UserMenu() {
   const initials =
     user.name
       ?.split(" ")
-      .map((n) => n[0])
+      .map((n: string) => n[0])
       .join("")
       .toUpperCase()
       .slice(0, 2) ?? "U"
@@ -43,8 +43,11 @@ export function UserMenu() {
     authBroadcast.notifyLogout()
     authBroadcast.clearAuthState()
 
-    // Sign out with redirect to login
-    await signOut({ callbackUrl: "/login?signedOut=true" })
+    // Sign out with Better Auth
+    await authClient.signOut()
+
+    // Redirect to login
+    window.location.href = "/login?signedOut=true"
   }
 
   return (
