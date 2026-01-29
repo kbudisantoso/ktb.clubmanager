@@ -1,0 +1,14 @@
+{
+  "name": "ClubManager",
+  "short_name": "ClubManager",
+  "description": "Open-source club management with integrated bookkeeping",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#0F2478",
+  "icons": [
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "/icon-mask.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}

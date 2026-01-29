@@ -38,15 +38,15 @@ export default function ComponentsDemo() {
         <div className="flex items-center gap-4">
           <div className="relative w-[200px] h-[49px]">
             <Image
-              src="/logo.png"
-              alt="ktb.clubmanager"
+              src="/logo.svg"
+              alt="ClubManager"
               width={200}
               height={49}
               className="absolute dark:hidden"
             />
             <Image
-              src="/logo-darkbg.png"
-              alt="ktb.clubmanager"
+              src="/logo-darkbg.svg"
+              alt="ClubManager"
               width={200}
               height={49}
               className="absolute hidden dark:block"

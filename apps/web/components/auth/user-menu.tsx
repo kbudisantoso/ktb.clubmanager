@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { getAuthBroadcast } from "@/lib/broadcast-auth"
 import { LogOut, User, Settings, Moon, Sun } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 
 /**
  * User menu dropdown component.
@@ -23,8 +24,13 @@ export function UserMenu() {
   const { data: session, isPending } = useSession()
   const { theme, setTheme } = useTheme()
 
-  // Don't render during loading or when not authenticated
-  if (isPending || !session?.user) {
+  // Show skeleton while loading
+  if (isPending) {
+    return <Skeleton className="h-8 w-8 rounded-full" />
+  }
+
+  // Don't render when not authenticated
+  if (!session?.user) {
     return null
   }
 
@@ -60,7 +66,7 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          className="flex items-center gap-2 rounded-full focus:outline-none focus-visible:ring-1 focus-visible:ring-border"
           aria-label="Benutzermenu"
         >
           <Avatar className="h-8 w-8">

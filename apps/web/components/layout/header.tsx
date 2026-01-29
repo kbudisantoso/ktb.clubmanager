@@ -17,16 +17,24 @@ const UserMenu = dynamic(
  */
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full bg-transparent backdrop-blur-sm">
       <div className="container mx-auto flex h-14 items-center px-4">
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center">
           <Image
-            src="/logo.png"
+            src="/logo.svg"
             alt="ClubManager"
             width={160}
             height={40}
-            className="h-8 w-auto"
+            className="h-8 w-auto dark:hidden"
+            priority
+          />
+          <Image
+            src="/logo-darkbg.svg"
+            alt="ClubManager"
+            width={160}
+            height={40}
+            className="h-8 w-auto hidden dark:block"
             priority
           />
         </Link>
