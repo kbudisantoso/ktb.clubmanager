@@ -24,6 +24,9 @@ jobs:
           path-to-signatures: 'signatures/cla.json'
           path-to-document: 'https://github.com/${{ github.repository }}/blob/main/CLA.md'
           branch: 'main'
-          allowlist: 'bot*,dependabot*,renovate*'
+          remote-organization-name: 'kbudisantoso'
+          remote-repository-name: 'ktb.clubmanager-cla.signatures'
+          allowlist: 'bot*,dependabot*,renovate*,kbudisantoso'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.CLA_PAT }}

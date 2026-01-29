@@ -222,6 +222,8 @@ When you open your first PR, our CLA bot will comment with instructions. Simply 
 I have read the CLA Document and I hereby sign the CLA
 ```
 
+**Important:** Do not include personal data in the signing comment; only use the provided statement.
+
 That's it! The bot will record your signature and you won't need to sign again.
 
 ## Getting Help
