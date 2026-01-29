@@ -36,7 +36,7 @@ export default function ComponentsDemo() {
       {/* Header with Logo and Theme Toggle */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="relative w-[200px] h-[49px]">
+          <div className="relative w-50 h-12.25">
             <Image
               src="/logo.svg"
               alt="ClubManager"
