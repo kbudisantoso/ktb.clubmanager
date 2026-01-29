@@ -30,8 +30,8 @@ model Club {
   updatedAt   DateTime  @updatedAt
 
   // Relations
-  members     Member[]
-  accounts    Account[]
+  members        Member[]
+  ledgerAccounts LedgerAccount[]
 
   @@map("clubs")
 }
@@ -106,7 +106,8 @@ enum AccountType {
 
 /// An account in the chart of accounts (Kontenrahmen).
 /// Based on SKR42 for German non-profit organizations.
-model Account {
+/// Named LedgerAccount to avoid conflict with Better Auth's Account model.
+model LedgerAccount {
   /// Unique identifier (CUID format)
   id          String      @id @default(cuid())
   /// Reference to the parent club (tenant)
@@ -134,7 +135,7 @@ model Account {
 
   @@unique([clubId, code])
   @@index([clubId])
-  @@map("accounts")
+  @@map("ledger_accounts")
 }
 
 // =============================================================================
@@ -167,10 +168,6 @@ model User {
   /// Terms & Conditions acceptance timestamp
   termsAcceptedAt DateTime?
 
-  /// Password hash for email/password auth (bcrypt)
-  /// Null for OAuth-only users
-  passwordHash  String?
-
   /// Soft-deletion fields (CONV-006)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -178,24 +175,26 @@ model User {
   deletedBy     String?
 
   /// Better Auth relations
-  accounts      OAuthAccount[]
+  accounts      Account[]
   sessions      Session[]
 
-  @@map("users")
+  @@map("auth_users")
 }
 
-/// OAuth account linked to a user (Better Auth adapter requirement)
-/// Stores tokens and provider info for each linked OAuth account
-/// Note: Named OAuthAccount to avoid conflict with Chart of Accounts model
-model OAuthAccount {
+/// Auth account linked to a user (Better Auth adapter requirement)
+/// Stores credentials and provider info for each auth method
+model Account {
   id                String    @id @default(cuid())
   userId            String
 
-  /// Provider identifier (e.g., "google", "github")
+  /// Provider identifier (e.g., "credential", "google", "github")
   providerId        String
 
-  /// Provider's account ID (user ID at provider)
+  /// Provider's account ID (user ID at provider, or internal ID for credentials)
   accountId         String
+
+  /// Password hash for credential provider (scrypt format)
+  password          String?
 
   /// OAuth tokens
   accessToken       String?   @db.Text
@@ -214,7 +213,7 @@ model OAuthAccount {
 
   @@unique([providerId, accountId])
   @@index([userId])
-  @@map("oauth_accounts")
+  @@map("auth_accounts")
 }
 
 /// User session (Better Auth adapter requirement)
@@ -241,7 +240,7 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@map("sessions")
+  @@map("auth_sessions")
 }
 
 /// Email verification token (Better Auth)
@@ -261,5 +260,5 @@ model Verification {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@map("verifications")
+  @@map("auth_verifications")
 }
