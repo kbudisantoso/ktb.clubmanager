@@ -195,12 +195,13 @@ function LoginContent() {
                   <Input
                     ref={emailInputRef}
                     id="email"
+                    name="email"
                     type="email"
                     placeholder="name@example.de"
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setError(null); }}
                     onKeyDown={handleEmailKeyDown}
-                    autoComplete="email"
+                    autoComplete="username email"
                     className="glass-input"
                   />
                 </div>
@@ -269,11 +270,23 @@ function LoginContent() {
               </div>
 
               <form onSubmit={handlePasswordSignIn} className="space-y-4" noValidate>
+                {/* Hidden email field for password manager to correctly save credentials */}
+                <input
+                  type="email"
+                  name="email"
+                  value={email}
+                  autoComplete="username email"
+                  readOnly
+                  className="sr-only"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                />
                 <div className="space-y-2">
                   <Label htmlFor="password">Passwort</Label>
                   <Input
                     ref={passwordInputRef}
                     id="password"
+                    name="password"
                     type="password"
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setError(null); }}
