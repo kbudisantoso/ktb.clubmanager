@@ -2,7 +2,7 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
       <h1 className="text-4xl font-display font-bold text-primary mb-4">
-        ktb.clubmanager
+        ClubManager
       </h1>
       <p className="text-lg text-muted-foreground font-body mb-8">
         Open-source club management with integrated bookkeeping

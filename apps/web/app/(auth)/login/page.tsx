@@ -151,7 +151,7 @@ function LoginContent() {
           {/* Logo */}
           <div className="flex justify-center mb-8">
             <Image
-              src="/logo.png"
+              src="/logo.svg"
               alt="ClubManager"
               width={200}
               height={50}
@@ -159,7 +159,7 @@ function LoginContent() {
               priority
             />
             <Image
-              src="/logo-darkbg.png"
+              src="/logo-darkbg.svg"
               alt="ClubManager"
               width={200}
               height={50}
@@ -209,7 +209,7 @@ function LoginContent() {
                   <p className="text-sm text-destructive">{error}</p>
                 )}
 
-                <Button type="submit" className="w-full glow-primary" disabled={isLoading}>
+                <Button type="submit" className="w-full " disabled={isLoading}>
                   {isLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : null}
@@ -287,7 +287,7 @@ function LoginContent() {
                   <p className="text-sm text-destructive">{error}</p>
                 )}
 
-                <Button type="submit" className="w-full glow-primary" disabled={isLoading}>
+                <Button type="submit" className="w-full " disabled={isLoading}>
                   {isLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : null}

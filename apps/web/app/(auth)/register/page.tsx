@@ -126,7 +126,7 @@ export default function RegisterPage() {
           {/* Logo */}
           <div className="flex justify-center mb-6">
             <Image
-              src="/logo.png"
+              src="/logo.svg"
               alt="ClubManager"
               width={180}
               height={45}
@@ -134,7 +134,7 @@ export default function RegisterPage() {
               priority
             />
             <Image
-              src="/logo-darkbg.png"
+              src="/logo-darkbg.svg"
               alt="ClubManager"
               width={180}
               height={45}
@@ -214,7 +214,7 @@ export default function RegisterPage() {
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 
-            <Button type="submit" className="w-full glow-primary" disabled={isLoading}>
+            <Button type="submit" className="w-full " disabled={isLoading}>
               {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
