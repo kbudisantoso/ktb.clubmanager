@@ -3,15 +3,10 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Background is in root layout - auth pages just need content wrapper
   return (
-    <>
-      {/* Auth background with gradient overlay */}
-      <div className="auth-background" />
-
-      {/* Content without header */}
-      <div className="relative min-h-screen flex flex-col">
-        <main className="flex-1">{children}</main>
-      </div>
-    </>
+    <div className="relative min-h-screen flex flex-col">
+      <main className="flex-1">{children}</main>
+    </div>
   )
 }

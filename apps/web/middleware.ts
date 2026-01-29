@@ -11,6 +11,7 @@ const publicPaths = [
   "/reset-password",
   "/impressum",
   "/datenschutz",
+  "/nutzungsbedingungen",
   "/api/auth", // Better Auth endpoints
 ]
 

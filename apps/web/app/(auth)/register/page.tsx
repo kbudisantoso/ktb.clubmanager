@@ -9,12 +9,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PasswordStrength } from "@/components/auth/password-strength"
 import { validatePassword } from "@/lib/password-validation"
-import { authClient } from "@/lib/auth-client"
+import { authClient, useSession } from "@/lib/auth-client"
 import { getAuthBroadcast } from "@/lib/broadcast-auth"
-import { ArrowLeft, Loader2, Check, Sparkles } from "lucide-react"
+import { ArrowLeft, Loader2, Check, Sparkles, LogOut, LayoutDashboard } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { LegalFooterLinks, DatenschutzLink, NutzungsbedingungenLink } from "@/components/layout/legal-links"
 
 export default function RegisterPage() {
   const router = useRouter()
+  const { data: session, isPending } = useSession()
   const [email, setEmail] = useState("")
   const [name, setName] = useState("")
   const [password, setPassword] = useState("")
@@ -87,6 +90,95 @@ export default function RegisterPage() {
       setError("Ein Fehler ist aufgetreten. Bitte versuche es erneut.")
       setIsLoading(false)
     }
+  }
+
+  const handleLogoutAndRegister = async () => {
+    getAuthBroadcast().notifyLogout()
+    getAuthBroadcast().clearAuthState()
+    await authClient.signOut()
+    // Page will re-render without session, showing the registration form
+  }
+
+  // Show loading while checking session
+  if (isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
+        <div className="w-full max-w-md">
+          <div className="glass-panel rounded-2xl p-8 sm:p-10 animate-pulse">
+            <div className="h-6 w-32 bg-muted/50 rounded mb-6" />
+            <div className="h-9 w-40 bg-muted/50 rounded mx-auto mb-6" />
+            <div className="h-8 w-48 bg-muted/50 rounded mx-auto mb-2" />
+            <div className="h-4 w-36 bg-muted/50 rounded mx-auto mb-8" />
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show "already logged in" state
+  if (session?.user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
+        <div className="w-full max-w-md">
+          <div className="glass-panel rounded-2xl p-8 sm:p-10 text-center">
+            {/* Logo */}
+            <div className="flex justify-center mb-6">
+              <Image
+                src="/logo.svg"
+                alt="ClubManager"
+                width={180}
+                height={45}
+                className="h-9 w-auto dark:hidden"
+                priority
+              />
+              <Image
+                src="/logo-darkbg.svg"
+                alt="ClubManager"
+                width={180}
+                height={45}
+                className="h-9 w-auto hidden dark:block"
+                priority
+              />
+            </div>
+
+            <h2 className="text-2xl font-display font-bold gradient-text mb-2">
+              Bereits angemeldet
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              Du bist als <span className="font-medium text-foreground">{session.user.email}</span> angemeldet.
+            </p>
+
+            <div className="space-y-3">
+              <Button
+                onClick={() => router.push("/dashboard")}
+                className="w-full"
+              >
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                Zum Dashboard
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleLogoutAndRegister}
+                className="w-full"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Abmelden und neues Konto erstellen
+              </Button>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <footer className="mt-8 text-xs text-center text-foreground/70 space-x-4">
+            <LegalFooterLinks />
+          </footer>
+        </div>
+      </div>
+    )
   }
 
   if (success) {
@@ -226,12 +318,9 @@ export default function RegisterPage() {
 
           <p className="text-xs text-center text-muted-foreground mt-6">
             Mit der Registrierung akzeptierst du unsere{" "}
-            <Link
-              href="/datenschutz"
-              className="text-accent hover:underline"
-            >
-              Datenschutzerklärung
-            </Link>
+            <NutzungsbedingungenLink className="text-accent hover:underline" />
+            {" "}und{" "}
+            <DatenschutzLink className="text-accent hover:underline" />
           </p>
         </div>
 
@@ -249,13 +338,8 @@ export default function RegisterPage() {
         </div>
 
         {/* Footer */}
-        <footer className="mt-8 text-xs text-center text-muted-foreground/70 space-x-4">
-          <Link href="/impressum" className="hover:text-foreground transition-colors">
-            Impressum
-          </Link>
-          <Link href="/datenschutz" className="hover:text-foreground transition-colors">
-            Datenschutz
-          </Link>
+        <footer className="mt-8 text-xs text-center text-foreground/70 space-x-4">
+          <LegalFooterLinks />
         </footer>
       </div>
     </div>

@@ -1,5 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
+import { PublicHeaderAuth } from "./public-header-auth"
+import { LegalFooterLinks } from "./legal-links"
 
 interface PublicPageLayoutProps {
   children: React.ReactNode
@@ -8,13 +10,12 @@ interface PublicPageLayoutProps {
 /**
  * Layout for public pages (Impressum, Datenschutz, etc.)
  * Matches the app's glassmorphism design but styled as a public website.
+ * Shows UserMenu when logged in, "Anmelden" link when not.
  */
 export function PublicPageLayout({ children }: PublicPageLayoutProps) {
+  // Background is in root layout
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Background */}
-      <div className="app-background" />
-
       {/* Header */}
       <header className="sticky top-0 z-50 w-full bg-transparent backdrop-blur-sm">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
@@ -36,12 +37,7 @@ export function PublicPageLayout({ children }: PublicPageLayoutProps) {
               priority
             />
           </Link>
-          <Link
-            href="/login"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Anmelden
-          </Link>
+          <PublicHeaderAuth />
         </div>
       </header>
 
@@ -54,19 +50,8 @@ export function PublicPageLayout({ children }: PublicPageLayoutProps) {
 
       {/* Footer */}
       <footer className="py-6">
-        <div className="container mx-auto px-4 text-center text-xs text-muted-foreground/70 space-x-4">
-          <Link
-            href="/impressum"
-            className="hover:text-foreground transition-colors"
-          >
-            Impressum
-          </Link>
-          <Link
-            href="/datenschutz"
-            className="hover:text-foreground transition-colors"
-          >
-            Datenschutz
-          </Link>
+        <div className="container mx-auto px-4 text-center text-xs text-foreground/70 space-x-4">
+          <LegalFooterLinks />
         </div>
       </footer>
     </div>

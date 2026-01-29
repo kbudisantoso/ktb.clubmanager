@@ -1,23 +1,33 @@
 "use client"
 
 import { useState, useRef, useEffect, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { GoogleIcon } from "@/components/icons"
-import { authClient } from "@/lib/auth-client"
+import { authClient, useSession } from "@/lib/auth-client"
 import { getAuthBroadcast } from "@/lib/broadcast-auth"
 import { ArrowLeft, Loader2, Check } from "lucide-react"
+import { LegalFooterLinks } from "@/components/layout/legal-links"
 
 type LoginStep = "email" | "auth-options"
 
 function LoginContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
+  const { data: session, isPending } = useSession()
   const signedOut = searchParams.get("signedOut") === "true"
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (!isPending && session?.user && !signedOut) {
+      router.replace(callbackUrl)
+    }
+  }, [session, isPending, signedOut, callbackUrl, router])
 
   const [step, setStep] = useState<LoginStep>("email")
   const [email, setEmail] = useState("")
@@ -141,6 +151,11 @@ function LoginContent() {
     setTimeout(() => {
       emailInputRef.current?.focus()
     }, 50)
+  }
+
+  // Show loading while checking session (to avoid flash of login form)
+  if (isPending || (!signedOut && session?.user)) {
+    return <LoginPageSkeleton />
   }
 
   return (
@@ -327,13 +342,8 @@ function LoginContent() {
         </div>
 
         {/* Footer */}
-        <footer className="mt-8 text-xs text-center text-muted-foreground/70 space-x-4">
-          <Link href="/impressum" className="hover:text-foreground transition-colors">
-            Impressum
-          </Link>
-          <Link href="/datenschutz" className="hover:text-foreground transition-colors">
-            Datenschutz
-          </Link>
+        <footer className="mt-8 text-xs text-center text-foreground/70 space-x-4">
+          <LegalFooterLinks />
         </footer>
       </div>
     </div>
