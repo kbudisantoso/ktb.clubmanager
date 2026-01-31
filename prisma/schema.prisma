@@ -16,10 +16,30 @@ datasource db {
 model Club {
   /// Unique identifier (CUID format)
   id          String    @id @default(cuid())
-  /// Display name of the club
+  /// Display name of the club (2-100 chars)
   name        String
+  /// Legal/official name (up to 255 chars)
+  legalName   String?
+  /// URL-safe identifier (3-50 chars, unique)
+  slug        String    @unique
   /// Optional description or notes about the club
   description String?
+
+  /// Club visibility (PUBLIC = searchable, PRIVATE = invite-only)
+  visibility  ClubVisibility @default(PRIVATE)
+  /// 8-char code for joining (XXXX-XXXX format stored without dash)
+  inviteCode  String?   @unique
+
+  /// Avatar: either image URL or initials + color
+  avatarUrl      String?
+  /// 1-3 characters for avatar display
+  avatarInitials String?
+  /// Preset color name for avatar
+  avatarColor    String?
+
+  /// Tier for feature limits (optional)
+  tierId      String?
+  tier        Tier?     @relation(fields: [tierId], references: [id])
 
   /// Soft deletion timestamp (null if not deleted)
   deletedAt   DateTime?
@@ -30,10 +50,257 @@ model Club {
   updatedAt   DateTime  @updatedAt
 
   // Relations
+  clubUsers      ClubUser[]
+  accessRequests AccessRequest[]
   members        Member[]
   ledgerAccounts LedgerAccount[]
 
   @@map("clubs")
+}
+
+/// Club visibility setting
+enum ClubVisibility {
+  /// Searchable in app, anyone can request access
+  PUBLIC
+  /// Hidden, requires invite code to find
+  PRIVATE
+}
+
+// =============================================================================
+// Multi-Tenancy Models
+// =============================================================================
+// ClubUser links users to clubs with roles.
+// Tier defines feature limits for clubs.
+// AccessRequest tracks join requests.
+
+/// User's access to a club (junction table).
+/// A user can belong to multiple clubs with different roles.
+model ClubUser {
+  id        String   @id @default(cuid())
+
+  /// The user who has access
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The club being accessed
+  clubId    String
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  /// Role within this club
+  role      ClubRole @default(VIEWER)
+
+  /// Status of the user's access
+  status    ClubUserStatus @default(ACTIVE)
+
+  /// When the user joined this club
+  joinedAt  DateTime @default(now())
+
+  /// Who invited this user (optional)
+  invitedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, clubId])
+  @@index([clubId])
+  @@index([userId])
+  @@map("club_users")
+}
+
+/// Roles a user can have within a club
+enum ClubRole {
+  /// Full control, delete club, manage admins, transfer ownership
+  OWNER
+  /// Manage members, settings, invite users, cannot delete club
+  ADMIN
+  /// Financial features (fees, bookkeeping, SEPA, reports)
+  TREASURER
+  /// Read-only access to permitted areas
+  VIEWER
+}
+
+/// Status of a user's club membership
+enum ClubUserStatus {
+  /// Active access
+  ACTIVE
+  /// Invitation pending acceptance
+  PENDING
+  /// Access temporarily suspended
+  SUSPENDED
+}
+
+/// Request for access to a club (for PUBLIC clubs or via invite code).
+/// Requires admin approval.
+model AccessRequest {
+  id        String   @id @default(cuid())
+
+  /// The user requesting access
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The club being requested
+  clubId    String
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  /// Optional message from the requester (max 500 chars)
+  message   String?
+
+  /// Current status of the request
+  status    AccessRequestStatus @default(PENDING)
+
+  /// Rejection handling
+  rejectionReason AccessRejectionReason?
+  /// Custom note for "OTHER" reason
+  rejectionNote   String?
+  /// Who processed this request
+  processedById   String?
+  /// When this request was processed
+  processedAt     DateTime?
+
+  /// Request expires after 30 days
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, clubId])
+  @@index([clubId])
+  @@index([userId])
+  @@map("access_requests")
+}
+
+/// Status of an access request
+enum AccessRequestStatus {
+  /// Awaiting admin review
+  PENDING
+  /// Admin approved, user now has access
+  APPROVED
+  /// Admin rejected the request
+  REJECTED
+  /// Request expired without action
+  EXPIRED
+}
+
+/// Reason for rejecting an access request
+enum AccessRejectionReason {
+  /// "Nur Vorstandsmitglieder haben Zugang"
+  BOARD_ONLY
+  /// "Wir konnten dich leider nicht zuordnen"
+  UNIDENTIFIED
+  /// "Das scheint nicht der richtige Verein zu sein"
+  WRONG_CLUB
+  /// "Bitte kontaktiere uns direkt"
+  CONTACT_DIRECTLY
+  /// Custom reason in rejectionNote
+  OTHER
+}
+
+/// Tier/plan for clubs with feature flags and limits.
+/// Supports future SaaS billing integration.
+model Tier {
+  id          String  @id @default(cuid())
+
+  /// Display name of the tier
+  name        String  @unique
+
+  /// Description of what's included
+  description String?
+
+  /// Whether this tier is visible to users
+  isVisible   Boolean @default(true)
+
+  /// Cannot be deleted if true (seeded tiers)
+  isSeeded    Boolean @default(false)
+
+  /// Display order in tier selection
+  sortOrder   Int     @default(0)
+
+  /// Preset color name for display
+  color       String?
+
+  /// Lucide icon name for display
+  icon        String?
+
+  /// Limits (null = unlimited)
+  /// Maximum users per club
+  usersLimit   Int?
+  /// Maximum members per club
+  membersLimit Int?
+  /// Storage limit in MB
+  storageLimit Int?
+
+  /// Feature flags
+  /// SEPA direct debit enabled
+  sepaEnabled       Boolean @default(true)
+  /// Financial reports enabled
+  reportsEnabled    Boolean @default(true)
+  /// Bank statement import enabled
+  bankImportEnabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Clubs on this tier
+  clubs Club[]
+
+  @@map("tiers")
+}
+
+// =============================================================================
+// System Configuration
+// =============================================================================
+
+/// System-wide application settings (key-value store).
+/// Used for configuration that doesn't belong to a specific club.
+model AppSetting {
+  /// Setting key (unique identifier)
+  key       String   @id
+
+  /// JSON-serialized value
+  value     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("app_settings")
+}
+
+/// Audit log for tracking changes to entities.
+/// Per ADR-0010: Row-Level Tenant Isolation.
+model AuditLog {
+  id         String   @id @default(cuid())
+
+  /// Model name (e.g., "Club", "Member")
+  entityType String
+
+  /// ID of the affected entity
+  entityId   String
+
+  /// Operation performed (create, update, delete)
+  action     String
+
+  /// Who performed the action (null for system actions)
+  userId     String?
+
+  /// Club context if applicable
+  clubId     String?
+
+  /// What changed (before/after or input data)
+  changes    Json?
+
+  /// Client IP address
+  ipAddress  String?
+
+  /// Client user agent
+  userAgent  String?
+
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([clubId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 
 /// Status of a club member
@@ -165,6 +432,9 @@ model User {
   /// Profile image URL (from OAuth provider or uploaded)
   image         String?
 
+  /// System-wide super admin flag (first user gets this automatically)
+  isSuperAdmin  Boolean   @default(false)
+
   /// Terms & Conditions acceptance timestamp
   termsAcceptedAt DateTime?
 
@@ -177,6 +447,10 @@ model User {
   /// Better Auth relations
   accounts      Account[]
   sessions      Session[]
+
+  /// Multi-tenancy relations
+  clubUsers      ClubUser[]
+  accessRequests AccessRequest[]
 
   @@map("auth_users")
 }
