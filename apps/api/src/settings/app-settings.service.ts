@@ -4,15 +4,26 @@ import { PrismaService } from '../prisma/prisma.service.js';
 /**
  * Application settings keys with their default values.
  */
-export const APP_SETTING_DEFAULTS = {
+export const APP_SETTING_DEFAULTS: AppSettingValues = {
   'club.selfServiceCreation': false,
-  'club.defaultVisibility': 'PRIVATE' as const,
-  'club.defaultTierId': null as string | null,
+  'club.defaultVisibility': 'PRIVATE',
+  'club.defaultTierId': null,
   'tier.graceperiodDays': 14,
   'mode.saas': false, // true = SaaS mode (show upgrade prompts), false = OSS mode (hide disabled features)
-} as const;
+};
 
-export type AppSettingKey = keyof typeof APP_SETTING_DEFAULTS;
+/**
+ * Type definitions for application settings.
+ */
+export interface AppSettingValues {
+  'club.selfServiceCreation': boolean;
+  'club.defaultVisibility': 'PUBLIC' | 'PRIVATE';
+  'club.defaultTierId': string | null;
+  'tier.graceperiodDays': number;
+  'mode.saas': boolean;
+}
+
+export type AppSettingKey = keyof AppSettingValues;
 
 @Injectable()
 export class AppSettingsService {
@@ -26,12 +37,10 @@ export class AppSettingsService {
    * @param key - Setting key
    * @returns Setting value
    */
-  async get<K extends AppSettingKey>(
-    key: K,
-  ): Promise<(typeof APP_SETTING_DEFAULTS)[K]> {
+  async get<K extends AppSettingKey>(key: K): Promise<AppSettingValues[K]> {
     // Check cache first
     if (this.cache.has(key)) {
-      return JSON.parse(this.cache.get(key)!) as (typeof APP_SETTING_DEFAULTS)[K];
+      return JSON.parse(this.cache.get(key)!) as AppSettingValues[K];
     }
 
     const setting = await this.prisma.appSetting.findUnique({
@@ -41,7 +50,7 @@ export class AppSettingsService {
     const value = setting?.value ?? JSON.stringify(APP_SETTING_DEFAULTS[key]);
     this.cache.set(key, value);
 
-    return JSON.parse(value) as (typeof APP_SETTING_DEFAULTS)[K];
+    return JSON.parse(value) as AppSettingValues[K];
   }
 
   /**
@@ -52,7 +61,7 @@ export class AppSettingsService {
    */
   async set<K extends AppSettingKey>(
     key: K,
-    value: (typeof APP_SETTING_DEFAULTS)[K],
+    value: AppSettingValues[K],
   ): Promise<void> {
     const serialized = JSON.stringify(value);
 
@@ -68,7 +77,7 @@ export class AppSettingsService {
   /**
    * Gets all settings as an object.
    */
-  async getAll(): Promise<typeof APP_SETTING_DEFAULTS> {
+  async getAll(): Promise<AppSettingValues> {
     const settings = await this.prisma.appSetting.findMany();
     const result = { ...APP_SETTING_DEFAULTS };
 

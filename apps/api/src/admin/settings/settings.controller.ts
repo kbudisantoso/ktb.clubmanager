@@ -1,0 +1,78 @@
+import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { AppSettingsService } from '../../settings/app-settings.service.js';
+import { SessionAuthGuard } from '../../auth/guards/session-auth.guard.js';
+import { SuperAdminGuard } from '../../common/guards/super-admin.guard.js';
+import { SuperAdminOnly } from '../../common/decorators/super-admin.decorator.js';
+
+class UpdateSettingsDto {
+  'club.selfServiceCreation'?: boolean;
+  'club.defaultVisibility'?: 'PUBLIC' | 'PRIVATE';
+  'club.defaultTierId'?: string | null;
+  'tier.graceperiodDays'?: number;
+  'mode.saas'?: boolean;
+}
+
+/**
+ * Controller for application-wide settings.
+ *
+ * Only Super Admins can view and modify these settings.
+ */
+@ApiTags('Admin - Settings')
+@ApiBearerAuth()
+@Controller('admin/settings')
+@UseGuards(SessionAuthGuard, SuperAdminGuard)
+@SuperAdminOnly()
+export class AdminSettingsController {
+  constructor(private appSettings: AppSettingsService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get all application settings' })
+  async getAll() {
+    return this.appSettings.getAll();
+  }
+
+  @Put()
+  @ApiOperation({ summary: 'Update application settings' })
+  async update(@Body() dto: UpdateSettingsDto) {
+    // Update each setting that was provided
+    const updates: Promise<void>[] = [];
+
+    if (dto['club.selfServiceCreation'] !== undefined) {
+      updates.push(
+        this.appSettings.set(
+          'club.selfServiceCreation',
+          dto['club.selfServiceCreation'],
+        ),
+      );
+    }
+    if (dto['club.defaultVisibility'] !== undefined) {
+      updates.push(
+        this.appSettings.set(
+          'club.defaultVisibility',
+          dto['club.defaultVisibility'],
+        ),
+      );
+    }
+    if (dto['club.defaultTierId'] !== undefined) {
+      updates.push(
+        this.appSettings.set('club.defaultTierId', dto['club.defaultTierId']),
+      );
+    }
+    if (dto['tier.graceperiodDays'] !== undefined) {
+      updates.push(
+        this.appSettings.set(
+          'tier.graceperiodDays',
+          dto['tier.graceperiodDays'],
+        ),
+      );
+    }
+    if (dto['mode.saas'] !== undefined) {
+      updates.push(this.appSettings.set('mode.saas', dto['mode.saas']));
+    }
+
+    await Promise.all(updates);
+
+    return this.appSettings.getAll();
+  }
+}
