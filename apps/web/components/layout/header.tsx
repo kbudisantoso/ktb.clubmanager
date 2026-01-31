@@ -4,16 +4,21 @@ import Link from "next/link"
 import Image from "next/image"
 import dynamic from "next/dynamic"
 
-// Dynamically import UserMenu to avoid SSG issues with useSession hook
-// The UserMenu uses better-auth's useSession which requires client-side context
+// Dynamically import session-dependent components to avoid SSG issues
+// These use better-auth's useSession which requires client-side context
 const UserMenu = dynamic(
   () => import("@/components/auth/user-menu").then((mod) => mod.UserMenu),
   { ssr: false }
 )
 
+const HeaderActions = dynamic(
+  () => import("./header-actions").then((mod) => mod.HeaderActions),
+  { ssr: false }
+)
+
 /**
  * Application header component.
- * Shows logo and user menu for authenticated users.
+ * Shows logo, club switcher, and user menu for authenticated users.
  */
 export function Header() {
   return (
@@ -38,6 +43,11 @@ export function Header() {
             priority
           />
         </Link>
+
+        {/* Club switcher - for logged in users */}
+        <div className="ml-6">
+          <HeaderActions />
+        </div>
 
         {/* Spacer */}
         <div className="flex-1" />
