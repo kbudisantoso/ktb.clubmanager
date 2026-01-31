@@ -47,7 +47,6 @@ export default function JoinPage() {
     }
 
     joinClub()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, sessionLoading, code])
 
   async function joinClub() {
