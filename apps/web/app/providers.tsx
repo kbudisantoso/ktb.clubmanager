@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import { ThemeProvider } from "next-themes"
+import { Toaster } from "@/components/ui/sonner"
 import { getAuthBroadcast } from "@/lib/broadcast-auth"
 
 /**
@@ -51,7 +52,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      <AuthSyncProvider>{children}</AuthSyncProvider>
+      <AuthSyncProvider>
+        {children}
+        <Toaster richColors />
+      </AuthSyncProvider>
     </ThemeProvider>
   )
 }
