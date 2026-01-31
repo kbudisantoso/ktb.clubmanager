@@ -44,6 +44,8 @@
     "vitest": "^4.0.17"
   },
   "dependencies": {
-    "@prisma/client": "^7.3.0"
+    "@prisma/client": "^7.3.0",
+    "@sindresorhus/slugify": "^3.0.0",
+    "nanoid": "^5.1.6"
   }
 }
