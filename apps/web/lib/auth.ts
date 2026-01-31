@@ -22,6 +22,32 @@ function getPrisma(): PrismaClient {
 }
 
 /**
+ * Call NestJS API to check if user should be promoted to Super Admin.
+ *
+ * This is called after user creation to check bootstrap rules:
+ * 1. If SUPER_ADMIN_EMAIL matches, promote to Super Admin
+ * 2. If no Super Admin exists and this is the first user, promote
+ *
+ * Errors are logged but don't fail user creation.
+ */
+async function checkSuperAdminBootstrap(
+  userId: string,
+  email: string
+): Promise<void> {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+    await fetch(`${apiUrl}/api/admin/bootstrap/check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, email }),
+    })
+  } catch (error) {
+    // Don't fail signup if bootstrap check fails
+    console.error("[Bootstrap] Failed to check Super Admin:", error)
+  }
+}
+
+/**
  * Better Auth server configuration.
  *
  * Features:
@@ -29,6 +55,7 @@ function getPrisma(): PrismaClient {
  * - Optional Google OAuth (when GOOGLE_CLIENT_ID is set)
  * - Database sessions via Prisma
  * - Session cookies with secure defaults
+ * - Super Admin bootstrap on first user registration
  *
  * Note: Prisma is lazily initialized to avoid SSG issues.
  */
@@ -63,6 +90,18 @@ export const auth = betterAuth({
         },
       }
     : undefined,
+
+  // Database hooks for Super Admin bootstrap
+  databaseHooks: {
+    user: {
+      create: {
+        async after(user) {
+          // Check if this user should be promoted to Super Admin
+          await checkSuperAdminBootstrap(user.id, user.email)
+        },
+      },
+    },
+  },
 
   // Advanced configuration
   advanced: {
