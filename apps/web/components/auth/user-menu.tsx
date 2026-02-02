@@ -1,7 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import { useTheme } from "next-themes"
-import { authClient, useSession } from "@/lib/auth-client"
+import { authClient } from "@/lib/auth-client"
+import { useSessionQuery, useClearSession } from "@/hooks/use-session"
+import { useMyClubsQuery } from "@/hooks/use-clubs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -12,8 +15,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getAuthBroadcast } from "@/lib/broadcast-auth"
-import { LogOut, User, Settings, Moon, Sun } from "lucide-react"
+import { LogOut, User, Shield, Moon, Sun, Settings, ArrowLeftRight } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useActiveClub } from "@/lib/club-store"
+import { useCanManageSettings } from "@/lib/club-permissions"
+import { ClubSwitcherModal } from "@/components/club-switcher/club-switcher-modal"
 
 /**
  * User menu dropdown component.
@@ -21,11 +27,20 @@ import { Skeleton } from "@/components/ui/skeleton"
  * Per CONTEXT.md: Primary sign-out location in header.
  */
 export function UserMenu() {
-  const { data: session, isPending } = useSession()
+  const { data: session, isLoading } = useSessionQuery()
+  const { data: clubsData } = useMyClubsQuery()
+  const clearSession = useClearSession()
   const { theme, setTheme } = useTheme()
+  const activeClub = useActiveClub()
+  const canManageSettings = useCanManageSettings()
+  const [showClubSwitcher, setShowClubSwitcher] = useState(false)
+
+  const clubs = clubsData?.clubs ?? []
+  const canCreateClub = clubsData?.canCreateClub ?? false
+  const hasMultipleClubs = clubs.length >= 2
 
   // Show skeleton while loading
-  if (isPending) {
+  if (isLoading) {
     return <Skeleton className="h-8 w-8 rounded-full" />
   }
 
@@ -40,20 +55,26 @@ export function UserMenu() {
 
   const { user } = session
 
-  // Get initials for avatar fallback
-  const initials =
-    user.name
-      ?.split(" ")
-      .map((n: string) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) ?? "U"
+  // Get initials for avatar fallback (null if no name)
+  // Use first letter of first word + first letter of last word
+  const initials = user.name
+    ? (() => {
+        const words = user.name.split(" ").filter(Boolean)
+        if (words.length >= 2) {
+          return (words[0][0] + words[words.length - 1][0]).toUpperCase()
+        }
+        return words[0]?.[0]?.toUpperCase() || null
+      })()
+    : null
 
   const handleSignOut = async () => {
     // Notify other tabs BEFORE signing out
     const authBroadcast = getAuthBroadcast()
     authBroadcast.notifyLogout()
     authBroadcast.clearAuthState()
+
+    // Clear session from React Query cache
+    clearSession()
 
     // Sign out with Better Auth
     await authClient.signOut()
@@ -63,6 +84,7 @@ export function UserMenu() {
   }
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
@@ -75,7 +97,7 @@ export function UserMenu() {
               alt={user.name ?? "Avatar"}
             />
             <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-              {initials}
+              {initials ?? <User className="h-4 w-4" />}
             </AvatarFallback>
           </Avatar>
         </button>
@@ -93,17 +115,40 @@ export function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <a href="/settings/profile" className="cursor-pointer">
+          <a href="/settings" className="cursor-pointer">
             <User className="mr-2 h-4 w-4" />
-            <span>Profil</span>
+            <span>Einstellungen</span>
           </a>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href="/settings/security" className="cursor-pointer">
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Sicherheit</span>
-          </a>
-        </DropdownMenuItem>
+        {activeClub && canManageSettings && (
+          <DropdownMenuItem asChild>
+            <a href={`/clubs/${activeClub.slug}/settings`} className="cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Vereinsverwaltung</span>
+            </a>
+          </DropdownMenuItem>
+        )}
+        {user.isSuperAdmin && (
+          <DropdownMenuItem asChild>
+            <a href="/admin" className="cursor-pointer">
+              <Shield className="mr-2 h-4 w-4" />
+              <span>Verwaltungszentrale</span>
+            </a>
+          </DropdownMenuItem>
+        )}
+        {hasMultipleClubs && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => setShowClubSwitcher(true)}
+              className="cursor-pointer"
+            >
+              <ArrowLeftRight className="mr-2 h-4 w-4" />
+              <span>Verein wechseln</span>
+            </DropdownMenuItem>
+          </>
+        )}
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer">
           {theme === "dark" ? (
             <Sun className="mr-2 h-4 w-4" />
@@ -123,5 +168,12 @@ export function UserMenu() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <ClubSwitcherModal
+      open={showClubSwitcher}
+      onOpenChange={setShowClubSwitcher}
+      canCreateClub={canCreateClub}
+    />
+  </>
   )
 }
