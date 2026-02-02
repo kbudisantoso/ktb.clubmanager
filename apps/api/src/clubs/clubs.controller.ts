@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpCode,
   Req,
+  Header,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -58,7 +59,8 @@ export class ClubsController {
   @ApiOperation({ summary: 'List clubs the current user belongs to' })
   @ApiResponse({ status: 200, type: [MyClubResponseDto] })
   async findMyClubs(@Req() req: AuthenticatedRequest) {
-    return this.clubsService.findMyClubs(req.user.id);
+    const isSuperAdmin = await this.isSuperAdmin(req.user.id);
+    return this.clubsService.findMyClubs(req.user.id, isSuperAdmin);
   }
 
   @Get('public')
@@ -68,6 +70,7 @@ export class ClubsController {
   }
 
   @Get('check-slug')
+  @Header('Cache-Control', 'no-cache, no-store, must-revalidate')
   @ApiOperation({ summary: 'Check if a slug is available' })
   @ApiQuery({ name: 'slug', required: true })
   async checkSlug(@Query('slug') slug: string) {
@@ -107,6 +110,18 @@ export class ClubsController {
   ): Promise<void> {
     const isSuperAdmin = await this.isSuperAdmin(req.user.id);
     return this.clubsService.remove(slug, req.user.id, isSuperAdmin);
+  }
+
+  @Post(':slug/leave')
+  @ApiOperation({ summary: 'Leave a club' })
+  @ApiResponse({ status: 200, description: 'Successfully left the club' })
+  @ApiResponse({ status: 403, description: 'Owners cannot leave' })
+  @ApiResponse({ status: 400, description: 'Not a member' })
+  async leaveClub(
+    @Param('slug') slug: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.clubsService.leaveClub(slug, req.user.id);
   }
 
   @Post(':slug/regenerate-invite-code')

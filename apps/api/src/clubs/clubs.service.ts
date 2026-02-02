@@ -25,7 +25,7 @@ export class ClubsService {
     const selfServiceEnabled = await this.appSettings.isSelfServiceEnabled();
     if (!selfServiceEnabled && !isSuperAdmin) {
       throw new ForbiddenException(
-        'Club creation requires Super Admin or self-service mode',
+        'Nur für Plattform-Admins oder bei aktiviertem Self-Service',
       );
     }
 
@@ -59,7 +59,7 @@ export class ClubsService {
       }
 
       if (suffix >= 100) {
-        throw new BadRequestException('Could not generate unique slug');
+        throw new BadRequestException('URL-Pfad konnte nicht generiert werden');
       }
     }
 
@@ -95,7 +95,7 @@ export class ClubsService {
         clubUsers: {
           create: {
             userId,
-            role: 'OWNER',
+            roles: ['OWNER'],
             status: 'ACTIVE',
           },
         },
@@ -108,13 +108,14 @@ export class ClubsService {
       },
     });
 
-    return this.formatClubResponse(club, 'OWNER');
+    return this.formatClubResponse(club, ['OWNER']);
   }
 
   /**
    * Get clubs the current user belongs to.
+   * Returns clubs array and meta info (canCreateClub permission).
    */
-  async findMyClubs(userId: string) {
+  async findMyClubs(userId: string, isSuperAdmin: boolean) {
     const clubUsers = await this.prisma.clubUser.findMany({
       where: {
         userId,
@@ -136,9 +137,20 @@ export class ClubsService {
       },
     });
 
-    return clubUsers.map((cu) =>
-      this.formatClubResponse(cu.club, cu.role, cu.joinedAt),
+    const clubs = clubUsers.map((cu) =>
+      this.formatClubResponse(cu.club, cu.roles, cu.joinedAt),
     );
+
+    // Check if user can create clubs
+    const selfServiceEnabled = await this.appSettings.isSelfServiceEnabled();
+    const canCreateClub = isSuperAdmin || selfServiceEnabled;
+
+    return {
+      clubs,
+      meta: {
+        canCreateClub,
+      },
+    };
   }
 
   /**
@@ -156,7 +168,7 @@ export class ClubsService {
     });
 
     if (!club) {
-      throw new NotFoundException('Club not found');
+      throw new NotFoundException('Verein nicht gefunden');
     }
 
     // Check access
@@ -166,13 +178,13 @@ export class ClubsService {
       });
 
       if (!membership) {
-        throw new ForbiddenException('No access to this club');
+        throw new ForbiddenException('Kein Zugriff auf diesen Verein');
       }
 
-      return this.formatClubResponse(club, membership.role);
+      return this.formatClubResponse(club, membership.roles);
     }
 
-    return this.formatClubResponse(club);
+    return this.formatClubResponse(club, []);
   }
 
   /**
@@ -189,7 +201,7 @@ export class ClubsService {
     });
 
     if (!club) {
-      throw new NotFoundException('Club not found');
+      throw new NotFoundException('Verein nicht gefunden');
     }
 
     // Check permission (OWNER, ADMIN, or Super Admin)
@@ -199,12 +211,12 @@ export class ClubsService {
           userId,
           clubId: club.id,
           status: 'ACTIVE',
-          role: { in: ['OWNER', 'ADMIN'] },
+          roles: { hasSome: ['OWNER', 'ADMIN'] },
         },
       });
 
       if (!membership) {
-        throw new ForbiddenException('Only club admins can update club settings');
+        throw new ForbiddenException('Nur Vereinsadministratoren können Einstellungen ändern');
       }
     }
 
@@ -239,7 +251,7 @@ export class ClubsService {
     });
 
     if (!club) {
-      throw new NotFoundException('Club not found');
+      throw new NotFoundException('Verein nicht gefunden');
     }
 
     // Only OWNER or Super Admin can delete
@@ -249,12 +261,12 @@ export class ClubsService {
           userId,
           clubId: club.id,
           status: 'ACTIVE',
-          role: 'OWNER',
+          roles: { has: 'OWNER' },
         },
       });
 
       if (!membership) {
-        throw new ForbiddenException('Only club owner can delete club');
+        throw new ForbiddenException('Nur der Vereinsinhaber kann den Verein löschen');
       }
     }
 
@@ -280,7 +292,7 @@ export class ClubsService {
     });
 
     if (!club) {
-      throw new NotFoundException('Club not found');
+      throw new NotFoundException('Verein nicht gefunden');
     }
 
     // Check permission
@@ -290,13 +302,13 @@ export class ClubsService {
           userId,
           clubId: club.id,
           status: 'ACTIVE',
-          role: { in: ['OWNER', 'ADMIN'] },
+          roles: { hasSome: ['OWNER', 'ADMIN'] },
         },
       });
 
       if (!membership) {
         throw new ForbiddenException(
-          'Only club admins can regenerate invite code',
+          'Nur Vereinsadministratoren können den Einladungscode erneuern',
         );
       }
     }
@@ -325,6 +337,46 @@ export class ClubsService {
     });
 
     return { available: !existing };
+  }
+
+  /**
+   * Leave a club (self-service).
+   * OWNERs cannot leave - they must transfer ownership first.
+   */
+  async leaveClub(slug: string, userId: string) {
+    const club = await this.prisma.club.findFirst({
+      where: { slug, deletedAt: null },
+    });
+
+    if (!club) {
+      throw new NotFoundException('Verein nicht gefunden');
+    }
+
+    const membership = await this.prisma.clubUser.findFirst({
+      where: {
+        userId,
+        clubId: club.id,
+        status: 'ACTIVE',
+      },
+    });
+
+    if (!membership) {
+      throw new BadRequestException('Du bist kein Mitglied dieses Vereins');
+    }
+
+    // OWNERs cannot leave
+    if (membership.roles.includes('OWNER')) {
+      throw new ForbiddenException(
+        'Als Inhaber kannst du den Verein nicht verlassen. Übertrage zuerst die Inhaberschaft.',
+      );
+    }
+
+    // Delete the membership
+    await this.prisma.clubUser.delete({
+      where: { id: membership.id },
+    });
+
+    return { message: 'Du hast den Verein verlassen' };
   }
 
   /**
@@ -411,7 +463,7 @@ export class ClubsService {
       updatedAt: Date;
       _count?: { clubUsers?: number; members?: number };
     },
-    role?: string,
+    roles?: string[],
     joinedAt?: Date,
   ) {
     return {
@@ -429,7 +481,7 @@ export class ClubsService {
       tier: club.tier ?? undefined,
       createdAt: club.createdAt,
       updatedAt: club.updatedAt,
-      role,
+      roles,
       joinedAt,
       userCount: club._count?.clubUsers,
       memberCount: club._count?.members,
