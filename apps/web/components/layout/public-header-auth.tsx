@@ -1,24 +1,18 @@
 "use client"
 
 import Link from "next/link"
-import dynamic from "next/dynamic"
-import { useSession } from "@/lib/auth-client"
-
-// Dynamically import UserMenu to avoid SSG issues
-const UserMenu = dynamic(
-  () => import("@/components/auth/user-menu").then((mod) => mod.UserMenu),
-  { ssr: false }
-)
+import { useSessionQuery } from "@/hooks/use-session"
+import { UserMenu } from "@/components/auth/user-menu"
 
 /**
  * Auth-aware header actions for public pages.
  * Shows UserMenu when logged in, "Anmelden" link when not.
  */
 export function PublicHeaderAuth() {
-  const { data: session, isPending } = useSession()
+  const { data: session, isLoading } = useSessionQuery()
 
   // Show nothing while loading to avoid flash
-  if (isPending) {
+  if (isLoading) {
     return <div className="w-8 h-8" /> // Placeholder for layout stability
   }
 

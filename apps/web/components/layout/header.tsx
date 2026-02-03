@@ -2,30 +2,20 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import dynamic from "next/dynamic"
-
-// Dynamically import session-dependent components to avoid SSG issues
-// These use better-auth's useSession which requires client-side context
-const UserMenu = dynamic(
-  () => import("@/components/auth/user-menu").then((mod) => mod.UserMenu),
-  { ssr: false }
-)
-
-const HeaderActions = dynamic(
-  () => import("./header-actions").then((mod) => mod.HeaderActions),
-  { ssr: false }
-)
+import { UserMenu } from "@/components/auth/user-menu"
+import { HeaderActions } from "./header-actions"
+import { ClubBadge } from "@/components/club-switcher/club-badge"
 
 /**
  * Application header component.
- * Shows logo, club switcher, and user menu for authenticated users.
+ * Layout: Logo (left) | Navigation (center) | User menu (right)
  */
 export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full bg-transparent backdrop-blur-sm">
-      <div className="container mx-auto flex h-14 items-center px-4">
-        {/* Logo */}
-        <Link href="/dashboard" className="flex items-center">
+      <div className="container mx-auto flex h-14 items-center justify-between px-4">
+        {/* Logo - Left */}
+        <Link href="/dashboard" className="flex items-center shrink-0">
           <Image
             src="/logo.svg"
             alt="ClubManager"
@@ -44,16 +34,14 @@ export function Header() {
           />
         </Link>
 
-        {/* Club switcher - for logged in users */}
-        <div className="ml-6">
-          <HeaderActions />
+        {/* Navigation - Center */}
+        <HeaderActions />
+
+        {/* Club badge + User menu - Right */}
+        <div className="flex items-center gap-3">
+          <ClubBadge />
+          <UserMenu />
         </div>
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* User menu */}
-        <UserMenu />
       </div>
     </header>
   )
