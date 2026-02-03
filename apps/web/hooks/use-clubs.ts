@@ -168,16 +168,33 @@ export function useCreateClubMutation() {
 }
 
 /**
- * Access request type
+ * Access request rejection reasons
  */
-interface AccessRequest {
+export type AccessRejectionReason =
+  | "BOARD_ONLY"
+  | "UNIDENTIFIED"
+  | "WRONG_CLUB"
+  | "CONTACT_DIRECTLY"
+  | "OTHER"
+
+/**
+ * Access request type (user's own requests)
+ */
+export interface AccessRequest {
   id: string
-  status: string
+  status: "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED"
   createdAt: string
+  expiresAt: string
+  rejectionReason?: AccessRejectionReason
+  rejectionNote?: string
+  processedAt?: string
+  seenAt?: string
   club: {
     id: string
     name: string
     slug: string
+    avatarInitials?: string
+    avatarColor?: string
   }
 }
 
@@ -290,6 +307,28 @@ export function useCancelAccessRequestMutation() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.message || "Fehler beim Zurückziehen der Anfrage")
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: clubKeys.myRequests() })
+    },
+  })
+}
+
+/**
+ * Hook for marking an access request rejection as seen.
+ */
+export function useMarkRequestSeenMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (requestId: string): Promise<void> => {
+      const res = await apiFetch(`/api/me/access-requests/${requestId}/seen`, {
+        method: "POST",
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.message || "Fehler beim Markieren")
       }
     },
     onSuccess: () => {

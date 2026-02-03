@@ -32,9 +32,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ClubAvatar } from '@/components/club-switcher/club-avatar';
+import { RejectionNotice } from '@/components/club/rejection-notice';
 import { useClubStore, type ClubContext } from '@/lib/club-store';
 import { useToast } from '@/hooks/use-toast';
-import { useMyClubsQuery, useMyAccessRequestsQuery, useLeaveClubMutation } from '@/hooks/use-clubs';
+import { useMyClubsQuery, useMyAccessRequestsQuery, useLeaveClubMutation, useJoinClubMutation, type AccessRequest } from '@/hooks/use-clubs';
 
 const ROLE_LABELS: Record<string, string> = {
   OWNER: 'Inhaber',
@@ -140,12 +141,26 @@ export default function MyClubsPage() {
   }
 
   const pendingRequests = requests.filter((r) => r.status === 'PENDING');
+  // Unseen rejections should be shown prominently
+  const unseenRejections = requests.filter(
+    (r) => r.status === 'REJECTED' && !r.seenAt
+  );
+  // Processed requests exclude unseen rejections (they get their own section)
   const processedRequests = requests
-    .filter((r) => r.status !== 'PENDING')
+    .filter((r) => r.status !== 'PENDING' && !(r.status === 'REJECTED' && !r.seenAt))
     .slice(0, 5);
 
   return (
     <div className="space-y-6">
+      {/* Unseen Rejections - shown prominently at top */}
+      {unseenRejections.length > 0 && (
+        <div className="space-y-3">
+          {unseenRejections.map((request) => (
+            <RejectionNotice key={request.id} request={request} />
+          ))}
+        </div>
+      )}
+
       {/* My Clubs */}
       <Card>
         <CardHeader>

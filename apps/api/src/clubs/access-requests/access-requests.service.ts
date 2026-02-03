@@ -458,6 +458,34 @@ export class AccessRequestsService {
     return { message: 'Anfrage zuruckgezogen' };
   }
 
+  /**
+   * Mark a rejected request as seen by the user.
+   */
+  async markAsSeen(requestId: string, userId: string) {
+    const request = await this.prisma.accessRequest.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Anfrage nicht gefunden');
+    }
+
+    if (request.userId !== userId) {
+      throw new ForbiddenException('Keine Berechtigung');
+    }
+
+    if (request.status !== 'REJECTED') {
+      throw new BadRequestException('Anfrage ist nicht abgelehnt');
+    }
+
+    await this.prisma.accessRequest.update({
+      where: { id: requestId },
+      data: { seenAt: new Date() },
+    });
+
+    return { message: 'Gelesen' };
+  }
+
   private async verifyClubAdmin(clubId: string, userId: string) {
     const membership = await this.prisma.clubUser.findFirst({
       where: {

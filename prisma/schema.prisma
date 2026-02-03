@@ -15,20 +15,20 @@ datasource db {
 /// belong to exactly one club.
 model Club {
   /// Unique identifier (CUID format)
-  id          String    @id @default(cuid())
+  id          String  @id @default(cuid())
   /// Display name of the club (2-100 chars)
   name        String
   /// Legal/official name (up to 255 chars)
   legalName   String?
   /// URL-safe identifier (3-50 chars, unique)
-  slug        String    @unique
+  slug        String  @unique
   /// Optional description or notes about the club
   description String?
 
   /// Club visibility (PUBLIC = searchable, PRIVATE = invite-only)
-  visibility  ClubVisibility @default(PRIVATE)
+  visibility ClubVisibility @default(PRIVATE)
   /// 8-char code for joining (XXXX-XXXX format stored without dash)
-  inviteCode  String?   @unique
+  inviteCode String?        @unique
 
   /// Avatar: either image URL or initials + color
   avatarUrl      String?
@@ -38,16 +38,16 @@ model Club {
   avatarColor    String?
 
   /// Tier for feature limits (optional)
-  tierId      String?
-  tier        Tier?     @relation(fields: [tierId], references: [id])
+  tierId String?
+  tier   Tier?   @relation(fields: [tierId], references: [id])
 
   /// Soft deletion timestamp (null if not deleted)
-  deletedAt   DateTime?
+  deletedAt DateTime?
   /// User ID who performed the soft deletion
-  deletedBy   String?
+  deletedBy String?
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   clubUsers      ClubUser[]
@@ -76,24 +76,24 @@ enum ClubVisibility {
 /// User's access to a club (junction table).
 /// A user can belong to multiple clubs with different roles.
 model ClubUser {
-  id        String   @id @default(cuid())
+  id String @id @default(cuid())
 
   /// The user who has access
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   /// The club being accessed
-  clubId    String
-  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId String
+  club   Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
-  /// Role within this club
-  role      ClubRole @default(VIEWER)
+  /// Roles within this club (1:n relationship, empty = no access)
+  roles ClubRole[]
 
   /// Status of the user's access
-  status    ClubUserStatus @default(ACTIVE)
+  status ClubUserStatus @default(ACTIVE)
 
   /// When the user joined this club
-  joinedAt  DateTime @default(now())
+  joinedAt DateTime @default(now())
 
   /// Who invited this user (optional)
   invitedById String?
@@ -107,16 +107,18 @@ model ClubUser {
   @@map("club_users")
 }
 
-/// Roles a user can have within a club
+/// Roles a user can have within a club (multiple roles per user possible)
 enum ClubRole {
-  /// Full control, delete club, manage admins, transfer ownership
+  /// Full control, all permissions
   OWNER
-  /// Manage members, settings, invite users, cannot delete club
+  /// Technical administration, user management (no finance access)
   ADMIN
-  /// Financial features (fees, bookkeeping, SEPA, reports)
+  /// Financial features: bookkeeping, fees, SEPA, reports (no user management)
   TREASURER
-  /// Read-only access to permitted areas
-  VIEWER
+  /// Protocols, documentation, board member
+  SECRETARY
+  /// Basic member access
+  MEMBER
 }
 
 /// Status of a user's club membership
@@ -132,21 +134,21 @@ enum ClubUserStatus {
 /// Request for access to a club (for PUBLIC clubs or via invite code).
 /// Requires admin approval.
 model AccessRequest {
-  id        String   @id @default(cuid())
+  id String @id @default(cuid())
 
   /// The user requesting access
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   /// The club being requested
-  clubId    String
-  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId String
+  club   Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
   /// Optional message from the requester (max 500 chars)
-  message   String?
+  message String?
 
   /// Current status of the request
-  status    AccessRequestStatus @default(PENDING)
+  status AccessRequestStatus @default(PENDING)
 
   /// Rejection handling
   rejectionReason AccessRejectionReason?
@@ -156,6 +158,8 @@ model AccessRequest {
   processedById   String?
   /// When this request was processed
   processedAt     DateTime?
+  /// When the user acknowledged seeing the rejection (null = not yet seen)
+  seenAt          DateTime?
 
   /// Request expires after 30 days
   expiresAt DateTime
@@ -198,28 +202,28 @@ enum AccessRejectionReason {
 /// Tier/plan for clubs with feature flags and limits.
 /// Supports future SaaS billing integration.
 model Tier {
-  id          String  @id @default(cuid())
+  id String @id @default(cuid())
 
   /// Display name of the tier
-  name        String  @unique
+  name String @unique
 
   /// Description of what's included
   description String?
 
   /// Whether this tier is visible to users
-  isVisible   Boolean @default(true)
+  isVisible Boolean @default(true)
 
   /// Cannot be deleted if true (seeded tiers)
-  isSeeded    Boolean @default(false)
+  isSeeded Boolean @default(false)
 
   /// Display order in tier selection
-  sortOrder   Int     @default(0)
+  sortOrder Int @default(0)
 
   /// Preset color name for display
-  color       String?
+  color String?
 
   /// Lucide icon name for display
-  icon        String?
+  icon String?
 
   /// Limits (null = unlimited)
   /// Maximum users per club
@@ -254,10 +258,10 @@ model Tier {
 /// Used for configuration that doesn't belong to a specific club.
 model AppSetting {
   /// Setting key (unique identifier)
-  key       String   @id
+  key String @id
 
   /// JSON-serialized value
-  value     String
+  value String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -268,33 +272,33 @@ model AppSetting {
 /// Audit log for tracking changes to entities.
 /// Per ADR-0010: Row-Level Tenant Isolation.
 model AuditLog {
-  id         String   @id @default(cuid())
+  id String @id @default(cuid())
 
   /// Model name (e.g., "Club", "Member")
   entityType String
 
   /// ID of the affected entity
-  entityId   String
+  entityId String
 
   /// Operation performed (create, update, delete)
-  action     String
+  action String
 
   /// Who performed the action (null for system actions)
-  userId     String?
+  userId String?
 
   /// Club context if applicable
-  clubId     String?
+  clubId String?
 
   /// What changed (before/after or input data)
-  changes    Json?
+  changes Json?
 
   /// Client IP address
-  ipAddress  String?
+  ipAddress String?
 
   /// Client user agent
-  userAgent  String?
+  userAgent String?
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([entityType, entityId])
   @@index([userId])
@@ -319,40 +323,40 @@ enum MemberStatus {
 /// Members belong to exactly one club (tenant isolation).
 model Member {
   /// Unique identifier (CUID format)
-  id          String       @id @default(cuid())
+  id     String @id @default(cuid())
   /// Reference to the parent club (tenant)
-  clubId      String
+  clubId String
   /// The club this member belongs to
-  club        Club         @relation(fields: [clubId], references: [id])
+  club   Club   @relation(fields: [clubId], references: [id])
 
   /// Member's full name
-  name        String
+  name  String
   /// Email address (unique within club)
-  email       String?
+  email String?
   /// Phone number
-  phone       String?
+  phone String?
 
   /// Street address
-  street      String?
+  street     String?
   /// Postal/ZIP code
-  postalCode  String?
+  postalCode String?
   /// City
-  city        String?
+  city       String?
 
   /// Current membership status
-  status      MemberStatus @default(ACTIVE)
+  status   MemberStatus @default(ACTIVE)
   /// Date when member joined the club
-  joinedAt    DateTime?
+  joinedAt DateTime?
   /// Date when member left (if status is LEFT)
-  leftAt      DateTime?
+  leftAt   DateTime?
 
   /// Soft deletion timestamp
-  deletedAt   DateTime?
+  deletedAt DateTime?
   /// User ID who performed the soft deletion
-  deletedBy   String?
+  deletedBy String?
 
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([clubId, email])
   @@index([clubId])
@@ -376,29 +380,29 @@ enum AccountType {
 /// Named LedgerAccount to avoid conflict with Better Auth's Account model.
 model LedgerAccount {
   /// Unique identifier (CUID format)
-  id          String      @id @default(cuid())
+  id     String @id @default(cuid())
   /// Reference to the parent club (tenant)
-  clubId      String
+  clubId String
   /// The club this account belongs to
-  club        Club        @relation(fields: [clubId], references: [id])
+  club   Club   @relation(fields: [clubId], references: [id])
 
   /// SKR42 account code (e.g., "1200" for Bank)
-  code        String
+  code String
   /// Account name/description
-  name        String
+  name String
   /// Type of account (asset, liability, income, expense)
-  type        AccountType
+  type AccountType
 
   /// Whether this account is active and can receive postings
-  isActive    Boolean     @default(true)
+  isActive Boolean @default(true)
 
   /// Soft deletion timestamp
-  deletedAt   DateTime?
+  deletedAt DateTime?
   /// User ID who performed the soft deletion
-  deletedBy   String?
+  deletedBy String?
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([clubId, code])
   @@index([clubId])
@@ -415,38 +419,38 @@ model LedgerAccount {
 /// Application user. Managed by Better Auth.
 /// Soft-deletion supported per CONV-006.
 model User {
-  id            String    @id @default(cuid())
+  id String @id @default(cuid())
 
   /// External ID for future Zitadel migration (OIDC profile.sub claim)
-  externalId    String?   @unique
+  externalId String? @unique
 
   /// User's email address (from registration or OAuth)
-  email         String    @unique
+  email String @unique
 
   /// Whether email has been verified
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean @default(false)
 
   /// Display name (from registration or OAuth profile)
-  name          String?
+  name String?
 
   /// Profile image URL (from OAuth provider or uploaded)
-  image         String?
+  image String?
 
   /// System-wide super admin flag (first user gets this automatically)
-  isSuperAdmin  Boolean   @default(false)
+  isSuperAdmin Boolean @default(false)
 
   /// Terms & Conditions acceptance timestamp
   termsAcceptedAt DateTime?
 
   /// Soft-deletion fields (CONV-006)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
-  deletedBy     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  deletedBy String?
 
   /// Better Auth relations
-  accounts      Account[]
-  sessions      Session[]
+  accounts Account[]
+  sessions Session[]
 
   /// Multi-tenancy relations
   clubUsers      ClubUser[]
@@ -458,30 +462,30 @@ model User {
 /// Auth account linked to a user (Better Auth adapter requirement)
 /// Stores credentials and provider info for each auth method
 model Account {
-  id                String    @id @default(cuid())
-  userId            String
+  id     String @id @default(cuid())
+  userId String
 
   /// Provider identifier (e.g., "credential", "google", "github")
-  providerId        String
+  providerId String
 
   /// Provider's account ID (user ID at provider, or internal ID for credentials)
-  accountId         String
+  accountId String
 
   /// Password hash for credential provider (scrypt format)
-  password          String?
+  password String?
 
   /// OAuth tokens
-  accessToken       String?   @db.Text
-  refreshToken      String?   @db.Text
-  accessTokenExpiresAt DateTime?
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
 
   /// Token metadata
-  scope             String?
-  idToken           String?   @db.Text
+  scope   String?
+  idToken String? @db.Text
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -493,25 +497,25 @@ model Account {
 /// User session (Better Auth adapter requirement)
 /// Database-backed sessions for revocation support
 model Session {
-  id           String   @id @default(cuid())
+  id String @id @default(cuid())
 
   /// Session token for cookie validation
-  token        String   @unique
+  token String @unique
 
   /// User who owns this session
-  userId       String
+  userId String
 
   /// When the session expires
-  expiresAt    DateTime
+  expiresAt DateTime
 
   /// Client metadata
-  ipAddress    String?
-  userAgent    String?
+  ipAddress String?
+  userAgent String?
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("auth_sessions")
@@ -520,19 +524,19 @@ model Session {
 /// Email verification token (Better Auth)
 /// Used for email verification and password reset
 model Verification {
-  id         String   @id @default(cuid())
+  id String @id @default(cuid())
 
   /// What is being verified (email address, phone, etc.)
   identifier String
 
   /// The verification token/code
-  value      String
+  value String
 
   /// When this verification expires
-  expiresAt  DateTime
+  expiresAt DateTime
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("auth_verifications")
 }

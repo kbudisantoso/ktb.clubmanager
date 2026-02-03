@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AccessRequestsService } from './access-requests.service.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import type { PrismaService } from '../../prisma/prisma.service.js';
 import {
   BadRequestException,
   NotFoundException,
@@ -798,6 +798,76 @@ describe('AccessRequestsService', () => {
       await expect(
         service.getClubRequests('nonexistent', adminUserId),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('markAsSeen()', () => {
+    const requestId = 'request-123';
+    const userId = 'user-123';
+
+    describe('sunshine path', () => {
+      it('should mark rejected request as seen', async () => {
+        mockPrisma.accessRequest.findUnique.mockResolvedValue({
+          id: requestId,
+          userId,
+          status: 'REJECTED',
+        });
+        mockPrisma.accessRequest.update.mockResolvedValue({});
+
+        const result = await service.markAsSeen(requestId, userId);
+
+        expect(result.message).toBe('Gelesen');
+        expect(mockPrisma.accessRequest.update).toHaveBeenCalledWith({
+          where: { id: requestId },
+          data: { seenAt: expect.any(Date) },
+        });
+      });
+    });
+
+    describe('error cases', () => {
+      it('should fail for non-existent request', async () => {
+        mockPrisma.accessRequest.findUnique.mockResolvedValue(null);
+
+        await expect(
+          service.markAsSeen(requestId, userId),
+        ).rejects.toThrow(NotFoundException);
+      });
+
+      it('should fail for other users request', async () => {
+        mockPrisma.accessRequest.findUnique.mockResolvedValue({
+          id: requestId,
+          userId: 'other-user',
+          status: 'REJECTED',
+        });
+
+        await expect(
+          service.markAsSeen(requestId, userId),
+        ).rejects.toThrow(ForbiddenException);
+      });
+
+      it('should fail for non-rejected request', async () => {
+        mockPrisma.accessRequest.findUnique.mockResolvedValue({
+          id: requestId,
+          userId,
+          status: 'PENDING',
+        });
+
+        await expect(
+          service.markAsSeen(requestId, userId),
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it('should fail for approved request', async () => {
+        mockPrisma.accessRequest.findUnique.mockResolvedValue({
+          id: requestId,
+          userId,
+          status: 'APPROVED',
+        });
+
+        await expect(
+          service.markAsSeen(requestId, userId),
+        ).rejects.toThrow(BadRequestException);
+      });
     });
   });
 });
