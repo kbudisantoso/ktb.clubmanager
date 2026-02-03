@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronDown, Plus, Search, Building2 } from "lucide-react"
-import { useClubStore, useMyClubs, useNeedsClubRefresh, type ClubContext } from "@/lib/club-store"
+import { useClubStore, type ClubContext } from "@/lib/club-store"
+import { useMyClubsQuery } from "@/hooks/use-clubs"
 import { ClubAvatar } from "./club-avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -24,14 +25,37 @@ const ROLE_LABELS: Record<string, string> = {
   OWNER: "Inhaber",
   ADMIN: "Admin",
   TREASURER: "Kassenwart",
-  VIEWER: "Mitglied",
+  SECRETARY: "Schriftführer",
+  MEMBER: "Mitglied",
 }
 
 const ROLE_COLORS: Record<string, string> = {
-  OWNER: "bg-purple-100 text-purple-800",
-  ADMIN: "bg-blue-100 text-blue-800",
-  TREASURER: "bg-green-100 text-green-800",
-  VIEWER: "bg-gray-100 text-gray-800",
+  OWNER: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  ADMIN: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  TREASURER: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  SECRETARY: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+  MEMBER: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+}
+
+/**
+ * Role priority for display (lower = higher priority)
+ */
+const ROLE_PRIORITY: Record<string, number> = {
+  OWNER: 0,
+  ADMIN: 1,
+  TREASURER: 2,
+  SECRETARY: 3,
+  MEMBER: 4,
+}
+
+/**
+ * Get the primary (highest priority) role from a list of roles
+ */
+function getPrimaryRole(roles: string[]): string {
+  if (roles.length === 0) return "MEMBER"
+  return roles.reduce((primary, role) =>
+    (ROLE_PRIORITY[role] ?? 99) < (ROLE_PRIORITY[primary] ?? 99) ? role : primary
+  )
 }
 
 interface ClubSwitcherProps {
@@ -44,46 +68,11 @@ interface ClubSwitcherProps {
  */
 export function ClubSwitcher({ className }: ClubSwitcherProps) {
   const router = useRouter()
-  const clubs = useMyClubs()
-  const needsRefresh = useNeedsClubRefresh()
-  const { activeClubSlug, setActiveClub, setClubs } = useClubStore()
+  const { data, isLoading } = useMyClubsQuery()
+  const { clubs = [], canCreateClub = false } = data ?? {}
+  const { activeClubSlug, setActiveClub } = useClubStore()
 
   const [searchQuery, setSearchQuery] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-
-  // Fetch clubs on mount if needed
-  useEffect(() => {
-    if (needsRefresh) {
-      fetchClubs()
-    }
-  }, [needsRefresh])
-
-  async function fetchClubs() {
-    setIsLoading(true)
-    try {
-      const res = await fetch("/api/clubs/my", {
-        credentials: "include",
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setClubs(
-          data.map((club: ClubContext & Record<string, unknown>) => ({
-            id: club.id,
-            name: club.name,
-            slug: club.slug,
-            role: club.role,
-            avatarUrl: club.avatarUrl,
-            avatarInitials: club.avatarInitials,
-            avatarColor: club.avatarColor,
-          }))
-        )
-      }
-    } catch (error) {
-      console.error("Failed to fetch clubs:", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   // Get active club object
   const activeClub = clubs.find((c) => c.slug === activeClubSlug)
@@ -109,6 +98,13 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
 
   // No clubs state
   if (clubs.length === 0 && !isLoading) {
+    if (!canCreateClub) {
+      return (
+        <div className={cn("text-sm text-muted-foreground", className)}>
+          Kein Verein zugeordnet
+        </div>
+      )
+    }
     return (
       <Button
         variant="outline"
@@ -122,23 +118,9 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
     )
   }
 
-  // Single club - just show name, no dropdown
+  // Single club - don't show anything in header (name shown as page title)
   if (clubs.length === 1) {
-    const club = clubs[0]
-    return (
-      <div className={cn("flex items-center gap-2", className)}>
-        <ClubAvatar
-          name={club.name}
-          avatarUrl={club.avatarUrl}
-          avatarInitials={club.avatarInitials}
-          avatarColor={club.avatarColor}
-          size="sm"
-        />
-        <span className="text-sm font-medium truncate max-w-[150px]">
-          {club.name}
-        </span>
-      </div>
-    )
+    return null
   }
 
   // Multiple clubs - show dropdown
@@ -207,9 +189,9 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
                 <div className="font-medium truncate">{club.name}</div>
                 <Badge
                   variant="secondary"
-                  className={cn("text-xs mt-1", ROLE_COLORS[club.role])}
+                  className={cn("text-xs mt-1", ROLE_COLORS[getPrimaryRole(club.roles)])}
                 >
-                  {ROLE_LABELS[club.role] || club.role}
+                  {ROLE_LABELS[getPrimaryRole(club.roles)] || getPrimaryRole(club.roles)}
                 </Badge>
               </div>
             </DropdownMenuItem>
@@ -222,12 +204,15 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
           )}
         </div>
 
-        <DropdownMenuSeparator />
-
-        <DropdownMenuItem onClick={handleCreateClub} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Neuen Verein erstellen
-        </DropdownMenuItem>
+        {canCreateClub && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleCreateClub} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Neuen Verein erstellen
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -1,7 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { act } from "react"
 
 // Mock next/navigation
 const mockPush = vi.fn()
@@ -9,46 +8,46 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }))
 
-// Mock fetch
-const mockFetch = vi.fn()
-global.fetch = mockFetch
-
 // Mock club store - we need to control what the hooks return
 const mockSetActiveClub = vi.fn()
-const mockSetClubs = vi.fn()
 
 vi.mock("@/lib/club-store", async () => {
   const actual = await vi.importActual("@/lib/club-store")
   return {
     ...actual,
-    useMyClubs: vi.fn(() => []),
-    useNeedsClubRefresh: vi.fn(() => false),
     useClubStore: vi.fn(() => ({
       activeClubSlug: null,
       setActiveClub: mockSetActiveClub,
-      setClubs: mockSetClubs,
     })),
   }
 })
 
+// Mock use-clubs hook - initial mock, overridden in beforeEach
+vi.mock("@/hooks/use-clubs", () => ({
+  useMyClubsQuery: vi.fn(),
+}))
+
 import { ClubSwitcher } from "./club-switcher"
 import * as clubStoreModule from "@/lib/club-store"
+import * as useClubsModule from "@/hooks/use-clubs"
 import type { ClubContext } from "@/lib/club-store"
 
 describe("ClubSwitcher", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => [],
-    })
+    // Default mock - no clubs
+    vi.mocked(useClubsModule.useMyClubsQuery).mockReturnValue({
+      data: { clubs: [] as ClubContext[], canCreateClub: true },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useClubsModule.useMyClubsQuery>)
+    vi.mocked(clubStoreModule.useClubStore).mockReturnValue({
+      activeClubSlug: null,
+      setActiveClub: mockSetActiveClub,
+    } as ReturnType<typeof clubStoreModule.useClubStore>)
   })
 
   describe("no clubs state", () => {
     it("renders 'Verein erstellen' button when no clubs", () => {
-      vi.mocked(clubStoreModule.useMyClubs).mockReturnValue([])
-      vi.mocked(clubStoreModule.useNeedsClubRefresh).mockReturnValue(false)
-
       render(<ClubSwitcher />)
 
       expect(screen.getByRole("button", { name: /verein erstellen/i })).toBeInTheDocument()
@@ -56,8 +55,6 @@ describe("ClubSwitcher", () => {
 
     it("navigates to /clubs/new when create button clicked", async () => {
       const user = userEvent.setup()
-      vi.mocked(clubStoreModule.useMyClubs).mockReturnValue([])
-      vi.mocked(clubStoreModule.useNeedsClubRefresh).mockReturnValue(false)
 
       render(<ClubSwitcher />)
 
@@ -73,31 +70,31 @@ describe("ClubSwitcher", () => {
         id: "1",
         name: "TSV Musterstadt",
         slug: "tsv-musterstadt",
-        role: "OWNER",
+        roles: ["OWNER"],
         avatarInitials: "TM",
         avatarColor: "blue",
       },
     ]
 
-    it("renders club name without dropdown for single club", () => {
-      vi.mocked(clubStoreModule.useMyClubs).mockReturnValue(singleClub)
-      vi.mocked(clubStoreModule.useNeedsClubRefresh).mockReturnValue(false)
-
-      render(<ClubSwitcher />)
-
-      expect(screen.getByText("TSV Musterstadt")).toBeInTheDocument()
-      // No dropdown trigger (no ChevronDown icon button)
-      expect(screen.queryByRole("button")).not.toBeInTheDocument()
+    beforeEach(() => {
+      vi.mocked(useClubsModule.useMyClubsQuery).mockReturnValue({
+        data: { clubs: singleClub, canCreateClub: false },
+        isLoading: false,
+      } as ReturnType<typeof useClubsModule.useMyClubsQuery>)
     })
 
-    it("shows club avatar with initials", () => {
-      vi.mocked(clubStoreModule.useMyClubs).mockReturnValue(singleClub)
-      vi.mocked(clubStoreModule.useNeedsClubRefresh).mockReturnValue(false)
+    it("returns null for single club (no switcher needed)", () => {
+      const { container } = render(<ClubSwitcher />)
 
+      // Component returns null for single club - nothing is rendered
+      expect(container.firstChild).toBeNull()
+    })
+
+    it("does not show dropdown for single club", () => {
       render(<ClubSwitcher />)
 
-      expect(screen.getByTitle("TSV Musterstadt")).toBeInTheDocument()
-      expect(screen.getByText("TM")).toBeInTheDocument()
+      // No dropdown trigger when there's only one club
+      expect(screen.queryByRole("button")).not.toBeInTheDocument()
     })
   })
 
@@ -107,7 +104,7 @@ describe("ClubSwitcher", () => {
         id: "1",
         name: "TSV Musterstadt",
         slug: "tsv-musterstadt",
-        role: "OWNER",
+        roles: ["OWNER"],
         avatarInitials: "TM",
         avatarColor: "blue",
       },
@@ -115,7 +112,7 @@ describe("ClubSwitcher", () => {
         id: "2",
         name: "FC Beispiel",
         slug: "fc-beispiel",
-        role: "ADMIN",
+        roles: ["ADMIN"],
         avatarInitials: "FB",
         avatarColor: "green",
       },
@@ -123,20 +120,21 @@ describe("ClubSwitcher", () => {
         id: "3",
         name: "SV Test",
         slug: "sv-test",
-        role: "VIEWER",
+        roles: ["MEMBER"],
         avatarInitials: "ST",
         avatarColor: "red",
       },
     ]
 
     beforeEach(() => {
-      vi.mocked(clubStoreModule.useMyClubs).mockReturnValue(multipleClubs)
-      vi.mocked(clubStoreModule.useNeedsClubRefresh).mockReturnValue(false)
+      vi.mocked(useClubsModule.useMyClubsQuery).mockReturnValue({
+        data: { clubs: multipleClubs, canCreateClub: true },
+        isLoading: false,
+      } as ReturnType<typeof useClubsModule.useMyClubsQuery>)
       vi.mocked(clubStoreModule.useClubStore).mockReturnValue({
         activeClubSlug: "tsv-musterstadt",
         setActiveClub: mockSetActiveClub,
-        setClubs: mockSetClubs,
-      })
+      } as ReturnType<typeof clubStoreModule.useClubStore>)
     })
 
     it("renders dropdown trigger when 2+ clubs", () => {
@@ -219,21 +217,22 @@ describe("ClubSwitcher", () => {
 
   describe("5+ clubs with search", () => {
     const manyClubs: ClubContext[] = [
-      { id: "1", name: "TSV Alpha", slug: "tsv-alpha", role: "OWNER" },
-      { id: "2", name: "FC Beta", slug: "fc-beta", role: "ADMIN" },
-      { id: "3", name: "SV Gamma", slug: "sv-gamma", role: "VIEWER" },
-      { id: "4", name: "SC Delta", slug: "sc-delta", role: "VIEWER" },
-      { id: "5", name: "VfB Epsilon", slug: "vfb-epsilon", role: "VIEWER" },
+      { id: "1", name: "TSV Alpha", slug: "tsv-alpha", roles: ["OWNER"] },
+      { id: "2", name: "FC Beta", slug: "fc-beta", roles: ["ADMIN"] },
+      { id: "3", name: "SV Gamma", slug: "sv-gamma", roles: ["MEMBER"] },
+      { id: "4", name: "SC Delta", slug: "sc-delta", roles: ["MEMBER"] },
+      { id: "5", name: "VfB Epsilon", slug: "vfb-epsilon", roles: ["MEMBER"] },
     ]
 
     beforeEach(() => {
-      vi.mocked(clubStoreModule.useMyClubs).mockReturnValue(manyClubs)
-      vi.mocked(clubStoreModule.useNeedsClubRefresh).mockReturnValue(false)
+      vi.mocked(useClubsModule.useMyClubsQuery).mockReturnValue({
+        data: { clubs: manyClubs, canCreateClub: true },
+        isLoading: false,
+      } as ReturnType<typeof useClubsModule.useMyClubsQuery>)
       vi.mocked(clubStoreModule.useClubStore).mockReturnValue({
         activeClubSlug: "tsv-alpha",
         setActiveClub: mockSetActiveClub,
-        setClubs: mockSetClubs,
-      })
+      } as ReturnType<typeof clubStoreModule.useClubStore>)
     })
 
     it("renders search input when 5+ clubs", async () => {
@@ -281,22 +280,18 @@ describe("ClubSwitcher", () => {
     })
   })
 
-  describe("loading and refresh", () => {
-    it("fetches clubs when needsRefresh is true", async () => {
-      vi.mocked(clubStoreModule.useMyClubs).mockReturnValue([])
-      vi.mocked(clubStoreModule.useNeedsClubRefresh).mockReturnValue(true)
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => [
-          { id: "1", name: "Fetched Club", slug: "fetched", role: "OWNER" },
-        ],
-      })
+  describe("loading state", () => {
+    it("shows dropdown placeholder when loading with empty data", () => {
+      vi.mocked(useClubsModule.useMyClubsQuery).mockReturnValue({
+        data: undefined,
+        isLoading: true,
+      } as ReturnType<typeof useClubsModule.useMyClubsQuery>)
 
       render(<ClubSwitcher />)
 
-      await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalledWith("/api/clubs/my", expect.anything())
-      })
+      // When loading with no clubs yet, component shows dropdown with placeholder
+      expect(screen.getByRole("button")).toBeInTheDocument()
+      expect(screen.getByText("Verein auswählen")).toBeInTheDocument()
     })
   })
 })

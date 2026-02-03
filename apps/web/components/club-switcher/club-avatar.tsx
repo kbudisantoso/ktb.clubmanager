@@ -18,12 +18,22 @@ const AVATAR_COLORS: Record<string, string> = {
   gray: "bg-gray-500",
 }
 
-interface ClubAvatarProps {
+interface ClubData {
+  name: string
   avatarUrl?: string
   avatarInitials?: string
   avatarColor?: string
-  name: string
-  size?: "sm" | "md" | "lg"
+}
+
+interface ClubAvatarProps {
+  /** Club object with avatar data */
+  club?: ClubData
+  /** Direct props (used if club is not provided) */
+  avatarUrl?: string
+  avatarInitials?: string
+  avatarColor?: string
+  name?: string
+  size?: "xs" | "sm" | "md" | "lg"
   className?: string
 }
 
@@ -31,23 +41,31 @@ interface ClubAvatarProps {
  * Club avatar component showing either an image or initials with color.
  */
 export function ClubAvatar({
-  avatarUrl,
-  avatarInitials,
-  avatarColor = "blue",
-  name,
+  club,
+  avatarUrl: directAvatarUrl,
+  avatarInitials: directAvatarInitials,
+  avatarColor: directAvatarColor = "blue",
+  name: directName,
   size = "md",
   className,
 }: ClubAvatarProps) {
+  // Use club prop values if provided, otherwise fall back to direct props
+  const avatarUrl = club?.avatarUrl ?? directAvatarUrl
+  const avatarInitials = club?.avatarInitials ?? directAvatarInitials
+  const avatarColor = club?.avatarColor ?? directAvatarColor
+  const name = club?.name ?? directName ?? ""
+
   const sizeClasses = {
-    sm: "h-6 w-6 text-xs",
-    md: "h-8 w-8 text-sm",
-    lg: "h-10 w-10 text-base",
+    xs: "h-6 w-6 text-[8px]",
+    sm: "h-8 w-8 text-[10px]",
+    md: "h-10 w-10 text-xs",
+    lg: "h-12 w-12 text-sm",
   }
 
   const bgColor = AVATAR_COLORS[avatarColor] || AVATAR_COLORS.blue
 
-  // Generate initials from name if not provided
-  const initials = avatarInitials || generateInitials(name)
+  // Generate initials from name if not provided, limit to 3 chars
+  const initials = (avatarInitials || generateInitials(name)).slice(0, 3)
 
   if (avatarUrl) {
     return (
@@ -82,7 +100,8 @@ export function ClubAvatar({
 function generateInitials(name: string): string {
   const words = name.split(/\s+/).filter(Boolean)
   if (words.length >= 2) {
-    return words.slice(0, 2).map((w) => w[0]).join("").toUpperCase()
+    // Take first letter of up to 3 words (e.g., "Western Club Dakota" → "WCD")
+    return words.slice(0, 3).map((w) => w[0]).join("").toUpperCase()
   }
   return name.slice(0, 2).toUpperCase()
 }
