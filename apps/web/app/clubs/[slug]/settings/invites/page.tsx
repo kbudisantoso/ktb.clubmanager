@@ -6,20 +6,19 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-export default function ClubSettingsPage() {
+export default function ClubInvitesSettingsPage() {
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Allgemein</CardTitle>
+          <CardTitle>Einladungen</CardTitle>
           <CardDescription>
-            Grundlegende Einstellungen für deinen Verein
+            Einladungscodes und Beitrittsanfragen verwalten
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Vereinseinstellungen werden in Phase 9 (Roles & Permissions) vollständig
-            implementiert.
+            Einladungsverwaltung wird in einer späteren Phase implementiert.
           </p>
         </CardContent>
       </Card>

@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { useSession } from "@/lib/auth-client"
-import { useClubStore, type ClubContext } from "@/lib/club-store"
-import { Loader2, CheckCircle, XCircle, Building2 } from "lucide-react"
+import { useSessionQuery } from "@/hooks/use-session"
+import { useClubStore } from "@/lib/club-store"
+import { useJoinClubMutation } from "@/hooks/use-clubs"
+import { Loader2, CheckCircle, XCircle, Building2, Clock, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -17,24 +18,14 @@ import Link from "next/link"
 
 type JoinState = "loading" | "success" | "error" | "login-required"
 
-interface JoinResult {
-  message: string
-  club?: {
-    id: string
-    name: string
-    slug: string
-  }
-}
-
 export default function JoinPage() {
   const params = useParams()
   const router = useRouter()
-  const { data: session, isPending: sessionLoading } = useSession()
-  const { setActiveClub, setClubs } = useClubStore()
+  const { data: session, isLoading: sessionLoading } = useSessionQuery()
+  const { setActiveClub } = useClubStore()
+  const joinClub = useJoinClubMutation()
 
   const [state, setState] = useState<JoinState>("loading")
-  const [result, setResult] = useState<JoinResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
 
   const code = params.code as string
 
@@ -46,69 +37,31 @@ export default function JoinPage() {
       return
     }
 
-    joinClub()
-  }, [session, sessionLoading, code])
-
-  async function joinClub() {
-    try {
-      const res = await fetch("/api/clubs/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ code }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setState("error")
-        setError(data.message || "Fehler beim Beitreten")
-        return
-      }
-
-      setResult(data)
-      setState("success")
-
-      // Refresh clubs list
-      const clubsRes = await fetch("/api/clubs/my", { credentials: "include" })
-      if (clubsRes.ok) {
-        const clubs = await clubsRes.json()
-        setClubs(
-          clubs.map(
-            (club: {
-              id: string
-              name: string
-              slug: string
-              role: string
-              avatarUrl?: string
-              avatarInitials?: string
-              avatarColor?: string
-            }): ClubContext => ({
-              id: club.id,
-              name: club.name,
-              slug: club.slug,
-              role: club.role,
-              avatarUrl: club.avatarUrl,
-              avatarInitials: club.avatarInitials,
-              avatarColor: club.avatarColor,
-            })
-          )
-        )
-      }
-
-      // Set as active club if joining succeeded
-      if (data.club?.slug) {
-        setActiveClub(data.club.slug)
-      }
-    } catch {
-      setState("error")
-      setError("Netzwerkfehler. Bitte versuche es erneut.")
+    // User is logged in - if we were waiting for login, reset to loading to trigger join
+    if (state === "login-required") {
+      setState("loading")
+      return
     }
-  }
+
+    // Only join once
+    if (state === "loading" && !joinClub.isPending && !joinClub.isSuccess && !joinClub.isError) {
+      joinClub.mutate(code, {
+        onSuccess: (data) => {
+          setState("success")
+          if (data.club?.slug) {
+            setActiveClub(data.club.slug)
+          }
+        },
+        onError: () => {
+          setState("error")
+        },
+      })
+    }
+  }, [session, sessionLoading, code, state, joinClub, setActiveClub])
 
   function handleGoToClub() {
-    if (result?.club?.slug) {
-      router.push(`/clubs/${result.club.slug}/dashboard`)
+    if (joinClub.data?.club?.slug) {
+      router.push(`/clubs/${joinClub.data.club.slug}/dashboard`)
     } else {
       router.push("/dashboard")
     }
@@ -120,7 +73,7 @@ export default function JoinPage() {
     router.push(`/login?callbackUrl=${callbackUrl}`)
   }
 
-  if (sessionLoading || state === "loading") {
+  if (sessionLoading || (state === "loading" && !joinClub.isError)) {
     return (
       <div className="container mx-auto px-4 py-12 max-w-md">
         <Card>
@@ -160,14 +113,16 @@ export default function JoinPage() {
     )
   }
 
-  if (state === "error") {
+  if (state === "error" || joinClub.isError) {
     return (
       <div className="container mx-auto px-4 py-12 max-w-md">
         <Card>
           <CardHeader className="text-center">
             <XCircle className="h-12 w-12 mx-auto mb-2 text-destructive" />
             <CardTitle>Einladung fehlgeschlagen</CardTitle>
-            <CardDescription>{error}</CardDescription>
+            <CardDescription>
+              {joinClub.error?.message || "Netzwerkfehler. Bitte versuche es erneut."}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button onClick={() => router.push("/dashboard")} className="w-full">
@@ -179,23 +134,81 @@ export default function JoinPage() {
     )
   }
 
-  if (state === "success" && result) {
+  if (state === "success" && joinClub.data) {
+    const { status, message, club } = joinClub.data
+
+    // Already a member - can go directly to club
+    if (status === "already_member") {
+      return (
+        <div className="container mx-auto px-4 py-12 max-w-md">
+          <Card>
+            <CardHeader className="text-center">
+              <CheckCircle className="h-12 w-12 mx-auto mb-2 text-success" />
+              <CardTitle>Bereits Mitglied</CardTitle>
+              <CardDescription>{message}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {club && (
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <p className="font-medium">{club.name}</p>
+                </div>
+              )}
+              <Button onClick={handleGoToClub} className="w-full">
+                Zum Verein
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+
+    // Request sent or already pending - needs admin approval
+    if (status === "request_sent" || status === "pending") {
+      const isNewRequest = status === "request_sent"
+      return (
+        <div className="container mx-auto px-4 py-12 max-w-md">
+          <Card>
+            <CardHeader className="text-center">
+              {isNewRequest ? (
+                <Clock className="h-12 w-12 mx-auto mb-2 text-warning" />
+              ) : (
+                <Info className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+              )}
+              <CardTitle>
+                {isNewRequest ? "Anfrage gesendet" : "Anfrage ausstehend"}
+              </CardTitle>
+              <CardDescription>{message}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {club && (
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <p className="font-medium">{club.name}</p>
+                </div>
+              )}
+              <p className="text-sm text-muted-foreground text-center">
+                Du wirst benachrichtigt, sobald ein Administrator die Anfrage bearbeitet hat.
+              </p>
+              <Button onClick={() => router.push("/dashboard")} variant="outline" className="w-full">
+                Zum Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+
+    // Fallback (should not happen)
     return (
       <div className="container mx-auto px-4 py-12 max-w-md">
         <Card>
           <CardHeader className="text-center">
             <CheckCircle className="h-12 w-12 mx-auto mb-2 text-success" />
-            <CardTitle>Willkommen!</CardTitle>
-            <CardDescription>{result.message}</CardDescription>
+            <CardTitle>Erfolgreich</CardTitle>
+            <CardDescription>{message}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {result.club && (
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <p className="font-medium">{result.club.name}</p>
-              </div>
-            )}
-            <Button onClick={handleGoToClub} className="w-full">
-              Zum Verein
+            <Button onClick={() => router.push("/dashboard")} className="w-full">
+              Zum Dashboard
             </Button>
           </CardContent>
         </Card>

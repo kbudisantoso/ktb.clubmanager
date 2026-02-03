@@ -16,24 +16,33 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useClubStore, type ClubContext } from '@/lib/club-store';
+import { useClubStore } from '@/lib/club-store';
 import { useToast } from '@/hooks/use-toast';
+import { useDebounce } from '@/hooks/use-debounce';
+import { useCheckSlugQuery, useCreateClubMutation } from '@/hooks/use-clubs';
 
 export default function NewClubPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { setActiveClub, setClubs } = useClubStore();
+  const { setActiveClub } = useClubStore();
 
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [slugEdited, setSlugEdited] = useState(false);
   const [description, setDescription] = useState('');
   const [visibility, setVisibility] = useState<'PRIVATE' | 'PUBLIC'>('PRIVATE');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
+
+  // Debounce slug for API check (wait 400ms after typing stops)
+  const debouncedSlug = useDebounce(slug, 400);
+
+  // Check slug availability with debounced value
+  const { data: slugCheck, isFetching: isCheckingSlug } = useCheckSlugQuery(debouncedSlug);
+
+  // Create club mutation
+  const createClub = useCreateClubMutation();
 
   // Auto-generate slug from name
-  async function handleNameChange(newName: string) {
+  function handleNameChange(newName: string) {
     setName(newName);
 
     if (!slugEdited && newName.length >= 2) {
@@ -48,89 +57,39 @@ export default function NewClubPage() {
         .replace(/^-|-$/g, '')
         .slice(0, 50);
       setSlug(generated);
-      checkSlugAvailability(generated);
     }
   }
 
-  async function handleSlugChange(newSlug: string) {
+  function handleSlugChange(newSlug: string) {
     setSlugEdited(true);
     setSlug(newSlug.toLowerCase());
-    checkSlugAvailability(newSlug.toLowerCase());
-  }
-
-  async function checkSlugAvailability(slugToCheck: string) {
-    if (slugToCheck.length < 3) {
-      setSlugAvailable(null);
-      return;
-    }
-
-    try {
-      const res = await fetch(
-        `/api/clubs/check-slug?slug=${encodeURIComponent(slugToCheck)}`,
-        {
-          credentials: 'include',
-        }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setSlugAvailable(data.available);
-      }
-    } catch {
-      setSlugAvailable(null);
-    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setIsSubmitting(true);
 
     try {
-      const res = await fetch('/api/clubs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          name,
-          slug: slug || undefined, // Let server generate if empty
-          description: description || undefined,
-          visibility,
-        }),
+      const club = await createClub.mutateAsync({
+        name,
+        slug: slug || undefined, // Let server generate if empty
+        description: description || undefined,
+        visibility,
       });
 
-      if (res.ok) {
-        const club = await res.json();
-
-        // Update club store
-        const clubsRes = await fetch('/api/clubs/my', { credentials: 'include' });
-        if (clubsRes.ok) {
-          const clubs = await clubsRes.json();
-          setClubs(
-            clubs.map((c: ClubContext & { avatarUrl?: string }) => ({
-              id: c.id,
-              name: c.name,
-              slug: c.slug,
-              role: c.role,
-              avatarUrl: c.avatarUrl,
-              avatarInitials: c.avatarInitials,
-              avatarColor: c.avatarColor,
-            }))
-          );
-        }
-
-        setActiveClub(club.slug);
-        router.push(`/clubs/${club.slug}/dashboard`);
-      } else {
-        const error = await res.json();
-        toast({
-          title: 'Fehler',
-          description: error.message,
-          variant: 'destructive',
-        });
-      }
-    } finally {
-      setIsSubmitting(false);
+      setActiveClub(club.slug);
+      router.push(`/clubs/${club.slug}/dashboard`);
+    } catch (error) {
+      toast({
+        title: 'Fehler',
+        description: error instanceof Error ? error.message : 'Unbekannter Fehler',
+        variant: 'destructive',
+      });
     }
   }
+
+  // Determine slug availability state
+  const slugAvailable = slug.length >= 3 ? slugCheck?.available : null;
+  const isSlugPending = slug !== debouncedSlug || isCheckingSlug;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -188,11 +147,17 @@ export default function NewClubPage() {
               </div>
               {slug.length >= 3 && (
                 <p
-                  className={`text-sm ${slugAvailable ? 'text-green-600' : slugAvailable === false ? 'text-red-600' : 'text-muted-foreground'}`}
+                  className={`text-sm ${
+                    slugAvailable === true
+                      ? 'text-green-600'
+                      : slugAvailable === false
+                        ? 'text-red-600'
+                        : 'text-muted-foreground'
+                  }`}
                 >
-                  {slugAvailable === true && 'Verfügbar'}
-                  {slugAvailable === false && 'Bereits vergeben'}
-                  {slugAvailable === null && 'Wird geprüft...'}
+                  {isSlugPending && 'Wird geprüft...'}
+                  {!isSlugPending && slugAvailable === true && 'Verfügbar'}
+                  {!isSlugPending && slugAvailable === false && 'Bereits vergeben'}
                 </p>
               )}
             </div>
@@ -246,9 +211,9 @@ export default function NewClubPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || !name || slugAvailable === false}
+                disabled={createClub.isPending || !name || slugAvailable === false}
               >
-                {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {createClub.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Verein erstellen
               </Button>
             </div>

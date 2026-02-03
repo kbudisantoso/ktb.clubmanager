@@ -6,20 +6,19 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-export default function ClubSettingsPage() {
+export default function ClubRolesSettingsPage() {
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Allgemein</CardTitle>
+          <CardTitle>Rollen & Berechtigungen</CardTitle>
           <CardDescription>
-            Grundlegende Einstellungen für deinen Verein
+            Rollen erstellen und Berechtigungen konfigurieren
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Vereinseinstellungen werden in Phase 9 (Roles & Permissions) vollständig
-            implementiert.
+            Rollenverwaltung wird in Phase 9 (Roles & Permissions) implementiert.
           </p>
         </CardContent>
       </Card>
