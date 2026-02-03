@@ -43,30 +43,32 @@ describe('AccessRequestsService', () => {
     const validCode = 'HXNK4P9M';
 
     describe('sunshine path', () => {
-      it('should add user as VIEWER with valid code', async () => {
+      it('should create access request with valid code', async () => {
         mockPrisma.club.findFirst.mockResolvedValue({
           id: 'club-1',
           name: 'Test Club',
           slug: 'test-club',
         });
         mockPrisma.clubUser.findFirst.mockResolvedValue(null);
-        mockPrisma.clubUser.create.mockResolvedValue({});
+        mockPrisma.accessRequest.findFirst.mockResolvedValue(null);
+        mockPrisma.accessRequest.count.mockResolvedValue(0);
+        mockPrisma.accessRequest.create.mockResolvedValue({});
 
         const result = await service.joinWithCode(userId, validCode);
 
-        expect(result.message).toBe('Du bist dem Verein beigetreten');
+        expect(result.message).toBe('Deine Anfrage wurde gesendet.');
+        expect(result.status).toBe('request_sent');
         expect(result.club).toMatchObject({
           id: 'club-1',
           name: 'Test Club',
           slug: 'test-club',
         });
-        expect(mockPrisma.clubUser.create).toHaveBeenCalledWith({
-          data: {
+        expect(mockPrisma.accessRequest.create).toHaveBeenCalledWith({
+          data: expect.objectContaining({
             userId,
             clubId: 'club-1',
-            role: 'VIEWER',
-            status: 'ACTIVE',
-          },
+            message: 'Beitritt über Einladungscode',
+          }),
         });
       });
 
@@ -93,7 +95,7 @@ describe('AccessRequestsService', () => {
     });
 
     describe('edge cases', () => {
-      it('should reactivate suspended membership', async () => {
+      it('should inform user about pending/suspended membership', async () => {
         mockPrisma.club.findFirst.mockResolvedValue({
           id: 'club-1',
           name: 'Test Club',
@@ -103,15 +105,14 @@ describe('AccessRequestsService', () => {
           id: 'membership-1',
           status: 'SUSPENDED',
         });
-        mockPrisma.clubUser.update.mockResolvedValue({});
 
         const result = await service.joinWithCode(userId, validCode);
 
-        expect(result.message).toBe('Deine Mitgliedschaft wurde reaktiviert');
-        expect(mockPrisma.clubUser.update).toHaveBeenCalledWith({
-          where: { id: 'membership-1' },
-          data: { status: 'ACTIVE' },
-        });
+        expect(result.message).toBe('Deine Anfrage wird noch bearbeitet');
+        expect(result.status).toBe('pending');
+        // Should NOT create or update anything - just return info
+        expect(mockPrisma.clubUser.update).not.toHaveBeenCalled();
+        expect(mockPrisma.accessRequest.create).not.toHaveBeenCalled();
       });
 
       it('should return message if already active member', async () => {
@@ -129,6 +130,102 @@ describe('AccessRequestsService', () => {
 
         expect(result.message).toBe('Du bist bereits Mitglied dieses Vereins');
         expect(mockPrisma.clubUser.create).not.toHaveBeenCalled();
+      });
+
+      it('should return pending status if request already pending', async () => {
+        mockPrisma.club.findFirst.mockResolvedValue({
+          id: 'club-1',
+          name: 'Test Club',
+          slug: 'test-club',
+        });
+        mockPrisma.clubUser.findFirst.mockResolvedValue(null);
+        mockPrisma.accessRequest.findFirst.mockResolvedValue({
+          id: 'existing-request',
+          status: 'PENDING',
+        });
+
+        const result = await service.joinWithCode(userId, validCode);
+
+        expect(result.message).toBe(
+          'Du hast bereits eine Anfrage für diesen Verein gestellt',
+        );
+        expect(result.status).toBe('pending');
+        expect(mockPrisma.accessRequest.create).not.toHaveBeenCalled();
+        expect(mockPrisma.accessRequest.update).not.toHaveBeenCalled();
+      });
+
+      it('should allow resubmission after REJECTED request', async () => {
+        mockPrisma.club.findFirst.mockResolvedValue({
+          id: 'club-1',
+          name: 'Test Club',
+          slug: 'test-club',
+        });
+        mockPrisma.clubUser.findFirst.mockResolvedValue(null);
+        mockPrisma.accessRequest.findFirst.mockResolvedValue({
+          id: 'existing-request',
+          status: 'REJECTED',
+          rejectionReason: 'BOARD_ONLY',
+        });
+        mockPrisma.accessRequest.update.mockResolvedValue({});
+
+        const result = await service.joinWithCode(userId, validCode);
+
+        expect(result.message).toBe('Deine Anfrage wurde erneut gesendet.');
+        expect(result.status).toBe('request_sent');
+        expect(mockPrisma.accessRequest.update).toHaveBeenCalledWith({
+          where: { id: 'existing-request' },
+          data: expect.objectContaining({
+            status: 'PENDING',
+            rejectionReason: null,
+            rejectionNote: null,
+          }),
+        });
+        // Should NOT create a new request
+        expect(mockPrisma.accessRequest.create).not.toHaveBeenCalled();
+      });
+
+      it('should allow resubmission after EXPIRED request', async () => {
+        mockPrisma.club.findFirst.mockResolvedValue({
+          id: 'club-1',
+          name: 'Test Club',
+          slug: 'test-club',
+        });
+        mockPrisma.clubUser.findFirst.mockResolvedValue(null);
+        mockPrisma.accessRequest.findFirst.mockResolvedValue({
+          id: 'existing-request',
+          status: 'EXPIRED',
+        });
+        mockPrisma.accessRequest.update.mockResolvedValue({});
+
+        const result = await service.joinWithCode(userId, validCode);
+
+        expect(result.message).toBe('Deine Anfrage wurde erneut gesendet.');
+        expect(result.status).toBe('request_sent');
+        expect(mockPrisma.accessRequest.update).toHaveBeenCalledWith({
+          where: { id: 'existing-request' },
+          data: expect.objectContaining({
+            status: 'PENDING',
+            message: 'Beitritt über Einladungscode (erneute Anfrage)',
+          }),
+        });
+      });
+
+      it('should handle APPROVED request status gracefully', async () => {
+        mockPrisma.club.findFirst.mockResolvedValue({
+          id: 'club-1',
+          name: 'Test Club',
+          slug: 'test-club',
+        });
+        mockPrisma.clubUser.findFirst.mockResolvedValue(null);
+        mockPrisma.accessRequest.findFirst.mockResolvedValue({
+          id: 'existing-request',
+          status: 'APPROVED',
+        });
+
+        const result = await service.joinWithCode(userId, validCode);
+
+        expect(result.message).toBe('Deine Anfrage wurde bereits genehmigt');
+        expect(result.status).toBe('already_member');
       });
     });
 
@@ -236,6 +333,94 @@ describe('AccessRequestsService', () => {
       });
     });
 
+    describe('resubmission after rejection/expiry', () => {
+      it('should allow resubmission after REJECTED request', async () => {
+        mockPrisma.club.findFirst.mockResolvedValue({
+          id: 'club-1',
+          visibility: 'PUBLIC',
+        });
+        mockPrisma.clubUser.findFirst.mockResolvedValue(null);
+        mockPrisma.accessRequest.count.mockResolvedValue(0);
+        mockPrisma.accessRequest.findFirst.mockResolvedValue({
+          id: 'existing-request',
+          status: 'REJECTED',
+          rejectionReason: 'BOARD_ONLY',
+        });
+        mockPrisma.accessRequest.update.mockResolvedValue({
+          id: 'existing-request',
+          status: 'PENDING',
+          club: { id: 'club-1', name: 'Test Club', slug: 'test-club' },
+        });
+
+        const result = await service.requestAccess(
+          userId,
+          clubSlug,
+          'Erneute Anfrage',
+        );
+
+        expect(result.message).toBe('Anfrage wurde erneut gesendet');
+        expect(mockPrisma.accessRequest.update).toHaveBeenCalledWith({
+          where: { id: 'existing-request' },
+          data: expect.objectContaining({
+            status: 'PENDING',
+            message: 'Erneute Anfrage',
+            rejectionReason: null,
+            rejectionNote: null,
+          }),
+          include: expect.any(Object),
+        });
+        // Should NOT create a new request
+        expect(mockPrisma.accessRequest.create).not.toHaveBeenCalled();
+      });
+
+      it('should allow resubmission after EXPIRED request', async () => {
+        mockPrisma.club.findFirst.mockResolvedValue({
+          id: 'club-1',
+          visibility: 'PUBLIC',
+        });
+        mockPrisma.clubUser.findFirst.mockResolvedValue(null);
+        mockPrisma.accessRequest.count.mockResolvedValue(0);
+        mockPrisma.accessRequest.findFirst.mockResolvedValue({
+          id: 'existing-request',
+          status: 'EXPIRED',
+        });
+        mockPrisma.accessRequest.update.mockResolvedValue({
+          id: 'existing-request',
+          status: 'PENDING',
+          club: { id: 'club-1', name: 'Test Club', slug: 'test-club' },
+        });
+
+        const result = await service.requestAccess(userId, clubSlug);
+
+        expect(result.message).toBe('Anfrage wurde erneut gesendet');
+        expect(mockPrisma.accessRequest.update).toHaveBeenCalledWith({
+          where: { id: 'existing-request' },
+          data: expect.objectContaining({
+            status: 'PENDING',
+            message: 'Erneute Anfrage',
+          }),
+          include: expect.any(Object),
+        });
+      });
+
+      it('should fail for APPROVED request (edge case)', async () => {
+        mockPrisma.club.findFirst.mockResolvedValue({
+          id: 'club-1',
+          visibility: 'PUBLIC',
+        });
+        mockPrisma.clubUser.findFirst.mockResolvedValue(null);
+        mockPrisma.accessRequest.count.mockResolvedValue(0);
+        mockPrisma.accessRequest.findFirst.mockResolvedValue({
+          id: 'existing-request',
+          status: 'APPROVED',
+        });
+
+        await expect(service.requestAccess(userId, clubSlug)).rejects.toThrow(
+          BadRequestException,
+        );
+      });
+    });
+
     describe('error cases', () => {
       it('should fail for private clubs', async () => {
         mockPrisma.club.findFirst.mockResolvedValue({
@@ -317,12 +502,12 @@ describe('AccessRequestsService', () => {
           club: { id: 'club-1' },
         });
         mockPrisma.clubUser.findFirst.mockResolvedValue({
-          role: 'ADMIN',
+          roles: ['ADMIN'],
           status: 'ACTIVE',
         });
         mockPrisma.$transaction.mockResolvedValue([]);
 
-        const result = await service.approve(requestId, 'VIEWER', adminUserId);
+        const result = await service.approve(requestId, ['MEMBER'], adminUserId);
 
         expect(result.message).toBe('Anfrage genehmigt');
         expect(mockPrisma.$transaction).toHaveBeenCalled();
@@ -337,12 +522,12 @@ describe('AccessRequestsService', () => {
           club: { id: 'club-1' },
         });
         mockPrisma.clubUser.findFirst.mockResolvedValue({
-          role: 'OWNER',
+          roles: ['OWNER'],
           status: 'ACTIVE',
         });
         mockPrisma.$transaction.mockResolvedValue([]);
 
-        const result = await service.approve(requestId, 'VIEWER', adminUserId);
+        const result = await service.approve(requestId, ['MEMBER'], adminUserId);
 
         expect(result.message).toBe('Anfrage genehmigt');
       });
@@ -356,7 +541,7 @@ describe('AccessRequestsService', () => {
         });
 
         await expect(
-          service.approve(requestId, 'VIEWER', adminUserId),
+          service.approve(requestId, ['MEMBER'], adminUserId),
         ).rejects.toThrow(BadRequestException);
       });
 
@@ -371,7 +556,7 @@ describe('AccessRequestsService', () => {
         mockPrisma.clubUser.findFirst.mockResolvedValue(null);
 
         await expect(
-          service.approve(requestId, 'VIEWER', adminUserId),
+          service.approve(requestId, ['MEMBER'], adminUserId),
         ).rejects.toThrow(ForbiddenException);
       });
 
@@ -379,7 +564,7 @@ describe('AccessRequestsService', () => {
         mockPrisma.accessRequest.findUnique.mockResolvedValue(null);
 
         await expect(
-          service.approve(requestId, 'VIEWER', adminUserId),
+          service.approve(requestId, ['MEMBER'], adminUserId),
         ).rejects.toThrow(NotFoundException);
       });
     });
@@ -397,7 +582,7 @@ describe('AccessRequestsService', () => {
           status: 'PENDING',
         });
         mockPrisma.clubUser.findFirst.mockResolvedValue({
-          role: 'ADMIN',
+          roles: ['ADMIN'],
           status: 'ACTIVE',
         });
         mockPrisma.accessRequest.update.mockResolvedValue({});
@@ -420,7 +605,7 @@ describe('AccessRequestsService', () => {
           status: 'PENDING',
         });
         mockPrisma.clubUser.findFirst.mockResolvedValue({
-          role: 'ADMIN',
+          roles: ['ADMIN'],
           status: 'ACTIVE',
         });
         mockPrisma.accessRequest.update.mockResolvedValue({});
@@ -452,7 +637,7 @@ describe('AccessRequestsService', () => {
           status: 'PENDING',
         });
         mockPrisma.clubUser.findFirst.mockResolvedValue({
-          role: 'ADMIN',
+          roles: ['ADMIN'],
           status: 'ACTIVE',
         });
 
@@ -579,7 +764,7 @@ describe('AccessRequestsService', () => {
         slug: 'test-club',
       });
       mockPrisma.clubUser.findFirst.mockResolvedValue({
-        role: 'ADMIN',
+        roles: ['ADMIN'],
         status: 'ACTIVE',
       });
       mockPrisma.accessRequest.findMany.mockResolvedValue([

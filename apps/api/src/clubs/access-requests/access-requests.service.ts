@@ -24,13 +24,14 @@ export class AccessRequestsService {
 
   /**
    * Join a private club using invite code.
-   * Directly adds user as VIEWER if code is valid.
+   * Creates an access request that needs admin approval.
+   * Note: Direct email invitations bypass this and create ACTIVE memberships directly.
    */
   async joinWithCode(userId: string, code: string) {
     const normalizedCode = normalizeInviteCode(code);
 
     if (!isInviteCodeValid(normalizedCode)) {
-      throw new BadRequestException('Ungultiger Einladungscode');
+      throw new BadRequestException('Ungültiger Einladungscode');
     }
 
     // Find club by invite code
@@ -57,28 +58,95 @@ export class AccessRequestsService {
 
     if (existingMembership) {
       if (existingMembership.status === 'ACTIVE') {
-        return { message: 'Du bist bereits Mitglied dieses Vereins', club };
+        return {
+          message: 'Du bist bereits Mitglied dieses Vereins',
+          status: 'already_member' as const,
+          club: { id: club.id, name: club.name, slug: club.slug },
+        };
       }
-      // Reactivate suspended/pending membership
-      await this.prisma.clubUser.update({
-        where: { id: existingMembership.id },
-        data: { status: 'ACTIVE' },
-      });
-      return { message: 'Deine Mitgliedschaft wurde reaktiviert', club };
+      // Already has a pending/suspended membership - inform user
+      return {
+        message: 'Deine Anfrage wird noch bearbeitet',
+        status: 'pending' as const,
+        club: { id: club.id, name: club.name, slug: club.slug },
+      };
     }
 
-    // Create membership
-    await this.prisma.clubUser.create({
+    // Check if already has a request for this club (any status)
+    const existingRequest = await this.prisma.accessRequest.findFirst({
+      where: {
+        userId,
+        clubId: club.id,
+      },
+    });
+
+    if (existingRequest) {
+      if (existingRequest.status === 'PENDING') {
+        return {
+          message: 'Du hast bereits eine Anfrage für diesen Verein gestellt',
+          status: 'pending' as const,
+          club: { id: club.id, name: club.name, slug: club.slug },
+        };
+      }
+
+      if (existingRequest.status === 'REJECTED' || existingRequest.status === 'EXPIRED') {
+        // Allow resubmission by updating the existing request
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+
+        await this.prisma.accessRequest.update({
+          where: { id: existingRequest.id },
+          data: {
+            status: 'PENDING',
+            message: 'Beitritt über Einladungscode (erneute Anfrage)',
+            rejectionReason: null,
+            rejectionNote: null,
+            expiresAt,
+          },
+        });
+
+        return {
+          message: 'Deine Anfrage wurde erneut gesendet.',
+          status: 'request_sent' as const,
+          club: { id: club.id, name: club.name, slug: club.slug },
+        };
+      }
+
+      // APPROVED status - shouldn't happen since they'd be a member, but handle gracefully
+      return {
+        message: 'Deine Anfrage wurde bereits genehmigt',
+        status: 'already_member' as const,
+        club: { id: club.id, name: club.name, slug: club.slug },
+      };
+    }
+
+    // Check rate limit: max 5 pending requests per user
+    const pendingCount = await this.prisma.accessRequest.count({
+      where: { userId, status: 'PENDING' },
+    });
+
+    if (pendingCount >= 5) {
+      throw new BadRequestException(
+        'Du hast bereits 5 ausstehende Anfragen. Bitte warte auf eine Antwort.',
+      );
+    }
+
+    // Create access request (pending admin approval)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
+    await this.prisma.accessRequest.create({
       data: {
         userId,
         clubId: club.id,
-        role: 'VIEWER',
-        status: 'ACTIVE',
+        message: 'Beitritt über Einladungscode',
+        expiresAt,
       },
     });
 
     return {
-      message: 'Du bist dem Verein beigetreten',
+      message: 'Deine Anfrage wurde gesendet.',
+      status: 'request_sent' as const,
       club: {
         id: club.id,
         name: club.name,
@@ -130,18 +198,54 @@ export class AccessRequestsService {
       );
     }
 
-    // Check if already requested this club
+    // Check if already requested this club (any status)
     const existingRequest = await this.prisma.accessRequest.findFirst({
       where: {
         userId,
         clubId: club.id,
-        status: 'PENDING',
       },
     });
 
     if (existingRequest) {
+      if (existingRequest.status === 'PENDING') {
+        throw new BadRequestException(
+          'Du hast bereits eine Anfrage fuer diesen Verein gestellt',
+        );
+      }
+
+      if (
+        existingRequest.status === 'REJECTED' ||
+        existingRequest.status === 'EXPIRED'
+      ) {
+        // Allow resubmission by updating the existing request
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+
+        const request = await this.prisma.accessRequest.update({
+          where: { id: existingRequest.id },
+          data: {
+            status: 'PENDING',
+            message: message || 'Erneute Anfrage',
+            rejectionReason: null,
+            rejectionNote: null,
+            expiresAt,
+          },
+          include: {
+            club: {
+              select: { id: true, name: true, slug: true },
+            },
+          },
+        });
+
+        return {
+          message: 'Anfrage wurde erneut gesendet',
+          request,
+        };
+      }
+
+      // APPROVED status - shouldn't happen since they'd be a member
       throw new BadRequestException(
-        'Du hast bereits eine Anfrage fuer diesen Verein gestellt',
+        'Deine Anfrage wurde bereits genehmigt. Bitte lade die Seite neu.',
       );
     }
 
@@ -204,9 +308,9 @@ export class AccessRequestsService {
   }
 
   /**
-   * Approve an access request.
+   * Approve an access request with specified roles.
    */
-  async approve(requestId: string, role: string, adminUserId: string) {
+  async approve(requestId: string, roles: string[], adminUserId: string) {
     const request = await this.prisma.accessRequest.findUnique({
       where: { id: requestId },
       include: { club: true },
@@ -223,13 +327,18 @@ export class AccessRequestsService {
     // Verify admin access
     await this.verifyClubAdmin(request.clubId, adminUserId);
 
+    // Validate roles
+    if (!roles || roles.length === 0) {
+      throw new BadRequestException('Mindestens eine Rolle erforderlich');
+    }
+
     // Create membership and update request in transaction
     await this.prisma.$transaction([
       this.prisma.clubUser.create({
         data: {
           userId: request.userId,
           clubId: request.clubId,
-          role: role as 'VIEWER' | 'TREASURER' | 'ADMIN',
+          roles: roles as ('MEMBER' | 'TREASURER' | 'SECRETARY' | 'ADMIN')[],
           status: 'ACTIVE',
           invitedById: adminUserId,
         },
@@ -355,7 +464,7 @@ export class AccessRequestsService {
         userId,
         clubId,
         status: 'ACTIVE',
-        role: { in: ['OWNER', 'ADMIN'] },
+        roles: { hasSome: ['OWNER', 'ADMIN'] },
       },
     });
 
