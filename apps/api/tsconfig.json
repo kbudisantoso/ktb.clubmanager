@@ -5,10 +5,7 @@
     "outDir": "./dist",
     "noEmit": false,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "paths": {
-      "@ktb/shared": ["../../packages/shared/src/index.ts"]
-    }
+    "emitDecoratorMetadata": true
   },
   "include": ["src/**/*"]
 }

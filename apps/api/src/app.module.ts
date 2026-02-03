@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { SettingsModule } from './settings/settings.module';
 import { AdminModule } from './admin/admin.module';
 import { ClubsModule } from './clubs/clubs.module';
+import { MeModule } from './me/me.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ClubsModule } from './clubs/clubs.module';
     SettingsModule,
     AuthModule,
     AdminModule,
+    MeModule,
     ClubsModule,
     HealthModule,
   ],

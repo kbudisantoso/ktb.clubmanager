@@ -1,6 +1,7 @@
+import type {
+  PrismaClient} from '../../../../../prisma/generated/client/index.js';
 import {
   Prisma,
-  PrismaClient,
   type Prisma as PrismaNamespace,
 } from '../../../../../prisma/generated/client/index.js';
 
