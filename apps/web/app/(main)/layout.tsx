@@ -1,4 +1,5 @@
 import { Header } from "@/components/layout/header"
+import { ClubSync } from "@/components/providers/club-sync"
 
 export default function MainLayout({
   children,
@@ -7,6 +8,7 @@ export default function MainLayout({
 }) {
   return (
     <>
+      <ClubSync />
       {/* Subtle gradient background for in-app pages */}
       <div className="app-background" />
 

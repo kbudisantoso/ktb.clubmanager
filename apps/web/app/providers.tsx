@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect } from "react"
+import { useState, useEffect } from "react"
 import { ThemeProvider } from "next-themes"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Toaster } from "@/components/ui/sonner"
 import { getAuthBroadcast } from "@/lib/broadcast-auth"
 
@@ -43,19 +44,41 @@ function AuthSyncProvider({ children }: { children: React.ReactNode }) {
  * Root providers component that wraps the application.
  * Includes ThemeProvider for dark/light mode support.
  * Includes AuthSyncProvider for cross-tab authentication sync.
+ * Includes QueryClientProvider for server state management.
  */
 export function Providers({ children }: { children: React.ReactNode }) {
+  // Create QueryClient once per client instance
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            // Consider data fresh for 30 seconds
+            staleTime: 30 * 1000,
+            // Keep unused data in cache for 5 minutes
+            gcTime: 5 * 60 * 1000,
+            // Retry failed requests once
+            retry: 1,
+            // Don't refetch on window focus in development
+            refetchOnWindowFocus: process.env.NODE_ENV === "production",
+          },
+        },
+      })
+  )
+
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <AuthSyncProvider>
-        {children}
-        <Toaster richColors />
-      </AuthSyncProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <AuthSyncProvider>
+          {children}
+          <Toaster richColors />
+        </AuthSyncProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   )
 }
