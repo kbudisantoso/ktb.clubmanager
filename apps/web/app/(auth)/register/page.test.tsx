@@ -4,8 +4,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock next/navigation
 const mockPush = vi.fn();
+const mockSearchParams = new URLSearchParams();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
+  useSearchParams: () => mockSearchParams,
 }));
 
 // Mock next/image
@@ -23,6 +25,12 @@ vi.mock("@/lib/auth-client", () => ({
       email: (...args: unknown[]) => mockSignUpEmail(...args),
     },
   },
+}));
+
+// Mock session hook
+vi.mock("@/hooks/use-session", () => ({
+  useSessionQuery: () => ({ data: null, isLoading: false }),
+  useClearSession: () => vi.fn(),
 }));
 
 // Mock password validation - avoid loading zxcvbn

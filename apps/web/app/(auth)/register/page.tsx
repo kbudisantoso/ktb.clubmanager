@@ -1,23 +1,27 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PasswordStrength } from "@/components/auth/password-strength"
 import { validatePassword } from "@/lib/password-validation"
-import { authClient, useSession } from "@/lib/auth-client"
+import { authClient } from "@/lib/auth-client"
+import { useSessionQuery, useClearSession } from "@/hooks/use-session"
 import { getAuthBroadcast } from "@/lib/broadcast-auth"
 import { ArrowLeft, Loader2, Check, Sparkles, LogOut, LayoutDashboard } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { LegalFooterLinks, DatenschutzLink, NutzungsbedingungenLink } from "@/components/layout/legal-links"
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter()
-  const { data: session, isPending } = useSession()
+  const searchParams = useSearchParams()
+  const { data: session, isLoading: isPending } = useSessionQuery()
+  const clearSession = useClearSession()
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
   const [email, setEmail] = useState("")
   const [name, setName] = useState("")
   const [password, setPassword] = useState("")
@@ -80,10 +84,11 @@ export default function RegisterPage() {
         // Notify other tabs
         getAuthBroadcast().notifyLogin()
 
-        // Show success state briefly then redirect
+        // Show success state briefly then redirect to callback URL (e.g., join page)
+        // Use window.location.href for full page reload to ensure fresh session data
         setSuccess(true)
         setTimeout(() => {
-          router.push("/dashboard")
+          window.location.href = callbackUrl
         }, 1500)
       }
     } catch {
@@ -95,6 +100,7 @@ export default function RegisterPage() {
   const handleLogoutAndRegister = async () => {
     getAuthBroadcast().notifyLogout()
     getAuthBroadcast().clearAuthState()
+    clearSession()
     await authClient.signOut()
     // Page will re-render without session, showing the registration form
   }
@@ -208,7 +214,7 @@ export default function RegisterPage() {
         <div className="glass-panel rounded-2xl p-8 sm:p-10">
           {/* Back link */}
           <Link
-            href="/login"
+            href={callbackUrl !== "/dashboard" ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/login"}
             className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
@@ -341,6 +347,34 @@ export default function RegisterPage() {
         <footer className="mt-8 text-xs text-center text-foreground/70 space-x-4">
           <LegalFooterLinks />
         </footer>
+      </div>
+    </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<RegisterPageSkeleton />}>
+      <RegisterContent />
+    </Suspense>
+  )
+}
+
+function RegisterPageSkeleton() {
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
+      <div className="w-full max-w-md">
+        <div className="glass-panel rounded-2xl p-8 sm:p-10 animate-pulse">
+          <div className="h-6 w-32 bg-muted/50 rounded mb-6" />
+          <div className="h-9 w-40 bg-muted/50 rounded mx-auto mb-6" />
+          <div className="h-8 w-48 bg-muted/50 rounded mx-auto mb-2" />
+          <div className="h-4 w-36 bg-muted/50 rounded mx-auto mb-8" />
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
       </div>
     </div>
   )

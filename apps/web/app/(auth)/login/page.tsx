@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { GoogleIcon } from "@/components/icons"
-import { authClient, useSession } from "@/lib/auth-client"
+import { authClient } from "@/lib/auth-client"
+import { useSessionQuery } from "@/hooks/use-session"
 import { getAuthBroadcast } from "@/lib/broadcast-auth"
 import { ArrowLeft, Loader2, Check } from "lucide-react"
 import { LegalFooterLinks } from "@/components/layout/legal-links"
@@ -18,7 +19,7 @@ type LoginStep = "email" | "auth-options"
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { data: session, isPending } = useSession()
+  const { data: session, isLoading: isPending } = useSessionQuery()
   const signedOut = searchParams.get("signedOut") === "true"
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
 
@@ -261,7 +262,7 @@ function LoginContent() {
 
               <p className="text-center text-sm text-muted-foreground">
                 Noch kein Konto?{" "}
-                <Link href="/register" className="text-accent hover:underline font-medium">
+                <Link href={callbackUrl !== "/dashboard" ? `/register?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/register"} className="text-accent hover:underline font-medium">
                   Jetzt registrieren
                 </Link>
               </p>
@@ -324,7 +325,7 @@ function LoginContent() {
 
                 <div className="flex justify-between text-sm">
                   <Link
-                    href="/register"
+                    href={callbackUrl !== "/dashboard" ? `/register?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/register"}
                     className="text-muted-foreground hover:text-foreground hover:underline"
                   >
                     Konto erstellen

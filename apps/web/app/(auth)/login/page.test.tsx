@@ -29,6 +29,11 @@ vi.mock("@/lib/auth-client", () => ({
   },
 }));
 
+// Mock session hook
+vi.mock("@/hooks/use-session", () => ({
+  useSessionQuery: () => ({ data: null, isLoading: false }),
+}));
+
 // Mock broadcast auth
 vi.mock("@/lib/broadcast-auth", () => ({
   getAuthBroadcast: () => ({
