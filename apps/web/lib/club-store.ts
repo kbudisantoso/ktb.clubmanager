@@ -11,7 +11,8 @@ export interface ClubContext {
   id: string
   name: string
   slug: string
-  role: string
+  /** User's roles in this club (multiple roles possible) */
+  roles: string[]
   avatarUrl?: string
   avatarInitials?: string
   avatarColor?: string
@@ -118,3 +119,4 @@ export function useNeedsClubRefresh(): boolean {
   const FIVE_MINUTES = 5 * 60 * 1000
   return Date.now() - lastFetched > FIVE_MINUTES
 }
+

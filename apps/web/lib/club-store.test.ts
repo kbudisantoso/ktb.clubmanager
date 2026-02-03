@@ -74,8 +74,8 @@ describe("club-store", () => {
         const { result } = renderHook(() => useClubStore())
 
         const clubs: ClubContext[] = [
-          { id: "1", name: "Club One", slug: "club-one", role: "OWNER" },
-          { id: "2", name: "Club Two", slug: "club-two", role: "VIEWER" },
+          { id: "1", name: "Club One", slug: "club-one", roles: ["OWNER"] },
+          { id: "2", name: "Club Two", slug: "club-two", roles: ["MEMBER"] },
         ]
 
         act(() => {
@@ -93,7 +93,7 @@ describe("club-store", () => {
         const beforeTime = Date.now()
 
         act(() => {
-          result.current.setClubs([{ id: "1", name: "Club", slug: "club", role: "OWNER" }])
+          result.current.setClubs([{ id: "1", name: "Club", slug: "club", roles: ["OWNER"] }])
         })
 
         const afterTime = Date.now()
@@ -109,7 +109,7 @@ describe("club-store", () => {
 
         // Set up some state
         act(() => {
-          result.current.setClubs([{ id: "1", name: "Club", slug: "club", role: "OWNER" }])
+          result.current.setClubs([{ id: "1", name: "Club", slug: "club", roles: ["OWNER"] }])
           result.current.setActiveClub("club")
         })
 
@@ -133,7 +133,7 @@ describe("club-store", () => {
         const { result } = renderHook(() => useClubStore())
 
         act(() => {
-          result.current.setClubs([{ id: "1", name: "Club", slug: "club", role: "OWNER" }])
+          result.current.setClubs([{ id: "1", name: "Club", slug: "club", roles: ["OWNER"] }])
           result.current.setActiveClub("club")
         })
 
@@ -158,8 +158,8 @@ describe("club-store", () => {
     it("should return correct club after hydration", async () => {
       // Set up store state before rendering hook
       const clubs: ClubContext[] = [
-        { id: "1", name: "Club One", slug: "club-one", role: "OWNER" },
-        { id: "2", name: "Club Two", slug: "club-two", role: "VIEWER" },
+        { id: "1", name: "Club One", slug: "club-one", roles: ["OWNER"] },
+        { id: "2", name: "Club Two", slug: "club-two", roles: ["MEMBER"] },
       ]
 
       act(() => {
@@ -180,14 +180,14 @@ describe("club-store", () => {
         id: "1",
         name: "Club One",
         slug: "club-one",
-        role: "OWNER",
+        roles: ["OWNER"],
       })
     })
 
     it("should return null when activeClubSlug does not match any club", () => {
       act(() => {
         useClubStore.setState({
-          clubs: [{ id: "1", name: "Club One", slug: "club-one", role: "OWNER" }],
+          clubs: [{ id: "1", name: "Club One", slug: "club-one", roles: ["OWNER"] }],
           activeClubSlug: "nonexistent",
           lastFetched: Date.now(),
         })
@@ -210,8 +210,8 @@ describe("club-store", () => {
 
     it("should return all clubs after hydration", () => {
       const clubs: ClubContext[] = [
-        { id: "1", name: "Club One", slug: "club-one", role: "OWNER" },
-        { id: "2", name: "Club Two", slug: "club-two", role: "VIEWER" },
+        { id: "1", name: "Club One", slug: "club-one", roles: ["OWNER"] },
+        { id: "2", name: "Club Two", slug: "club-two", roles: ["MEMBER"] },
       ]
 
       act(() => {
@@ -241,7 +241,7 @@ describe("club-store", () => {
     it("should return true when lastFetched is null", () => {
       act(() => {
         useClubStore.setState({
-          clubs: [{ id: "1", name: "Club", slug: "club", role: "OWNER" }],
+          clubs: [{ id: "1", name: "Club", slug: "club", roles: ["OWNER"] }],
           activeClubSlug: null,
           lastFetched: null,
         })
@@ -257,7 +257,7 @@ describe("club-store", () => {
 
       act(() => {
         useClubStore.setState({
-          clubs: [{ id: "1", name: "Club", slug: "club", role: "OWNER" }],
+          clubs: [{ id: "1", name: "Club", slug: "club", roles: ["OWNER"] }],
           activeClubSlug: null,
           lastFetched: sixMinutesAgo,
         })
@@ -271,7 +271,7 @@ describe("club-store", () => {
     it("should return false when data is fresh", () => {
       act(() => {
         useClubStore.setState({
-          clubs: [{ id: "1", name: "Club", slug: "club", role: "OWNER" }],
+          clubs: [{ id: "1", name: "Club", slug: "club", roles: ["OWNER"] }],
           activeClubSlug: null,
           lastFetched: Date.now(),
         })
