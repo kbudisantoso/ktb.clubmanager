@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SuperAdminGuard } from './super-admin.guard.js';
-import { Reflector } from '@nestjs/core';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { ExecutionContext, ForbiddenException } from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
+import type { PrismaService } from '../../prisma/prisma.service.js';
+import type { ExecutionContext} from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
 
 // Mock Reflector
 const mockReflector = {
@@ -81,7 +82,7 @@ describe('SuperAdminGuard', () => {
         ForbiddenException,
       );
       await expect(guard.canActivate(context)).rejects.toThrow(
-        'Authentication required',
+        'Authentifizierung erforderlich',
       );
     });
 
@@ -95,7 +96,7 @@ describe('SuperAdminGuard', () => {
         ForbiddenException,
       );
       await expect(guard.canActivate(context)).rejects.toThrow(
-        'Super Admin access required',
+        'Nur für Plattform-Admins',
       );
     });
 
@@ -112,7 +113,7 @@ describe('SuperAdminGuard', () => {
         ForbiddenException,
       );
       await expect(guard.canActivate(context)).rejects.toThrow(
-        'Super Admin access required',
+        'Nur für Plattform-Admins',
       );
     });
 

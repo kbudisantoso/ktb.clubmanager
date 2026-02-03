@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClubContextGuard } from './club-context.guard.js';
-import { Reflector } from '@nestjs/core';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
+import type { PrismaService } from '../../prisma/prisma.service.js';
+import type { ExecutionContext} from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CLUB_CONTEXT_KEY } from '../decorators/club-context.decorator.js';
 import { ROLES_KEY } from '../decorators/roles.decorator.js';
 
@@ -71,7 +72,7 @@ describe('ClubContextGuard', () => {
         .mockReturnValueOnce(null); // RequireRoles
 
       mockPrisma.clubUser.findFirst.mockResolvedValue({
-        role: 'VIEWER',
+        roles: ['MEMBER'],
         club: { id: 'club-1', slug: 'test-club' },
       });
 
@@ -100,7 +101,7 @@ describe('ClubContextGuard', () => {
         .mockReturnValueOnce(null); // RequireRoles
 
       mockPrisma.clubUser.findFirst.mockResolvedValue({
-        role: 'ADMIN',
+        roles: ['ADMIN'],
         club: { id: 'club-1', slug: 'header-club' },
       });
 
@@ -127,7 +128,7 @@ describe('ClubContextGuard', () => {
         .mockReturnValueOnce(null); // RequireRoles
 
       mockPrisma.clubUser.findFirst.mockResolvedValue({
-        role: 'OWNER',
+        roles: ['OWNER'],
         club: { id: 'club-1', slug: 'test-club' },
       });
 
@@ -142,7 +143,7 @@ describe('ClubContextGuard', () => {
       expect(request.clubContext).toEqual({
         clubId: 'club-1',
         clubSlug: 'test-club',
-        role: 'OWNER',
+        roles: ['OWNER'],
       });
     });
 
@@ -152,7 +153,7 @@ describe('ClubContextGuard', () => {
         .mockReturnValueOnce(['ADMIN', 'OWNER']); // RequireRoles
 
       mockPrisma.clubUser.findFirst.mockResolvedValue({
-        role: 'ADMIN',
+        roles: ['ADMIN'],
         club: { id: 'club-1', slug: 'test-club' },
       });
 
@@ -174,7 +175,7 @@ describe('ClubContextGuard', () => {
         .mockReturnValueOnce(null); // RequireRoles
 
       mockPrisma.clubUser.findFirst.mockResolvedValue({
-        role: 'VIEWER',
+        roles: ['MEMBER'],
         club: { id: 'club-1', slug: 'params-club' },
       });
 
@@ -205,7 +206,7 @@ describe('ClubContextGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        new ForbiddenException('Authentication required'),
+        new ForbiddenException('Authentifizierung erforderlich'),
       );
     });
 
@@ -217,7 +218,7 @@ describe('ClubContextGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        new ForbiddenException('Club context required'),
+        new ForbiddenException('Vereinskontext erforderlich'),
       );
     });
 
@@ -235,7 +236,7 @@ describe('ClubContextGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        new NotFoundException('Club not found'),
+        new NotFoundException('Verein nicht gefunden'),
       );
     });
 
@@ -253,7 +254,7 @@ describe('ClubContextGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        new ForbiddenException('No access to this club'),
+        new ForbiddenException('Kein Zugriff auf diesen Verein'),
       );
     });
 
@@ -263,7 +264,7 @@ describe('ClubContextGuard', () => {
         .mockReturnValueOnce(['ADMIN', 'OWNER']); // RequireRoles
 
       mockPrisma.clubUser.findFirst.mockResolvedValue({
-        role: 'VIEWER',
+        roles: ['MEMBER'],
         club: { id: 'club-1', slug: 'test-club' },
       });
 
@@ -273,7 +274,7 @@ describe('ClubContextGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        new ForbiddenException('Required role: ADMIN or OWNER'),
+        new ForbiddenException('Erforderliche Rolle: ADMIN oder OWNER'),
       );
     });
   });

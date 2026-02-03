@@ -98,9 +98,13 @@ export class SessionAuthGuard implements CanActivate {
     }
 
     // Check cookie
+    // Better Auth signs the token: format is "<tokenId>.<signature>"
+    // We only need the tokenId part to query the database
     const cookieToken = request.cookies?.['better-auth.session_token'];
     if (cookieToken) {
-      return cookieToken;
+      // Extract just the token ID (before the dot)
+      const [tokenId] = cookieToken.split('.');
+      return tokenId;
     }
 
     return null;

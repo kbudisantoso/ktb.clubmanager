@@ -1,7 +1,8 @@
+import type {
+  ExecutionContext} from '@nestjs/common';
 import {
   SetMetadata,
-  createParamDecorator,
-  ExecutionContext,
+  createParamDecorator
 } from '@nestjs/common';
 
 export const CLUB_CONTEXT_KEY = 'require_club_context';
@@ -18,7 +19,8 @@ export const RequireClubContext = () => SetMetadata(CLUB_CONTEXT_KEY, true);
 export interface ClubContext {
   clubId: string;
   clubSlug: string;
-  role: string;
+  /** User's roles in this club (multiple roles possible) */
+  roles: string[];
 }
 
 /**

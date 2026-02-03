@@ -12,6 +12,8 @@ import {
   ClubContext,
 } from '../decorators/club-context.decorator.js';
 import { ROLES_KEY } from '../decorators/roles.decorator.js';
+import { hasAccess, hasAnyRole } from '../permissions/club-permissions.js';
+import { ClubRole } from '../../../../../prisma/generated/client/index.js';
 
 @Injectable()
 export class ClubContextGuard implements CanActivate {
@@ -35,14 +37,14 @@ export class ClubContextGuard implements CanActivate {
     const userId = request.user?.id;
 
     if (!userId) {
-      throw new ForbiddenException('Authentication required');
+      throw new ForbiddenException('Authentifizierung erforderlich');
     }
 
     // Get club slug from route params or header
     const clubSlug = request.params.slug || request.headers['x-club-slug'];
 
     if (!clubSlug) {
-      throw new ForbiddenException('Club context required');
+      throw new ForbiddenException('Vereinskontext erforderlich');
     }
 
     // Verify user has access to this club
@@ -69,22 +71,31 @@ export class ClubContextGuard implements CanActivate {
       });
 
       if (!club) {
-        throw new NotFoundException('Club not found');
+        throw new NotFoundException('Verein nicht gefunden');
       }
 
-      throw new ForbiddenException('No access to this club');
+      throw new ForbiddenException('Kein Zugriff auf diesen Verein');
     }
 
-    // Check role requirements
+    // User exists but has no roles = no access
+    if (!hasAccess(clubUser.roles)) {
+      throw new ForbiddenException('Kein Zugriff auf diesen Verein');
+    }
+
+    // Check role requirements (user must have at least one of the required roles)
     const requiredRoles = this.reflector.getAllAndOverride<string[]>(
       ROLES_KEY,
       [context.getHandler(), context.getClass()],
     );
 
     if (requiredRoles && requiredRoles.length > 0) {
-      if (!requiredRoles.includes(clubUser.role)) {
+      const userHasRequiredRole = hasAnyRole(
+        clubUser.roles,
+        requiredRoles as ClubRole[],
+      );
+      if (!userHasRequiredRole) {
         throw new ForbiddenException(
-          `Required role: ${requiredRoles.join(' or ')}`,
+          `Erforderliche Rolle: ${requiredRoles.join(' oder ')}`,
         );
       }
     }
@@ -93,7 +104,7 @@ export class ClubContextGuard implements CanActivate {
     const clubContext: ClubContext = {
       clubId: clubUser.club.id,
       clubSlug: clubUser.club.slug,
-      role: clubUser.role,
+      roles: clubUser.roles,
     };
     request.clubContext = clubContext;
 

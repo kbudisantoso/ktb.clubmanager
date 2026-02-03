@@ -30,7 +30,7 @@ export class SuperAdminGuard implements CanActivate {
     const userId = request.user?.id;
 
     if (!userId) {
-      throw new ForbiddenException('Authentication required');
+      throw new ForbiddenException('Authentifizierung erforderlich');
     }
 
     const user = await this.prisma.user.findUnique({
@@ -39,7 +39,7 @@ export class SuperAdminGuard implements CanActivate {
     });
 
     if (!user?.isSuperAdmin) {
-      throw new ForbiddenException('Super Admin access required');
+      throw new ForbiddenException('Nur für Plattform-Admins');
     }
 
     return true;
