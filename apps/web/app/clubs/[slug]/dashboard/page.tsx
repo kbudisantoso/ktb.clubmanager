@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useActiveClub } from '@/lib/club-store';
-import { Users, CreditCard, FileText, Settings, Copy, Check } from 'lucide-react';
+import { useCanManageSettings } from '@/lib/club-permissions';
+import { apiFetch } from '@/lib/api';
+import { Users, BookOpen, Copy, Check } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -29,9 +30,10 @@ interface ClubDetails {
 
 export default function ClubDashboardPage() {
   const params = useParams();
-  const activeClub = useActiveClub();
+  const canManageSettings = useCanManageSettings();
   const [club, setClub] = useState<ClubDetails | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const slug = params.slug as string;
 
@@ -40,7 +42,7 @@ export default function ClubDashboardPage() {
   }, [slug]);
 
   async function fetchClubDetails() {
-    const res = await fetch(`/api/clubs/${slug}`, { credentials: 'include' });
+    const res = await apiFetch(`/api/clubs/${slug}`);
     if (res.ok) {
       setClub(await res.json());
     }
@@ -49,8 +51,17 @@ export default function ClubDashboardPage() {
   async function copyInviteCode() {
     if (club?.inviteCode) {
       await navigator.clipboard.writeText(club.inviteCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    }
+  }
+
+  async function copyInviteLink() {
+    if (club?.inviteCode && typeof window !== 'undefined') {
+      const link = `${window.location.origin}/join/${club.inviteCode}`;
+      await navigator.clipboard.writeText(link);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
     }
   }
 
@@ -60,9 +71,7 @@ export default function ClubDashboardPage() {
 
   const quickActions = [
     { href: `/clubs/${slug}/members`, label: 'Mitglieder', icon: Users },
-    { href: `/clubs/${slug}/fees`, label: 'Beiträge', icon: CreditCard },
-    { href: `/clubs/${slug}/bookkeeping`, label: 'Buchhaltung', icon: FileText },
-    { href: `/clubs/${slug}/settings`, label: 'Einstellungen', icon: Settings },
+    { href: `/clubs/${slug}/accounting`, label: 'Buchhaltung', icon: BookOpen },
   ];
 
   return (
@@ -116,9 +125,7 @@ export default function ClubDashboardPage() {
         </Card>
 
         {/* Invite Code (for private clubs with admin access) */}
-        {club.inviteCode &&
-          activeClub?.role &&
-          ['OWNER', 'ADMIN'].includes(activeClub.role) && (
+        {club.inviteCode && canManageSettings && (
             <Card>
               <CardHeader>
                 <CardTitle>Einladungscode</CardTitle>
@@ -131,20 +138,29 @@ export default function ClubDashboardPage() {
                   <code className="flex-1 p-3 bg-muted rounded-lg text-lg font-mono tracking-wider text-center">
                     {club.inviteCode}
                   </code>
-                  <Button variant="outline" size="icon" onClick={copyInviteCode}>
-                    {copied ? (
+                  <Button variant="outline" size="icon" onClick={copyInviteCode} title="Code kopieren">
+                    {copiedCode ? (
                       <Check className="h-4 w-4" />
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Einladungslink:{' '}
-                  {typeof window !== 'undefined'
-                    ? `${window.location.origin}/join/${club.inviteCode}`
-                    : `/join/${club.inviteCode}`}
-                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <p className="text-sm text-muted-foreground flex-1 truncate">
+                    Einladungslink:{' '}
+                    {typeof window !== 'undefined'
+                      ? `${window.location.origin}/join/${club.inviteCode}`
+                      : `/join/${club.inviteCode}`}
+                  </p>
+                  <Button variant="ghost" size="sm" onClick={copyInviteLink} className="shrink-0 h-7 px-2">
+                    {copiedLink ? (
+                      <Check className="h-3 w-3" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
