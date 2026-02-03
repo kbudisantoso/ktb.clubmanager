@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useCanManageSettings } from '@/lib/club-permissions';
 import { apiFetch } from '@/lib/api';
 import { Users, BookOpen, Copy, Check } from 'lucide-react';
+import { AccessRequestsCard } from '@/components/club/access-requests-card';
 import {
   Card,
   CardContent,
@@ -164,6 +165,9 @@ export default function ClubDashboardPage() {
               </CardContent>
             </Card>
           )}
+
+        {/* Access Requests (for admins only, auto-hides when empty) */}
+        {canManageSettings && <AccessRequestsCard slug={slug} />}
       </div>
     </div>
   );

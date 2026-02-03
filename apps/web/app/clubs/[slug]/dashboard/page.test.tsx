@@ -19,6 +19,22 @@ vi.mock("@/lib/club-permissions", () => ({
   useCanManageSettings: () => mockCanManageSettings,
 }));
 
+// Mock use-clubs hooks for AccessRequestsCard
+vi.mock("@/hooks/use-clubs", () => ({
+  useClubAccessRequestsQuery: () => ({
+    data: [],
+    isLoading: false,
+  }),
+  useApproveAccessRequestMutation: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
+  useRejectAccessRequestMutation: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
+}));
+
 // Mock clipboard API
 const mockWriteText = vi.fn().mockResolvedValue(undefined);
 vi.stubGlobal("navigator", {

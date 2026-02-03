@@ -14,10 +14,11 @@ export const clubKeys = {
   public: () => [...clubKeys.all, "public"] as const,
   checkSlug: (slug: string) => [...clubKeys.all, "check-slug", slug] as const,
   myRequests: () => [...clubKeys.all, "my-requests"] as const,
+  accessRequests: (slug: string) => [...clubKeys.all, "access-requests", slug] as const,
 }
 
 /**
- * API response type for /api/clubs/my
+ * API response type for /api/me/clubs
  */
 interface ClubApiResponse {
   id: string
@@ -45,7 +46,7 @@ interface MyClubsResult {
  * Fetch user's clubs from API and transform to ClubContext.
  */
 async function fetchMyClubs(): Promise<MyClubsResult> {
-  const res = await apiFetch("/api/clubs/my")
+  const res = await apiFetch("/api/me/clubs")
   if (!res.ok) {
     throw new Error("Failed to fetch clubs")
   }
@@ -187,7 +188,7 @@ export function useMyAccessRequestsQuery() {
   return useQuery({
     queryKey: clubKeys.myRequests(),
     queryFn: async (): Promise<AccessRequest[]> => {
-      const res = await apiFetch("/api/clubs/my-requests")
+      const res = await apiFetch("/api/me/access-requests")
       if (!res.ok) {
         throw new Error("Failed to fetch requests")
       }
@@ -276,6 +277,28 @@ export function useLeaveClubMutation() {
 }
 
 /**
+ * Hook for canceling an access request.
+ */
+export function useCancelAccessRequestMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (requestId: string): Promise<void> => {
+      const res = await apiFetch(`/api/me/access-requests/${requestId}`, {
+        method: "DELETE",
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.message || "Fehler beim Zurückziehen der Anfrage")
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: clubKeys.myRequests() })
+    },
+  })
+}
+
+/**
  * Hook to sync clubs from API to the Zustand store.
  * Also auto-selects the first club if user has clubs but none is selected.
  * Call this in a layout or provider that wraps authenticated pages.
@@ -297,14 +320,138 @@ export function useSyncClubsToStore() {
         setClubs(apiClubs)
       }
 
-      // Auto-select first club if none is selected
-      if (!activeClubSlug) {
+      // If active club no longer exists in the list (user was removed by admin),
+      // select first available club. Note: We intentionally do NOT auto-select
+      // when activeClubSlug is null - this allows users to leave clubs without
+      // being immediately redirected to another one.
+      if (activeClubSlug && !apiClubs.find((c) => c.slug === activeClubSlug)) {
         setActiveClub(apiClubs[0].slug)
       }
-      // If active club no longer exists, select first one
-      else if (!apiClubs.find((c) => c.slug === activeClubSlug)) {
-        setActiveClub(apiClubs[0].slug)
+    } else {
+      // User has no clubs - sync empty state to store
+      if (storeClubs.length > 0) {
+        setClubs([])
       }
     }
   }, [isLoading, apiClubs, storeClubs, activeClubSlug, setActiveClub, setClubs])
+}
+
+// ============================================================================
+// Club Access Requests (Admin)
+// ============================================================================
+
+/**
+ * Pending access request type (from club admin perspective)
+ */
+export interface ClubAccessRequest {
+  id: string
+  status: "PENDING"
+  message?: string
+  createdAt: string
+  expiresAt: string
+  user: {
+    id: string
+    name: string | null
+    email: string
+    image?: string | null
+  }
+}
+
+/**
+ * Hook for fetching pending access requests for a club.
+ * Only available to OWNER/ADMIN users.
+ */
+export function useClubAccessRequestsQuery(slug: string) {
+  return useQuery({
+    queryKey: clubKeys.accessRequests(slug),
+    queryFn: async (): Promise<ClubAccessRequest[]> => {
+      const res = await apiFetch(`/api/clubs/${slug}/access-requests`)
+      if (!res.ok) {
+        if (res.status === 403) {
+          // User doesn't have admin access - return empty array
+          return []
+        }
+        throw new Error("Failed to fetch access requests")
+      }
+      return res.json()
+    },
+    staleTime: 30 * 1000, // 30 seconds - requests can change frequently
+    enabled: !!slug,
+  })
+}
+
+/**
+ * Rejection reasons for access requests
+ */
+export type RejectionReason =
+  | "BOARD_ONLY"
+  | "UNIDENTIFIED"
+  | "WRONG_CLUB"
+  | "CONTACT_DIRECTLY"
+  | "OTHER"
+
+/**
+ * Hook for approving an access request.
+ */
+export function useApproveAccessRequestMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      requestId,
+      roles,
+    }: {
+      requestId: string
+      roles: string[]
+    }): Promise<{ message: string }> => {
+      const res = await apiFetch(`/api/clubs/requests/${requestId}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roles }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.message || "Fehler beim Genehmigen der Anfrage")
+      }
+      return data
+    },
+    onSuccess: () => {
+      // Invalidate access requests for all clubs (we don't know which slug)
+      queryClient.invalidateQueries({ queryKey: clubKeys.all })
+    },
+  })
+}
+
+/**
+ * Hook for rejecting an access request.
+ */
+export function useRejectAccessRequestMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      requestId,
+      reason,
+      note,
+    }: {
+      requestId: string
+      reason: RejectionReason
+      note?: string
+    }): Promise<{ message: string }> => {
+      const res = await apiFetch(`/api/clubs/requests/${requestId}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason, note }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.message || "Fehler beim Ablehnen der Anfrage")
+      }
+      return data
+    },
+    onSuccess: () => {
+      // Invalidate access requests for all clubs
+      queryClient.invalidateQueries({ queryKey: clubKeys.all })
+    },
+  })
 }
