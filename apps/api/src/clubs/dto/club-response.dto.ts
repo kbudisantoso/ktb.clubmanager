@@ -41,8 +41,11 @@ export class ClubResponseDto {
   updatedAt!: Date;
 
   // Included for list views
-  @ApiPropertyOptional({ description: 'User role in this club (if applicable)' })
-  role?: string;
+  @ApiPropertyOptional({
+    description: 'User roles in this club (if applicable)',
+    type: [String],
+  })
+  roles?: string[];
 
   @ApiPropertyOptional({ description: 'User count in club' })
   userCount?: number;
@@ -52,8 +55,8 @@ export class ClubResponseDto {
 }
 
 export class MyClubResponseDto extends ClubResponseDto {
-  @ApiProperty({ description: 'User role in this club' })
-  declare role: string;
+  @ApiProperty({ description: 'User roles in this club', type: [String] })
+  declare roles: string[];
 
   @ApiProperty({ description: 'When user joined this club' })
   joinedAt!: Date;

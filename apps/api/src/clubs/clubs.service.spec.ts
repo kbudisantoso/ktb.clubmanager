@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClubsService } from './clubs.service.js';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { AppSettingsService } from '../settings/app-settings.service.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
+import type { AppSettingsService } from '../settings/app-settings.service.js';
 import { ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
 
 // Mock PrismaService

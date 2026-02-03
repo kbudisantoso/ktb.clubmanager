@@ -23,7 +23,7 @@ import { Request } from 'express';
 import { ClubsService } from './clubs.service.js';
 import { CreateClubDto } from './dto/create-club.dto.js';
 import { UpdateClubDto } from './dto/update-club.dto.js';
-import { ClubResponseDto, MyClubResponseDto } from './dto/club-response.dto.js';
+import { ClubResponseDto } from './dto/club-response.dto.js';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard.js';
 import { SuperAdminGuard } from '../common/guards/super-admin.guard.js';
 import { SuperAdminOnly } from '../common/decorators/super-admin.decorator.js';
@@ -53,14 +53,6 @@ export class ClubsController {
   async create(@Body() dto: CreateClubDto, @Req() req: AuthenticatedRequest) {
     const isSuperAdmin = await this.isSuperAdmin(req.user.id);
     return this.clubsService.create(dto, req.user.id, isSuperAdmin);
-  }
-
-  @Get('my')
-  @ApiOperation({ summary: 'List clubs the current user belongs to' })
-  @ApiResponse({ status: 200, type: [MyClubResponseDto] })
-  async findMyClubs(@Req() req: AuthenticatedRequest) {
-    const isSuperAdmin = await this.isSuperAdmin(req.user.id);
-    return this.clubsService.findMyClubs(req.user.id, isSuperAdmin);
   }
 
   @Get('public')

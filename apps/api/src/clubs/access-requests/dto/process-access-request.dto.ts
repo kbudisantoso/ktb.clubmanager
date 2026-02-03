@@ -9,14 +9,23 @@ export enum AccessRejectionReason {
   OTHER = 'OTHER',
 }
 
+/**
+ * Roles that can be assigned via access request approval.
+ * OWNER cannot be assigned this way (only via transfer).
+ * ADMIN can only be assigned by OWNER.
+ */
+export const ASSIGNABLE_ROLES = ['MEMBER', 'TREASURER', 'SECRETARY', 'ADMIN'] as const;
+export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
+
 export class ApproveAccessRequestDto {
   @ApiProperty({
-    description: 'Role to assign to the user',
-    enum: ['VIEWER', 'TREASURER', 'ADMIN'],
-    default: 'VIEWER',
+    description: 'Roles to assign to the user (at least one required)',
+    type: [String],
+    enum: ASSIGNABLE_ROLES,
+    example: ['MEMBER'],
   })
-  @IsEnum(['VIEWER', 'TREASURER', 'ADMIN'])
-  role!: 'VIEWER' | 'TREASURER' | 'ADMIN';
+  @IsString({ each: true })
+  roles!: AssignableRole[];
 }
 
 export class RejectAccessRequestDto {

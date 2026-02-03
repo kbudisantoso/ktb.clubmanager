@@ -2,12 +2,10 @@ import {
   Controller,
   Get,
   Post,
-  Delete,
   Param,
   Body,
   UseGuards,
   Req,
-  HttpCode,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -68,22 +66,6 @@ export class AccessRequestsController {
     );
   }
 
-  @Get('my-requests')
-  @ApiOperation({ summary: 'Get my access requests' })
-  async getMyRequests(@Req() req: AuthenticatedRequest) {
-    return this.accessRequestsService.getMyRequests(req.user.id);
-  }
-
-  @Delete('requests/:id')
-  @HttpCode(204)
-  @ApiOperation({ summary: 'Cancel a pending access request' })
-  async cancelRequest(
-    @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.accessRequestsService.cancelRequest(id, req.user.id);
-  }
-
   // Club admin endpoints
   @Get(':slug/access-requests')
   @ApiOperation({ summary: 'Get pending access requests for a club (admin)' })
@@ -101,7 +83,7 @@ export class AccessRequestsController {
     @Body() dto: ApproveAccessRequestDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.accessRequestsService.approve(id, dto.role, req.user.id);
+    return this.accessRequestsService.approve(id, dto.roles, req.user.id);
   }
 
   @Post('requests/:id/reject')
