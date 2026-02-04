@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Search, ExternalLink } from "lucide-react"
+import { apiFetch } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -40,7 +41,7 @@ export default function AdminClubsPage() {
 
   async function fetchClubs() {
     try {
-      const res = await fetch("/api/clubs", { credentials: "include" })
+      const res = await apiFetch("/api/clubs")
       if (res.ok) {
         const data = await res.json()
         setClubs(data)

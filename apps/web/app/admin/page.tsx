@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Building2, Users, Layers, Activity } from "lucide-react"
+import { apiFetch } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface Stats {
@@ -23,8 +24,8 @@ export default function AdminDashboardPage() {
     try {
       // Fetch stats from multiple endpoints
       const [clubsRes, tiersRes] = await Promise.all([
-        fetch("/api/clubs", { credentials: "include" }),
-        fetch("/api/admin/tiers", { credentials: "include" }),
+        apiFetch("/api/clubs"),
+        apiFetch("/api/admin/tiers"),
       ])
 
       const clubs = clubsRes.ok ? await clubsRes.json() : []

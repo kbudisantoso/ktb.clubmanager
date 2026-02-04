@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Plus, Pencil, Trash2, Crown } from "lucide-react"
+import { apiFetch } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -55,7 +56,7 @@ export default function AdminTiersPage() {
 
   async function fetchTiers() {
     try {
-      const res = await fetch("/api/admin/tiers", { credentials: "include" })
+      const res = await apiFetch("/api/admin/tiers")
       if (res.ok) {
         const data = await res.json()
         setTiers(data)
@@ -90,10 +91,9 @@ export default function AdminTiersPage() {
         : "/api/admin/tiers"
       const method = editingTier ? "PUT" : "POST"
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(data),
       })
 
@@ -125,9 +125,8 @@ export default function AdminTiersPage() {
     if (!confirm(`Tarif "${tier.name}" wirklich loschen?`)) return
 
     try {
-      const res = await fetch(`/api/admin/tiers/${tier.id}`, {
+      const res = await apiFetch(`/api/admin/tiers/${tier.id}`, {
         method: "DELETE",
-        credentials: "include",
       })
 
       if (res.ok) {

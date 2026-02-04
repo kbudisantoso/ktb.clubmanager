@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
-import { useSession } from "@/lib/auth-client"
+import { useSessionQuery } from "@/hooks/use-session"
+import { apiFetch } from "@/lib/api"
 import {
   Shield,
   Building2,
@@ -35,7 +36,7 @@ export default function AdminLayout({
 }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { data: session, isPending: sessionLoading } = useSession()
+  const { data: session, isLoading: sessionLoading } = useSessionQuery()
 
   const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null)
 
@@ -53,7 +54,7 @@ export default function AdminLayout({
 
   async function checkSuperAdmin() {
     try {
-      const res = await fetch("/api/users/me", { credentials: "include" })
+      const res = await apiFetch("/api/users/me")
       if (res.ok) {
         const user = await res.json()
         if (user.isSuperAdmin) {

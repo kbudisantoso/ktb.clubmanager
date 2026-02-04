@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Save } from "lucide-react"
+import { apiFetch } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -47,7 +48,7 @@ export default function AdminSettingsPage() {
   }, [])
 
   async function fetchSettings() {
-    const res = await fetch("/api/admin/settings", { credentials: "include" })
+    const res = await apiFetch("/api/admin/settings")
     if (res.ok) {
       const data = await res.json()
       setSettings(data)
@@ -55,7 +56,7 @@ export default function AdminSettingsPage() {
   }
 
   async function fetchTiers() {
-    const res = await fetch("/api/admin/tiers", { credentials: "include" })
+    const res = await apiFetch("/api/admin/tiers")
     if (res.ok) {
       const data = await res.json()
       setTiers(data)
@@ -67,10 +68,9 @@ export default function AdminSettingsPage() {
 
     setIsSaving(true)
     try {
-      const res = await fetch("/api/admin/settings", {
+      const res = await apiFetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(settings),
       })
 
