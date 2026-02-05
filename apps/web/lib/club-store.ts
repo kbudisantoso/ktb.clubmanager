@@ -5,6 +5,15 @@ import { persist, createJSONStorage } from "zustand/middleware"
 import { useEffect, useState } from "react"
 
 /**
+ * Tier feature flags for the club.
+ */
+export interface TierFeatures {
+  sepa: boolean
+  reports: boolean
+  bankImport: boolean
+}
+
+/**
  * Club data stored in the client-side context.
  */
 export interface ClubContext {
@@ -13,6 +22,10 @@ export interface ClubContext {
   slug: string
   /** User's roles in this club (multiple roles possible) */
   roles: string[]
+  /** Permissions derived from roles (set after fetching /my-permissions) */
+  permissions: string[]
+  /** Tier features available to this club */
+  features: TierFeatures
   avatarUrl?: string
   avatarInitials?: string
   avatarColor?: string
@@ -39,6 +52,8 @@ interface ClubState {
   clearActiveClub: () => void
   setClubs: (clubs: ClubContext[]) => void
   clearClubs: () => void
+  /** Update permissions and features for a specific club */
+  setClubPermissions: (slug: string, permissions: string[], features: TierFeatures) => void
 }
 
 /**
@@ -55,6 +70,12 @@ export const useClubStore = create<ClubState>()(
       clearActiveClub: () => set({ activeClubSlug: null }),
       setClubs: (clubs) => set({ clubs, lastFetched: Date.now() }),
       clearClubs: () => set({ clubs: [], lastFetched: null, activeClubSlug: null }),
+      setClubPermissions: (slug, permissions, features) =>
+        set((state) => ({
+          clubs: state.clubs.map((c) =>
+            c.slug === slug ? { ...c, permissions, features } : c
+          ),
+        })),
     }),
     {
       name: "club-context",

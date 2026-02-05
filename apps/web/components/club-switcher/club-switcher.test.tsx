@@ -30,7 +30,19 @@ vi.mock("@/hooks/use-clubs", () => ({
 import { ClubSwitcher } from "./club-switcher"
 import * as clubStoreModule from "@/lib/club-store"
 import * as useClubsModule from "@/hooks/use-clubs"
-import type { ClubContext } from "@/lib/club-store"
+import type { ClubContext, TierFeatures } from "@/lib/club-store"
+
+/** Default tier features for test fixtures */
+const defaultFeatures: TierFeatures = { sepa: true, reports: true, bankImport: true }
+
+/** Helper to create ClubContext with default permissions/features */
+function createTestClub(partial: Omit<ClubContext, "permissions" | "features"> & Partial<Pick<ClubContext, "permissions" | "features">>): ClubContext {
+  return {
+    ...partial,
+    permissions: partial.permissions ?? [],
+    features: partial.features ?? defaultFeatures,
+  }
+}
 
 describe("ClubSwitcher", () => {
   beforeEach(() => {
@@ -66,14 +78,14 @@ describe("ClubSwitcher", () => {
 
   describe("single club state", () => {
     const singleClub: ClubContext[] = [
-      {
+      createTestClub({
         id: "1",
         name: "TSV Musterstadt",
         slug: "tsv-musterstadt",
         roles: ["OWNER"],
         avatarInitials: "TM",
         avatarColor: "blue",
-      },
+      }),
     ]
 
     beforeEach(() => {
@@ -100,30 +112,30 @@ describe("ClubSwitcher", () => {
 
   describe("multiple clubs state", () => {
     const multipleClubs: ClubContext[] = [
-      {
+      createTestClub({
         id: "1",
         name: "TSV Musterstadt",
         slug: "tsv-musterstadt",
         roles: ["OWNER"],
         avatarInitials: "TM",
         avatarColor: "blue",
-      },
-      {
+      }),
+      createTestClub({
         id: "2",
         name: "FC Beispiel",
         slug: "fc-beispiel",
         roles: ["ADMIN"],
         avatarInitials: "FB",
         avatarColor: "green",
-      },
-      {
+      }),
+      createTestClub({
         id: "3",
         name: "SV Test",
         slug: "sv-test",
         roles: ["MEMBER"],
         avatarInitials: "ST",
         avatarColor: "red",
-      },
+      }),
     ]
 
     beforeEach(() => {
@@ -217,11 +229,11 @@ describe("ClubSwitcher", () => {
 
   describe("5+ clubs with search", () => {
     const manyClubs: ClubContext[] = [
-      { id: "1", name: "TSV Alpha", slug: "tsv-alpha", roles: ["OWNER"] },
-      { id: "2", name: "FC Beta", slug: "fc-beta", roles: ["ADMIN"] },
-      { id: "3", name: "SV Gamma", slug: "sv-gamma", roles: ["MEMBER"] },
-      { id: "4", name: "SC Delta", slug: "sc-delta", roles: ["MEMBER"] },
-      { id: "5", name: "VfB Epsilon", slug: "vfb-epsilon", roles: ["MEMBER"] },
+      createTestClub({ id: "1", name: "TSV Alpha", slug: "tsv-alpha", roles: ["OWNER"] }),
+      createTestClub({ id: "2", name: "FC Beta", slug: "fc-beta", roles: ["ADMIN"] }),
+      createTestClub({ id: "3", name: "SV Gamma", slug: "sv-gamma", roles: ["MEMBER"] }),
+      createTestClub({ id: "4", name: "SC Delta", slug: "sc-delta", roles: ["MEMBER"] }),
+      createTestClub({ id: "5", name: "VfB Epsilon", slug: "vfb-epsilon", roles: ["MEMBER"] }),
     ]
 
     beforeEach(() => {

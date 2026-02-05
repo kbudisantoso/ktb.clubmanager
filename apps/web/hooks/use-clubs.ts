@@ -57,6 +57,9 @@ async function fetchMyClubs(): Promise<MyClubsResult> {
       name: club.name,
       slug: club.slug,
       roles: club.roles,
+      // Default values for permissions/features - fetched separately via /my-permissions
+      permissions: [],
+      features: { sepa: true, reports: true, bankImport: true },
       avatarUrl: club.avatarUrl,
       avatarInitials: club.avatarInitials,
       avatarColor: club.avatarColor,
