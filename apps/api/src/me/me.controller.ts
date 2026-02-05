@@ -4,7 +4,6 @@ import {
   Post,
   Delete,
   Param,
-  UseGuards,
   Req,
   HttpCode,
 } from '@nestjs/common';
@@ -15,7 +14,6 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { SessionAuthGuard } from '../auth/guards/session-auth.guard.js';
 import { ClubsService } from '../clubs/clubs.service.js';
 import { AccessRequestsService } from '../clubs/access-requests/access-requests.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -27,7 +25,6 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Me')
 @ApiBearerAuth()
 @Controller('me')
-@UseGuards(SessionAuthGuard)
 export class MeController {
   constructor(
     private clubsService: ClubsService,

@@ -1,8 +1,6 @@
-import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AppSettingsService } from '../../settings/app-settings.service.js';
-import { SessionAuthGuard } from '../../auth/guards/session-auth.guard.js';
-import { SuperAdminGuard } from '../../common/guards/super-admin.guard.js';
 import { SuperAdminOnly } from '../../common/decorators/super-admin.decorator.js';
 
 class UpdateSettingsDto {
@@ -21,7 +19,6 @@ class UpdateSettingsDto {
 @ApiTags('Admin - Settings')
 @ApiBearerAuth()
 @Controller('admin/settings')
-@UseGuards(SessionAuthGuard, SuperAdminGuard)
 @SuperAdminOnly()
 export class AdminSettingsController {
   constructor(private appSettings: AppSettingsService) {}

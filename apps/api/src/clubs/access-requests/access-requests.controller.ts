@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Req } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -23,7 +15,6 @@ import {
   ApproveAccessRequestDto,
   RejectAccessRequestDto,
 } from './dto/process-access-request.dto.js';
-import { SessionAuthGuard } from '../../auth/guards/session-auth.guard.js';
 
 interface AuthenticatedRequest extends Request {
   user: { id: string; email: string };
@@ -32,7 +23,6 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Access Requests')
 @ApiBearerAuth()
 @Controller('clubs')
-@UseGuards(SessionAuthGuard)
 export class AccessRequestsController {
   constructor(private accessRequestsService: AccessRequestsService) {}
 

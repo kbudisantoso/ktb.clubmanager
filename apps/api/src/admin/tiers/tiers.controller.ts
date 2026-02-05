@@ -6,7 +6,6 @@ import {
   Delete,
   Param,
   Body,
-  UseGuards,
   HttpCode,
 } from '@nestjs/common';
 import {
@@ -18,8 +17,6 @@ import {
 import { TiersService } from './tiers.service.js';
 import { CreateTierDto } from './dto/create-tier.dto.js';
 import { UpdateTierDto } from './dto/update-tier.dto.js';
-import { SessionAuthGuard } from '../../auth/guards/session-auth.guard.js';
-import { SuperAdminGuard } from '../../common/guards/super-admin.guard.js';
 import { SuperAdminOnly } from '../../common/decorators/super-admin.decorator.js';
 
 /**
@@ -31,7 +28,6 @@ import { SuperAdminOnly } from '../../common/decorators/super-admin.decorator.js
 @ApiTags('Admin - Tiers')
 @ApiBearerAuth()
 @Controller('admin/tiers')
-@UseGuards(SessionAuthGuard, SuperAdminGuard)
 @SuperAdminOnly()
 export class TiersController {
   constructor(private tiersService: TiersService) {}

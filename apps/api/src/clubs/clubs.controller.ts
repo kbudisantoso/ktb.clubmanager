@@ -7,7 +7,6 @@ import {
   Param,
   Body,
   Query,
-  UseGuards,
   HttpCode,
   Req,
   Header,
@@ -24,8 +23,6 @@ import { ClubsService } from './clubs.service.js';
 import { CreateClubDto } from './dto/create-club.dto.js';
 import { UpdateClubDto } from './dto/update-club.dto.js';
 import { ClubResponseDto } from './dto/club-response.dto.js';
-import { SessionAuthGuard } from '../auth/guards/session-auth.guard.js';
-import { SuperAdminGuard } from '../common/guards/super-admin.guard.js';
 import { SuperAdminOnly } from '../common/decorators/super-admin.decorator.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -36,7 +33,6 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Clubs')
 @ApiBearerAuth()
 @Controller('clubs')
-@UseGuards(SessionAuthGuard)
 export class ClubsController {
   constructor(
     private clubsService: ClubsService,
@@ -130,7 +126,6 @@ export class ClubsController {
 
   // Super Admin only endpoints
   @Get()
-  @UseGuards(SuperAdminGuard)
   @SuperAdminOnly()
   @ApiOperation({ summary: 'List all clubs (Super Admin only)' })
   @ApiResponse({ status: 200, type: [ClubResponseDto] })
