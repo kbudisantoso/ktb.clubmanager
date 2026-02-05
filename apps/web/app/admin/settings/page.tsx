@@ -112,7 +112,7 @@ export default function AdminSettingsPage() {
           <CardHeader>
             <CardTitle>Vereine</CardTitle>
             <CardDescription>
-              Einstellungen fur die Vereinserstellung und -verwaltung
+              Einstellungen für die Vereinserstellung und -verwaltung
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -120,7 +120,7 @@ export default function AdminSettingsPage() {
               <div className="space-y-0.5">
                 <Label>Self-Service Vereinserstellung</Label>
                 <p className="text-sm text-muted-foreground">
-                  Benutzer konnen selbst Vereine erstellen
+                  Benutzer können selbst Vereine erstellen
                 </p>
               </div>
               <Switch
@@ -144,7 +144,7 @@ export default function AdminSettingsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="PRIVATE">Privat</SelectItem>
-                  <SelectItem value="PUBLIC">Offentlich</SelectItem>
+                  <SelectItem value="PUBLIC">Öffentlich</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -180,7 +180,7 @@ export default function AdminSettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Tarife</CardTitle>
-            <CardDescription>Einstellungen fur das Tarifsystem</CardDescription>
+            <CardDescription>Einstellungen für das Tarifsystem</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
@@ -216,7 +216,7 @@ export default function AdminSettingsPage() {
               <div className="space-y-0.5">
                 <Label>SaaS-Modus</Label>
                 <p className="text-sm text-muted-foreground">
-                  Zeigt Upgrade-Prompts fur deaktivierte Funktionen (statt sie zu
+                  Zeigt Upgrade-Prompts für deaktivierte Funktionen (statt sie zu
                   verstecken)
                 </p>
               </div>

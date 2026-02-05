@@ -122,7 +122,7 @@ export default function AdminTiersPage() {
   }
 
   async function handleDelete(tier: Tier) {
-    if (!confirm(`Tarif "${tier.name}" wirklich loschen?`)) return
+    if (!confirm(`Tarif "${tier.name}" wirklich löschen?`)) return
 
     try {
       const res = await apiFetch(`/api/admin/tiers/${tier.id}`, {
@@ -130,7 +130,7 @@ export default function AdminTiersPage() {
       })
 
       if (res.ok) {
-        toast({ title: "Tarif geloscht" })
+        toast({ title: "Tarif gelöscht" })
         fetchTiers()
       } else {
         const error = await res.json()
@@ -158,7 +158,7 @@ export default function AdminTiersPage() {
         <div>
           <h1 className="text-2xl font-bold">Tarife</h1>
           <p className="text-muted-foreground">
-            Verwalte die verfugbaren Tarife und deren Funktionen
+            Verwalte die verfügbaren Tarife und deren Funktionen
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

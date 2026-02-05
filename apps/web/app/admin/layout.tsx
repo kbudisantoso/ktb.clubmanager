@@ -23,7 +23,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: "/admin", label: "Ubersicht", icon: Home },
+  { href: "/admin", label: "Übersicht", icon: Home },
   { href: "/admin/clubs", label: "Vereine", icon: Building2 },
   { href: "/admin/tiers", label: "Tarife", icon: Layers },
   { href: "/admin/settings", label: "Einstellungen", icon: Settings },
@@ -114,7 +114,7 @@ export default function AdminLayout({
         <div className="p-4 border-t">
           <Link href="/dashboard">
             <Button variant="outline" className="w-full">
-              Zuruck zur App
+              Zurück zur App
             </Button>
           </Link>
         </div>
