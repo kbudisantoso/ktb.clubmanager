@@ -146,7 +146,7 @@ export function getUserPermissions(roles: ClubRole[]): Permission[] {
  * @param required - Required permission
  * @returns True if user has the required permission
  */
-export function hasPermission(
+export function checkPermission(
   permissions: Permission[],
   required: Permission,
 ): boolean {
@@ -188,6 +188,6 @@ export function hasAllPermissions(
  * @param roles - User's roles
  * @returns True if user has at least one board role
  */
-export function isBoardMember(roles: ClubRole[]): boolean {
+export function checkBoardMember(roles: ClubRole[]): boolean {
   return roles.some((role) => BOARD_ROLES.includes(role));
 }
