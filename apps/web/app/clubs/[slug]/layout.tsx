@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSessionQuery } from '@/hooks/use-session';
 import { useClubStore } from '@/lib/club-store';
+import { fetchAndStorePermissions } from '@/lib/fetch-permissions';
 import { useMyClubsQuery } from '@/hooks/use-clubs';
 import { Header } from '@/components/layout/header';
 import { Loader2 } from 'lucide-react';
@@ -33,6 +34,12 @@ export default function ClubLayout({ children }: { children: React.ReactNode }) 
     if (club) {
       setActiveClub(slug);
       setHasAccess(true);
+
+      // Fetch permissions if not already loaded for this club
+      const hasPermissions = club.permissions && club.permissions.length > 0;
+      if (!hasPermissions) {
+        fetchAndStorePermissions(slug);
+      }
     } else {
       router.push('/dashboard');
     }
