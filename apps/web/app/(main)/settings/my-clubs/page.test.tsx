@@ -112,7 +112,7 @@ describe("MyClubsPage", () => {
 
       render(<MyClubsPage />);
 
-      expect(screen.getByText("Inhaber")).toBeInTheDocument();
+      expect(screen.getByText("Verantwortlicher")).toBeInTheDocument();
     });
 
     it("shows active badge for current club", async () => {
@@ -183,7 +183,7 @@ describe("MyClubsPage", () => {
       render(<MyClubsPage />);
 
       // Find the leave button - it should be disabled for owner
-      const leaveButton = screen.getByTitle("Inhaber können nicht austreten");
+      const leaveButton = screen.getByTitle("Verantwortliche können nicht austreten");
       expect(leaveButton).toBeDisabled();
     });
 
@@ -398,7 +398,7 @@ describe("MyClubsPage", () => {
 
       render(<MyClubsPage />);
 
-      const leaveButton = screen.getByTitle("Inhaber können nicht austreten");
+      const leaveButton = screen.getByTitle("Verantwortliche können nicht austreten");
       expect(leaveButton).toBeDisabled();
     });
   });

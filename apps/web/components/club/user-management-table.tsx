@@ -19,6 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { MoreHorizontal } from "lucide-react"
 import { RoleEditDialog } from "./role-edit-dialog"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { useToast } from "@/hooks/use-toast"
 
 interface ClubUser {
@@ -40,7 +41,7 @@ interface UserManagementTableProps {
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  OWNER: "Inhaber",
+  OWNER: "Verantwortlicher",
   ADMIN: "Admin",
   TREASURER: "Kassierer",
   SECRETARY: "Schriftführer",
@@ -56,17 +57,12 @@ export function UserManagementTable({
 }: UserManagementTableProps) {
   const [editUser, setEditUser] = useState<ClubUser | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [removeUser, setRemoveUser] = useState<ClubUser | null>(null)
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
+  const [removing, setRemoving] = useState(false)
   const { toast } = useToast()
 
   const handleEditRoles = (user: ClubUser) => {
-    if (user.userId === currentUserId) {
-      toast({
-        title: "Nicht erlaubt",
-        description: "Du kannst deine eigenen Rollen nicht bearbeiten.",
-        variant: "destructive",
-      })
-      return
-    }
     setEditUser(user)
     setDialogOpen(true)
   }
@@ -95,7 +91,7 @@ export function UserManagementTable({
     onRefresh()
   }
 
-  const handleRemoveUser = async (user: ClubUser) => {
+  const handleRemoveClick = (user: ClubUser) => {
     if (user.userId === currentUserId) {
       toast({
         title: "Nicht erlaubt",
@@ -104,30 +100,38 @@ export function UserManagementTable({
       })
       return
     }
+    setRemoveUser(user)
+    setRemoveDialogOpen(true)
+  }
 
-    if (!confirm(`${user.name} wirklich aus dem Verein entfernen?`)) {
-      return
-    }
+  const handleConfirmRemove = async () => {
+    if (!removeUser) return
 
-    const response = await fetch(`/api/clubs/${clubSlug}/users/${user.id}`, {
-      method: "DELETE",
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      toast({
-        title: "Fehler",
-        description: error.message || "Benutzer konnte nicht entfernt werden.",
-        variant: "destructive",
+    setRemoving(true)
+    try {
+      const response = await fetch(`/api/clubs/${clubSlug}/users/${removeUser.id}`, {
+        method: "DELETE",
       })
-      return
-    }
 
-    toast({
-      title: "Entfernt",
-      description: `${user.name} wurde aus dem Verein entfernt.`,
-    })
-    onRefresh()
+      if (!response.ok) {
+        const error = await response.json()
+        toast({
+          title: "Fehler",
+          description: error.message || "Benutzer konnte nicht entfernt werden.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      toast({
+        title: "Entfernt",
+        description: `${removeUser.name} wurde aus dem Verein entfernt.`,
+      })
+      onRefresh()
+    } finally {
+      setRemoving(false)
+      setRemoveUser(null)
+    }
   }
 
   return (
@@ -166,7 +170,7 @@ export function UserManagementTable({
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" disabled={isSelf}>
+                      <Button variant="ghost" size="icon">
                         <MoreHorizontal className="h-4 w-4" />
                         <span className="sr-only">Aktionen</span>
                       </Button>
@@ -175,12 +179,14 @@ export function UserManagementTable({
                       <DropdownMenuItem onClick={() => handleEditRoles(user)}>
                         Rollen bearbeiten
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleRemoveUser(user)}
-                        className="text-destructive"
-                      >
-                        Aus Verein entfernen
-                      </DropdownMenuItem>
+                      {!isSelf && (
+                        <DropdownMenuItem
+                          onClick={() => handleRemoveClick(user)}
+                          className="text-destructive"
+                        >
+                          Aus Verein entfernen
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -195,7 +201,20 @@ export function UserManagementTable({
         onOpenChange={setDialogOpen}
         user={editUser}
         currentUserRoles={currentUserRoles}
+        isSelfEdit={editUser?.userId === currentUserId}
         onSave={handleSaveRoles}
+      />
+
+      <ConfirmDialog
+        open={removeDialogOpen}
+        onOpenChange={setRemoveDialogOpen}
+        title="Benutzer entfernen"
+        description={`Möchtest du ${removeUser?.name ?? "diesen Benutzer"} wirklich aus dem Verein entfernen?`}
+        confirmLabel="Entfernen"
+        cancelLabel="Abbrechen"
+        variant="destructive"
+        onConfirm={handleConfirmRemove}
+        loading={removing}
       />
     </>
   )

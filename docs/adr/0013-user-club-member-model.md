@@ -46,7 +46,7 @@ ktb.clubmanager needs to model the relationship between app users (people with l
 │                                                                 │
 │  ClubUser (user's access to a club)                             │
 │  ├── userId + clubId (composite unique)                         │
-│  ├── role: OWNER | ADMIN | TREASURER | VIEWER                   │
+│  ├── roles: ClubRole[] (OWNER, ADMIN, TREASURER, SECRETARY, MEMBER) │
 │  ├── memberId?: links user to their Member record if applicable │
 │  ├── status: ACTIVE | PENDING | SUSPENDED                       │
 │  └── joinedAt, invitedById                                      │
@@ -106,14 +106,65 @@ Email-based invitations with unique links. Invite codes identify which club to r
 
 #### 5. Club-Level Roles
 
-| Role | Permissions |
-|------|-------------|
-| **OWNER** | Full control, delete club, manage admins, transfer ownership |
-| **ADMIN** | Manage members, settings, invite users, cannot delete club |
-| **TREASURER** | Financial features (fees, bookkeeping, SEPA, reports) |
-| **VIEWER** | Read-only access to permitted areas |
+Users can have multiple roles per club (additive permissions).
+
+**Board Roles (Vorstand)** — membership-bound:
+
+| Role | German | Permissions |
+|------|--------|-------------|
+| **OWNER** | Verantwortlicher | Full control, delete club, transfer ownership, assign OWNER role |
+| **TREASURER** | Kassierer | Financial features (fees, bookkeeping, SEPA, reports), member CRUD |
+| **SECRETARY** | Schriftführer | Member CRUD, protocol management, finance read-only |
+
+**Non-Board Roles:**
+
+| Role | German | Permissions | Membership-bound |
+|------|--------|-------------|------------------|
+| **ADMIN** | Admin | Manage club users, edit settings (NOT finance, NOT members) | No (can be external) |
+| **MEMBER** | Mitglied | View/edit own profile, dashboard access | Yes |
+
+**Key distinctions:**
+- ADMIN is a **technical role** (external consultant, tech support) — NOT a board member
+- Board members (OWNER, TREASURER, SECRETARY) are always club members
+- Protocol visibility: "board-only" = OWNER + TREASURER + SECRETARY (not ADMIN)
 
 Roles are per-club. Same user can have different roles in different clubs.
+
+#### 6. Self-Service Role Management
+
+Users with role management permissions (OWNER, ADMIN) can edit their **own** roles with specific restrictions to prevent privilege escalation and orphaned clubs.
+
+**Allowed Self-Actions:**
+
+| Action | Condition |
+|--------|-----------|
+| Add assignable roles (MEMBER, TREASURER, SECRETARY) | Always allowed for ADMIN/OWNER |
+| Add ADMIN role | Only if current user is OWNER |
+| Remove non-critical roles | At least one role must remain |
+| Remove OWNER role | Another OWNER must exist **AND** user keeps another role |
+
+**Blocked Self-Actions:**
+
+| Action | Reason |
+|--------|--------|
+| Add OWNER role to self | Privilege escalation |
+| Remove all roles | Use "Leave Club" function instead |
+| Remove OWNER as last owner | Prevents orphaned club |
+| Remove OWNER without keeping another role | Prevents accidental lockout |
+
+**Rationale:**
+
+Industry research (GitHub, Google Workspace, Slack) shows that most SaaS platforms prevent users from editing their own roles entirely. However, this creates UX friction for legitimate use cases:
+
+- Admin becomes club member → should be able to add MEMBER role
+- Owner delegates ownership → should be able to step down if another owner exists
+
+The implemented approach balances security (no privilege escalation, no orphaned clubs) with usability (legitimate self-service operations allowed).
+
+**Implementation:**
+- Backend enforces all rules in `ClubUsersService.updateClubUserRoles()`
+- Frontend provides guidance in `RoleEditDialog` (disabled checkboxes, explanatory text)
+- "Remove from club" action hidden for self (use "Leave Club" instead)
 
 ### User Experience by Club Count
 

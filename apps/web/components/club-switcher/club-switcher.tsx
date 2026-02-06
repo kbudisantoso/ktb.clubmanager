@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils"
  * Role display configuration (German labels)
  */
 const ROLE_LABELS: Record<string, string> = {
-  OWNER: "Inhaber",
+  OWNER: "Verantwortlicher",
   ADMIN: "Admin",
   TREASURER: "Kassenwart",
   SECRETARY: "Schriftführer",

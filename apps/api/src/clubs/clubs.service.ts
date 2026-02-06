@@ -367,7 +367,7 @@ export class ClubsService {
     // OWNERs cannot leave
     if (membership.roles.includes('OWNER')) {
       throw new ForbiddenException(
-        'Als Inhaber kannst du den Verein nicht verlassen. Übertrage zuerst die Inhaberschaft.',
+        'Als Verantwortlicher kannst du den Verein nicht verlassen. Übertrage zuerst die Verantwortung.',
       );
     }
 

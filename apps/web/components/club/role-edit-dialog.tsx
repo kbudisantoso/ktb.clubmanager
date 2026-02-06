@@ -26,14 +26,15 @@ interface RoleEditDialogProps {
   onOpenChange: (open: boolean) => void
   user: ClubUser | null
   currentUserRoles: string[]
+  isSelfEdit?: boolean
   onSave: (userId: string, roles: string[]) => Promise<void>
 }
 
 const ROLE_CONFIG = [
   {
     value: "OWNER",
-    label: "Inhaber",
-    description: "Kann Vereinsdaten löschen und Inhaber ernennen",
+    label: "Verantwortlicher",
+    description: "Kann Vereinsdaten löschen und Verantwortliche ernennen",
     ownerOnly: true,
   },
   {
@@ -67,12 +68,14 @@ export function RoleEditDialog({
   onOpenChange,
   user,
   currentUserRoles,
+  isSelfEdit = false,
   onSave,
 }: RoleEditDialogProps) {
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
 
   const isCurrentUserOwner = currentUserRoles.includes("OWNER")
+  const userHasOwnerRole = user?.roles.includes("OWNER") ?? false
 
   useEffect(() => {
     if (user) {
@@ -98,21 +101,50 @@ export function RoleEditDialog({
     }
   }
 
+  const isRoleDisabled = (roleValue: string, ownerOnly: boolean) => {
+    // Standard: OWNER role requires OWNER to assign
+    if (ownerOnly && !isCurrentUserOwner) return true
+    // Self-edit: Cannot add OWNER role to self (privilege escalation)
+    if (isSelfEdit && roleValue === "OWNER" && !userHasOwnerRole) return true
+    return false
+  }
+
+  const getRoleDisabledReason = (roleValue: string, ownerOnly: boolean) => {
+    if (ownerOnly && !isCurrentUserOwner) return " (nur für Verantwortliche)"
+    if (isSelfEdit && roleValue === "OWNER" && !userHasOwnerRole) {
+      return " (kann nicht selbst zugewiesen werden)"
+    }
+    return ""
+  }
+
   if (!user) return null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Rollen bearbeiten</DialogTitle>
+          <DialogTitle>
+            {isSelfEdit ? "Eigene Rollen bearbeiten" : "Rollen bearbeiten"}
+          </DialogTitle>
           <DialogDescription>
-            Rollen für {user.name} verwalten
+            {isSelfEdit
+              ? "Verwalte deine eigenen Rollen im Verein"
+              : `Rollen für ${user.name} verwalten`}
           </DialogDescription>
         </DialogHeader>
 
+        {isSelfEdit && (
+          <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
+            Du musst mindestens eine Rolle behalten.
+            {userHasOwnerRole &&
+              " Um diese Rolle abzugeben, muss ein anderer Verantwortlicher existieren."}
+          </p>
+        )}
+
         <div className="space-y-4 py-4">
           {ROLE_CONFIG.map((role) => {
-            const disabled = role.ownerOnly && !isCurrentUserOwner
+            const disabled = isRoleDisabled(role.value, role.ownerOnly)
+            const disabledReason = getRoleDisabledReason(role.value, role.ownerOnly)
 
             return (
               <div key={role.value} className="flex items-start space-x-3">
@@ -130,7 +162,7 @@ export function RoleEditDialog({
                     className={disabled ? "text-muted-foreground" : ""}
                   >
                     {role.label}
-                    {disabled && " (nur für Inhaber)"}
+                    {disabledReason}
                   </Label>
                   <p className="text-sm text-muted-foreground">
                     {role.description}

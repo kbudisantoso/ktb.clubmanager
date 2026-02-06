@@ -47,9 +47,10 @@ export class ClubUsersService {
   /**
    * Update a user's roles in a club.
    * Enforces business rules:
-   * - Users cannot modify their own roles
+   * - Self-edit allowed with restrictions (no privilege escalation, must keep at least one role)
    * - ADMIN cannot assign OWNER role
    * - Last OWNER cannot be demoted
+   * - OWNER can only remove own OWNER role if another OWNER exists AND keeps another role
    */
   async updateClubUserRoles(
     clubId: string,
@@ -70,29 +71,57 @@ export class ClubUsersService {
       throw new NotFoundException('Benutzer nicht gefunden');
     }
 
-    // Rule: Cannot modify own roles
-    if (targetClubUser.userId === actorUserId) {
-      throw new ForbiddenException('Du kannst deine eigenen Rollen nicht ändern');
+    const isSelfEdit = targetClubUser.userId === actorUserId;
+    const requestedRoles = dto.roles;
+    const currentRoles = targetClubUser.roles;
+
+    // Rule: Must keep at least one role (use "leave club" to remove completely)
+    if (requestedRoles.length === 0) {
+      throw new BadRequestException(
+        'Mindestens eine Rolle muss zugewiesen sein. Nutze "Club verlassen" um den Club zu verlassen.',
+      );
     }
 
     // Rule: Check assignable roles for actor
     const assignableRoles = getAssignableRoles(actorRoles);
-    const requestedRoles = dto.roles;
 
-    // Check if actor can assign all requested roles
-    for (const role of requestedRoles) {
-      if (!assignableRoles.includes(role) && role !== ClubRole.OWNER) {
+    // Determine added and removed roles
+    const addedRoles = requestedRoles.filter((r) => !currentRoles.includes(r));
+    const removedRoles = currentRoles.filter((r) => !requestedRoles.includes(r));
+
+    // Check if actor can assign all added roles
+    for (const role of addedRoles) {
+      if (role === ClubRole.OWNER) {
+        // Only OWNER can assign OWNER
+        if (!isOwner(actorRoles)) {
+          throw new ForbiddenException('Nur Verantwortliche können diese Rolle zuweisen');
+        }
+        // Self-assigning OWNER is privilege escalation
+        if (isSelfEdit) {
+          throw new ForbiddenException('Du kannst dir diese Rolle nicht selbst zuweisen');
+        }
+      } else if (!assignableRoles.includes(role)) {
         throw new ForbiddenException(`Du kannst die Rolle "${role}" nicht zuweisen`);
-      }
-      // Only OWNER can assign OWNER
-      if (role === ClubRole.OWNER && !isOwner(actorRoles)) {
-        throw new ForbiddenException('Nur Inhaber können die Inhaber-Rolle zuweisen');
       }
     }
 
-    // Rule: Protect last OWNER
+    // Self-edit specific rules for removing roles
+    if (isSelfEdit && removedRoles.length > 0) {
+      // Check if removing OWNER role
+      if (removedRoles.includes(ClubRole.OWNER)) {
+        // Must have another role remaining when removing OWNER
+        const remainingRoles = requestedRoles.filter((r) => r !== ClubRole.OWNER);
+        if (remainingRoles.length === 0) {
+          throw new BadRequestException(
+            'Wähle eine andere Rolle bevor du diese Rolle abgibst',
+          );
+        }
+      }
+    }
+
+    // Rule: Protect last OWNER (applies to both self-edit and editing others)
     if (
-      targetClubUser.roles.includes(ClubRole.OWNER) &&
+      currentRoles.includes(ClubRole.OWNER) &&
       !requestedRoles.includes(ClubRole.OWNER)
     ) {
       const ownerCount = await this.prisma.clubUser.count({
@@ -105,7 +134,7 @@ export class ClubUsersService {
 
       if (ownerCount <= 1) {
         throw new BadRequestException(
-          'Übertrage zuerst die Inhaberschaft an eine andere Person',
+          'Übertrage zuerst die Verantwortung an eine andere Person',
         );
       }
     }
@@ -164,7 +193,7 @@ export class ClubUsersService {
 
       if (ownerCount <= 1) {
         throw new BadRequestException(
-          'Der letzte Inhaber kann nicht entfernt werden',
+          'Der letzte Verantwortliche kann nicht entfernt werden',
         );
       }
     }

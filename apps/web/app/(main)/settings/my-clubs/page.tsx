@@ -38,7 +38,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMyClubsQuery, useMyAccessRequestsQuery, useLeaveClubMutation, useJoinClubMutation, type AccessRequest } from '@/hooks/use-clubs';
 
 const ROLE_LABELS: Record<string, string> = {
-  OWNER: 'Inhaber',
+  OWNER: 'Verantwortlicher',
   ADMIN: 'Administrator',
   TREASURER: 'Kassenwart',
   SECRETARY: 'Schriftführer',
@@ -72,7 +72,7 @@ export default function MyClubsPage() {
       toast({
         title: 'Nicht möglich',
         description:
-          'Als Inhaber kannst du den Verein nicht verlassen. Übertrage zuerst die Inhaberschaft.',
+          'Als Verantwortlicher kannst du den Verein nicht verlassen. Übertrage zuerst die Verantwortung.',
         variant: 'destructive',
       });
       return;
@@ -234,7 +234,7 @@ export default function MyClubsPage() {
                       size="icon"
                       onClick={() => handleLeaveClub(club)}
                       disabled={club.roles.includes('OWNER')}
-                      title={club.roles.includes('OWNER') ? 'Inhaber können nicht austreten' : 'Verein verlassen'}
+                      title={club.roles.includes('OWNER') ? 'Verantwortliche können nicht austreten' : 'Verein verlassen'}
                     >
                       <LogOut className="h-4 w-4" />
                     </Button>

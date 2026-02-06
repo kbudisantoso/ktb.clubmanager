@@ -178,7 +178,7 @@ describe("ClubSwitcher", () => {
       await user.click(screen.getByRole("button"))
 
       await waitFor(() => {
-        expect(screen.getByText("Inhaber")).toBeInTheDocument() // OWNER
+        expect(screen.getByText("Verantwortlicher")).toBeInTheDocument() // OWNER
         expect(screen.getByText("Admin")).toBeInTheDocument() // ADMIN
         expect(screen.getByText("Mitglied")).toBeInTheDocument() // VIEWER
       })
