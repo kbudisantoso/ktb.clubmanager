@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, Bell, Building2, Settings, Users, Shield, Key } from 'lucide-react';
+import { User, Bell, Building2, Settings, Users, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -30,8 +30,7 @@ export function SettingsSidebar() {
   const clubSettingsItems = activeClub
     ? [
         { href: clubBasePath, label: 'Allgemein', icon: Settings },
-        { href: `${clubBasePath}/members`, label: 'Mitglieder', icon: Users },
-        { href: `${clubBasePath}/roles`, label: 'Rollen', icon: Shield },
+        { href: `${clubBasePath}/users`, label: 'Benutzer', icon: Users },
         { href: `${clubBasePath}/invites`, label: 'Einladungen', icon: Key },
       ]
     : [];
