@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react"
 import { useParams } from "next/navigation"
 import { useSession } from "@/lib/auth-client"
 import { useActiveClub } from "@/lib/club-store"
+import { useHasPermission } from "@/lib/permission-hooks"
+import { AccessDenied } from "@/components/access-denied"
 import { UserManagementTable } from "@/components/club/user-management-table"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,9 +25,18 @@ export function UsersSettingsClient() {
   const params = useParams<{ slug: string }>()
   const { data: session } = useSession()
   const activeClub = useActiveClub()
+  const hasPermission = useHasPermission("users:read")
   const [users, setUsers] = useState<ClubUser[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [permissionChecked, setPermissionChecked] = useState(false)
+
+  // Wait for hydration before checking permission
+  useEffect(() => {
+    if (activeClub) {
+      setPermissionChecked(true)
+    }
+  }, [activeClub])
 
   const fetchUsers = useCallback(async () => {
     if (!params.slug) return
@@ -34,6 +45,10 @@ export function UsersSettingsClient() {
     try {
       const response = await fetch(`/api/clubs/${params.slug}/users`)
       if (!response.ok) {
+        if (response.status === 403) {
+          // Permission denied at API level - will be caught by permission check
+          throw new Error("Keine Berechtigung")
+        }
         throw new Error("Fehler beim Laden der Benutzer")
       }
       const data = await response.json()
@@ -47,8 +62,33 @@ export function UsersSettingsClient() {
   }, [params.slug])
 
   useEffect(() => {
-    fetchUsers()
-  }, [fetchUsers])
+    // Only fetch if we have permission
+    if (permissionChecked && hasPermission) {
+      fetchUsers()
+    } else if (permissionChecked) {
+      setLoading(false)
+    }
+  }, [fetchUsers, permissionChecked, hasPermission])
+
+  // Show loading while checking permissions
+  if (!permissionChecked) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    )
+  }
+
+  // Show access denied if no permission
+  if (!hasPermission) {
+    return (
+      <AccessDenied
+        feature="die Benutzerverwaltung"
+        backHref={`/clubs/${params.slug}/dashboard`}
+        backLabel="Zurück zum Verein"
+      />
+    )
+  }
 
   if (loading) {
     return (
