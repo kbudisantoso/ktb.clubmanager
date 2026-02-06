@@ -7,7 +7,10 @@ import { useClubStore } from '@/lib/club-store';
 import { fetchAndStorePermissions } from '@/lib/fetch-permissions';
 import { useMyClubsQuery } from '@/hooks/use-clubs';
 import { Header } from '@/components/layout/header';
+import { ClubNotFound } from '@/components/club-not-found';
 import { Loader2 } from 'lucide-react';
+
+type AccessState = 'loading' | 'granted' | 'denied';
 
 export default function ClubLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
@@ -17,7 +20,7 @@ export default function ClubLayout({ children }: { children: React.ReactNode }) 
   const { clubs = [] } = data ?? {};
   const { setActiveClub } = useClubStore();
 
-  const [hasAccess, setHasAccess] = useState(false);
+  const [accessState, setAccessState] = useState<AccessState>('loading');
 
   const slug = params.slug as string;
 
@@ -33,7 +36,7 @@ export default function ClubLayout({ children }: { children: React.ReactNode }) 
     const club = clubs.find((c) => c.slug === slug);
     if (club) {
       setActiveClub(slug);
-      setHasAccess(true);
+      setAccessState('granted');
 
       // Fetch permissions if not already loaded for this club
       const hasPermissions = club.permissions && club.permissions.length > 0;
@@ -41,11 +44,12 @@ export default function ClubLayout({ children }: { children: React.ReactNode }) 
         fetchAndStorePermissions(slug);
       }
     } else {
-      router.push('/dashboard');
+      // Show security 404 - don't reveal if club exists or not
+      setAccessState('denied');
     }
   }, [session, sessionLoading, clubsLoading, clubs, slug, setActiveClub, router]);
 
-  if (sessionLoading || clubsLoading) {
+  if (sessionLoading || clubsLoading || accessState === 'loading') {
     return (
       <>
         <div className="app-background" />
@@ -59,8 +63,18 @@ export default function ClubLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
-  if (!hasAccess) {
-    return null; // Will redirect
+  if (accessState === 'denied') {
+    return (
+      <>
+        <div className="app-background" />
+        <div className="relative min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-1">
+            <ClubNotFound />
+          </main>
+        </div>
+      </>
+    );
   }
 
   return (

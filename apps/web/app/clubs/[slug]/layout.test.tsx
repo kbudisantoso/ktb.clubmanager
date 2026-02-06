@@ -102,7 +102,7 @@ describe("ClubLayout", () => {
   });
 
   describe("access control", () => {
-    it("redirects to dashboard if user lacks access", async () => {
+    it("shows 404 page if user lacks access to club", async () => {
       mockSession = { user: { id: "user-1" } };
       mockClubs = [{ id: "club-1", slug: "other-club", name: "Other Club", roles: ["OWNER"] }];
 
@@ -112,9 +112,12 @@ describe("ClubLayout", () => {
         </ClubLayout>
       );
 
+      // Should show ClubNotFound component instead of redirecting
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith("/dashboard");
+        expect(screen.getByText("Verein nicht gefunden")).toBeInTheDocument();
       });
+      expect(screen.getByText("Der Verein existiert nicht oder du hast keinen Zugriff.")).toBeInTheDocument();
+      expect(mockPush).not.toHaveBeenCalled();
     });
   });
 
