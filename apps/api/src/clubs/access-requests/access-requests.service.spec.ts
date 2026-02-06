@@ -210,22 +210,32 @@ describe('AccessRequestsService', () => {
         });
       });
 
-      it('should handle APPROVED request status gracefully', async () => {
+      it('should allow rejoin after leaving club (APPROVED request, no membership)', async () => {
+        // Regression test: User was approved, left the club (ClubUser deleted),
+        // then tries to rejoin. Should allow resubmission, not say "already approved".
         mockPrisma.club.findFirst.mockResolvedValue({
           id: 'club-1',
           name: 'Test Club',
           slug: 'test-club',
         });
-        mockPrisma.clubUser.findFirst.mockResolvedValue(null);
+        mockPrisma.clubUser.findFirst.mockResolvedValue(null); // No membership (left club)
         mockPrisma.accessRequest.findFirst.mockResolvedValue({
           id: 'existing-request',
-          status: 'APPROVED',
+          status: 'APPROVED', // Old approved request still exists
         });
+        mockPrisma.accessRequest.update.mockResolvedValue({});
 
         const result = await service.joinWithCode(userId, validCode);
 
-        expect(result.message).toBe('Deine Anfrage wurde bereits genehmigt');
-        expect(result.status).toBe('already_member');
+        expect(result.message).toBe('Deine Anfrage wurde erneut gesendet.');
+        expect(result.status).toBe('request_sent');
+        expect(mockPrisma.accessRequest.update).toHaveBeenCalledWith({
+          where: { id: 'existing-request' },
+          data: expect.objectContaining({
+            status: 'PENDING',
+            message: 'Beitritt über Einladungscode (Wiedereintritt)',
+          }),
+        });
       });
     });
 
@@ -403,21 +413,36 @@ describe('AccessRequestsService', () => {
         });
       });
 
-      it('should fail for APPROVED request (edge case)', async () => {
+      it('should allow rejoin after leaving club (APPROVED request, no membership)', async () => {
+        // Regression test: User was approved, left the club (ClubUser deleted),
+        // then tries to rejoin via public request. Should allow resubmission.
         mockPrisma.club.findFirst.mockResolvedValue({
           id: 'club-1',
           visibility: 'PUBLIC',
         });
-        mockPrisma.clubUser.findFirst.mockResolvedValue(null);
+        mockPrisma.clubUser.findFirst.mockResolvedValue(null); // No membership (left club)
         mockPrisma.accessRequest.count.mockResolvedValue(0);
         mockPrisma.accessRequest.findFirst.mockResolvedValue({
           id: 'existing-request',
-          status: 'APPROVED',
+          status: 'APPROVED', // Old approved request still exists
+        });
+        mockPrisma.accessRequest.update.mockResolvedValue({
+          id: 'existing-request',
+          status: 'PENDING',
+          club: { id: 'club-1', name: 'Test Club', slug: 'test-club' },
         });
 
-        await expect(service.requestAccess(userId, clubSlug)).rejects.toThrow(
-          BadRequestException,
-        );
+        const result = await service.requestAccess(userId, clubSlug);
+
+        expect(result.message).toBe('Anfrage wurde erneut gesendet');
+        expect(mockPrisma.accessRequest.update).toHaveBeenCalledWith({
+          where: { id: 'existing-request' },
+          data: expect.objectContaining({
+            status: 'PENDING',
+            message: 'Wiedereintritt',
+          }),
+          include: expect.any(Object),
+        });
       });
     });
 

@@ -89,8 +89,14 @@ export class AccessRequestsService {
         };
       }
 
-      if (existingRequest.status === 'REJECTED' || existingRequest.status === 'EXPIRED') {
-        // Allow resubmission by updating the existing request
+      if (
+        existingRequest.status === 'REJECTED' ||
+        existingRequest.status === 'EXPIRED' ||
+        existingRequest.status === 'APPROVED'
+      ) {
+        // Allow resubmission for:
+        // - REJECTED/EXPIRED: User can try again
+        // - APPROVED: User was member but left, allow rejoin
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 30);
 
@@ -98,7 +104,10 @@ export class AccessRequestsService {
           where: { id: existingRequest.id },
           data: {
             status: 'PENDING',
-            message: 'Beitritt über Einladungscode (erneute Anfrage)',
+            message:
+              existingRequest.status === 'APPROVED'
+                ? 'Beitritt über Einladungscode (Wiedereintritt)'
+                : 'Beitritt über Einladungscode (erneute Anfrage)',
             rejectionReason: null,
             rejectionNote: null,
             expiresAt,
@@ -111,13 +120,6 @@ export class AccessRequestsService {
           club: { id: club.id, name: club.name, slug: club.slug },
         };
       }
-
-      // APPROVED status - shouldn't happen since they'd be a member, but handle gracefully
-      return {
-        message: 'Deine Anfrage wurde bereits genehmigt',
-        status: 'already_member' as const,
-        club: { id: club.id, name: club.name, slug: club.slug },
-      };
     }
 
     // Check rate limit: max 5 pending requests per user
@@ -215,9 +217,12 @@ export class AccessRequestsService {
 
       if (
         existingRequest.status === 'REJECTED' ||
-        existingRequest.status === 'EXPIRED'
+        existingRequest.status === 'EXPIRED' ||
+        existingRequest.status === 'APPROVED'
       ) {
-        // Allow resubmission by updating the existing request
+        // Allow resubmission for:
+        // - REJECTED/EXPIRED: User can try again
+        // - APPROVED: User was member but left, allow rejoin
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 30);
 
@@ -225,7 +230,10 @@ export class AccessRequestsService {
           where: { id: existingRequest.id },
           data: {
             status: 'PENDING',
-            message: message || 'Erneute Anfrage',
+            message:
+              existingRequest.status === 'APPROVED'
+                ? message || 'Wiedereintritt'
+                : message || 'Erneute Anfrage',
             rejectionReason: null,
             rejectionNote: null,
             expiresAt,
@@ -242,11 +250,6 @@ export class AccessRequestsService {
           request,
         };
       }
-
-      // APPROVED status - shouldn't happen since they'd be a member
-      throw new BadRequestException(
-        'Deine Anfrage wurde bereits genehmigt. Bitte lade die Seite neu.',
-      );
     }
 
     // Create request with 30-day expiry
