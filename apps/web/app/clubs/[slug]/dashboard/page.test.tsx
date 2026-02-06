@@ -48,10 +48,10 @@ vi.stubGlobal("navigator", {
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-// Import after mocks
-import ClubDashboardPage from "./page";
+// Import after mocks - test the client component directly
+import { ClubDashboardClient } from "./_client";
 
-describe("ClubDashboardPage", () => {
+describe("ClubDashboardClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockParams = { slug: "test-club" };
@@ -77,7 +77,7 @@ describe("ClubDashboardPage", () => {
           }),
       });
 
-      render(<ClubDashboardPage />);
+      render(<ClubDashboardClient />);
 
       await waitFor(() => {
         expect(screen.getByText("TSV Test")).toBeInTheDocument();
@@ -99,7 +99,7 @@ describe("ClubDashboardPage", () => {
           }),
       });
 
-      render(<ClubDashboardPage />);
+      render(<ClubDashboardClient />);
 
       await waitFor(() => {
         // Use getAllByText since "Mitglieder" appears in quick action AND stats
@@ -122,7 +122,7 @@ describe("ClubDashboardPage", () => {
           }),
       });
 
-      render(<ClubDashboardPage />);
+      render(<ClubDashboardClient />);
 
       await waitFor(() => {
         expect(screen.getByText("Übersicht")).toBeInTheDocument();
@@ -145,7 +145,7 @@ describe("ClubDashboardPage", () => {
           }),
       });
 
-      render(<ClubDashboardPage />);
+      render(<ClubDashboardClient />);
 
       await waitFor(() => {
         expect(screen.getByText("Öffentlich")).toBeInTheDocument();
@@ -167,7 +167,7 @@ describe("ClubDashboardPage", () => {
           }),
       });
 
-      render(<ClubDashboardPage />);
+      render(<ClubDashboardClient />);
 
       await waitFor(() => {
         expect(screen.getByText("Pro")).toBeInTheDocument();
@@ -193,7 +193,7 @@ describe("ClubDashboardPage", () => {
           }),
       });
 
-      render(<ClubDashboardPage />);
+      render(<ClubDashboardClient />);
 
       await waitFor(() => {
         expect(screen.getByText("Einladungscode")).toBeInTheDocument();
@@ -218,7 +218,7 @@ describe("ClubDashboardPage", () => {
           }),
       });
 
-      render(<ClubDashboardPage />);
+      render(<ClubDashboardClient />);
 
       await waitFor(() => {
         expect(screen.getByText("ABCD-EFGH")).toBeInTheDocument();
@@ -241,7 +241,7 @@ describe("ClubDashboardPage", () => {
           }),
       });
 
-      render(<ClubDashboardPage />);
+      render(<ClubDashboardClient />);
 
       await waitFor(() => {
         expect(screen.getByText("TSV Test")).toBeInTheDocument();
@@ -266,7 +266,7 @@ describe("ClubDashboardPage", () => {
           }),
       });
 
-      render(<ClubDashboardPage />);
+      render(<ClubDashboardClient />);
 
       await waitFor(() => {
         expect(screen.getByText("COPY-CODE")).toBeInTheDocument();
@@ -282,7 +282,7 @@ describe("ClubDashboardPage", () => {
     it("shows loading state", () => {
       mockFetch.mockImplementation(() => new Promise(() => {}));
 
-      render(<ClubDashboardPage />);
+      render(<ClubDashboardClient />);
 
       expect(screen.getByText("Laden...")).toBeInTheDocument();
     });
@@ -302,7 +302,7 @@ describe("ClubDashboardPage", () => {
           }),
       });
 
-      render(<ClubDashboardPage />);
+      render(<ClubDashboardClient />);
 
       await waitFor(() => {
         expect(screen.getByText("Ein toller Sportverein seit 1920")).toBeInTheDocument();
@@ -325,7 +325,7 @@ describe("ClubDashboardPage", () => {
           }),
       });
 
-      render(<ClubDashboardPage />);
+      render(<ClubDashboardClient />);
 
       await waitFor(() => {
         expect(screen.getByText("Public Club")).toBeInTheDocument();

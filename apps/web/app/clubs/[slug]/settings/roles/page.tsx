@@ -1,3 +1,4 @@
+import { checkClubAccess } from '@/lib/check-club-access';
 import {
   Card,
   CardContent,
@@ -6,7 +7,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-export default function ClubRolesSettingsPage() {
+interface RolesPageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export default async function ClubRolesSettingsPage({ params }: RolesPageProps) {
+  const { slug } = await params;
+  await checkClubAccess(slug);
   return (
     <div className="space-y-6">
       <Card>

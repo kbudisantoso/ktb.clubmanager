@@ -7,10 +7,10 @@ vi.mock("next/navigation", () => ({
   useParams: () => mockParams,
 }));
 
-// Import after mocks
-import ClubSettingsPage from "./page";
+// Import client component for testing (server component is async and can't be tested directly)
+import { SettingsContent } from "./_client";
 
-describe("ClubSettingsPage", () => {
+describe("SettingsContent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockParams = { slug: "test-club" };
@@ -18,34 +18,23 @@ describe("ClubSettingsPage", () => {
 
   describe("sunshine path", () => {
     it("renders the general settings card title", () => {
-      render(<ClubSettingsPage />);
+      render(<SettingsContent />);
 
       expect(screen.getByText("Allgemein")).toBeInTheDocument();
     });
 
     it("shows general settings card description", () => {
-      render(<ClubSettingsPage />);
+      render(<SettingsContent />);
 
       expect(screen.getByText("Grundlegende Einstellungen für deinen Verein")).toBeInTheDocument();
     });
 
     it("shows placeholder message about future implementation", () => {
-      render(<ClubSettingsPage />);
+      render(<SettingsContent />);
 
       expect(
         screen.getByText(/vereinseinstellungen werden in phase 9/i)
       ).toBeInTheDocument();
-    });
-  });
-
-  describe("edge cases", () => {
-    it("renders correctly with different slug", () => {
-      mockParams = { slug: "another-club" };
-
-      render(<ClubSettingsPage />);
-
-      // Page should still render the same content - slug is not displayed
-      expect(screen.getByText("Allgemein")).toBeInTheDocument();
     });
   });
 });
