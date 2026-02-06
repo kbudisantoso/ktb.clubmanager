@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 interface Tier {
   id: string
@@ -49,6 +50,8 @@ export default function AdminTiersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [editingTier, setEditingTier] = useState<Tier | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [deletingTier, setDeletingTier] = useState<Tier | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     fetchTiers()
@@ -121,11 +124,16 @@ export default function AdminTiersPage() {
     }
   }
 
-  async function handleDelete(tier: Tier) {
-    if (!confirm(`Tarif "${tier.name}" wirklich löschen?`)) return
+  function handleDeleteClick(tier: Tier) {
+    setDeletingTier(tier)
+  }
 
+  async function handleConfirmDelete() {
+    if (!deletingTier) return
+
+    setIsDeleting(true)
     try {
-      const res = await apiFetch(`/api/admin/tiers/${tier.id}`, {
+      const res = await apiFetch(`/api/admin/tiers/${deletingTier.id}`, {
         method: "DELETE",
       })
 
@@ -146,6 +154,9 @@ export default function AdminTiersPage() {
         description: "Netzwerkfehler",
         variant: "destructive",
       })
+    } finally {
+      setIsDeleting(false)
+      setDeletingTier(null)
     }
   }
 
@@ -362,7 +373,7 @@ export default function AdminTiersPage() {
                         variant="ghost"
                         size="sm"
                         disabled={tier.isSeeded}
-                        onClick={() => handleDelete(tier)}
+                        onClick={() => handleDeleteClick(tier)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -374,6 +385,18 @@ export default function AdminTiersPage() {
           </TableBody>
         </Table>
       </div>
+
+      <ConfirmDialog
+        open={!!deletingTier}
+        onOpenChange={(open) => !open && setDeletingTier(null)}
+        title="Tarif löschen"
+        description={`Möchtest du den Tarif "${deletingTier?.name ?? ""}" wirklich löschen?`}
+        confirmLabel="Löschen"
+        cancelLabel="Abbrechen"
+        variant="destructive"
+        onConfirm={handleConfirmDelete}
+        loading={isDeleting}
+      />
     </div>
   )
 }
