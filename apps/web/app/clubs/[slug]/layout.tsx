@@ -1,88 +1,23 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useSessionQuery } from '@/hooks/use-session';
-import { useClubStore } from '@/lib/club-store';
-import { fetchAndStorePermissions } from '@/lib/fetch-permissions';
-import { useMyClubsQuery } from '@/hooks/use-clubs';
 import { Header } from '@/components/layout/header';
-import { ClubNotFound } from '@/components/club-not-found';
-import { Loader2 } from 'lucide-react';
+import { ClubLayoutClient } from './_layout-client';
 
-type AccessState = 'loading' | 'granted' | 'denied';
-
+/**
+ * Club layout - Server component.
+ *
+ * Access control is handled by checkClubAccess in individual page components,
+ * which properly returns 404 status codes when access is denied.
+ *
+ * Client-side effects (active club, permissions) are handled by ClubLayoutClient.
+ */
 export default function ClubLayout({ children }: { children: React.ReactNode }) {
-  const params = useParams();
-  const router = useRouter();
-  const { data: session, isLoading: sessionLoading } = useSessionQuery();
-  const { data, isLoading: clubsLoading } = useMyClubsQuery();
-  const { clubs = [] } = data ?? {};
-  const { setActiveClub } = useClubStore();
-
-  const [accessState, setAccessState] = useState<AccessState>('loading');
-
-  const slug = params.slug as string;
-
-  useEffect(() => {
-    if (sessionLoading || clubsLoading) return;
-
-    if (!session?.user) {
-      router.push(`/login?callbackUrl=/clubs/${slug}/dashboard`);
-      return;
-    }
-
-    // Check if user has access to this club
-    const club = clubs.find((c) => c.slug === slug);
-    if (club) {
-      setActiveClub(slug);
-      setAccessState('granted');
-
-      // Fetch permissions if not already loaded for this club
-      const hasPermissions = club.permissions && club.permissions.length > 0;
-      if (!hasPermissions) {
-        fetchAndStorePermissions(slug);
-      }
-    } else {
-      // Show security 404 - don't reveal if club exists or not
-      setAccessState('denied');
-    }
-  }, [session, sessionLoading, clubsLoading, clubs, slug, setActiveClub, router]);
-
-  if (sessionLoading || clubsLoading || accessState === 'loading') {
-    return (
-      <>
-        <div className="app-background" />
-        <div className="relative min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </main>
-        </div>
-      </>
-    );
-  }
-
-  if (accessState === 'denied') {
-    return (
-      <>
-        <div className="app-background" />
-        <div className="relative min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1">
-            <ClubNotFound />
-          </main>
-        </div>
-      </>
-    );
-  }
-
   return (
     <>
       <div className="app-background" />
       <div className="relative min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1">
+          <ClubLayoutClient>{children}</ClubLayoutClient>
+        </main>
       </div>
     </>
   );
