@@ -12,6 +12,8 @@ import { useMember } from '@/hooks/use-member-detail';
 import { MemberDetailHeader } from './member-detail-header';
 import { MemberForm } from './member-form/member-form';
 import { MemberStatusDialog } from './member-status-dialog';
+import { MemberDeleteDialog } from './member-delete-dialog';
+import { MemberAnonymizeDialog } from './member-anonymize-dialog';
 
 // ============================================================================
 // Constants
@@ -72,6 +74,8 @@ function DetailContent({ memberId, onClose, showFullPageLink = true }: DetailCon
   const slug = params.slug;
   const { data: member, isLoading, isError } = useMember(slug, memberId);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [anonymizeDialogOpen, setAnonymizeDialogOpen] = useState(false);
 
   if (isLoading) {
     return <DetailSkeleton />;
@@ -114,6 +118,8 @@ function DetailContent({ memberId, onClose, showFullPageLink = true }: DetailCon
           slug={slug}
           avatarSize="md"
           onChangeStatus={() => setStatusDialogOpen(true)}
+          onDelete={() => setDeleteDialogOpen(true)}
+          onAnonymize={() => setAnonymizeDialogOpen(true)}
         />
       </div>
 
@@ -132,6 +138,23 @@ function DetailContent({ memberId, onClose, showFullPageLink = true }: DetailCon
         member={member}
         open={statusDialogOpen}
         onOpenChange={setStatusDialogOpen}
+      />
+
+      {/* Delete dialog */}
+      <MemberDeleteDialog
+        member={member}
+        slug={slug}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onDeleted={onClose}
+      />
+
+      {/* Anonymize dialog */}
+      <MemberAnonymizeDialog
+        member={member}
+        slug={slug}
+        open={anonymizeDialogOpen}
+        onOpenChange={setAnonymizeDialogOpen}
       />
     </div>
   );

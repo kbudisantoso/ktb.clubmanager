@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MemberAvatar } from './member-avatar';
 import { MemberStatusBadge } from './member-status-badge';
+import { HouseholdBadge } from './household-badge';
 import type { MemberDetail } from '@/hooks/use-member-detail';
 
 /** Membership type German labels */
@@ -136,6 +137,14 @@ export function MemberDetailHeader({
             <div className="flex items-center gap-2 flex-wrap">
               <MemberStatusBadge status={member.status} />
               <span className="text-sm text-muted-foreground font-mono">{member.memberNumber}</span>
+              {member.household && (
+                <HouseholdBadge
+                  name={member.household.name}
+                  householdId={member.household.id}
+                  members={member.household.members}
+                  onClick={onAssignHousehold}
+                />
+              )}
             </div>
 
             {/* Membership type + Entry date */}
@@ -179,7 +188,7 @@ export function MemberDetailHeader({
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={onAssignHousehold}>
                 <Users className="h-4 w-4" />
-                Haushalt zuordnen
+                {member.household ? 'Haushalt bearbeiten' : 'Haushalt zuordnen'}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onEndMembership}>
                 <UserX className="h-4 w-4" />

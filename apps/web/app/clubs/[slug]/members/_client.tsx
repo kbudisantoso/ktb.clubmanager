@@ -13,6 +13,7 @@ import { MemberEmptyState } from '@/components/members/member-empty-state';
 import { MemberListTable } from '@/components/members/member-list-table';
 import { MemberCreateSheet } from '@/components/members/member-create-sheet';
 import { MemberDetailPanel, useMemberPanelUrl } from '@/components/members/member-detail-panel';
+import { MemberBulkActions } from '@/components/members/member-bulk-actions';
 
 /** Status filter options */
 const STATUS_FILTERS = [
@@ -195,6 +196,14 @@ function MembersClientInner() {
 
       {/* Quick-create member sheet */}
       <MemberCreateSheet slug={slug} open={isCreateSheetOpen} onOpenChange={setIsCreateSheetOpen} />
+
+      {/* Floating bulk actions bar */}
+      <MemberBulkActions
+        selectedIds={selectedIds}
+        members={members}
+        totalCount={totalCount}
+        onClearSelection={() => setSelectedIds(new Set())}
+      />
     </div>
   );
 
