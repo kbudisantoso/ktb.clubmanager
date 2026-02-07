@@ -60,9 +60,7 @@ export class NumberRangesService {
     });
 
     if (existing) {
-      throw new ConflictException(
-        `Nummernkreis fuer Typ "${dto.entityType}" existiert bereits`
-      );
+      throw new ConflictException(`Nummernkreis fuer Typ "${dto.entityType}" existiert bereits`);
     }
 
     // Use raw prisma with explicit clubId (forClub extension adds clubId
@@ -150,9 +148,7 @@ export class NumberRangesService {
       });
 
       if (!current) {
-        throw new NotFoundException(
-          `Nummernkreis fuer Typ "${entityType}" nicht gefunden`
-        );
+        throw new NotFoundException(`Nummernkreis fuer Typ "${entityType}" nicht gefunden`);
       }
 
       // Handle year reset: if yearReset is true and prefix contains {YYYY},
@@ -229,10 +225,7 @@ export class NumberRangesService {
   private formatNumber(prefix: string, value: number, padLength: number): string {
     let resolvedPrefix = prefix;
     if (resolvedPrefix.includes('{YYYY}')) {
-      resolvedPrefix = resolvedPrefix.replace(
-        '{YYYY}',
-        new Date().getFullYear().toString()
-      );
+      resolvedPrefix = resolvedPrefix.replace('{YYYY}', new Date().getFullYear().toString());
     }
 
     const paddedValue = String(value).padStart(padLength, '0');
