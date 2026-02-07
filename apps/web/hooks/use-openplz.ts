@@ -45,13 +45,10 @@ export function useOpenPlzLocalities(postalCode: string) {
       const timeout = setTimeout(() => controller.abort(), OPENPLZ_TIMEOUT);
 
       try {
-        const res = await fetch(
-          `${OPENPLZ_BASE}/Localities?postalCode=${postalCode}`,
-          {
-            headers: { accept: 'text/json' },
-            signal: controller.signal,
-          }
-        );
+        const res = await fetch(`${OPENPLZ_BASE}/Localities?postalCode=${postalCode}`, {
+          headers: { accept: 'text/json' },
+          signal: controller.signal,
+        });
         if (!res.ok) return [];
         return res.json();
       } catch {
@@ -75,11 +72,7 @@ export function useOpenPlzLocalities(postalCode: string) {
  * - Same timeout/fallback pattern as localities
  * - Cached for 24 hours
  */
-export function useOpenPlzStreets(
-  postalCode: string,
-  locality: string,
-  search: string
-) {
+export function useOpenPlzStreets(postalCode: string, locality: string, search: string) {
   return useQuery<Street[]>({
     queryKey: ['openplz', 'streets', postalCode, locality, search],
     queryFn: async (): Promise<Street[]> => {
@@ -105,10 +98,7 @@ export function useOpenPlzStreets(
         clearTimeout(timeout);
       }
     },
-    enabled:
-      /^\d{5}$/.test(postalCode) &&
-      locality.length > 0 &&
-      search.length >= 2,
+    enabled: /^\d{5}$/.test(postalCode) && locality.length > 0 && search.length >= 2,
     staleTime: 24 * 60 * 60 * 1000, // 24 hours
     gcTime: 7 * 24 * 60 * 60 * 1000, // 7 days
     retry: false,

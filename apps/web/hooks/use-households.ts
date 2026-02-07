@@ -9,8 +9,7 @@ import { memberKeys } from './use-members';
 export const householdKeys = {
   all: (slug: string) => ['households', slug] as const,
   list: (slug: string) => [...householdKeys.all(slug), 'list'] as const,
-  detail: (slug: string, id: string) =>
-    [...householdKeys.all(slug), 'detail', id] as const,
+  detail: (slug: string, id: string) => [...householdKeys.all(slug), 'detail', id] as const,
 };
 
 // ============================================================================
@@ -121,9 +120,7 @@ export function useCreateHousehold(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(
-          error.message || 'Fehler beim Erstellen des Haushalts'
-        );
+        throw new Error(error.message || 'Fehler beim Erstellen des Haushalts');
       }
       return res.json();
     },
@@ -144,13 +141,7 @@ export function useUpdateHousehold(slug: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: UpdateHouseholdInput;
-    }) => {
+    mutationFn: async ({ id, data }: { id: string; data: UpdateHouseholdInput }) => {
       const res = await apiFetch(`/api/clubs/${slug}/households/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -158,9 +149,7 @@ export function useUpdateHousehold(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(
-          error.message || 'Fehler beim Aktualisieren des Haushalts'
-        );
+        throw new Error(error.message || 'Fehler beim Aktualisieren des Haushalts');
       }
       return res.json();
     },
@@ -182,24 +171,15 @@ export function useAddHouseholdMember(slug: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      householdId,
-      memberId,
-      role,
-    }: AddHouseholdMemberInput) => {
-      const res = await apiFetch(
-        `/api/clubs/${slug}/households/${householdId}/members`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ memberId, role }),
-        }
-      );
+    mutationFn: async ({ householdId, memberId, role }: AddHouseholdMemberInput) => {
+      const res = await apiFetch(`/api/clubs/${slug}/households/${householdId}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId, role }),
+      });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(
-          error.message || 'Fehler beim Hinzufuegen des Mitglieds zum Haushalt'
-        );
+        throw new Error(error.message || 'Fehler beim Hinzufuegen des Mitglieds zum Haushalt');
       }
       return res.json();
     },
@@ -222,10 +202,7 @@ export function useRemoveHouseholdMember(slug: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      householdId,
-      memberId,
-    }: RemoveHouseholdMemberInput) => {
+    mutationFn: async ({ householdId, memberId }: RemoveHouseholdMemberInput) => {
       const res = await apiFetch(
         `/api/clubs/${slug}/households/${householdId}/members/${memberId}`,
         {
@@ -234,9 +211,7 @@ export function useRemoveHouseholdMember(slug: string) {
       );
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(
-          error.message || 'Fehler beim Entfernen des Mitglieds aus dem Haushalt'
-        );
+        throw new Error(error.message || 'Fehler beim Entfernen des Mitglieds aus dem Haushalt');
       }
       return res.json();
     },
@@ -260,19 +235,14 @@ export function useSyncAddresses(slug: string) {
 
   return useMutation({
     mutationFn: async ({ householdId, memberIds }: SyncAddressesInput) => {
-      const res = await apiFetch(
-        `/api/clubs/${slug}/households/${householdId}/sync-addresses`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ memberIds }),
-        }
-      );
+      const res = await apiFetch(`/api/clubs/${slug}/households/${householdId}/sync-addresses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberIds }),
+      });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(
-          error.message || 'Fehler beim Synchronisieren der Adressen'
-        );
+        throw new Error(error.message || 'Fehler beim Synchronisieren der Adressen');
       }
       return res.json();
     },
@@ -293,17 +263,12 @@ export function useDissolveHousehold(slug: string) {
 
   return useMutation({
     mutationFn: async (householdId: string) => {
-      const res = await apiFetch(
-        `/api/clubs/${slug}/households/${householdId}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const res = await apiFetch(`/api/clubs/${slug}/households/${householdId}`, {
+        method: 'DELETE',
+      });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(
-          error.message || 'Fehler beim Aufloesen des Haushalts'
-        );
+        throw new Error(error.message || 'Fehler beim Aufloesen des Haushalts');
       }
       return res.json();
     },

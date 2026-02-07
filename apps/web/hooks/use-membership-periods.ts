@@ -7,10 +7,8 @@ import { memberKeys } from './use-members';
 // ============================================================================
 
 export const periodKeys = {
-  all: (slug: string, memberId: string) =>
-    ['membershipPeriods', slug, memberId] as const,
-  list: (slug: string, memberId: string) =>
-    [...periodKeys.all(slug, memberId), 'list'] as const,
+  all: (slug: string, memberId: string) => ['membershipPeriods', slug, memberId] as const,
+  list: (slug: string, memberId: string) => [...periodKeys.all(slug, memberId), 'list'] as const,
 };
 
 // ============================================================================
@@ -55,16 +53,11 @@ interface ClosePeriodInput {
  * Fetch membership periods for a specific member.
  * Only queries when memberId is provided.
  */
-export function useMemberPeriods(
-  slug: string,
-  memberId: string | undefined
-) {
+export function useMemberPeriods(slug: string, memberId: string | undefined) {
   return useQuery<MembershipPeriod[]>({
     queryKey: periodKeys.list(slug, memberId ?? ''),
     queryFn: async () => {
-      const res = await apiFetch(
-        `/api/clubs/${slug}/members/${memberId}/periods`
-      );
+      const res = await apiFetch(`/api/clubs/${slug}/members/${memberId}/periods`);
       if (!res.ok) {
         throw new Error('Fehler beim Laden der Mitgliedschaftszeitraeume');
       }
@@ -87,19 +80,14 @@ export function useCreatePeriod(slug: string, memberId: string) {
 
   return useMutation({
     mutationFn: async (data: CreatePeriodInput) => {
-      const res = await apiFetch(
-        `/api/clubs/${slug}/members/${memberId}/periods`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }
-      );
+      const res = await apiFetch(`/api/clubs/${slug}/members/${memberId}/periods`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(
-          error.message || 'Fehler beim Erstellen des Zeitraums'
-        );
+        throw new Error(error.message || 'Fehler beim Erstellen des Zeitraums');
       }
       return res.json();
     },
@@ -123,19 +111,14 @@ export function useUpdatePeriod(slug: string, memberId: string) {
 
   return useMutation({
     mutationFn: async ({ periodId, ...data }: UpdatePeriodInput) => {
-      const res = await apiFetch(
-        `/api/clubs/${slug}/members/${memberId}/periods/${periodId}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }
-      );
+      const res = await apiFetch(`/api/clubs/${slug}/members/${memberId}/periods/${periodId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(
-          error.message || 'Fehler beim Aktualisieren des Zeitraums'
-        );
+        throw new Error(error.message || 'Fehler beim Aktualisieren des Zeitraums');
       }
       return res.json();
     },
@@ -158,19 +141,14 @@ export function useClosePeriod(slug: string, memberId: string) {
 
   return useMutation({
     mutationFn: async ({ periodId, leaveDate }: ClosePeriodInput) => {
-      const res = await apiFetch(
-        `/api/clubs/${slug}/members/${memberId}/periods/${periodId}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ leaveDate }),
-        }
-      );
+      const res = await apiFetch(`/api/clubs/${slug}/members/${memberId}/periods/${periodId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leaveDate }),
+      });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(
-          error.message || 'Fehler beim Beenden des Zeitraums'
-        );
+        throw new Error(error.message || 'Fehler beim Beenden des Zeitraums');
       }
       return res.json();
     },
