@@ -22,6 +22,9 @@ const AUDITED_MODELS = [
   'ClubUser',
   'Tier',
   'Member',
+  'Household',
+  'MembershipPeriod',
+  'NumberRange',
   'LedgerAccount',
   // Add more as needed
 ] as const;
