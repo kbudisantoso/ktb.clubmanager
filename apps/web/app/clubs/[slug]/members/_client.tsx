@@ -1,15 +1,25 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Suspense, useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from '@/components/ui/resizable';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useMembersInfinite } from '@/hooks/use-members';
 import { useNumberRanges } from '@/hooks/use-number-ranges';
 import { MemberSearch } from '@/components/members/member-search';
 import { MemberEmptyState } from '@/components/members/member-empty-state';
 import { MemberListTable } from '@/components/members/member-list-table';
+import { MemberCreateSheet } from '@/components/members/member-create-sheet';
+import {
+  MemberDetailPanel,
+  useMemberPanelUrl,
+} from '@/components/members/member-detail-panel';
 
 /** Status filter options */
 const STATUS_FILTERS = [
@@ -21,10 +31,10 @@ const STATUS_FILTERS = [
 ] as const;
 
 /**
- * Client component orchestrating the member list page.
- * Handles search, status filtering, infinite scroll, and empty states.
+ * Inner content component that uses useSearchParams (via useMemberPanelUrl).
+ * Must be wrapped in Suspense boundary.
  */
-export function MembersClient() {
+function MembersClientInner() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
 
@@ -35,11 +45,14 @@ export function MembersClient() {
   // Status filter state
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
 
+  // Create sheet state
+  const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
+
   // Selection state for bulk actions
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Selected member for detail panel (wired in Plan 10)
-  const [_selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  // Detail panel URL sync
+  const { selectedMemberId, selectMember, closePanel } = useMemberPanelUrl();
 
   // Active row index for keyboard navigation
   const [activeRowIndex, setActiveRowIndex] = useState<number>(-1);
@@ -81,10 +94,13 @@ export function MembersClient() {
     setStatusFilter(undefined);
   }, []);
 
-  // Handle member row click
-  const handleSelectMember = useCallback((id: string) => {
-    setSelectedMemberId(id);
-  }, []);
+  // Handle member row click - opens detail panel
+  const handleSelectMember = useCallback(
+    (id: string) => {
+      selectMember(id);
+    },
+    [selectMember]
+  );
 
   // Reset selection when search/filter changes
   useEffect(() => {
@@ -92,7 +108,7 @@ export function MembersClient() {
     setActiveRowIndex(-1);
   }, [debouncedSearch, statusFilter]);
 
-  // Keyboard navigation: J/K for rows, Enter to open detail
+  // Keyboard navigation: J/K for rows, Enter to open detail, Escape to close panel
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       // Don't capture when typing in inputs
@@ -101,7 +117,10 @@ export function MembersClient() {
         return;
       }
 
-      if (e.key === 'j' || e.key === 'ArrowDown') {
+      if (e.key === 'Escape' && selectedMemberId) {
+        e.preventDefault();
+        closePanel();
+      } else if (e.key === 'j' || e.key === 'ArrowDown') {
         e.preventDefault();
         setActiveRowIndex((prev) => Math.min(prev + 1, members.length - 1));
       } else if (e.key === 'k' || e.key === 'ArrowUp') {
@@ -115,12 +134,14 @@ export function MembersClient() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [activeRowIndex, members, handleSelectMember]);
+  }, [activeRowIndex, members, handleSelectMember, selectedMemberId, closePanel]);
 
   const isLoading = isMembersLoading || isNumberRangesLoading;
+  const isPanelOpen = !!selectedMemberId;
 
-  return (
-    <div className="container mx-auto py-6 space-y-4">
+  /** The list content (header, search, table) */
+  const listContent = (
+    <div className="py-6 px-4 space-y-4 h-full overflow-auto">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
@@ -131,7 +152,7 @@ export function MembersClient() {
             </p>
           )}
         </div>
-        <Button disabled={!hasMemberNumberRange}>
+        <Button disabled={!hasMemberNumberRange} onClick={() => setIsCreateSheetOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Neues Mitglied
         </Button>
@@ -163,9 +184,7 @@ export function MembersClient() {
       {!isLoading && emptyStateVariant ? (
         <MemberEmptyState
           variant={emptyStateVariant}
-          onCreateMember={() => {
-            // TODO: Wire to create sheet in Plan 09
-          }}
+          onCreateMember={() => setIsCreateSheetOpen(true)}
           onClearSearch={handleClearSearch}
         />
       ) : (
@@ -180,6 +199,69 @@ export function MembersClient() {
           onSelectMember={handleSelectMember}
         />
       )}
+
+      {/* Quick-create member sheet */}
+      <MemberCreateSheet
+        slug={slug}
+        open={isCreateSheetOpen}
+        onOpenChange={setIsCreateSheetOpen}
+      />
+    </div>
+  );
+
+  // When panel is open on desktop, use ResizablePanelGroup
+  if (isPanelOpen) {
+    return (
+      <div className="h-[calc(100vh-4rem)]">
+        <ResizablePanelGroup orientation="horizontal">
+          {/* List panel */}
+          <ResizablePanel defaultSize={55} minSize={30}>
+            {listContent}
+          </ResizablePanel>
+
+          {/* Resize handle */}
+          <ResizableHandle withHandle />
+
+          {/* Detail panel */}
+          <ResizablePanel defaultSize={45} minSize={30}>
+            <div className="h-full overflow-auto border-l">
+              <MemberDetailPanel
+                selectedMemberId={selectedMemberId}
+                onClose={closePanel}
+              />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+    );
+  }
+
+  // No panel open - full-width list
+  return <div className="container mx-auto">{listContent}</div>;
+}
+
+/**
+ * Client component orchestrating the member list page.
+ * Handles search, status filtering, infinite scroll, detail panel, and empty states.
+ * Wrapped in Suspense because useMemberPanelUrl uses useSearchParams.
+ */
+export function MembersClient() {
+  return (
+    <Suspense fallback={<MembersLoadingFallback />}>
+      <MembersClientInner />
+    </Suspense>
+  );
+}
+
+/** Loading fallback for Suspense boundary */
+function MembersLoadingFallback() {
+  return (
+    <div className="container mx-auto py-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Mitglieder</h1>
+        </div>
+      </div>
     </div>
   );
 }
