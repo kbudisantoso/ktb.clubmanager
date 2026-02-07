@@ -135,9 +135,7 @@ export function MemberDetailHeader({
             {/* Status + Member number */}
             <div className="flex items-center gap-2 flex-wrap">
               <MemberStatusBadge status={member.status} />
-              <span className="text-sm text-muted-foreground font-mono">
-                {member.memberNumber}
-              </span>
+              <span className="text-sm text-muted-foreground font-mono">{member.memberNumber}</span>
             </div>
 
             {/* Membership type + Entry date */}
@@ -193,19 +191,11 @@ export function MemberDetailHeader({
                 Kuendigung erfassen
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                disabled={!isLeft}
-                onClick={onDelete}
-              >
+              <DropdownMenuItem variant="destructive" disabled={!isLeft} onClick={onDelete}>
                 <Trash2 className="h-4 w-4" />
                 Loeschen
               </DropdownMenuItem>
-              <DropdownMenuItem
-                variant="destructive"
-                disabled={!isLeft}
-                onClick={onAnonymize}
-              >
+              <DropdownMenuItem variant="destructive" disabled={!isLeft} onClick={onAnonymize}>
                 <ShieldAlert className="h-4 w-4" />
                 Anonymisieren
               </DropdownMenuItem>

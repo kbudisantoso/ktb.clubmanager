@@ -84,12 +84,7 @@ export function MemberDetailClient({ slug, memberId }: MemberDetailClientProps) 
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header with back link */}
-      <MemberDetailHeader
-        member={member}
-        slug={slug}
-        avatarSize="lg"
-        showBackLink
-      />
+      <MemberDetailHeader member={member} slug={slug} avatarSize="lg" showBackLink />
 
       {/* Tabs */}
       <Tabs defaultValue="stammdaten">
