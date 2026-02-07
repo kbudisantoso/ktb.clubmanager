@@ -28,7 +28,7 @@ function isPublicPath(pathname: string): boolean {
  * Checks for Better Auth session cookie and redirects
  * unauthenticated users to login page.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths

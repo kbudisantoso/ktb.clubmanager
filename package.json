@@ -40,13 +40,13 @@
     "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
-    "prettier": "^3.8.0",
-    "prisma": "^7.0.0",
+    "prettier": "^3.8.1",
+    "prisma": "^7.3.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.53.1",
-    "vite-tsconfig-paths": "^6.0.4",
-    "vitest": "^4.0.17"
+    "typescript-eslint": "^8.54.0",
+    "vite-tsconfig-paths": "^6.0.5",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
@@ -55,5 +55,11 @@
     "@sindresorhus/slugify": "^3.0.0",
     "nanoid": "^5.1.6",
     "pg": "^8.18.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.2.13",
+      "@types/react-dom": "19.2.3"
+    }
   }
 }
