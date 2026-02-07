@@ -8,6 +8,7 @@ import { SettingsModule } from './settings/settings.module';
 import { AdminModule } from './admin/admin.module';
 import { ClubsModule } from './clubs/clubs.module';
 import { NumberRangesModule } from './number-ranges/number-ranges.module';
+import { MembersModule } from './members/members.module';
 import { MeModule } from './me/me.module';
 import { SessionAuthGuard } from './auth/guards/session-auth.guard.js';
 import { SuperAdminGuard } from './common/guards/super-admin.guard.js';
@@ -28,6 +29,7 @@ import { PermissionGuard } from './common/guards/permission.guard.js';
     MeModule,
     ClubsModule,
     NumberRangesModule,
+    MembersModule,
     HealthModule,
   ],
   providers: [
