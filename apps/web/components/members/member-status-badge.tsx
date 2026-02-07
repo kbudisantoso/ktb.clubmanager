@@ -6,10 +6,7 @@ import { cn } from '@/lib/utils';
 type MemberStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'LEFT';
 
 /** Status configuration with German labels and semantic styling */
-const STATUS_CONFIG: Record<
-  MemberStatus,
-  { label: string; className: string }
-> = {
+const STATUS_CONFIG: Record<MemberStatus, { label: string; className: string }> = {
   ACTIVE: {
     label: 'Aktiv',
     className: 'bg-success/15 text-success border-success/25',

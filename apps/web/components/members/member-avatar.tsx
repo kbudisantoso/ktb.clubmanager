@@ -70,7 +70,7 @@ export function MemberAvatar({
       )}
       title={
         personType === 'LEGAL_ENTITY'
-          ? organizationName ?? ''
+          ? (organizationName ?? '')
           : `${firstName ?? ''} ${lastName ?? ''}`.trim()
       }
     >
