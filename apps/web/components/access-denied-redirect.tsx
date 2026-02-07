@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useToast } from "@/hooks/use-toast"
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 interface AccessDeniedRedirectProps {
   /**
@@ -10,15 +10,15 @@ interface AccessDeniedRedirectProps {
    * - 'clubs' -> /clubs (no club access)
    * - 'dashboard' -> /clubs/{slug} (no permission for specific feature)
    */
-  type: "clubs" | "dashboard"
+  type: 'clubs' | 'dashboard';
   /**
    * Club slug for dashboard redirect
    */
-  clubSlug?: string
+  clubSlug?: string;
   /**
    * Custom error message (defaults to standard German messages)
    */
-  message?: string
+  message?: string;
 }
 
 /**
@@ -32,60 +32,55 @@ interface AccessDeniedRedirectProps {
  * }
  * ```
  */
-export function AccessDeniedRedirect({
-  type,
-  clubSlug,
-  message,
-}: AccessDeniedRedirectProps) {
-  const router = useRouter()
-  const { toast } = useToast()
+export function AccessDeniedRedirect({ type, clubSlug, message }: AccessDeniedRedirectProps) {
+  const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     const toastMessage =
       message ||
-      (type === "clubs"
-        ? "Du hast keinen Zugang zu diesem Verein"
-        : "Du hast keine Berechtigung für diese Aktion")
+      (type === 'clubs'
+        ? 'Du hast keinen Zugang zu diesem Verein'
+        : 'Du hast keine Berechtigung für diese Aktion');
 
     toast({
-      title: "Zugriff verweigert",
+      title: 'Zugriff verweigert',
       description: toastMessage,
-      variant: "destructive",
-    })
+      variant: 'destructive',
+    });
 
-    const redirectUrl =
-      type === "clubs" ? "/clubs" : clubSlug ? `/clubs/${clubSlug}` : "/clubs"
+    const redirectUrl = type === 'clubs' ? '/clubs' : clubSlug ? `/clubs/${clubSlug}` : '/clubs';
 
-    router.replace(redirectUrl)
-  }, [type, clubSlug, message, router, toast])
+    router.replace(redirectUrl);
+  }, [type, clubSlug, message, router, toast]);
 
   // Return null - redirect happens in useEffect
-  return null
+  return null;
 }
 
 /**
  * Helper hook for programmatic access denial handling.
  */
 export function useAccessDenied() {
-  const router = useRouter()
-  const { toast } = useToast()
+  const router = useRouter();
+  const { toast } = useToast();
 
   return {
     redirectToClubs: (message?: string) => {
       toast({
-        title: "Zugriff verweigert",
-        description: message || "Du hast keinen Zugang zu diesem Verein",
-        variant: "destructive",
-      })
-      router.replace("/clubs")
+        title: 'Zugriff verweigert',
+        description: message || 'Du hast keinen Zugang zu diesem Verein',
+        variant: 'destructive',
+      });
+      router.replace('/clubs');
     },
     redirectToDashboard: (clubSlug: string, message?: string) => {
       toast({
-        title: "Zugriff verweigert",
-        description: message || "Du hast keine Berechtigung für diese Aktion",
-        variant: "destructive",
-      })
-      router.replace(`/clubs/${clubSlug}`)
+        title: 'Zugriff verweigert',
+        description: message || 'Du hast keine Berechtigung für diese Aktion',
+        variant: 'destructive',
+      });
+      router.replace(`/clubs/${clubSlug}`);
     },
-  }
+  };
 }

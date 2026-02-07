@@ -202,4 +202,4 @@ You will not need to sign again for future contributions unless the CLA is updat
 
 ---
 
-*This Agreement is designed to comply with German copyright law (Urheberrechtsgesetz). For legal advice, please consult a qualified attorney.*
+_This Agreement is designed to comply with German copyright law (Urheberrechtsgesetz). For legal advice, please consult a qualified attorney._

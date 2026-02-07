@@ -9,12 +9,14 @@ Accepted
 ## Context
 
 ktb.clubmanager needs to store files including:
+
 - Member profile photos
 - Receipt and invoice images
 - Document attachments (PDF contracts, membership forms)
 - Exported reports
 
 Requirements:
+
 1. **S3-compatible API:** Industry standard for object storage
 2. **Self-hosted option:** Data sovereignty for German clubs
 3. **Development parity:** Same API locally and in production
@@ -23,16 +25,19 @@ Requirements:
 We evaluated:
 
 **Local filesystem:**
+
 - Simple to implement
 - No S3 API compatibility
 - Harder to scale or migrate to cloud
 
 **AWS S3:**
+
 - Industry standard
 - Not self-hostable
 - Costs at scale
 
 **MinIO:**
+
 - S3-compatible API
 - Self-hosted, open source
 - Can run locally for development
@@ -47,6 +52,7 @@ MinIO provides an S3-compatible API that works identically in development (Docke
 ## Consequences
 
 **Positive:**
+
 - S3-compatible API: code works with AWS S3, Cloudflare R2, etc.
 - Self-hosted: clubs maintain data sovereignty
 - Development/production parity: same API locally and deployed
@@ -54,11 +60,13 @@ MinIO provides an S3-compatible API that works identically in development (Docke
 - Built-in console UI for browsing files
 
 **Negative:**
+
 - Additional service to run in Docker Compose
 - Requires configuration for buckets and access policies
 - Operational overhead for self-hosted production deployments
 
 **Neutral:**
+
 - Learning curve for S3 SDK/API if unfamiliar
 - Must configure proper access controls for public/private buckets
 - Backup strategy needed for production data

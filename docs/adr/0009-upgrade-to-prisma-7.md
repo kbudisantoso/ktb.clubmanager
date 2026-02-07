@@ -31,12 +31,12 @@ Now evaluating whether to stay on Prisma 6.x or upgrade to 7.x.
 
 **Trade-offs:**
 
-| Factor | Upgrade Now | Upgrade Later |
-|--------|-------------|---------------|
-| Migration effort | ~30 min (3 models) | Hours (full schema + services) |
-| Technical debt | Avoided | Accumulated |
-| Performance benefits | Immediate | Delayed |
-| Risk | Low (minimal code) | Medium (production code) |
+| Factor               | Upgrade Now        | Upgrade Later                  |
+| -------------------- | ------------------ | ------------------------------ |
+| Migration effort     | ~30 min (3 models) | Hours (full schema + services) |
+| Technical debt       | Avoided            | Accumulated                    |
+| Performance benefits | Immediate          | Delayed                        |
+| Risk                 | Low (minimal code) | Medium (production code)       |
 
 ## Decision
 

@@ -2,13 +2,7 @@
 
 import { useState } from 'react';
 import { Check, X, UserPlus, Loader2 } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -157,9 +151,7 @@ export function AccessRequestsCard({ slug }: AccessRequestsCardProps) {
               </span>
             )}
           </div>
-          <CardDescription>
-            Neue Mitglieder, die dem Verein beitreten möchten
-          </CardDescription>
+          <CardDescription>Neue Mitglieder, die dem Verein beitreten möchten</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -253,9 +245,7 @@ export function AccessRequestsCard({ slug }: AccessRequestsCardProps) {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="note">
-                Anmerkung {rejectReason === 'OTHER' && '*'}
-              </Label>
+              <Label htmlFor="note">Anmerkung {rejectReason === 'OTHER' && '*'}</Label>
               <Textarea
                 id="note"
                 value={rejectNote}
@@ -278,9 +268,7 @@ export function AccessRequestsCard({ slug }: AccessRequestsCardProps) {
               onClick={handleReject}
               disabled={rejectMutation.isPending}
             >
-              {rejectMutation.isPending && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              )}
+              {rejectMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Ablehnen
             </Button>
           </DialogFooter>

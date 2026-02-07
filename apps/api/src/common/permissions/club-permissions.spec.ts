@@ -61,7 +61,9 @@ describe('club-permissions', () => {
     });
 
     it('returns true if any role matches', () => {
-      expect(hasPermission([ClubRole.ADMIN, ClubRole.MEMBER], PERMISSION_GROUPS.CLUB_MEMBERS)).toBe(true);
+      expect(hasPermission([ClubRole.ADMIN, ClubRole.MEMBER], PERMISSION_GROUPS.CLUB_MEMBERS)).toBe(
+        true
+      );
     });
 
     it('returns false for empty roles array', () => {

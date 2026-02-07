@@ -1,27 +1,27 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ShieldAlert } from "lucide-react"
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ShieldAlert } from 'lucide-react';
 
 interface AccessDeniedProps {
   /**
    * The name of the feature/page the user tried to access
    */
-  feature?: string
+  feature?: string;
   /**
    * Custom description (defaults to standard German message)
    */
-  description?: string
+  description?: string;
   /**
    * Back button href
    */
-  backHref?: string
+  backHref?: string;
   /**
    * Back button label
    */
-  backLabel?: string
+  backLabel?: string;
 }
 
 /**
@@ -33,12 +33,12 @@ interface AccessDeniedProps {
 export function AccessDenied({
   feature,
   description,
-  backHref = "/dashboard",
-  backLabel = "Zurück zum Dashboard",
+  backHref = '/dashboard',
+  backLabel = 'Zurück zum Dashboard',
 }: AccessDeniedProps) {
   const defaultDescription = feature
     ? `Du hast keine Berechtigung, ${feature} zu sehen. Bitte wende dich an einen Administrator.`
-    : "Du hast keine Berechtigung für diese Seite. Bitte wende dich an einen Administrator."
+    : 'Du hast keine Berechtigung für diese Seite. Bitte wende dich an einen Administrator.';
 
   return (
     <div className="flex-1 flex items-center justify-center p-4">
@@ -59,5 +59,5 @@ export function AccessDenied({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

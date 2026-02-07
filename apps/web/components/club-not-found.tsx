@@ -1,9 +1,9 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ShieldX } from "lucide-react"
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ShieldX } from 'lucide-react';
 
 /**
  * Security-conscious 404 page for clubs.
@@ -19,9 +19,7 @@ export function ClubNotFound() {
             <ShieldX className="h-8 w-8 text-muted-foreground" />
           </div>
           <CardTitle>Verein nicht gefunden</CardTitle>
-          <CardDescription>
-            Der Verein existiert nicht oder du hast keinen Zugriff.
-          </CardDescription>
+          <CardDescription>Der Verein existiert nicht oder du hast keinen Zugriff.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button asChild>
@@ -30,5 +28,5 @@ export function ClubNotFound() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

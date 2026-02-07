@@ -1,62 +1,66 @@
-"use client"
+'use client';
 
-import { useState, Suspense } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { PasswordStrength } from "@/components/auth/password-strength"
-import { validatePassword } from "@/lib/password-validation"
-import { authClient } from "@/lib/auth-client"
-import { useSessionQuery, useClearSession } from "@/hooks/use-session"
-import { getAuthBroadcast } from "@/lib/broadcast-auth"
-import { ArrowLeft, Loader2, Check, Sparkles, LogOut, LayoutDashboard } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
-import { LegalFooterLinks, DatenschutzLink, NutzungsbedingungenLink } from "@/components/layout/legal-links"
+import { useState, Suspense } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { PasswordStrength } from '@/components/auth/password-strength';
+import { validatePassword } from '@/lib/password-validation';
+import { authClient } from '@/lib/auth-client';
+import { useSessionQuery, useClearSession } from '@/hooks/use-session';
+import { getAuthBroadcast } from '@/lib/broadcast-auth';
+import { ArrowLeft, Loader2, Check, Sparkles, LogOut, LayoutDashboard } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  LegalFooterLinks,
+  DatenschutzLink,
+  NutzungsbedingungenLink,
+} from '@/components/layout/legal-links';
 
 function RegisterContent() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const { data: session, isLoading: isPending } = useSessionQuery()
-  const clearSession = useClearSession()
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
-  const [email, setEmail] = useState("")
-  const [name, setName] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session, isLoading: isPending } = useSessionQuery();
+  const clearSession = useClearSession();
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  const userInputs = [email, name].filter(Boolean)
+  const userInputs = [email, name].filter(Boolean);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setIsLoading(true)
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
 
     // Validate email
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Bitte gib eine gültige E-Mail-Adresse ein")
-      setIsLoading(false)
-      return
+      setError('Bitte gib eine gültige E-Mail-Adresse ein');
+      setIsLoading(false);
+      return;
     }
 
     // Validate passwords match
     if (password !== confirmPassword) {
-      setError("Die Passwörter stimmen nicht überein")
-      setIsLoading(false)
-      return
+      setError('Die Passwörter stimmen nicht überein');
+      setIsLoading(false);
+      return;
     }
 
     // Validate password strength
-    const validation = await validatePassword(password, userInputs)
+    const validation = await validatePassword(password, userInputs);
     if (!validation.valid) {
-      setError(validation.errors[0])
-      setIsLoading(false)
-      return
+      setError(validation.errors[0]);
+      setIsLoading(false);
+      return;
     }
 
     try {
@@ -65,45 +69,48 @@ function RegisterContent() {
       const { data, error: signUpError } = await authClient.signUp.email({
         email,
         password,
-        name: name.trim() || email.split("@")[0],
-      })
+        name: name.trim() || email.split('@')[0],
+      });
 
       if (signUpError) {
         // Handle specific error cases
-        if (signUpError.message?.includes("already exists") || signUpError.code === "USER_ALREADY_EXISTS") {
-          setError("Ein Konto mit dieser E-Mail-Adresse existiert bereits")
+        if (
+          signUpError.message?.includes('already exists') ||
+          signUpError.code === 'USER_ALREADY_EXISTS'
+        ) {
+          setError('Ein Konto mit dieser E-Mail-Adresse existiert bereits');
         } else {
-          setError(signUpError.message || "Registrierung fehlgeschlagen")
+          setError(signUpError.message || 'Registrierung fehlgeschlagen');
         }
-        setIsLoading(false)
-        return
+        setIsLoading(false);
+        return;
       }
 
       if (data) {
         // Registration successful - Better Auth auto-signs in
         // Notify other tabs
-        getAuthBroadcast().notifyLogin()
+        getAuthBroadcast().notifyLogin();
 
         // Show success state briefly then redirect to callback URL (e.g., join page)
         // Use window.location.href for full page reload to ensure fresh session data
-        setSuccess(true)
+        setSuccess(true);
         setTimeout(() => {
-          window.location.href = callbackUrl
-        }, 1500)
+          window.location.href = callbackUrl;
+        }, 1500);
       }
     } catch {
-      setError("Ein Fehler ist aufgetreten. Bitte versuche es erneut.")
-      setIsLoading(false)
+      setError('Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleLogoutAndRegister = async () => {
-    getAuthBroadcast().notifyLogout()
-    getAuthBroadcast().clearAuthState()
-    clearSession()
-    await authClient.signOut()
+    getAuthBroadcast().notifyLogout();
+    getAuthBroadcast().clearAuthState();
+    clearSession();
+    await authClient.signOut();
     // Page will re-render without session, showing the registration form
-  }
+  };
 
   // Show loading while checking session
   if (isPending) {
@@ -123,7 +130,7 @@ function RegisterContent() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   // Show "already logged in" state
@@ -156,22 +163,16 @@ function RegisterContent() {
               Bereits angemeldet
             </h2>
             <p className="text-muted-foreground mb-6">
-              Du bist als <span className="font-medium text-foreground">{session.user.email}</span> angemeldet.
+              Du bist als <span className="font-medium text-foreground">{session.user.email}</span>{' '}
+              angemeldet.
             </p>
 
             <div className="space-y-3">
-              <Button
-                onClick={() => router.push("/dashboard")}
-                className="w-full"
-              >
+              <Button onClick={() => router.push('/dashboard')} className="w-full">
                 <LayoutDashboard className="mr-2 h-4 w-4" />
                 Zum Dashboard
               </Button>
-              <Button
-                variant="outline"
-                onClick={handleLogoutAndRegister}
-                className="w-full"
-              >
+              <Button variant="outline" onClick={handleLogoutAndRegister} className="w-full">
                 <LogOut className="mr-2 h-4 w-4" />
                 Abmelden und neues Konto erstellen
               </Button>
@@ -184,7 +185,7 @@ function RegisterContent() {
           </footer>
         </div>
       </div>
-    )
+    );
   }
 
   if (success) {
@@ -195,16 +196,12 @@ function RegisterContent() {
             <div className="mx-auto w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mb-6">
               <Check className="h-8 w-8 text-success" />
             </div>
-            <h2 className="text-2xl font-display font-bold gradient-text mb-2">
-              Konto erstellt!
-            </h2>
-            <p className="text-muted-foreground">
-              Du wirst zum Dashboard weitergeleitet...
-            </p>
+            <h2 className="text-2xl font-display font-bold gradient-text mb-2">Konto erstellt!</h2>
+            <p className="text-muted-foreground">Du wirst zum Dashboard weitergeleitet...</p>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -214,7 +211,11 @@ function RegisterContent() {
         <div className="glass-panel rounded-2xl p-8 sm:p-10">
           {/* Back link */}
           <Link
-            href={callbackUrl !== "/dashboard" ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/login"}
+            href={
+              callbackUrl !== '/dashboard'
+                ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                : '/login'
+            }
             className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
@@ -242,12 +243,8 @@ function RegisterContent() {
           </div>
 
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-display font-bold gradient-text">
-              Konto erstellen
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Starte mit ClubManager durch
-            </p>
+            <h1 className="text-2xl font-display font-bold gradient-text">Konto erstellen</h1>
+            <p className="text-muted-foreground mt-2">Starte mit ClubManager durch</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -258,7 +255,10 @@ function RegisterContent() {
                 type="email"
                 placeholder="name@example.de"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError(null);
+                }}
                 autoComplete="email"
                 required
                 className="glass-input"
@@ -272,7 +272,10 @@ function RegisterContent() {
                 type="text"
                 placeholder="Max Mustermann"
                 value={name}
-                onChange={(e) => { setName(e.target.value); setError(null); }}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setError(null);
+                }}
                 autoComplete="name"
                 className="glass-input"
               />
@@ -284,7 +287,10 @@ function RegisterContent() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError(null);
+                }}
                 autoComplete="new-password"
                 required
                 className="glass-input"
@@ -298,15 +304,16 @@ function RegisterContent() {
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
-                onChange={(e) => { setConfirmPassword(e.target.value); setError(null); }}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setError(null);
+                }}
                 autoComplete="new-password"
                 required
                 className="glass-input"
               />
               {confirmPassword && password !== confirmPassword && (
-                <p className="text-sm text-destructive">
-                  Die Passwörter stimmen nicht überein
-                </p>
+                <p className="text-sm text-destructive">Die Passwörter stimmen nicht überein</p>
               )}
             </div>
 
@@ -323,9 +330,8 @@ function RegisterContent() {
           </form>
 
           <p className="text-xs text-center text-muted-foreground mt-6">
-            Mit der Registrierung akzeptierst du unsere{" "}
-            <NutzungsbedingungenLink className="text-accent hover:underline" />
-            {" "}und{" "}
+            Mit der Registrierung akzeptierst du unsere{' '}
+            <NutzungsbedingungenLink className="text-accent hover:underline" /> und{' '}
             <DatenschutzLink className="text-accent hover:underline" />
           </p>
         </div>
@@ -337,8 +343,8 @@ function RegisterContent() {
               <Check className="h-4 w-4 text-success" />
             </div>
             <div className="text-muted-foreground">
-              <span className="font-medium text-foreground">Kostenlos starten</span>
-              {" "}- Keine Kreditkarte erforderlich
+              <span className="font-medium text-foreground">Kostenlos starten</span> - Keine
+              Kreditkarte erforderlich
             </div>
           </div>
         </div>
@@ -349,7 +355,7 @@ function RegisterContent() {
         </footer>
       </div>
     </div>
-  )
+  );
 }
 
 export default function RegisterPage() {
@@ -357,7 +363,7 @@ export default function RegisterPage() {
     <Suspense fallback={<RegisterPageSkeleton />}>
       <RegisterContent />
     </Suspense>
-  )
+  );
 }
 
 function RegisterPageSkeleton() {
@@ -377,5 +383,5 @@ function RegisterPageSkeleton() {
         </div>
       </div>
     </div>
-  )
+  );
 }

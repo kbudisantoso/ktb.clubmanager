@@ -1,8 +1,8 @@
-import { auth } from "@/lib/auth"
-import { toNextJsHandler } from "better-auth/next-js"
+import { auth } from '@/lib/auth';
+import { toNextJsHandler } from 'better-auth/next-js';
 
 // Force dynamic - auth endpoints can't be statically generated
-export const dynamic = "force-dynamic"
+export const dynamic = 'force-dynamic';
 
 /**
  * Better Auth API route handler.
@@ -17,4 +17,4 @@ export const dynamic = "force-dynamic"
  *
  * @see https://www.better-auth.com/docs/api-reference
  */
-export const { GET, POST } = toNextJsHandler(auth)
+export const { GET, POST } = toNextJsHandler(auth);

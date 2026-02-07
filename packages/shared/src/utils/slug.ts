@@ -120,9 +120,7 @@ export function isSlugValid(slug: string): boolean {
  * @returns true if reserved
  */
 export function isSlugReserved(slug: string): boolean {
-  return RESERVED_SLUGS.includes(
-    slug.toLowerCase() as (typeof RESERVED_SLUGS)[number],
-  );
+  return RESERVED_SLUGS.includes(slug.toLowerCase() as (typeof RESERVED_SLUGS)[number]);
 }
 
 /**

@@ -1,6 +1,6 @@
-"use client"
+'use client';
 
-import { useState } from "react"
+import { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -8,45 +8,45 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { MoreHorizontal } from "lucide-react"
-import { RoleEditDialog } from "./role-edit-dialog"
-import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { useToast } from "@/hooks/use-toast"
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { MoreHorizontal } from 'lucide-react';
+import { RoleEditDialog } from './role-edit-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface ClubUser {
-  id: string
-  userId: string
-  name: string
-  email: string
-  image?: string
-  roles: string[]
-  joinedAt: string
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  image?: string;
+  roles: string[];
+  joinedAt: string;
 }
 
 interface UserManagementTableProps {
-  users: ClubUser[]
-  currentUserId: string
-  currentUserRoles: string[]
-  clubSlug: string
-  onRefresh: () => void
+  users: ClubUser[];
+  currentUserId: string;
+  currentUserRoles: string[];
+  clubSlug: string;
+  onRefresh: () => void;
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  OWNER: "Verantwortlicher",
-  ADMIN: "Admin",
-  TREASURER: "Kassierer",
-  SECRETARY: "Schriftführer",
-  MEMBER: "Mitglied",
-}
+  OWNER: 'Verantwortlicher',
+  ADMIN: 'Admin',
+  TREASURER: 'Kassierer',
+  SECRETARY: 'Schriftführer',
+  MEMBER: 'Mitglied',
+};
 
 export function UserManagementTable({
   users,
@@ -55,84 +55,84 @@ export function UserManagementTable({
   clubSlug,
   onRefresh,
 }: UserManagementTableProps) {
-  const [editUser, setEditUser] = useState<ClubUser | null>(null)
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [removeUser, setRemoveUser] = useState<ClubUser | null>(null)
-  const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
-  const [removing, setRemoving] = useState(false)
-  const { toast } = useToast()
+  const [editUser, setEditUser] = useState<ClubUser | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [removeUser, setRemoveUser] = useState<ClubUser | null>(null);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const { toast } = useToast();
 
   const handleEditRoles = (user: ClubUser) => {
-    setEditUser(user)
-    setDialogOpen(true)
-  }
+    setEditUser(user);
+    setDialogOpen(true);
+  };
 
   const handleSaveRoles = async (clubUserId: string, roles: string[]) => {
     const response = await fetch(`/api/clubs/${clubSlug}/users/${clubUserId}/roles`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ roles }),
-    })
+    });
 
     if (!response.ok) {
-      const error = await response.json()
+      const error = await response.json();
       toast({
-        title: "Fehler",
-        description: error.message || "Rollen konnten nicht aktualisiert werden.",
-        variant: "destructive",
-      })
-      return
+        title: 'Fehler',
+        description: error.message || 'Rollen konnten nicht aktualisiert werden.',
+        variant: 'destructive',
+      });
+      return;
     }
 
     toast({
-      title: "Gespeichert",
-      description: "Rollen wurden aktualisiert.",
-    })
-    onRefresh()
-  }
+      title: 'Gespeichert',
+      description: 'Rollen wurden aktualisiert.',
+    });
+    onRefresh();
+  };
 
   const handleRemoveClick = (user: ClubUser) => {
     if (user.userId === currentUserId) {
       toast({
-        title: "Nicht erlaubt",
-        description: "Du kannst dich nicht selbst entfernen.",
-        variant: "destructive",
-      })
-      return
+        title: 'Nicht erlaubt',
+        description: 'Du kannst dich nicht selbst entfernen.',
+        variant: 'destructive',
+      });
+      return;
     }
-    setRemoveUser(user)
-    setRemoveDialogOpen(true)
-  }
+    setRemoveUser(user);
+    setRemoveDialogOpen(true);
+  };
 
   const handleConfirmRemove = async () => {
-    if (!removeUser) return
+    if (!removeUser) return;
 
-    setRemoving(true)
+    setRemoving(true);
     try {
       const response = await fetch(`/api/clubs/${clubSlug}/users/${removeUser.id}`, {
-        method: "DELETE",
-      })
+        method: 'DELETE',
+      });
 
       if (!response.ok) {
-        const error = await response.json()
+        const error = await response.json();
         toast({
-          title: "Fehler",
-          description: error.message || "Benutzer konnte nicht entfernt werden.",
-          variant: "destructive",
-        })
-        return
+          title: 'Fehler',
+          description: error.message || 'Benutzer konnte nicht entfernt werden.',
+          variant: 'destructive',
+        });
+        return;
       }
 
       toast({
-        title: "Entfernt",
+        title: 'Entfernt',
         description: `${removeUser.name} wurde aus dem Verein entfernt.`,
-      })
-      onRefresh()
+      });
+      onRefresh();
     } finally {
-      setRemoving(false)
-      setRemoveUser(null)
+      setRemoving(false);
+      setRemoveUser(null);
     }
-  }
+  };
 
   return (
     <>
@@ -147,15 +147,13 @@ export function UserManagementTable({
         </TableHeader>
         <TableBody>
           {users.map((user) => {
-            const isSelf = user.userId === currentUserId
+            const isSelf = user.userId === currentUserId;
 
             return (
               <TableRow key={user.id}>
                 <TableCell className="font-medium">
                   {user.name}
-                  {isSelf && (
-                    <span className="ml-2 text-xs text-muted-foreground">(Du)</span>
-                  )}
+                  {isSelf && <span className="ml-2 text-xs text-muted-foreground">(Du)</span>}
                 </TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
@@ -191,7 +189,7 @@ export function UserManagementTable({
                   </DropdownMenu>
                 </TableCell>
               </TableRow>
-            )
+            );
           })}
         </TableBody>
       </Table>
@@ -209,7 +207,7 @@ export function UserManagementTable({
         open={removeDialogOpen}
         onOpenChange={setRemoveDialogOpen}
         title="Benutzer entfernen"
-        description={`Möchtest du ${removeUser?.name ?? "diesen Benutzer"} wirklich aus dem Verein entfernen?`}
+        description={`Möchtest du ${removeUser?.name ?? 'diesen Benutzer'} wirklich aus dem Verein entfernen?`}
         confirmLabel="Entfernen"
         cancelLabel="Abbrechen"
         variant="destructive"
@@ -217,5 +215,5 @@ export function UserManagementTable({
         loading={removing}
       />
     </>
-  )
+  );
 }

@@ -23,12 +23,7 @@ export const PERMISSION_GROUPS = {
    * Dashboard (read-only), protocols with "club" visibility, etc.
    * Note: Member list access requires separate privacy consideration.
    */
-  CLUB_MEMBERS: [
-    ClubRole.OWNER,
-    ClubRole.TREASURER,
-    ClubRole.SECRETARY,
-    ClubRole.MEMBER,
-  ] as const,
+  CLUB_MEMBERS: [ClubRole.OWNER, ClubRole.TREASURER, ClubRole.SECRETARY, ClubRole.MEMBER] as const,
 
   /** Board members - access to confidential documents (ADMIN is NOT included) */
   BOARD_MEMBERS: [ClubRole.OWNER, ClubRole.TREASURER, ClubRole.SECRETARY] as const,
@@ -50,20 +45,14 @@ export const PERMISSION_GROUPS = {
  * Check if user's roles include any role from the required group.
  * Returns true if at least one role matches.
  */
-export function hasPermission(
-  userRoles: ClubRole[],
-  requiredGroup: readonly ClubRole[],
-): boolean {
+export function hasPermission(userRoles: ClubRole[], requiredGroup: readonly ClubRole[]): boolean {
   return userRoles.some((role) => requiredGroup.includes(role));
 }
 
 /**
  * Check if user has at least one of the specified roles.
  */
-export function hasAnyRole(
-  userRoles: ClubRole[],
-  allowedRoles: ClubRole[],
-): boolean {
+export function hasAnyRole(userRoles: ClubRole[], allowedRoles: ClubRole[]): boolean {
   return userRoles.some((role) => allowedRoles.includes(role));
 }
 
@@ -148,10 +137,7 @@ export const ASSIGNABLE_ROLES_BY_ADMIN = [
   ClubRole.SECRETARY,
 ] as const;
 
-export const ASSIGNABLE_ROLES_BY_OWNER = [
-  ...ASSIGNABLE_ROLES_BY_ADMIN,
-  ClubRole.ADMIN,
-] as const;
+export const ASSIGNABLE_ROLES_BY_OWNER = [...ASSIGNABLE_ROLES_BY_ADMIN, ClubRole.ADMIN] as const;
 
 /**
  * Get the roles that a user can assign based on their own roles.

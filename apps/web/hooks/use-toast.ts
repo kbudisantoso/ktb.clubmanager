@@ -1,15 +1,15 @@
-"use client"
+'use client';
 
-import { toast as sonnerToast, type ExternalToast } from "sonner"
+import { toast as sonnerToast, type ExternalToast } from 'sonner';
 
 interface ToastOptions {
-  title?: string
-  description?: string
-  variant?: "default" | "destructive"
+  title?: string;
+  description?: string;
+  variant?: 'default' | 'destructive';
   action?: {
-    label: string
-    onClick: () => void
-  }
+    label: string;
+    onClick: () => void;
+  };
 }
 
 /**
@@ -33,14 +33,14 @@ export function useToast() {
             onClick: options.action.onClick,
           }
         : undefined,
-    }
+    };
 
-    if (options.variant === "destructive") {
-      sonnerToast.error(options.title, sonnerOptions)
+    if (options.variant === 'destructive') {
+      sonnerToast.error(options.title, sonnerOptions);
     } else {
-      sonnerToast.success(options.title, sonnerOptions)
+      sonnerToast.success(options.title, sonnerOptions);
     }
   }
 
-  return { toast }
+  return { toast };
 }

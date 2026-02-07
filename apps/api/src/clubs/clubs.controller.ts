@@ -11,13 +11,7 @@ import {
   Req,
   Header,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiResponse,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { Request } from 'express';
 import { ClubsService } from './clubs.service.js';
 import { CreateClubDto } from './dto/create-club.dto.js';
@@ -36,7 +30,7 @@ interface AuthenticatedRequest extends Request {
 export class ClubsController {
   constructor(
     private clubsService: ClubsService,
-    private prisma: PrismaService,
+    private prisma: PrismaService
   ) {}
 
   @Post()
@@ -81,7 +75,7 @@ export class ClubsController {
   async update(
     @Param('slug') slug: string,
     @Body() dto: UpdateClubDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ) {
     const isSuperAdmin = await this.isSuperAdmin(req.user.id);
     return this.clubsService.update(slug, dto, req.user.id, isSuperAdmin);
@@ -92,10 +86,7 @@ export class ClubsController {
   @ApiOperation({ summary: 'Delete club (soft delete)' })
   @ApiResponse({ status: 204, description: 'Club deleted' })
   @ApiResponse({ status: 403, description: 'Not club owner' })
-  async remove(
-    @Param('slug') slug: string,
-    @Req() req: AuthenticatedRequest,
-  ): Promise<void> {
+  async remove(@Param('slug') slug: string, @Req() req: AuthenticatedRequest): Promise<void> {
     const isSuperAdmin = await this.isSuperAdmin(req.user.id);
     return this.clubsService.remove(slug, req.user.id, isSuperAdmin);
   }
@@ -105,10 +96,7 @@ export class ClubsController {
   @ApiResponse({ status: 200, description: 'Successfully left the club' })
   @ApiResponse({ status: 403, description: 'Owners cannot leave' })
   @ApiResponse({ status: 400, description: 'Not a member' })
-  async leaveClub(
-    @Param('slug') slug: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  async leaveClub(@Param('slug') slug: string, @Req() req: AuthenticatedRequest) {
     return this.clubsService.leaveClub(slug, req.user.id);
   }
 
@@ -116,10 +104,7 @@ export class ClubsController {
   @ApiOperation({ summary: 'Regenerate club invite code' })
   @ApiResponse({ status: 200, description: 'New invite code generated' })
   @ApiResponse({ status: 403, description: 'Not club admin' })
-  async regenerateInviteCode(
-    @Param('slug') slug: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  async regenerateInviteCode(@Param('slug') slug: string, @Req() req: AuthenticatedRequest) {
     const isSuperAdmin = await this.isSuperAdmin(req.user.id);
     return this.clubsService.regenerateInviteCode(slug, req.user.id, isSuperAdmin);
   }

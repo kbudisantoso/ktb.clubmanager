@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
-import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import { useTheme } from 'next-themes';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Card,
   CardHeader,
@@ -13,7 +13,7 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Table,
   TableHeader,
@@ -21,7 +21,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 
 export default function ComponentsDemo() {
   const [mounted, setMounted] = useState(false);
@@ -59,19 +59,19 @@ export default function ComponentsDemo() {
             </p>
           </div>
         </div>
-        <div className={`flex gap-2 ${!mounted ? "invisible" : ""}`}>
+        <div className={`flex gap-2 ${!mounted ? 'invisible' : ''}`}>
           <Button
-            variant={mounted && theme === "light" ? "default" : "outline"}
+            variant={mounted && theme === 'light' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setTheme("light")}
+            onClick={() => setTheme('light')}
             className="w-16 border border-transparent"
           >
             Light
           </Button>
           <Button
-            variant={mounted && theme === "dark" ? "default" : "outline"}
+            variant={mounted && theme === 'dark' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setTheme("dark")}
+            onClick={() => setTheme('dark')}
             className="w-14 border border-transparent"
           >
             Dark
@@ -108,11 +108,7 @@ export default function ComponentsDemo() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Passwort</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Passwort eingeben"
-            />
+            <Input id="password" type="password" placeholder="Passwort eingeben" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="disabled">Deaktiviert</Label>
@@ -173,25 +169,19 @@ export default function ComponentsDemo() {
               <TableCell className="font-medium">Max Mustermann</TableCell>
               <TableCell>max@example.com</TableCell>
               <TableCell>Aktiv</TableCell>
-              <TableCell className="text-right tabular-nums">
-                120,00 EUR
-              </TableCell>
+              <TableCell className="text-right tabular-nums">120,00 EUR</TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="font-medium">Erika Musterfrau</TableCell>
               <TableCell>erika@example.com</TableCell>
               <TableCell>Aktiv</TableCell>
-              <TableCell className="text-right tabular-nums">
-                120,00 EUR
-              </TableCell>
+              <TableCell className="text-right tabular-nums">120,00 EUR</TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="font-medium">Hans Schmidt</TableCell>
               <TableCell>hans@example.com</TableCell>
               <TableCell>Inaktiv</TableCell>
-              <TableCell className="text-right tabular-nums">
-                0,00 EUR
-              </TableCell>
+              <TableCell className="text-right tabular-nums">0,00 EUR</TableCell>
             </TableRow>
           </TableBody>
         </Table>

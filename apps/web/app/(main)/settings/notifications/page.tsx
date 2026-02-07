@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bell } from 'lucide-react';
 
 export default function NotificationsPage() {
@@ -15,9 +9,7 @@ export default function NotificationsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Benachrichtigungen</CardTitle>
-          <CardDescription>
-            Verwalte deine Benachrichtigungseinstellungen
-          </CardDescription>
+          <CardDescription>Verwalte deine Benachrichtigungseinstellungen</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-12 text-center">

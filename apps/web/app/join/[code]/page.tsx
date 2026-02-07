@@ -1,79 +1,73 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { useSessionQuery } from "@/hooks/use-session"
-import { useClubStore } from "@/lib/club-store"
-import { useJoinClubMutation } from "@/hooks/use-clubs"
-import { Loader2, CheckCircle, XCircle, Building2, Clock, Info } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import Link from "next/link"
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useSessionQuery } from '@/hooks/use-session';
+import { useClubStore } from '@/lib/club-store';
+import { useJoinClubMutation } from '@/hooks/use-clubs';
+import { Loader2, CheckCircle, XCircle, Building2, Clock, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
 
-type JoinState = "loading" | "success" | "error" | "login-required"
+type JoinState = 'loading' | 'success' | 'error' | 'login-required';
 
 export default function JoinPage() {
-  const params = useParams()
-  const router = useRouter()
-  const { data: session, isLoading: sessionLoading } = useSessionQuery()
-  const { setActiveClub } = useClubStore()
-  const joinClub = useJoinClubMutation()
+  const params = useParams();
+  const router = useRouter();
+  const { data: session, isLoading: sessionLoading } = useSessionQuery();
+  const { setActiveClub } = useClubStore();
+  const joinClub = useJoinClubMutation();
 
-  const [state, setState] = useState<JoinState>("loading")
+  const [state, setState] = useState<JoinState>('loading');
 
-  const code = params.code as string
+  const code = params.code as string;
 
   useEffect(() => {
-    if (sessionLoading) return
+    if (sessionLoading) return;
 
     if (!session?.user) {
-      setState("login-required")
-      return
+      setState('login-required');
+      return;
     }
 
     // User is logged in - if we were waiting for login, reset to loading to trigger join
-    if (state === "login-required") {
-      setState("loading")
-      return
+    if (state === 'login-required') {
+      setState('loading');
+      return;
     }
 
     // Only join once
-    if (state === "loading" && !joinClub.isPending && !joinClub.isSuccess && !joinClub.isError) {
+    if (state === 'loading' && !joinClub.isPending && !joinClub.isSuccess && !joinClub.isError) {
       joinClub.mutate(code, {
         onSuccess: (data) => {
-          setState("success")
+          setState('success');
           if (data.club?.slug) {
-            setActiveClub(data.club.slug)
+            setActiveClub(data.club.slug);
           }
         },
         onError: () => {
-          setState("error")
+          setState('error');
         },
-      })
+      });
     }
-  }, [session, sessionLoading, code, state, joinClub, setActiveClub])
+  }, [session, sessionLoading, code, state, joinClub, setActiveClub]);
 
   function handleGoToClub() {
     if (joinClub.data?.club?.slug) {
-      router.push(`/clubs/${joinClub.data.club.slug}/dashboard`)
+      router.push(`/clubs/${joinClub.data.club.slug}/dashboard`);
     } else {
-      router.push("/dashboard")
+      router.push('/dashboard');
     }
   }
 
   function handleLoginRedirect() {
     // Store the join URL to redirect back after login
-    const callbackUrl = encodeURIComponent(`/join/${code}`)
-    router.push(`/login?callbackUrl=${callbackUrl}`)
+    const callbackUrl = encodeURIComponent(`/join/${code}`);
+    router.push(`/login?callbackUrl=${callbackUrl}`);
   }
 
-  if (sessionLoading || (state === "loading" && !joinClub.isError)) {
+  if (sessionLoading || (state === 'loading' && !joinClub.isError)) {
     return (
       <div className="container mx-auto px-4 py-12 max-w-md">
         <Card>
@@ -83,10 +77,10 @@ export default function JoinPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
-  if (state === "login-required") {
+  if (state === 'login-required') {
     return (
       <div className="container mx-auto px-4 py-12 max-w-md">
         <Card>
@@ -94,8 +88,8 @@ export default function JoinPage() {
             <Building2 className="h-12 w-12 mx-auto mb-2 text-primary" />
             <CardTitle>Einladung zu einem Verein</CardTitle>
             <CardDescription>
-              Du hast eine Einladung erhalten. Melde dich an oder registriere
-              dich, um dem Verein beizutreten.
+              Du hast eine Einladung erhalten. Melde dich an oder registriere dich, um dem Verein
+              beizutreten.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -110,10 +104,10 @@ export default function JoinPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
-  if (state === "error" || joinClub.isError) {
+  if (state === 'error' || joinClub.isError) {
     return (
       <div className="container mx-auto px-4 py-12 max-w-md">
         <Card>
@@ -121,24 +115,24 @@ export default function JoinPage() {
             <XCircle className="h-12 w-12 mx-auto mb-2 text-destructive" />
             <CardTitle>Einladung fehlgeschlagen</CardTitle>
             <CardDescription>
-              {joinClub.error?.message || "Netzwerkfehler. Bitte versuche es erneut."}
+              {joinClub.error?.message || 'Netzwerkfehler. Bitte versuche es erneut.'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button onClick={() => router.push("/dashboard")} className="w-full">
+            <Button onClick={() => router.push('/dashboard')} className="w-full">
               Zum Dashboard
             </Button>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
-  if (state === "success" && joinClub.data) {
-    const { status, message, club } = joinClub.data
+  if (state === 'success' && joinClub.data) {
+    const { status, message, club } = joinClub.data;
 
     // Already a member - can go directly to club
-    if (status === "already_member") {
+    if (status === 'already_member') {
       return (
         <div className="container mx-auto px-4 py-12 max-w-md">
           <Card>
@@ -159,12 +153,12 @@ export default function JoinPage() {
             </CardContent>
           </Card>
         </div>
-      )
+      );
     }
 
     // Request sent or already pending - needs admin approval
-    if (status === "request_sent" || status === "pending") {
-      const isNewRequest = status === "request_sent"
+    if (status === 'request_sent' || status === 'pending') {
+      const isNewRequest = status === 'request_sent';
       return (
         <div className="container mx-auto px-4 py-12 max-w-md">
           <Card>
@@ -174,9 +168,7 @@ export default function JoinPage() {
               ) : (
                 <Info className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
               )}
-              <CardTitle>
-                {isNewRequest ? "Anfrage gesendet" : "Anfrage ausstehend"}
-              </CardTitle>
+              <CardTitle>{isNewRequest ? 'Anfrage gesendet' : 'Anfrage ausstehend'}</CardTitle>
               <CardDescription>{message}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -188,13 +180,17 @@ export default function JoinPage() {
               <p className="text-sm text-muted-foreground text-center">
                 Du wirst benachrichtigt, sobald ein Administrator die Anfrage bearbeitet hat.
               </p>
-              <Button onClick={() => router.push("/dashboard")} variant="outline" className="w-full">
+              <Button
+                onClick={() => router.push('/dashboard')}
+                variant="outline"
+                className="w-full"
+              >
                 Zum Dashboard
               </Button>
             </CardContent>
           </Card>
         </div>
-      )
+      );
     }
 
     // Fallback (should not happen)
@@ -207,14 +203,14 @@ export default function JoinPage() {
             <CardDescription>{message}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button onClick={() => router.push("/dashboard")} className="w-full">
+            <Button onClick={() => router.push('/dashboard')} className="w-full">
               Zum Dashboard
             </Button>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
-  return null
+  return null;
 }

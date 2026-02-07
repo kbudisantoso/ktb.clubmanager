@@ -8,10 +8,7 @@ import {
 import { RequireRoles } from '../common/decorators/roles.decorator.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { ClubUsersService } from './club-users.service.js';
-import {
-  ClubUserDto,
-  UpdateClubUserRolesDto,
-} from './dto/update-club-user-roles.dto.js';
+import { ClubUserDto, UpdateClubUserRolesDto } from './dto/update-club-user-roles.dto.js';
 import type { ClubRole } from '../../../../prisma/generated/client/index.js';
 
 @ApiTags('Club Users')
@@ -38,14 +35,14 @@ export class ClubUsersController {
     @GetClubContext() ctx: ClubContext,
     @Param('clubUserId') clubUserId: string,
     @CurrentUser('id') actorUserId: string,
-    @Body() dto: UpdateClubUserRolesDto,
+    @Body() dto: UpdateClubUserRolesDto
   ): Promise<ClubUserDto> {
     return this.clubUsersService.updateClubUserRoles(
       ctx.clubId,
       clubUserId,
       actorUserId,
       ctx.roles as ClubRole[],
-      dto,
+      dto
     );
   }
 
@@ -57,12 +54,8 @@ export class ClubUsersController {
   async removeUser(
     @GetClubContext() ctx: ClubContext,
     @Param('clubUserId') clubUserId: string,
-    @CurrentUser('id') actorUserId: string,
+    @CurrentUser('id') actorUserId: string
   ): Promise<void> {
-    await this.clubUsersService.removeClubUser(
-      ctx.clubId,
-      clubUserId,
-      actorUserId,
-    );
+    await this.clubUsersService.removeClubUser(ctx.clubId, clubUserId, actorUserId);
   }
 }

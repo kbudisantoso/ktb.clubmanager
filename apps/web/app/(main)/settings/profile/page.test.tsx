@@ -1,41 +1,41 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock hooks
 const mockUseSessionQuery = vi.fn();
-vi.mock("@/hooks/use-session", () => ({
+vi.mock('@/hooks/use-session', () => ({
   useSessionQuery: () => mockUseSessionQuery(),
 }));
 
 // Import after mocks
-import ProfilePage from "./page";
+import ProfilePage from './page';
 
-describe("ProfilePage", () => {
+describe('ProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe("sunshine path", () => {
-    it("renders user profile information", () => {
+  describe('sunshine path', () => {
+    it('renders user profile information', () => {
       mockUseSessionQuery.mockReturnValue({
         data: {
-          user: { id: "1", name: "Max Mustermann", email: "max@example.de" },
+          user: { id: '1', name: 'Max Mustermann', email: 'max@example.de' },
         },
         isLoading: false,
       });
 
       render(<ProfilePage />);
 
-      expect(screen.getByText("Profil")).toBeInTheDocument();
-      expect(screen.getByText("Deine persönlichen Informationen")).toBeInTheDocument();
-      expect(screen.getByText("Max Mustermann")).toBeInTheDocument();
-      expect(screen.getByText("max@example.de")).toBeInTheDocument();
+      expect(screen.getByText('Profil')).toBeInTheDocument();
+      expect(screen.getByText('Deine persönlichen Informationen')).toBeInTheDocument();
+      expect(screen.getByText('Max Mustermann')).toBeInTheDocument();
+      expect(screen.getByText('max@example.de')).toBeInTheDocument();
     });
 
-    it("displays user initials in avatar", () => {
+    it('displays user initials in avatar', () => {
       mockUseSessionQuery.mockReturnValue({
         data: {
-          user: { id: "1", name: "Max Mustermann", email: "max@example.de" },
+          user: { id: '1', name: 'Max Mustermann', email: 'max@example.de' },
         },
         isLoading: false,
       });
@@ -43,26 +43,26 @@ describe("ProfilePage", () => {
       render(<ProfilePage />);
 
       // Avatar fallback should show initials "MM"
-      expect(screen.getByText("MM")).toBeInTheDocument();
+      expect(screen.getByText('MM')).toBeInTheDocument();
     });
 
-    it("displays first letter of email when no name", () => {
+    it('displays first letter of email when no name', () => {
       mockUseSessionQuery.mockReturnValue({
         data: {
-          user: { id: "1", name: "", email: "max@example.de" },
+          user: { id: '1', name: '', email: 'max@example.de' },
         },
         isLoading: false,
       });
 
       render(<ProfilePage />);
 
-      expect(screen.getByText("M")).toBeInTheDocument();
-      expect(screen.getByText("Kein Name")).toBeInTheDocument();
+      expect(screen.getByText('M')).toBeInTheDocument();
+      expect(screen.getByText('Kein Name')).toBeInTheDocument();
     });
   });
 
-  describe("edge cases", () => {
-    it("shows loading state when session is loading", () => {
+  describe('edge cases', () => {
+    it('shows loading state when session is loading', () => {
       mockUseSessionQuery.mockReturnValue({
         data: null,
         isLoading: true,
@@ -74,18 +74,18 @@ describe("ProfilePage", () => {
       expect(document.querySelector('[data-slot="card"]')).toBeInTheDocument();
     });
 
-    it("handles user with single name", () => {
+    it('handles user with single name', () => {
       mockUseSessionQuery.mockReturnValue({
         data: {
-          user: { id: "1", name: "Max", email: "max@example.de" },
+          user: { id: '1', name: 'Max', email: 'max@example.de' },
         },
         isLoading: false,
       });
 
       render(<ProfilePage />);
 
-      expect(screen.getByText("M")).toBeInTheDocument();
-      expect(screen.getByText("Max")).toBeInTheDocument();
+      expect(screen.getByText('M')).toBeInTheDocument();
+      expect(screen.getByText('Max')).toBeInTheDocument();
     });
   });
 });

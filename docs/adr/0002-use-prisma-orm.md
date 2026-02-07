@@ -18,17 +18,20 @@ ktb.clubmanager requires an ORM for database operations, with specific requireme
 We evaluated several ORMs:
 
 **TypeORM:**
+
 - Widely used in NestJS projects
 - Uses decorators for schema definition
 - Decimal support exists but can be error-prone
 - Migration tooling works but can be complex
 
 **MikroORM:**
+
 - Modern, well-designed ORM
 - Good TypeScript support
 - Smaller community than alternatives
 
 **Prisma:**
+
 - Schema-first approach with `schema.prisma` file
 - Native Decimal type maps directly to PostgreSQL DECIMAL
 - Excellent TypeScript code generation
@@ -45,6 +48,7 @@ The schema.prisma file becomes the single source of truth for database structure
 ## Consequences
 
 **Positive:**
+
 - Native Decimal type with proper precision for financial calculations
 - Compile-time type safety for all database queries
 - Schema-first approach provides clear documentation
@@ -53,11 +57,13 @@ The schema.prisma file becomes the single source of truth for database structure
 - Excellent TypeScript integration with inferred types
 
 **Negative:**
+
 - Learning curve for developers used to raw SQL
 - Some complex queries may require raw SQL fallback (`$queryRaw`)
 - Generated client adds to `node_modules` size
 - Schema changes require `prisma generate` step
 
 **Neutral:**
+
 - Different mental model than traditional ORMs (schema-first vs code-first)
 - Must run `prisma db push` or `prisma migrate` after schema changes

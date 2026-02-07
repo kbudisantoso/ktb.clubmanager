@@ -6,13 +6,7 @@ import { useCanManageSettings } from '@/lib/club-permissions';
 import { apiFetch } from '@/lib/api';
 import { Users, BookOpen, Copy, Check } from 'lucide-react';
 import { AccessRequestsCard } from '@/components/club/access-requests-card';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -127,44 +121,44 @@ export function ClubDashboardClient() {
 
         {/* Invite Code (for private clubs with admin access) */}
         {club.inviteCode && canManageSettings && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Einladungscode</CardTitle>
-                <CardDescription>
-                  Teile diesen Code, um neue Mitglieder einzuladen
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 p-3 bg-muted rounded-lg text-lg font-mono tracking-wider text-center">
-                    {club.inviteCode}
-                  </code>
-                  <Button variant="outline" size="icon" onClick={copyInviteCode} title="Code kopieren">
-                    {copiedCode ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <p className="text-sm text-muted-foreground flex-1 truncate">
-                    Einladungslink:{' '}
-                    {typeof window !== 'undefined'
-                      ? `${window.location.origin}/join/${club.inviteCode}`
-                      : `/join/${club.inviteCode}`}
-                  </p>
-                  <Button variant="ghost" size="sm" onClick={copyInviteLink} className="shrink-0 h-7 px-2">
-                    {copiedLink ? (
-                      <Check className="h-3 w-3" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Einladungscode</CardTitle>
+              <CardDescription>Teile diesen Code, um neue Mitglieder einzuladen</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 p-3 bg-muted rounded-lg text-lg font-mono tracking-wider text-center">
+                  {club.inviteCode}
+                </code>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={copyInviteCode}
+                  title="Code kopieren"
+                >
+                  {copiedCode ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                <p className="text-sm text-muted-foreground flex-1 truncate">
+                  Einladungslink:{' '}
+                  {typeof window !== 'undefined'
+                    ? `${window.location.origin}/join/${club.inviteCode}`
+                    : `/join/${club.inviteCode}`}
+                </p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={copyInviteLink}
+                  className="shrink-0 h-7 px-2"
+                >
+                  {copiedLink ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Access Requests (for admins only, auto-hides when empty) */}
         {canManageSettings && <AccessRequestsCard slug={slug} />}

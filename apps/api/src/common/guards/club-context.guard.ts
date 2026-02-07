@@ -7,10 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import {
-  CLUB_CONTEXT_KEY,
-  ClubContext,
-} from '../decorators/club-context.decorator.js';
+import { CLUB_CONTEXT_KEY, ClubContext } from '../decorators/club-context.decorator.js';
 import { ROLES_KEY } from '../decorators/roles.decorator.js';
 import { hasAccess, hasAnyRole } from '../permissions/club-permissions.js';
 import { ClubRole } from '../../../../../prisma/generated/client/index.js';
@@ -19,15 +16,15 @@ import { ClubRole } from '../../../../../prisma/generated/client/index.js';
 export class ClubContextGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    private prisma: PrismaService,
+    private prisma: PrismaService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if endpoint requires club context
-    const requiresClubContext = this.reflector.getAllAndOverride<boolean>(
-      CLUB_CONTEXT_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiresClubContext = this.reflector.getAllAndOverride<boolean>(CLUB_CONTEXT_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (!requiresClubContext) {
       return true;
@@ -83,20 +80,15 @@ export class ClubContextGuard implements CanActivate {
     }
 
     // Check role requirements (user must have at least one of the required roles)
-    const requiredRoles = this.reflector.getAllAndOverride<string[]>(
-      ROLES_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (requiredRoles && requiredRoles.length > 0) {
-      const userHasRequiredRole = hasAnyRole(
-        clubUser.roles,
-        requiredRoles as ClubRole[],
-      );
+      const userHasRequiredRole = hasAnyRole(clubUser.roles, requiredRoles as ClubRole[]);
       if (!userHasRequiredRole) {
-        throw new ForbiddenException(
-          `Erforderliche Rolle: ${requiredRoles.join(' oder ')}`,
-        );
+        throw new ForbiddenException(`Erforderliche Rolle: ${requiredRoles.join(' oder ')}`);
       }
     }
 

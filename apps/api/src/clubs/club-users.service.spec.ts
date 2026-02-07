@@ -1,11 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClubUsersService } from './club-users.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
-import {
-  ForbiddenException,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ClubRole } from '../../../../prisma/generated/client/index.js';
 
 const mockPrisma = {
@@ -58,7 +54,7 @@ describe('ClubUsersService', () => {
           targetClubUserId,
           actorUserId,
           [ClubRole.ADMIN],
-          { roles: [ClubRole.ADMIN, ClubRole.MEMBER] },
+          { roles: [ClubRole.ADMIN, ClubRole.MEMBER] }
         );
 
         expect(result.roles).toContain(ClubRole.ADMIN);
@@ -82,7 +78,7 @@ describe('ClubUsersService', () => {
           targetClubUserId,
           actorUserId,
           [ClubRole.ADMIN],
-          { roles: [ClubRole.ADMIN, ClubRole.TREASURER] },
+          { roles: [ClubRole.ADMIN, ClubRole.TREASURER] }
         );
 
         expect(result.roles).toContain(ClubRole.TREASURER);
@@ -97,13 +93,9 @@ describe('ClubUsersService', () => {
         mockPrisma.clubUser.findUnique.mockResolvedValue(selfUser);
 
         await expect(
-          service.updateClubUserRoles(
-            clubId,
-            targetClubUserId,
-            actorUserId,
-            [ClubRole.ADMIN],
-            { roles: [ClubRole.ADMIN, ClubRole.OWNER] },
-          ),
+          service.updateClubUserRoles(clubId, targetClubUserId, actorUserId, [ClubRole.ADMIN], {
+            roles: [ClubRole.ADMIN, ClubRole.OWNER],
+          })
         ).rejects.toThrow(ForbiddenException);
       });
 
@@ -116,13 +108,9 @@ describe('ClubUsersService', () => {
         mockPrisma.clubUser.findUnique.mockResolvedValue(selfUser);
 
         await expect(
-          service.updateClubUserRoles(
-            clubId,
-            targetClubUserId,
-            actorUserId,
-            [ClubRole.OWNER],
-            { roles: [ClubRole.MEMBER, ClubRole.OWNER] },
-          ),
+          service.updateClubUserRoles(clubId, targetClubUserId, actorUserId, [ClubRole.OWNER], {
+            roles: [ClubRole.MEMBER, ClubRole.OWNER],
+          })
         ).rejects.toThrow(ForbiddenException);
       });
 
@@ -143,7 +131,7 @@ describe('ClubUsersService', () => {
           targetClubUserId,
           actorUserId,
           [ClubRole.ADMIN, ClubRole.MEMBER],
-          { roles: [ClubRole.MEMBER] },
+          { roles: [ClubRole.MEMBER] }
         );
 
         expect(result.roles).toEqual([ClubRole.MEMBER]);
@@ -158,13 +146,9 @@ describe('ClubUsersService', () => {
         mockPrisma.clubUser.findUnique.mockResolvedValue(selfUser);
 
         await expect(
-          service.updateClubUserRoles(
-            clubId,
-            targetClubUserId,
-            actorUserId,
-            [ClubRole.ADMIN],
-            { roles: [] },
-          ),
+          service.updateClubUserRoles(clubId, targetClubUserId, actorUserId, [ClubRole.ADMIN], {
+            roles: [],
+          })
         ).rejects.toThrow(BadRequestException);
       });
 
@@ -186,7 +170,7 @@ describe('ClubUsersService', () => {
           targetClubUserId,
           actorUserId,
           [ClubRole.OWNER, ClubRole.ADMIN],
-          { roles: [ClubRole.ADMIN] },
+          { roles: [ClubRole.ADMIN] }
         );
 
         expect(result.roles).toEqual([ClubRole.ADMIN]);
@@ -210,7 +194,7 @@ describe('ClubUsersService', () => {
           targetClubUserId,
           actorUserId,
           [ClubRole.OWNER],
-          { roles: [ClubRole.MEMBER] }, // Swap OWNER for MEMBER - allowed
+          { roles: [ClubRole.MEMBER] } // Swap OWNER for MEMBER - allowed
         );
 
         expect(result.roles).toEqual([ClubRole.MEMBER]);
@@ -231,8 +215,8 @@ describe('ClubUsersService', () => {
             targetClubUserId,
             actorUserId,
             [ClubRole.OWNER, ClubRole.ADMIN],
-            { roles: [ClubRole.ADMIN] },
-          ),
+            { roles: [ClubRole.ADMIN] }
+          )
         ).rejects.toThrow(BadRequestException);
       });
     });
@@ -250,7 +234,7 @@ describe('ClubUsersService', () => {
           targetClubUserId,
           actorUserId,
           [ClubRole.ADMIN],
-          { roles: [ClubRole.MEMBER] },
+          { roles: [ClubRole.MEMBER] }
         );
 
         expect(result.roles).toContain(ClubRole.MEMBER);
@@ -260,13 +244,9 @@ describe('ClubUsersService', () => {
         mockPrisma.clubUser.findUnique.mockResolvedValue(mockTargetUser);
 
         await expect(
-          service.updateClubUserRoles(
-            clubId,
-            targetClubUserId,
-            actorUserId,
-            [ClubRole.ADMIN],
-            { roles: [ClubRole.OWNER] },
-          ),
+          service.updateClubUserRoles(clubId, targetClubUserId, actorUserId, [ClubRole.ADMIN], {
+            roles: [ClubRole.OWNER],
+          })
         ).rejects.toThrow(ForbiddenException);
       });
 
@@ -282,7 +262,7 @@ describe('ClubUsersService', () => {
           targetClubUserId,
           actorUserId,
           [ClubRole.OWNER],
-          { roles: [ClubRole.OWNER] },
+          { roles: [ClubRole.OWNER] }
         );
 
         expect(result.roles).toContain(ClubRole.OWNER);
@@ -294,13 +274,9 @@ describe('ClubUsersService', () => {
         mockPrisma.clubUser.count.mockResolvedValue(1);
 
         await expect(
-          service.updateClubUserRoles(
-            clubId,
-            targetClubUserId,
-            actorUserId,
-            [ClubRole.OWNER],
-            { roles: [ClubRole.ADMIN] },
-          ),
+          service.updateClubUserRoles(clubId, targetClubUserId, actorUserId, [ClubRole.OWNER], {
+            roles: [ClubRole.ADMIN],
+          })
         ).rejects.toThrow(BadRequestException);
       });
 
@@ -318,7 +294,7 @@ describe('ClubUsersService', () => {
           targetClubUserId,
           actorUserId,
           [ClubRole.OWNER],
-          { roles: [ClubRole.ADMIN] },
+          { roles: [ClubRole.ADMIN] }
         );
 
         expect(result.roles).toEqual([ClubRole.ADMIN]);
@@ -330,13 +306,9 @@ describe('ClubUsersService', () => {
         mockPrisma.clubUser.findUnique.mockResolvedValue(null);
 
         await expect(
-          service.updateClubUserRoles(
-            clubId,
-            targetClubUserId,
-            actorUserId,
-            [ClubRole.ADMIN],
-            { roles: [ClubRole.MEMBER] },
-          ),
+          service.updateClubUserRoles(clubId, targetClubUserId, actorUserId, [ClubRole.ADMIN], {
+            roles: [ClubRole.MEMBER],
+          })
         ).rejects.toThrow(NotFoundException);
       });
 
@@ -347,13 +319,9 @@ describe('ClubUsersService', () => {
         });
 
         await expect(
-          service.updateClubUserRoles(
-            clubId,
-            targetClubUserId,
-            actorUserId,
-            [ClubRole.ADMIN],
-            { roles: [ClubRole.MEMBER] },
-          ),
+          service.updateClubUserRoles(clubId, targetClubUserId, actorUserId, [ClubRole.ADMIN], {
+            roles: [ClubRole.MEMBER],
+          })
         ).rejects.toThrow(NotFoundException);
       });
 
@@ -361,13 +329,9 @@ describe('ClubUsersService', () => {
         mockPrisma.clubUser.findUnique.mockResolvedValue(mockTargetUser);
 
         await expect(
-          service.updateClubUserRoles(
-            clubId,
-            targetClubUserId,
-            actorUserId,
-            [ClubRole.ADMIN],
-            { roles: [] },
-          ),
+          service.updateClubUserRoles(clubId, targetClubUserId, actorUserId, [ClubRole.ADMIN], {
+            roles: [],
+          })
         ).rejects.toThrow(BadRequestException);
       });
     });
@@ -386,9 +350,9 @@ describe('ClubUsersService', () => {
         roles: [ClubRole.ADMIN],
       });
 
-      await expect(
-        service.removeClubUser(clubId, targetClubUserId, actorUserId),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.removeClubUser(clubId, targetClubUserId, actorUserId)).rejects.toThrow(
+        ForbiddenException
+      );
     });
 
     it('cannot remove last owner', async () => {
@@ -400,9 +364,9 @@ describe('ClubUsersService', () => {
       });
       mockPrisma.clubUser.count.mockResolvedValue(1);
 
-      await expect(
-        service.removeClubUser(clubId, targetClubUserId, actorUserId),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.removeClubUser(clubId, targetClubUserId, actorUserId)).rejects.toThrow(
+        BadRequestException
+      );
     });
 
     it('can remove owner if other owners exist', async () => {

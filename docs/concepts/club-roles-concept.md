@@ -4,20 +4,20 @@
 
 ### Aktuelle Rollen (Umsetzung jetzt)
 
-| Rolle | Deutsch | Beschreibung |
-|-------|---------|--------------|
-| **OWNER** | Vorsitzender | Volle Kontrolle, alle Berechtigungen |
-| **ADMIN** | Administrator | Technische Verwaltung, Benutzerverwaltung |
-| **TREASURER** | Kassenwart | Finanzverwaltung, Buchhaltung |
-| **SECRETARY** | Schriftführer | Protokolle, Dokumentation |
-| **MEMBER** | Mitglied | Basis-Zugriff (ersetzt VIEWER) |
+| Rolle         | Deutsch       | Beschreibung                              |
+| ------------- | ------------- | ----------------------------------------- |
+| **OWNER**     | Vorsitzender  | Volle Kontrolle, alle Berechtigungen      |
+| **ADMIN**     | Administrator | Technische Verwaltung, Benutzerverwaltung |
+| **TREASURER** | Kassenwart    | Finanzverwaltung, Buchhaltung             |
+| **SECRETARY** | Schriftführer | Protokolle, Dokumentation                 |
+| **MEMBER**    | Mitglied      | Basis-Zugriff (ersetzt VIEWER)            |
 
 ### Zukünftige Rollen (nicht jetzt)
 
-| Rolle | Deutsch | Beschreibung |
-|-------|---------|--------------|
-| COACH | Übungsleiter | Trainingsgruppen verwalten |
-| Custom Roles | Eigene Rollen | Vereinsspezifische Rollen |
+| Rolle        | Deutsch       | Beschreibung               |
+| ------------ | ------------- | -------------------------- |
+| COACH        | Übungsleiter  | Trainingsgruppen verwalten |
+| Custom Roles | Eigene Rollen | Vereinsspezifische Rollen  |
 
 ---
 
@@ -28,19 +28,20 @@
 **Ein User kann MEHRERE Rollen in einem Club haben.**
 
 Beispiele:
+
 - Kassenwart ist gleichzeitig technischer Admin → `[TREASURER, ADMIN]`
 - Schriftführer ist gleichzeitig Vorsitzender → `[SECRETARY, OWNER]`
 - Vorsitzender übernimmt alle Ämter → `[OWNER, TREASURER, SECRETARY]`
 
 ### Rollen-Kombinationen
 
-| Kombination | Effektive Berechtigungen |
-|-------------|-------------------------|
-| `[MEMBER]` | Basis-Zugriff |
-| `[TREASURER]` | Finanzen + Vorstand |
-| `[ADMIN]` | Users + Settings |
+| Kombination          | Effektive Berechtigungen               |
+| -------------------- | -------------------------------------- |
+| `[MEMBER]`           | Basis-Zugriff                          |
+| `[TREASURER]`        | Finanzen + Vorstand                    |
+| `[ADMIN]`            | Users + Settings                       |
 | `[TREASURER, ADMIN]` | Finanzen + Users + Settings + Vorstand |
-| `[OWNER]` | Alles (impliziert alle anderen) |
+| `[OWNER]`            | Alles (impliziert alle anderen)        |
 
 ### Berechtigungs-Logik
 
@@ -49,6 +50,7 @@ Berechtigung erteilt = User hat MINDESTENS EINE Rolle die berechtigt ist
 ```
 
 Beispiel: User hat `[TREASURER, ADMIN]`
+
 - Kann Finanzen verwalten? → Ja (TREASURER)
 - Kann Users verwalten? → Ja (ADMIN)
 - Ist im Vorstand? → Ja (TREASURER)
@@ -79,12 +81,12 @@ Beispiel: User hat `[TREASURER, ADMIN]`
 
 ### Gruppen-Definition
 
-| Gruppe | Rollen | Zweck |
-|--------|--------|-------|
-| **Board Members** | OWNER, TREASURER, SECRETARY | Vorstand - vertrauliche Dokumente |
-| **User Managers** | OWNER, ADMIN | Benutzerverwaltung |
-| **Finance Managers** | OWNER, TREASURER | Finanzverwaltung |
-| **Settings Managers** | OWNER, ADMIN | Club-Einstellungen |
+| Gruppe                | Rollen                      | Zweck                             |
+| --------------------- | --------------------------- | --------------------------------- |
+| **Board Members**     | OWNER, TREASURER, SECRETARY | Vorstand - vertrauliche Dokumente |
+| **User Managers**     | OWNER, ADMIN                | Benutzerverwaltung                |
+| **Finance Managers**  | OWNER, TREASURER            | Finanzverwaltung                  |
+| **Settings Managers** | OWNER, ADMIN                | Club-Einstellungen                |
 
 **Wichtig:** ADMIN ist KEIN Board Member (kein Vorstandseinblick)
 
@@ -94,45 +96,45 @@ Beispiel: User hat `[TREASURER, ADMIN]`
 
 ### Club-Verwaltung
 
-| Aktion | OWNER | ADMIN | TREASURER | SECRETARY | MEMBER |
-|--------|:-----:|:-----:|:---------:|:---------:|:------:|
-| Club-Dashboard ansehen | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Club-Einstellungen ändern | ✓ | ✓ | ✗ | ✗ | ✗ |
-| Einladungscode verwalten | ✓ | ✓ | ✗ | ✗ | ✗ |
-| Club löschen | ✓ | ✗ | ✗ | ✗ | ✗ |
-| Ownership übertragen | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Aktion                    | OWNER | ADMIN | TREASURER | SECRETARY | MEMBER |
+| ------------------------- | :---: | :---: | :-------: | :-------: | :----: |
+| Club-Dashboard ansehen    |   ✓   |   ✓   |     ✓     |     ✓     |   ✓    |
+| Club-Einstellungen ändern |   ✓   |   ✓   |     ✗     |     ✗     |   ✗    |
+| Einladungscode verwalten  |   ✓   |   ✓   |     ✗     |     ✗     |   ✗    |
+| Club löschen              |   ✓   |   ✗   |     ✗     |     ✗     |   ✗    |
+| Ownership übertragen      |   ✓   |   ✗   |     ✗     |     ✗     |   ✗    |
 
 ### Benutzerverwaltung
 
-| Aktion | OWNER | ADMIN | TREASURER | SECRETARY | MEMBER |
-|--------|:-----:|:-----:|:---------:|:---------:|:------:|
-| Mitgliederliste sehen | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Mitglieder einladen | ✓ | ✓ | ✗ | ✗ | ✗ |
-| Beitrittsanfragen verwalten | ✓ | ✓ | ✗ | ✗ | ✗ |
-| Rollen zuweisen/entziehen | ✓ | ✓* | ✗ | ✗ | ✗ |
-| Mitglieder entfernen | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Aktion                      | OWNER | ADMIN | TREASURER | SECRETARY | MEMBER |
+| --------------------------- | :---: | :---: | :-------: | :-------: | :----: |
+| Mitgliederliste sehen       |   ✓   |   ✓   |     ✓     |     ✓     |   ✓    |
+| Mitglieder einladen         |   ✓   |   ✓   |     ✗     |     ✗     |   ✗    |
+| Beitrittsanfragen verwalten |   ✓   |   ✓   |     ✗     |     ✗     |   ✗    |
+| Rollen zuweisen/entziehen   |   ✓   |  ✓\*  |     ✗     |     ✗     |   ✗    |
+| Mitglieder entfernen        |   ✓   |   ✓   |     ✗     |     ✗     |   ✗    |
 
-*ADMIN kann TREASURER, SECRETARY zuweisen/entziehen, aber NICHT ADMIN oder OWNER
+\*ADMIN kann TREASURER, SECRETARY zuweisen/entziehen, aber NICHT ADMIN oder OWNER
 
 ### Finanzverwaltung
 
-| Aktion | OWNER | ADMIN | TREASURER | SECRETARY | MEMBER |
-|--------|:-----:|:-----:|:---------:|:---------:|:------:|
-| Buchungen ansehen | ✓ | ✗ | ✓ | ✗ | ✗ |
-| Buchungen erstellen | ✓ | ✗ | ✓ | ✗ | ✗ |
-| Beiträge verwalten | ✓ | ✗ | ✓ | ✗ | ✗ |
-| SEPA-Lastschriften | ✓ | ✗ | ✓ | ✗ | ✗ |
-| Finanzberichte | ✓ | ✗ | ✓ | ✗ | ✗ |
-| Kontenplan verwalten | ✓ | ✗ | ✓ | ✗ | ✗ |
+| Aktion               | OWNER | ADMIN | TREASURER | SECRETARY | MEMBER |
+| -------------------- | :---: | :---: | :-------: | :-------: | :----: |
+| Buchungen ansehen    |   ✓   |   ✗   |     ✓     |     ✗     |   ✗    |
+| Buchungen erstellen  |   ✓   |   ✗   |     ✓     |     ✗     |   ✗    |
+| Beiträge verwalten   |   ✓   |   ✗   |     ✓     |     ✗     |   ✗    |
+| SEPA-Lastschriften   |   ✓   |   ✗   |     ✓     |     ✗     |   ✗    |
+| Finanzberichte       |   ✓   |   ✗   |     ✓     |     ✗     |   ✗    |
+| Kontenplan verwalten |   ✓   |   ✗   |     ✓     |     ✗     |   ✗    |
 
 ### Protokolle & Dokumentation
 
-| Aktion | OWNER | ADMIN | TREASURER | SECRETARY | MEMBER |
-|--------|:-----:|:-----:|:---------:|:---------:|:------:|
-| Vereinsinterne Protokolle lesen | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Vorstandsprotokolle lesen | ✓ | ✗ | ✓ | ✓ | ✗ |
-| Protokolle erstellen | ✓ | ✗ | ✗ | ✓ | ✗ |
-| Protokolle bearbeiten | ✓ | ✗ | ✗ | ✓ | ✗ |
+| Aktion                          | OWNER | ADMIN | TREASURER | SECRETARY | MEMBER |
+| ------------------------------- | :---: | :---: | :-------: | :-------: | :----: |
+| Vereinsinterne Protokolle lesen |   ✓   |   ✓   |     ✓     |     ✓     |   ✓    |
+| Vorstandsprotokolle lesen       |   ✓   |   ✗   |     ✓     |     ✓     |   ✗    |
+| Protokolle erstellen            |   ✓   |   ✗   |     ✗     |     ✓     |   ✗    |
+| Protokolle bearbeiten           |   ✓   |   ✗   |     ✗     |     ✓     |   ✗    |
 
 ---
 
@@ -141,6 +143,7 @@ Beispiel: User hat `[TREASURER, ADMIN]`
 ### 5.1 Schema-Änderungen (Prisma)
 
 **Vorher (Single Role):**
+
 ```prisma
 model ClubUser {
   role ClubRole
@@ -148,6 +151,7 @@ model ClubUser {
 ```
 
 **Nachher (Multiple Roles):**
+
 ```prisma
 enum ClubRole {
   /// Volle Kontrolle, alle Berechtigungen
@@ -173,6 +177,7 @@ model ClubUser {
 ```
 
 **Migration:**
+
 1. `VIEWER` → `MEMBER` umbenennen
 2. `SECRETARY` hinzufügen
 3. `role` (single) → `roles[]` (array) konvertieren
@@ -307,7 +312,7 @@ export interface ClubContext {
   id: string;
   name: string;
   slug: string;
-  roles: string[];  // GEÄNDERT: role → roles (Array)
+  roles: string[]; // GEÄNDERT: role → roles (Array)
   avatarUrl?: string;
   avatarInitials?: string;
   avatarColor?: string;
@@ -334,42 +339,42 @@ export interface ClubContext {
 
 ### 6.1 Datenbank
 
-| Datei | Änderung |
-|-------|----------|
+| Datei                  | Änderung                                                  |
+| ---------------------- | --------------------------------------------------------- |
 | `prisma/schema.prisma` | `role` → `roles[]`, VIEWER → MEMBER, SECRETARY hinzufügen |
-| Migration | `role` zu `roles[]` Array konvertieren |
+| Migration              | `role` zu `roles[]` Array konvertieren                    |
 
 ### 6.2 Backend (API)
 
-| Datei | Änderung |
-|-------|----------|
-| `src/common/permissions/club-permissions.ts` | **Neue Datei** mit Permission-Groups |
-| `src/common/guards/club-context.guard.ts` | Array-basierte Rollen-Prüfung |
-| `src/clubs/clubs.service.ts` | `role` → `roles` in allen Queries |
-| `src/clubs/access-requests/access-requests.service.ts` | Rollen-Array bei Approval |
-| `src/clubs/access-requests/dto/*.ts` | SECRETARY als Option, Array-Support |
-| `/api/clubs/my` Endpoint | `roles[]` statt `role` zurückgeben |
+| Datei                                                  | Änderung                             |
+| ------------------------------------------------------ | ------------------------------------ |
+| `src/common/permissions/club-permissions.ts`           | **Neue Datei** mit Permission-Groups |
+| `src/common/guards/club-context.guard.ts`              | Array-basierte Rollen-Prüfung        |
+| `src/clubs/clubs.service.ts`                           | `role` → `roles` in allen Queries    |
+| `src/clubs/access-requests/access-requests.service.ts` | Rollen-Array bei Approval            |
+| `src/clubs/access-requests/dto/*.ts`                   | SECRETARY als Option, Array-Support  |
+| `/api/clubs/my` Endpoint                               | `roles[]` statt `role` zurückgeben   |
 
 ### 6.3 Frontend (Web)
 
-| Datei | Änderung |
-|-------|----------|
-| `lib/club-store.ts` | `role` → `roles[]` in ClubContext |
-| `lib/club-permissions.ts` | **Neue Datei** mit Permission-Hooks |
-| `hooks/use-clubs.ts` | `role` → `roles` beim Mapping |
-| `components/layout/settings-sidebar.tsx` | `useCanManageSettings()` |
-| `components/auth/user-menu.tsx` | `useCanManageSettings()` |
-| Club-Dashboard Navigation | Permissions-basierte Anzeige |
+| Datei                                    | Änderung                            |
+| ---------------------------------------- | ----------------------------------- |
+| `lib/club-store.ts`                      | `role` → `roles[]` in ClubContext   |
+| `lib/club-permissions.ts`                | **Neue Datei** mit Permission-Hooks |
+| `hooks/use-clubs.ts`                     | `role` → `roles` beim Mapping       |
+| `components/layout/settings-sidebar.tsx` | `useCanManageSettings()`            |
+| `components/auth/user-menu.tsx`          | `useCanManageSettings()`            |
+| Club-Dashboard Navigation                | Permissions-basierte Anzeige        |
 
 ### 6.4 UI-Anpassungen
 
-| Bereich | Sichtbar für | Hook |
-|---------|--------------|------|
-| Vereinseinstellungen | OWNER, ADMIN | `useCanManageSettings()` |
-| Benutzerverwaltung | OWNER, ADMIN | `useCanManageUsers()` |
-| Finanzen/Buchhaltung | OWNER, TREASURER | `useCanManageFinances()` |
-| Protokolle (intern) | Alle | - |
-| Protokolle (Vorstand) | OWNER, TREASURER, SECRETARY | `useIsBoardMember()` |
+| Bereich               | Sichtbar für                | Hook                     |
+| --------------------- | --------------------------- | ------------------------ |
+| Vereinseinstellungen  | OWNER, ADMIN                | `useCanManageSettings()` |
+| Benutzerverwaltung    | OWNER, ADMIN                | `useCanManageUsers()`    |
+| Finanzen/Buchhaltung  | OWNER, TREASURER            | `useCanManageFinances()` |
+| Protokolle (intern)   | Alle                        | -                        |
+| Protokolle (Vorstand) | OWNER, TREASURER, SECRETARY | `useIsBoardMember()`     |
 
 ---
 
@@ -378,11 +383,13 @@ export interface ClubContext {
 ### Bei Beitrittsanfrage (Approve)
 
 User Manager (OWNER/ADMIN) kann vergeben:
+
 - MEMBER (immer implizit)
 - TREASURER
 - SECRETARY
 
 Nur OWNER kann vergeben:
+
 - ADMIN
 
 **OWNER kann nie vergeben werden** (nur Transfer)
@@ -396,6 +403,7 @@ Rollen: [TREASURER ×] [ADMIN ×] [+ Rolle hinzufügen]
 ```
 
 Dropdown beim Klick auf "+":
+
 - Kassenwart (TREASURER)
 - Schriftführer (SECRETARY)
 - Administrator (ADMIN) ← nur wenn User selbst OWNER ist
@@ -414,6 +422,7 @@ Neue Mitglieder erhalten: `roles: ['MEMBER']`
 Wenn `roles: []` (leeres Array), hat der User **keinen Zugriff** auf den Club.
 
 **Use Case:** Nur Vorstand soll Plattform-Zugriff haben
+
 - Normales Vereinsmitglied: `roles: []` → kein Login möglich
 - Vorstandsmitglied: `roles: ['TREASURER']` → hat Zugriff
 
@@ -442,6 +451,7 @@ UPDATE club_users SET roles = array_replace(roles, 'VIEWER', 'MEMBER');
 ### API-Kompatibilität
 
 Während Übergangsphase beide Felder unterstützen:
+
 ```typescript
 // Response
 {
@@ -455,6 +465,7 @@ Während Übergangsphase beide Felder unterstützen:
 ## 9. Zusammenfassung
 
 **Kernprinzipien:**
+
 1. **Mehrfach-Rollen**: User kann beliebige Kombination haben
 2. **OWNER** hat ALLE Berechtigungen
 3. **ADMIN** = Technisch/Users, KEINE Finanzen, KEIN Vorstand
@@ -463,6 +474,7 @@ Während Übergangsphase beide Felder unterstützen:
 6. **MEMBER** = Basis (implizit für alle)
 
 **Board Members (Vorstand):** OWNER + TREASURER + SECRETARY
+
 - ADMIN ist bewusst NICHT im Vorstand
 
 **Berechtigungs-Check:** User hat Berechtigung wenn MINDESTENS EINE seiner Rollen berechtigt ist

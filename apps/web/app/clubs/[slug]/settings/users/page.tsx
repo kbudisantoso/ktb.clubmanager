@@ -1,8 +1,8 @@
-import { checkClubAccess } from "@/lib/check-club-access"
-import { UsersSettingsClient } from "./_client"
+import { checkClubAccess } from '@/lib/check-club-access';
+import { UsersSettingsClient } from './_client';
 
 interface UsersPageProps {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string }>;
 }
 
 /**
@@ -10,10 +10,10 @@ interface UsersPageProps {
  * Returns proper 404 status if user doesn't have access.
  */
 export default async function UsersSettingsPage({ params }: UsersPageProps) {
-  const { slug } = await params
+  const { slug } = await params;
 
   // Server-side access check - throws notFound() with proper 404 status
-  await checkClubAccess(slug)
+  await checkClubAccess(slug);
 
-  return <UsersSettingsClient />
+  return <UsersSettingsClient />;
 }

@@ -13,11 +13,12 @@
 
 ## What is this?
 
-ktb.clubmanager is open-source club management software built for German *Vereine*. It combines member management with proper double-entry accounting using the SKR42 chart of accounts.
+ktb.clubmanager is open-source club management software built for German _Vereine_. It combines member management with proper double-entry accounting using the SKR42 chart of accounts.
 
 **Why does this exist?** Most club software either lacks real accounting or costs hundreds per year. ktb.clubmanager is free, web-based, and handles the accounting complexity that volunteer treasurers need.
 
 **Key differentiators:**
+
 - SKR42 chart of accounts (German nonprofit standard)
 - SEPA direct debit generation (pain.008 XML)
 - German bank CSV import (Sparkasse, VR, DKB, etc.)
@@ -54,6 +55,7 @@ ktb.clubmanager is open-source club management software built for German *Verein
 The fastest way to get started uses VS Code DevContainers:
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/kbudisantoso/ktb.clubmanager.git
    cd ktb.clubmanager
@@ -90,35 +92,35 @@ pnpm dev
 
 ### Common Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start all development servers (web + api) |
-| `pnpm dev:web` | Start only the web frontend |
-| `pnpm dev:api` | Start only the API backend |
-| `pnpm test` | Run all tests |
-| `pnpm lint` | Check code quality |
-| `pnpm typecheck` | Verify TypeScript types |
-| `pnpm prepare-commit` | Run all checks before committing |
+| Command               | Description                               |
+| --------------------- | ----------------------------------------- |
+| `pnpm dev`            | Start all development servers (web + api) |
+| `pnpm dev:web`        | Start only the web frontend               |
+| `pnpm dev:api`        | Start only the API backend                |
+| `pnpm test`           | Run all tests                             |
+| `pnpm lint`           | Check code quality                        |
+| `pnpm typecheck`      | Verify TypeScript types                   |
+| `pnpm prepare-commit` | Run all checks before committing          |
 
 ### Port Configuration
 
 By default, the web app runs on port 3000 and the API on port 3001. You can customize ports via `.env.local` or command line:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | 3000 | Base port (web uses this, API uses PORT+1) |
-| `WEB_PORT` | - | Override web port explicitly |
-| `API_PORT` | - | Override API port explicitly |
+| Variable   | Default | Description                                |
+| ---------- | ------- | ------------------------------------------ |
+| `PORT`     | 3000    | Base port (web uses this, API uses PORT+1) |
+| `WEB_PORT` | -       | Override web port explicitly               |
+| `API_PORT` | -       | Override API port explicitly               |
 
 **Examples:**
 
-| Configuration | Web Port | API Port |
-|---------------|----------|----------|
-| Default | 3000 | 3001 |
-| `PORT=4000` | 4000 | 4001 |
-| `WEB_PORT=8000` | 8000 | 3001 |
-| `API_PORT=9000` | 3000 | 9000 |
-| `WEB_PORT=8000 API_PORT=9000` | 8000 | 9000 |
+| Configuration                 | Web Port | API Port |
+| ----------------------------- | -------- | -------- |
+| Default                       | 3000     | 3001     |
+| `PORT=4000`                   | 4000     | 4001     |
+| `WEB_PORT=8000`               | 8000     | 3001     |
+| `API_PORT=9000`               | 3000     | 9000     |
+| `WEB_PORT=8000 API_PORT=9000` | 8000     | 9000     |
 
 > **Tip:** Set variables in `.env.local` for persistent configuration. The dev scripts automatically load this file via `dotenv-cli`.
 
@@ -164,24 +166,24 @@ The project is a **pnpm monorepo** with two applications (`web` and `api`) shari
 
 ## Tech Stack
 
-| Component | Technology | Why |
-|-----------|------------|-----|
-| Frontend | Next.js 14+, TypeScript, Tailwind, shadcn/ui | Modern React with full-stack TypeScript |
-| Backend | NestJS, TypeScript, Prisma | Type safety for financial data |
-| Database | PostgreSQL 17 + pgvector | ACID for accounting, vectors for AI semantic search |
-| Storage | MinIO (S3-compatible) | Document uploads, receipt images, profile photos |
-| Cache | Redis 7 | Session storage, background jobs |
-| Auth | NextAuth.js + OIDC | Passwordless OAuth login |
+| Component | Technology                                   | Why                                                 |
+| --------- | -------------------------------------------- | --------------------------------------------------- |
+| Frontend  | Next.js 14+, TypeScript, Tailwind, shadcn/ui | Modern React with full-stack TypeScript             |
+| Backend   | NestJS, TypeScript, Prisma                   | Type safety for financial data                      |
+| Database  | PostgreSQL 17 + pgvector                     | ACID for accounting, vectors for AI semantic search |
+| Storage   | MinIO (S3-compatible)                        | Document uploads, receipt images, profile photos    |
+| Cache     | Redis 7                                      | Session storage, background jobs                    |
+| Auth      | NextAuth.js + OIDC                           | Passwordless OAuth login                            |
 
 ## Roadmap
 
 Track our progress via [GitHub Milestones](https://github.com/kbudisantoso/ktb.clubmanager/milestones):
 
-| Milestone | Status | Description |
-|-----------|--------|-------------|
-| [M0: Pre-MVP](https://github.com/kbudisantoso/ktb.clubmanager/milestone/1) | ✅ Complete | Repository foundation, DevContainer, CI/CD, documentation |
-| [M1: MVP](https://github.com/kbudisantoso/ktb.clubmanager/milestone/2) | 🔄 In Progress | Core features: members, fees, bookkeeping, SEPA |
-| [M2-M6](https://github.com/kbudisantoso/ktb.clubmanager/milestones) | 📋 Planned | Post-MVP: working hours, member portal, FinTS |
+| Milestone                                                                  | Status         | Description                                               |
+| -------------------------------------------------------------------------- | -------------- | --------------------------------------------------------- |
+| [M0: Pre-MVP](https://github.com/kbudisantoso/ktb.clubmanager/milestone/1) | ✅ Complete    | Repository foundation, DevContainer, CI/CD, documentation |
+| [M1: MVP](https://github.com/kbudisantoso/ktb.clubmanager/milestone/2)     | 🔄 In Progress | Core features: members, fees, bookkeeping, SEPA           |
+| [M2-M6](https://github.com/kbudisantoso/ktb.clubmanager/milestones)        | 📋 Planned     | Post-MVP: working hours, member portal, FinTS             |
 
 See all [open issues](https://github.com/kbudisantoso/ktb.clubmanager/issues) for detailed requirements.
 

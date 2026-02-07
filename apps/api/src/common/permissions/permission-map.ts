@@ -146,10 +146,7 @@ export function getUserPermissions(roles: ClubRole[]): Permission[] {
  * @param required - Required permission
  * @returns True if user has the required permission
  */
-export function checkPermission(
-  permissions: Permission[],
-  required: Permission,
-): boolean {
+export function checkPermission(permissions: Permission[], required: Permission): boolean {
   return permissions.includes(required);
 }
 
@@ -160,10 +157,7 @@ export function checkPermission(
  * @param required - Array of permissions (need at least one)
  * @returns True if user has at least one of the required permissions
  */
-export function hasAnyPermission(
-  permissions: Permission[],
-  required: Permission[],
-): boolean {
+export function hasAnyPermission(permissions: Permission[], required: Permission[]): boolean {
   return required.some((permission) => permissions.includes(permission));
 }
 
@@ -174,10 +168,7 @@ export function hasAnyPermission(
  * @param required - Array of permissions (need all)
  * @returns True if user has all required permissions
  */
-export function hasAllPermissions(
-  permissions: Permission[],
-  required: Permission[],
-): boolean {
+export function hasAllPermissions(permissions: Permission[], required: Permission[]): boolean {
   return required.every((permission) => permissions.includes(permission));
 }
 

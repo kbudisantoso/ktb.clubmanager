@@ -14,7 +14,7 @@ import { generateSlug, validateSlug, formatInviteCode, generateInviteCode } from
 export class ClubsService {
   constructor(
     private prisma: PrismaService,
-    private appSettings: AppSettingsService,
+    private appSettings: AppSettingsService
   ) {}
 
   /**
@@ -24,9 +24,7 @@ export class ClubsService {
     // Check self-service permission
     const selfServiceEnabled = await this.appSettings.isSelfServiceEnabled();
     if (!selfServiceEnabled && !isSuperAdmin) {
-      throw new ForbiddenException(
-        'Nur für Plattform-Admins oder bei aktiviertem Self-Service',
-      );
+      throw new ForbiddenException('Nur für Plattform-Admins oder bei aktiviertem Self-Service');
     }
 
     // Generate or validate slug
@@ -71,8 +69,7 @@ export class ClubsService {
     }
 
     // Get default visibility if not specified
-    const visibility =
-      dto.visibility || (await this.appSettings.getDefaultVisibility());
+    const visibility = dto.visibility || (await this.appSettings.getDefaultVisibility());
 
     // Generate invite code for private clubs
     const inviteCode = visibility === 'PRIVATE' ? generateInviteCode() : null;
@@ -137,9 +134,7 @@ export class ClubsService {
       },
     });
 
-    const clubs = clubUsers.map((cu) =>
-      this.formatClubResponse(cu.club, cu.roles, cu.joinedAt),
-    );
+    const clubs = clubUsers.map((cu) => this.formatClubResponse(cu.club, cu.roles, cu.joinedAt));
 
     // Check if user can create clubs
     const selfServiceEnabled = await this.appSettings.isSelfServiceEnabled();
@@ -190,12 +185,7 @@ export class ClubsService {
   /**
    * Update club details.
    */
-  async update(
-    slug: string,
-    dto: UpdateClubDto,
-    userId: string,
-    isSuperAdmin: boolean,
-  ) {
+  async update(slug: string, dto: UpdateClubDto, userId: string, isSuperAdmin: boolean) {
     const club = await this.prisma.club.findFirst({
       where: { slug, deletedAt: null },
     });
@@ -282,11 +272,7 @@ export class ClubsService {
   /**
    * Regenerate invite code (ADMIN/OWNER only).
    */
-  async regenerateInviteCode(
-    slug: string,
-    userId: string,
-    isSuperAdmin: boolean,
-  ) {
+  async regenerateInviteCode(slug: string, userId: string, isSuperAdmin: boolean) {
     const club = await this.prisma.club.findFirst({
       where: { slug, deletedAt: null },
     });
@@ -308,7 +294,7 @@ export class ClubsService {
 
       if (!membership) {
         throw new ForbiddenException(
-          'Nur Vereinsadministratoren können den Einladungscode erneuern',
+          'Nur Vereinsadministratoren können den Einladungscode erneuern'
         );
       }
     }
@@ -367,7 +353,7 @@ export class ClubsService {
     // OWNERs cannot leave
     if (membership.roles.includes('OWNER')) {
       throw new ForbiddenException(
-        'Als Verantwortlicher kannst du den Verein nicht verlassen. Übertrage zuerst die Verantwortung.',
+        'Als Verantwortlicher kannst du den Verein nicht verlassen. Übertrage zuerst die Verantwortung.'
       );
     }
 
@@ -464,7 +450,7 @@ export class ClubsService {
       _count?: { clubUsers?: number; members?: number };
     },
     roles?: string[],
-    joinedAt?: Date,
+    joinedAt?: Date
   ) {
     return {
       id: club.id,

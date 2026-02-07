@@ -37,32 +37,17 @@ export class AdminSettingsController {
 
     if (dto['club.selfServiceCreation'] !== undefined) {
       updates.push(
-        this.appSettings.set(
-          'club.selfServiceCreation',
-          dto['club.selfServiceCreation'],
-        ),
+        this.appSettings.set('club.selfServiceCreation', dto['club.selfServiceCreation'])
       );
     }
     if (dto['club.defaultVisibility'] !== undefined) {
-      updates.push(
-        this.appSettings.set(
-          'club.defaultVisibility',
-          dto['club.defaultVisibility'],
-        ),
-      );
+      updates.push(this.appSettings.set('club.defaultVisibility', dto['club.defaultVisibility']));
     }
     if (dto['club.defaultTierId'] !== undefined) {
-      updates.push(
-        this.appSettings.set('club.defaultTierId', dto['club.defaultTierId']),
-      );
+      updates.push(this.appSettings.set('club.defaultTierId', dto['club.defaultTierId']));
     }
     if (dto['tier.graceperiodDays'] !== undefined) {
-      updates.push(
-        this.appSettings.set(
-          'tier.graceperiodDays',
-          dto['tier.graceperiodDays'],
-        ),
-      );
+      updates.push(this.appSettings.set('tier.graceperiodDays', dto['tier.graceperiodDays']));
     }
     if (dto['mode.saas'] !== undefined) {
       updates.push(this.appSettings.set('mode.saas', dto['mode.saas']));

@@ -44,7 +44,8 @@ export function SettingsSidebar() {
           </div>
           <div className="space-y-1">
             {personalItems.map((item) => {
-              const isActive = pathname === item.href ||
+              const isActive =
+                pathname === item.href ||
                 (item.href === '/settings/profile' && pathname === '/settings');
               return (
                 <Link key={item.href} href={item.href}>

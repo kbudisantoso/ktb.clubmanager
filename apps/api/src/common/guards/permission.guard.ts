@@ -1,17 +1,9 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator.js';
 import type { Permission } from '../permissions/permissions.enum.js';
-import {
-  getUserPermissions,
-  hasAnyPermission,
-} from '../permissions/permission-map.js';
+import { getUserPermissions, hasAnyPermission } from '../permissions/permission-map.js';
 
 /**
  * Guard that checks if user has required permissions.
@@ -31,15 +23,15 @@ import {
 export class PermissionGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    private prisma: PrismaService,
+    private prisma: PrismaService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // 1. Check if endpoint requires permissions
-    const requiredPermissions = this.reflector.getAllAndOverride<Permission[]>(
-      PERMISSIONS_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiredPermissions = this.reflector.getAllAndOverride<Permission[]>(PERMISSIONS_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (!requiredPermissions || requiredPermissions.length === 0) {
       return true;
@@ -67,10 +59,7 @@ export class PermissionGuard implements CanActivate {
     }
 
     // 5. Check if user has any required permission (OR logic)
-    const hasPermission = hasAnyPermission(
-      request.userPermissions,
-      requiredPermissions,
-    );
+    const hasPermission = hasAnyPermission(request.userPermissions, requiredPermissions);
 
     if (!hasPermission) {
       throw new ForbiddenException({

@@ -1,5 +1,4 @@
-import type {
-  PrismaClient} from '../../../../../prisma/generated/client/index.js';
+import type { PrismaClient } from '../../../../../prisma/generated/client/index.js';
 import {
   Prisma,
   type Prisma as PrismaNamespace,
@@ -52,10 +51,7 @@ const WRITE_OPERATIONS = [
  * @param context - Who/where performed the action
  * @param prisma - Base Prisma client for writing audit logs (to avoid recursion)
  */
-export function createAuditExtension(
-  context: AuditContext,
-  prisma: PrismaClient,
-) {
+export function createAuditExtension(context: AuditContext, prisma: PrismaClient) {
   return Prisma.defineExtension({
     name: 'audit-logging',
     query: {
@@ -119,17 +115,8 @@ export function createAuditExtension(
  * Remove sensitive fields from audit data.
  * Never log passwords, tokens, or other secrets.
  */
-function sanitizeForAudit(
-  data: Record<string, unknown>,
-): Record<string, unknown> {
-  const sensitiveFields = [
-    'password',
-    'accessToken',
-    'refreshToken',
-    'idToken',
-    'secret',
-    'token',
-  ];
+function sanitizeForAudit(data: Record<string, unknown>): Record<string, unknown> {
+  const sensitiveFields = ['password', 'accessToken', 'refreshToken', 'idToken', 'secret', 'token'];
 
   const sanitize = (obj: unknown): unknown => {
     if (obj === null || obj === undefined) return obj;
@@ -137,9 +124,7 @@ function sanitizeForAudit(
     if (Array.isArray(obj)) return obj.map(sanitize);
 
     const result: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(
-      obj as Record<string, unknown>,
-    )) {
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
       if (sensitiveFields.some((f) => key.toLowerCase().includes(f))) {
         result[key] = '[REDACTED]';
       } else {

@@ -18,6 +18,7 @@ The application was experiencing issues with:
 4. **No loading/error states**: Inconsistent handling across components
 
 We needed a solution that:
+
 - Deduplicates concurrent requests
 - Provides caching with configurable staleness
 - Handles loading, error, and success states consistently
@@ -29,16 +30,17 @@ Adopt **TanStack Query** (formerly React Query) for all server state management.
 
 ### Why TanStack Query over alternatives?
 
-| Option | Verdict |
-|--------|---------|
-| **TanStack Query** | Industry standard, feature-complete, excellent devtools |
-| **SWR** | Smaller bundle but fewer features (no mutations, less control) |
-| **Enhanced Zustand** | DIY approach, error-prone, no deduplication |
-| **RTK Query** | Requires Redux, which we don't use |
+| Option               | Verdict                                                        |
+| -------------------- | -------------------------------------------------------------- |
+| **TanStack Query**   | Industry standard, feature-complete, excellent devtools        |
+| **SWR**              | Smaller bundle but fewer features (no mutations, less control) |
+| **Enhanced Zustand** | DIY approach, error-prone, no deduplication                    |
+| **RTK Query**        | Requires Redux, which we don't use                             |
 
 ### Architecture Change
 
 **Before:**
+
 ```
 Component → apiFetch() → API
 Component → apiFetch() → API  (duplicate!)
@@ -46,6 +48,7 @@ Component → Zustand store (stale)
 ```
 
 **After:**
+
 ```
 Component → useQuery() ─┐
 Component → useQuery() ─┼→ QueryClient → apiFetch() → API (single request)
@@ -64,20 +67,17 @@ Component → useQuery() ─┘              ↓
 
 ```typescript
 // Pattern: [resource, ...identifiers, filters?]
-['clubs', 'my']                    // User's clubs
-['clubs', 'detail', slug]          // Single club
-['clubs', 'public']                // Public clubs list
-['admin', 'tiers']                 // Admin tier list
+['clubs', 'my'][('clubs', 'detail', slug)][('clubs', 'public')][('admin', 'tiers')]; // User's clubs // Single club // Public clubs list // Admin tier list
 ```
 
 ### Stale Time Guidelines
 
-| Data Type | Stale Time | Rationale |
-|-----------|------------|-----------|
-| User's clubs | 30s | Changes rarely, user-initiated |
-| Club details | 60s | Stable data |
-| Admin data | 10s | May change from other admins |
-| Real-time data | 0 | Always refetch |
+| Data Type      | Stale Time | Rationale                      |
+| -------------- | ---------- | ------------------------------ |
+| User's clubs   | 30s        | Changes rarely, user-initiated |
+| Club details   | 60s        | Stable data                    |
+| Admin data     | 10s        | May change from other admins   |
+| Real-time data | 0          | Always refetch                 |
 
 ## Consequences
 

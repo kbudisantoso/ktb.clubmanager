@@ -1,10 +1,10 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { ThemeProvider } from "next-themes"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { Toaster } from "@/components/ui/sonner"
-import { getAuthBroadcast } from "@/lib/broadcast-auth"
+import { useState, useEffect } from 'react';
+import { ThemeProvider } from 'next-themes';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/sonner';
+import { getAuthBroadcast } from '@/lib/broadcast-auth';
 
 /**
  * AuthSyncProvider handles cross-tab authentication synchronization.
@@ -13,31 +13,31 @@ import { getAuthBroadcast } from "@/lib/broadcast-auth"
  */
 function AuthSyncProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    const authBroadcast = getAuthBroadcast()
+    const authBroadcast = getAuthBroadcast();
 
     // Handle logout from other tabs
-    authBroadcast.on("LOGOUT", () => {
+    authBroadcast.on('LOGOUT', () => {
       // Clear local auth state
-      authBroadcast.clearAuthState()
+      authBroadcast.clearAuthState();
       // Redirect to login with signedOut parameter
-      window.location.href = "/login?signedOut=true"
-    })
+      window.location.href = '/login?signedOut=true';
+    });
 
     // Handle login from other tabs (for login page)
-    authBroadcast.on("LOGIN", () => {
+    authBroadcast.on('LOGIN', () => {
       // If we're on the login page, redirect to dashboard
-      if (window.location.pathname === "/login") {
-        const returnUrl = sessionStorage.getItem("ktb.returnUrl") || "/dashboard"
-        window.location.href = returnUrl
+      if (window.location.pathname === '/login') {
+        const returnUrl = sessionStorage.getItem('ktb.returnUrl') || '/dashboard';
+        window.location.href = returnUrl;
       }
-    })
+    });
 
     return () => {
-      authBroadcast.disconnect()
-    }
-  }, [])
+      authBroadcast.disconnect();
+    };
+  }, []);
 
-  return <>{children}</>
+  return <>{children}</>;
 }
 
 /**
@@ -60,25 +60,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
             // Retry failed requests once
             retry: 1,
             // Don't refetch on window focus in development
-            refetchOnWindowFocus: process.env.NODE_ENV === "production",
+            refetchOnWindowFocus: process.env.NODE_ENV === 'production',
           },
         },
       })
-  )
+  );
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-      >
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <AuthSyncProvider>
           {children}
           <Toaster richColors />
         </AuthSyncProvider>
       </ThemeProvider>
     </QueryClientProvider>
-  )
+  );
 }

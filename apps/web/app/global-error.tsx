@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
 export default function GlobalError({
   error: _error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   return (
     <html lang="de">
@@ -13,9 +13,7 @@ export default function GlobalError({
         <div className="flex min-h-screen items-center justify-center p-8">
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-bold">Fehler</h1>
-            <p className="text-gray-600">
-              Ein unerwarteter Fehler ist aufgetreten.
-            </p>
+            <p className="text-gray-600">Ein unerwarteter Fehler ist aufgetreten.</p>
             <button
               onClick={() => reset()}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -26,5 +24,5 @@ export default function GlobalError({
         </div>
       </body>
     </html>
-  )
+  );
 }

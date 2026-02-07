@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  MemberStatusSchema,
-  DEFAULT_MEMBER_STATUS,
-  type MemberStatus,
-} from './member-status';
+import { MemberStatusSchema, DEFAULT_MEMBER_STATUS, type MemberStatus } from './member-status';
 
 describe('MemberStatusSchema', () => {
   it('should validate valid status values', () => {

@@ -6,11 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsSidebar } from '@/components/layout/settings-sidebar';
 
-export default function ClubSettingsLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ClubSettingsLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const slug = params.slug as string;
 

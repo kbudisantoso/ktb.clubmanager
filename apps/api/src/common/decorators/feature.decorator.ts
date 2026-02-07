@@ -22,5 +22,4 @@ export type TierFeature = 'sepa' | 'reports' | 'bankImport';
  * @RequireFeature('sepa')
  * @RequireFeature('reports')
  */
-export const RequireFeature = (feature: TierFeature) =>
-  SetMetadata(FEATURE_KEY, feature);
+export const RequireFeature = (feature: TierFeature) => SetMetadata(FEATURE_KEY, feature);

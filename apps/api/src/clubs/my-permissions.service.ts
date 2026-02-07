@@ -2,19 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { getUserPermissions } from '../common/permissions/permission-map.js';
 import type { ClubRole } from '../../../../prisma/generated/client/index.js';
-import type {
-  MyPermissionsResponseDto,
-  TierFeaturesDto,
-} from './dto/my-permissions.dto.js';
+import type { MyPermissionsResponseDto, TierFeaturesDto } from './dto/my-permissions.dto.js';
 
 @Injectable()
 export class MyPermissionsService {
   constructor(private prisma: PrismaService) {}
 
-  async getMyPermissions(
-    clubId: string,
-    roles: ClubRole[],
-  ): Promise<MyPermissionsResponseDto> {
+  async getMyPermissions(clubId: string, roles: ClubRole[]): Promise<MyPermissionsResponseDto> {
     // Derive permissions from roles
     const permissions = getUserPermissions(roles);
 

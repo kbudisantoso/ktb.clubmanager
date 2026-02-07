@@ -5,8 +5,7 @@ import pg from 'pg';
 // Create pg pool for Prisma adapter
 const pool = new pg.Pool({
   connectionString:
-    process.env.DATABASE_URL ||
-    'postgresql://clubmanager:clubmanager@localhost:35432/clubmanager',
+    process.env.DATABASE_URL || 'postgresql://clubmanager:clubmanager@localhost:35432/clubmanager',
 });
 
 // Initialize Prisma with PostgreSQL adapter

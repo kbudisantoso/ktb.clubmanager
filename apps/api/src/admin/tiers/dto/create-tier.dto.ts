@@ -1,13 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsString,
-  IsBoolean,
-  IsInt,
-  IsOptional,
-  Min,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+import { IsString, IsBoolean, IsInt, IsOptional, Min, MaxLength, MinLength } from 'class-validator';
 
 /**
  * DTO for creating a new tier.

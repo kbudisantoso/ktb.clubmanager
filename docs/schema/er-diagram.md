@@ -53,10 +53,10 @@ erDiagram
 
 ## Relationships
 
-| From | To | Cardinality | Description |
-|------|-----|-------------|-------------|
-| Club | Member | 1:N | A club has many members |
-| Club | Account | 1:N | A club has many accounts (chart of accounts) |
+| From | To      | Cardinality | Description                                  |
+| ---- | ------- | ----------- | -------------------------------------------- |
+| Club | Member  | 1:N         | A club has many members                      |
+| Club | Account | 1:N         | A club has many accounts (chart of accounts) |
 
 ## Relationship Notation
 
@@ -75,11 +75,13 @@ The root tenant entity. All data isolation happens through the `clubId` foreign 
 ### Member
 
 Represents a person who is (or was) a member of a club. The `status` enum tracks membership lifecycle:
+
 - ACTIVE, INACTIVE, PENDING, LEFT
 
 ### Account
 
 Part of the chart of accounts (Kontenrahmen) based on SKR42 for German non-profits. The `type` enum categorizes accounts:
+
 - ASSET, LIABILITY, INCOME, EXPENSE
 
 ## Future Extensions
@@ -101,5 +103,5 @@ erDiagram
 
 ---
 
-*Entity Relationship Diagram for ktb.clubmanager*
-*See [README.md](./README.md) for schema documentation*
+_Entity Relationship Diagram for ktb.clubmanager_
+_See [README.md](./README.md) for schema documentation_

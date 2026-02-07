@@ -39,14 +39,9 @@ export function createTenantExtension(clubId: string) {
 
           // Inject clubId into WHERE for read operations
           if (
-            [
-              'findMany',
-              'findFirst',
-              'findUnique',
-              'count',
-              'aggregate',
-              'groupBy',
-            ].includes(operation)
+            ['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'groupBy'].includes(
+              operation
+            )
           ) {
             modifiedArgs.where = {
               ...(modifiedArgs.where as object | undefined),
@@ -78,15 +73,7 @@ export function createTenantExtension(clubId: string) {
           }
 
           // Inject clubId into WHERE for update/delete
-          if (
-            [
-              'update',
-              'updateMany',
-              'delete',
-              'deleteMany',
-              'upsert',
-            ].includes(operation)
-          ) {
+          if (['update', 'updateMany', 'delete', 'deleteMany', 'upsert'].includes(operation)) {
             modifiedArgs.where = {
               ...(modifiedArgs.where as object | undefined),
               clubId,

@@ -1,13 +1,7 @@
 'use client';
 
 import { useSessionQuery } from '@/hooks/use-session';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -22,11 +16,11 @@ export default function ProfilePage() {
   // Use first letter of first word + first letter of last word
   const initials = user.name
     ? (() => {
-        const words = user.name.split(' ').filter(Boolean)
+        const words = user.name.split(' ').filter(Boolean);
         if (words.length >= 2) {
-          return (words[0][0] + words[words.length - 1][0]).toUpperCase()
+          return (words[0][0] + words[words.length - 1][0]).toUpperCase();
         }
-        return words[0]?.[0]?.toUpperCase() || null
+        return words[0]?.[0]?.toUpperCase() || null;
       })()
     : user.email?.charAt(0).toUpperCase();
 

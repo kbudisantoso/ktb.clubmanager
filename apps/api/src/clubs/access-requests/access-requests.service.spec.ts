@@ -1,11 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AccessRequestsService } from './access-requests.service.js';
 import type { PrismaService } from '../../prisma/prisma.service.js';
-import {
-  BadRequestException,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 
 // Mock PrismaService
 const mockPrisma = {
@@ -89,7 +85,7 @@ describe('AccessRequestsService', () => {
             where: expect.objectContaining({
               inviteCode: 'HXNK4P9M',
             }),
-          }),
+          })
         );
       });
     });
@@ -146,9 +142,7 @@ describe('AccessRequestsService', () => {
 
         const result = await service.joinWithCode(userId, validCode);
 
-        expect(result.message).toBe(
-          'Du hast bereits eine Anfrage für diesen Verein gestellt',
-        );
+        expect(result.message).toBe('Du hast bereits eine Anfrage für diesen Verein gestellt');
         expect(result.status).toBe('pending');
         expect(mockPrisma.accessRequest.create).not.toHaveBeenCalled();
         expect(mockPrisma.accessRequest.update).not.toHaveBeenCalled();
@@ -242,23 +236,17 @@ describe('AccessRequestsService', () => {
     describe('error cases', () => {
       it('should fail for invalid code format', async () => {
         // Code with invalid character (1 is not in alphabet)
-        await expect(
-          service.joinWithCode(userId, 'ABCD1234'),
-        ).rejects.toThrow(BadRequestException);
+        await expect(service.joinWithCode(userId, 'ABCD1234')).rejects.toThrow(BadRequestException);
       });
 
       it('should fail for too short code', async () => {
-        await expect(
-          service.joinWithCode(userId, 'HXNK'),
-        ).rejects.toThrow(BadRequestException);
+        await expect(service.joinWithCode(userId, 'HXNK')).rejects.toThrow(BadRequestException);
       });
 
       it('should fail for non-existent code', async () => {
         mockPrisma.club.findFirst.mockResolvedValue(null);
 
-        await expect(
-          service.joinWithCode(userId, validCode),
-        ).rejects.toThrow(NotFoundException);
+        await expect(service.joinWithCode(userId, validCode)).rejects.toThrow(NotFoundException);
       });
     });
   });
@@ -313,7 +301,7 @@ describe('AccessRequestsService', () => {
             data: expect.objectContaining({
               message: 'Please let me in!',
             }),
-          }),
+          })
         );
       });
 
@@ -338,7 +326,7 @@ describe('AccessRequestsService', () => {
             data: expect.objectContaining({
               expiresAt: expect.any(Date),
             }),
-          }),
+          })
         );
       });
     });
@@ -362,11 +350,7 @@ describe('AccessRequestsService', () => {
           club: { id: 'club-1', name: 'Test Club', slug: 'test-club' },
         });
 
-        const result = await service.requestAccess(
-          userId,
-          clubSlug,
-          'Erneute Anfrage',
-        );
+        const result = await service.requestAccess(userId, clubSlug, 'Erneute Anfrage');
 
         expect(result.message).toBe('Anfrage wurde erneut gesendet');
         expect(mockPrisma.accessRequest.update).toHaveBeenCalledWith({
@@ -453,9 +437,7 @@ describe('AccessRequestsService', () => {
           visibility: 'PRIVATE',
         });
 
-        await expect(
-          service.requestAccess(userId, clubSlug),
-        ).rejects.toThrow(BadRequestException);
+        await expect(service.requestAccess(userId, clubSlug)).rejects.toThrow(BadRequestException);
       });
 
       it('should fail at 5 pending request limit', async () => {
@@ -466,9 +448,7 @@ describe('AccessRequestsService', () => {
         mockPrisma.clubUser.findFirst.mockResolvedValue(null);
         mockPrisma.accessRequest.count.mockResolvedValue(5);
 
-        await expect(
-          service.requestAccess(userId, clubSlug),
-        ).rejects.toThrow(BadRequestException);
+        await expect(service.requestAccess(userId, clubSlug)).rejects.toThrow(BadRequestException);
       });
 
       it('should fail if already a member', async () => {
@@ -481,9 +461,7 @@ describe('AccessRequestsService', () => {
           status: 'ACTIVE',
         });
 
-        await expect(
-          service.requestAccess(userId, clubSlug),
-        ).rejects.toThrow(BadRequestException);
+        await expect(service.requestAccess(userId, clubSlug)).rejects.toThrow(BadRequestException);
       });
 
       it('should fail if pending request already exists', async () => {
@@ -498,17 +476,13 @@ describe('AccessRequestsService', () => {
           status: 'PENDING',
         });
 
-        await expect(
-          service.requestAccess(userId, clubSlug),
-        ).rejects.toThrow(BadRequestException);
+        await expect(service.requestAccess(userId, clubSlug)).rejects.toThrow(BadRequestException);
       });
 
       it('should fail for non-existent club', async () => {
         mockPrisma.club.findFirst.mockResolvedValue(null);
 
-        await expect(
-          service.requestAccess(userId, clubSlug),
-        ).rejects.toThrow(NotFoundException);
+        await expect(service.requestAccess(userId, clubSlug)).rejects.toThrow(NotFoundException);
       });
     });
   });
@@ -565,9 +539,9 @@ describe('AccessRequestsService', () => {
           status: 'APPROVED',
         });
 
-        await expect(
-          service.approve(requestId, ['MEMBER'], adminUserId),
-        ).rejects.toThrow(BadRequestException);
+        await expect(service.approve(requestId, ['MEMBER'], adminUserId)).rejects.toThrow(
+          BadRequestException
+        );
       });
 
       it('should fail without admin role', async () => {
@@ -580,17 +554,17 @@ describe('AccessRequestsService', () => {
         });
         mockPrisma.clubUser.findFirst.mockResolvedValue(null);
 
-        await expect(
-          service.approve(requestId, ['MEMBER'], adminUserId),
-        ).rejects.toThrow(ForbiddenException);
+        await expect(service.approve(requestId, ['MEMBER'], adminUserId)).rejects.toThrow(
+          ForbiddenException
+        );
       });
 
       it('should fail for non-existent request', async () => {
         mockPrisma.accessRequest.findUnique.mockResolvedValue(null);
 
-        await expect(
-          service.approve(requestId, ['MEMBER'], adminUserId),
-        ).rejects.toThrow(NotFoundException);
+        await expect(service.approve(requestId, ['MEMBER'], adminUserId)).rejects.toThrow(
+          NotFoundException
+        );
       });
     });
   });
@@ -612,12 +586,7 @@ describe('AccessRequestsService', () => {
         });
         mockPrisma.accessRequest.update.mockResolvedValue({});
 
-        const result = await service.reject(
-          requestId,
-          'BOARD_ONLY',
-          undefined,
-          adminUserId,
-        );
+        const result = await service.reject(requestId, 'BOARD_ONLY', undefined, adminUserId);
 
         expect(result.message).toBe('Anfrage abgelehnt');
         expect(result.displayReason).toBe('Nur Vorstandsmitglieder haben Zugang');
@@ -635,12 +604,7 @@ describe('AccessRequestsService', () => {
         });
         mockPrisma.accessRequest.update.mockResolvedValue({});
 
-        const result = await service.reject(
-          requestId,
-          'OTHER',
-          'Custom reason',
-          adminUserId,
-        );
+        const result = await service.reject(requestId, 'OTHER', 'Custom reason', adminUserId);
 
         expect(result.message).toBe('Anfrage abgelehnt');
         expect(mockPrisma.accessRequest.update).toHaveBeenCalledWith(
@@ -649,7 +613,7 @@ describe('AccessRequestsService', () => {
               rejectionReason: 'OTHER',
               rejectionNote: 'Custom reason',
             }),
-          }),
+          })
         );
       });
     });
@@ -666,9 +630,9 @@ describe('AccessRequestsService', () => {
           status: 'ACTIVE',
         });
 
-        await expect(
-          service.reject(requestId, 'OTHER', undefined, adminUserId),
-        ).rejects.toThrow(BadRequestException);
+        await expect(service.reject(requestId, 'OTHER', undefined, adminUserId)).rejects.toThrow(
+          BadRequestException
+        );
       });
 
       it('should fail for already processed request', async () => {
@@ -678,7 +642,7 @@ describe('AccessRequestsService', () => {
         });
 
         await expect(
-          service.reject(requestId, 'BOARD_ONLY', undefined, adminUserId),
+          service.reject(requestId, 'BOARD_ONLY', undefined, adminUserId)
         ).rejects.toThrow(BadRequestException);
       });
 
@@ -691,7 +655,7 @@ describe('AccessRequestsService', () => {
         mockPrisma.clubUser.findFirst.mockResolvedValue(null);
 
         await expect(
-          service.reject(requestId, 'BOARD_ONLY', undefined, adminUserId),
+          service.reject(requestId, 'BOARD_ONLY', undefined, adminUserId)
         ).rejects.toThrow(ForbiddenException);
       });
     });
@@ -724,9 +688,7 @@ describe('AccessRequestsService', () => {
         status: 'PENDING',
       });
 
-      await expect(
-        service.cancelRequest(requestId, userId),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.cancelRequest(requestId, userId)).rejects.toThrow(ForbiddenException);
     });
 
     it('should fail for non-pending request', async () => {
@@ -736,17 +698,13 @@ describe('AccessRequestsService', () => {
         status: 'APPROVED',
       });
 
-      await expect(
-        service.cancelRequest(requestId, userId),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.cancelRequest(requestId, userId)).rejects.toThrow(BadRequestException);
     });
 
     it('should fail for non-existent request', async () => {
       mockPrisma.accessRequest.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.cancelRequest(requestId, userId),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.cancelRequest(requestId, userId)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -775,7 +733,7 @@ describe('AccessRequestsService', () => {
           where: { userId },
           orderBy: { createdAt: 'desc' },
           take: 20,
-        }),
+        })
       );
     });
   });
@@ -812,17 +770,17 @@ describe('AccessRequestsService', () => {
       });
       mockPrisma.clubUser.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.getClubRequests('test-club', adminUserId),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.getClubRequests('test-club', adminUserId)).rejects.toThrow(
+        ForbiddenException
+      );
     });
 
     it('should fail for non-existent club', async () => {
       mockPrisma.club.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.getClubRequests('nonexistent', adminUserId),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.getClubRequests('nonexistent', adminUserId)).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 
@@ -853,9 +811,7 @@ describe('AccessRequestsService', () => {
       it('should fail for non-existent request', async () => {
         mockPrisma.accessRequest.findUnique.mockResolvedValue(null);
 
-        await expect(
-          service.markAsSeen(requestId, userId),
-        ).rejects.toThrow(NotFoundException);
+        await expect(service.markAsSeen(requestId, userId)).rejects.toThrow(NotFoundException);
       });
 
       it('should fail for other users request', async () => {
@@ -865,9 +821,7 @@ describe('AccessRequestsService', () => {
           status: 'REJECTED',
         });
 
-        await expect(
-          service.markAsSeen(requestId, userId),
-        ).rejects.toThrow(ForbiddenException);
+        await expect(service.markAsSeen(requestId, userId)).rejects.toThrow(ForbiddenException);
       });
 
       it('should fail for non-rejected request', async () => {
@@ -877,9 +831,7 @@ describe('AccessRequestsService', () => {
           status: 'PENDING',
         });
 
-        await expect(
-          service.markAsSeen(requestId, userId),
-        ).rejects.toThrow(BadRequestException);
+        await expect(service.markAsSeen(requestId, userId)).rejects.toThrow(BadRequestException);
       });
 
       it('should fail for approved request', async () => {
@@ -889,9 +841,7 @@ describe('AccessRequestsService', () => {
           status: 'APPROVED',
         });
 
-        await expect(
-          service.markAsSeen(requestId, userId),
-        ).rejects.toThrow(BadRequestException);
+        await expect(service.markAsSeen(requestId, userId)).rejects.toThrow(BadRequestException);
       });
     });
   });

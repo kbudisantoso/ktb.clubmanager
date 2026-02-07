@@ -10,18 +10,18 @@ Architecture Decision Records (ADRs) document the key technical decisions made i
 
 **Browse ADRs:** [docs/adr/](adr/)
 
-| ADR | Title | Status |
-|-----|-------|--------|
-| [0001](adr/0001-use-nestjs-backend.md) | Use NestJS Backend | Accepted |
-| [0002](adr/0002-use-prisma-orm.md) | Use Prisma ORM | Accepted |
-| [0003](adr/0003-postgresql-17-with-pgvector.md) | PostgreSQL 17 with pgvector | Accepted |
-| [0004](adr/0004-minio-object-storage.md) | MinIO Object Storage | Accepted |
-| [0005](adr/0005-pnpm-workspaces-monorepo.md) | pnpm Workspaces Monorepo | Accepted |
-| [0006](adr/0006-eslint-flat-config.md) | ESLint Flat Config | Accepted |
-| [0007](adr/0007-vitest-testing-framework.md) | Vitest Testing Framework | Accepted |
-| [0008](adr/0008-zod-schema-source-of-truth.md) | Zod Schema as Source of Truth | Accepted |
-| [0009](adr/0009-upgrade-to-prisma-7.md) | Upgrade to Prisma 7 | Accepted |
-| [0010](adr/0010-row-level-tenant-isolation.md) | Row-Level Tenant Isolation | Accepted |
+| ADR                                             | Title                         | Status   |
+| ----------------------------------------------- | ----------------------------- | -------- |
+| [0001](adr/0001-use-nestjs-backend.md)          | Use NestJS Backend            | Accepted |
+| [0002](adr/0002-use-prisma-orm.md)              | Use Prisma ORM                | Accepted |
+| [0003](adr/0003-postgresql-17-with-pgvector.md) | PostgreSQL 17 with pgvector   | Accepted |
+| [0004](adr/0004-minio-object-storage.md)        | MinIO Object Storage          | Accepted |
+| [0005](adr/0005-pnpm-workspaces-monorepo.md)    | pnpm Workspaces Monorepo      | Accepted |
+| [0006](adr/0006-eslint-flat-config.md)          | ESLint Flat Config            | Accepted |
+| [0007](adr/0007-vitest-testing-framework.md)    | Vitest Testing Framework      | Accepted |
+| [0008](adr/0008-zod-schema-source-of-truth.md)  | Zod Schema as Source of Truth | Accepted |
+| [0009](adr/0009-upgrade-to-prisma-7.md)         | Upgrade to Prisma 7           | Accepted |
+| [0010](adr/0010-row-level-tenant-isolation.md)  | Row-Level Tenant Isolation    | Accepted |
 
 ### API Documentation
 
@@ -48,4 +48,4 @@ Database schema documentation lives alongside the Prisma schema:
 
 ---
 
-*Documentation structure established 2026-01-22*
+_Documentation structure established 2026-01-22_

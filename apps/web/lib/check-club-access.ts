@@ -1,7 +1,7 @@
-import { headers } from "next/headers"
-import { notFound, redirect } from "next/navigation"
-import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { headers } from 'next/headers';
+import { notFound, redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 /**
  * Server-side club access check.
@@ -23,10 +23,10 @@ import { prisma } from "@/lib/prisma"
 export async function checkClubAccess(slug: string) {
   const session = await auth.api.getSession({
     headers: await headers(),
-  })
+  });
 
   if (!session?.user) {
-    redirect(`/login?callbackUrl=/clubs/${slug}/dashboard`)
+    redirect(`/login?callbackUrl=/clubs/${slug}/dashboard`);
   }
 
   // Check if user has access to this club
@@ -37,7 +37,7 @@ export async function checkClubAccess(slug: string) {
         slug,
         deletedAt: null,
       },
-      status: "ACTIVE",
+      status: 'ACTIVE',
     },
     include: {
       club: {
@@ -48,16 +48,16 @@ export async function checkClubAccess(slug: string) {
         },
       },
     },
-  })
+  });
 
   if (!clubUser) {
     // Security: Don't reveal if club exists or user lacks access
-    notFound()
+    notFound();
   }
 
   return {
     club: clubUser.club,
     roles: clubUser.roles,
     userId: session.user.id,
-  }
+  };
 }

@@ -1,4 +1,4 @@
-import { defineConfig } from 'prisma/config'
+import { defineConfig } from 'prisma/config';
 
 export default defineConfig({
   earlyAccess: true,
@@ -7,6 +7,8 @@ export default defineConfig({
     seed: 'tsx prisma/seed.ts',
   },
   datasource: {
-    url: process.env.DATABASE_URL ?? 'postgresql://clubmanager:clubmanager@localhost:35432/clubmanager',
+    url:
+      process.env.DATABASE_URL ??
+      'postgresql://clubmanager:clubmanager@localhost:35432/clubmanager',
   },
-})
+});

@@ -8,5 +8,4 @@ export const ROLES_KEY = 'roles';
  *
  * Usage: @RequireRoles('ADMIN', 'OWNER')
  */
-export const RequireRoles = (...roles: string[]) =>
-  SetMetadata(ROLES_KEY, roles);
+export const RequireRoles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);

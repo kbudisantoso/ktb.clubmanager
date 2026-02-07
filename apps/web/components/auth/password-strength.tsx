@@ -1,26 +1,23 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { checkPasswordStrength } from "@/lib/password-validation";
+import { useEffect, useState } from 'react';
+import { checkPasswordStrength } from '@/lib/password-validation';
 
 interface PasswordStrengthProps {
   password: string;
   userInputs?: string[]; // email, name for context
 }
 
-const strengthLabels = ["Sehr schwach", "Schwach", "Mäßig", "Stark", "Sehr stark"];
+const strengthLabels = ['Sehr schwach', 'Schwach', 'Mäßig', 'Stark', 'Sehr stark'];
 const strengthColors = [
-  "hsl(var(--destructive))",
-  "#f97316",
-  "#eab308",
-  "#84cc16",
-  "hsl(var(--success))",
+  'hsl(var(--destructive))',
+  '#f97316',
+  '#eab308',
+  '#84cc16',
+  'hsl(var(--success))',
 ];
 
-export function PasswordStrength({
-  password,
-  userInputs = [],
-}: PasswordStrengthProps) {
+export function PasswordStrength({ password, userInputs = [] }: PasswordStrengthProps) {
   const [result, setResult] = useState({
     score: 0,
     warning: undefined as string | undefined,
@@ -66,9 +63,7 @@ export function PasswordStrength({
         />
       </div>
 
-      {result.warning && (
-        <p className="text-sm text-warning">{result.warning}</p>
-      )}
+      {result.warning && <p className="text-sm text-warning">{result.warning}</p>}
 
       {result.suggestions.length > 0 && (
         <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">

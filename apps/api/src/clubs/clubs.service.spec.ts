@@ -34,7 +34,7 @@ describe('ClubsService', () => {
     vi.clearAllMocks();
     service = new ClubsService(
       mockPrisma as unknown as PrismaService,
-      mockAppSettings as unknown as AppSettingsService,
+      mockAppSettings as unknown as AppSettingsService
     );
   });
 
@@ -82,7 +82,7 @@ describe('ClubsService', () => {
                 },
               },
             }),
-          }),
+          })
         );
       });
 
@@ -117,7 +117,7 @@ describe('ClubsService', () => {
             data: expect.objectContaining({
               inviteCode: expect.any(String),
             }),
-          }),
+          })
         );
       });
 
@@ -157,7 +157,7 @@ describe('ClubsService', () => {
                 },
               },
             }),
-          }),
+          })
         );
       });
 
@@ -221,7 +221,7 @@ describe('ClubsService', () => {
             data: expect.objectContaining({
               slug: 'my-custom-slug',
             }),
-          }),
+          })
         );
       });
 
@@ -258,7 +258,7 @@ describe('ClubsService', () => {
             data: expect.objectContaining({
               slug: 'test-club-1',
             }),
-          }),
+          })
         );
       });
 
@@ -292,7 +292,7 @@ describe('ClubsService', () => {
             data: expect.objectContaining({
               avatarInitials: 'TSW',
             }),
-          }),
+          })
         );
       });
     });
@@ -301,9 +301,7 @@ describe('ClubsService', () => {
       it('should fail when self-service disabled and not Super Admin', async () => {
         mockAppSettings.isSelfServiceEnabled.mockResolvedValue(false);
 
-        await expect(service.create(createDto, userId, false)).rejects.toThrow(
-          ForbiddenException,
-        );
+        await expect(service.create(createDto, userId, false)).rejects.toThrow(ForbiddenException);
       });
 
       it('should fail for reserved slugs', async () => {
@@ -311,7 +309,7 @@ describe('ClubsService', () => {
         mockPrisma.club.findUnique.mockResolvedValue(null);
 
         await expect(
-          service.create({ name: 'Test', slug: 'admin' }, userId, false),
+          service.create({ name: 'Test', slug: 'admin' }, userId, false)
         ).rejects.toThrow(BadRequestException);
       });
 
@@ -319,9 +317,9 @@ describe('ClubsService', () => {
         mockAppSettings.isSelfServiceEnabled.mockResolvedValue(true);
         mockPrisma.club.findUnique.mockResolvedValue(null);
 
-        await expect(
-          service.create({ name: 'Test', slug: 'ab' }, userId, false),
-        ).rejects.toThrow(BadRequestException);
+        await expect(service.create({ name: 'Test', slug: 'ab' }, userId, false)).rejects.toThrow(
+          BadRequestException
+        );
       });
     });
   });
@@ -424,7 +422,7 @@ describe('ClubsService', () => {
             userId,
             status: 'ACTIVE',
           }),
-        }),
+        })
       );
     });
   });
@@ -565,17 +563,17 @@ describe('ClubsService', () => {
       });
       mockPrisma.clubUser.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.update('test-club', updateDto, userId, false),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.update('test-club', updateDto, userId, false)).rejects.toThrow(
+        ForbiddenException
+      );
     });
 
     it('should fail for non-existent club', async () => {
       mockPrisma.club.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.update('nonexistent', updateDto, userId, false),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.update('nonexistent', updateDto, userId, false)).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 
@@ -624,17 +622,13 @@ describe('ClubsService', () => {
       });
       mockPrisma.clubUser.findFirst.mockResolvedValue(null);
 
-      await expect(service.remove('test-club', userId, false)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(service.remove('test-club', userId, false)).rejects.toThrow(ForbiddenException);
     });
 
     it('should fail for non-existent club', async () => {
       mockPrisma.club.findFirst.mockResolvedValue(null);
 
-      await expect(service.remove('nonexistent', userId, false)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.remove('nonexistent', userId, false)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -689,9 +683,7 @@ describe('ClubsService', () => {
         status: 'ACTIVE',
       });
 
-      await expect(service.leaveClub('test-club', userId)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(service.leaveClub('test-club', userId)).rejects.toThrow(ForbiddenException);
       expect(mockPrisma.clubUser.delete).not.toHaveBeenCalled();
     });
 
@@ -702,17 +694,13 @@ describe('ClubsService', () => {
       });
       mockPrisma.clubUser.findFirst.mockResolvedValue(null);
 
-      await expect(service.leaveClub('test-club', userId)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.leaveClub('test-club', userId)).rejects.toThrow(BadRequestException);
     });
 
     it('should fail for non-existent club', async () => {
       mockPrisma.club.findFirst.mockResolvedValue(null);
 
-      await expect(service.leaveClub('nonexistent', userId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.leaveClub('nonexistent', userId)).rejects.toThrow(NotFoundException);
     });
   });
 });

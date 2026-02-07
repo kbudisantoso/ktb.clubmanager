@@ -5,10 +5,7 @@ import { Pool } from 'pg';
 import { createTenantExtension } from './extensions/tenant.extension.js';
 
 @Injectable()
-export class PrismaService
-  extends PrismaClient
-  implements OnModuleInit, OnModuleDestroy
-{
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL,

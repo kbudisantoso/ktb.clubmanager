@@ -23,9 +23,6 @@ export class MyPermissionsController {
     type: MyPermissionsResponseDto,
   })
   async getMyPermissions(@GetClubContext() ctx: ClubContext) {
-    return this.myPermissionsService.getMyPermissions(
-      ctx.clubId,
-      ctx.roles as ClubRole[],
-    );
+    return this.myPermissionsService.getMyPermissions(ctx.clubId, ctx.roles as ClubRole[]);
   }
 }

@@ -18,21 +18,25 @@ ktb.clubmanager needs a database that:
 We evaluated:
 
 **PostgreSQL:**
+
 - Industry standard for transactional applications
 - Excellent ACID compliance
 - Rich extension ecosystem
 - pgvector extension enables vector embeddings for AI/ML
 
 **MySQL/MariaDB:**
+
 - Good general-purpose database
 - Less powerful extension ecosystem
 - Vector support less mature
 
 **SQLite:**
+
 - Excellent for embedded use
 - Not suitable for multi-user web application
 
 For AI/semantic search, we plan to use vector embeddings to:
+
 - Match bank transactions to members based on payment reference text
 - Search documents by semantic meaning
 - Auto-categorize receipts and expenses
@@ -46,6 +50,7 @@ PostgreSQL 17 provides the newest features and security updates. pgvector is ins
 ## Consequences
 
 **Positive:**
+
 - ACID compliance ensures accounting integrity
 - Native DECIMAL type for precise financial calculations
 - pgvector enables future semantic search capabilities
@@ -54,11 +59,13 @@ PostgreSQL 17 provides the newest features and security updates. pgvector is ins
 - Latest PostgreSQL version with newest features and fixes
 
 **Negative:**
+
 - pgvector extension requires management (installed in Docker image)
 - Vector index maintenance has performance considerations
 - More complex than SQLite for local development
 
 **Neutral:**
+
 - Standard PostgreSQL operational knowledge applies
 - Backup and restore procedures well-documented
 - pgvector unused until AI features are prioritized

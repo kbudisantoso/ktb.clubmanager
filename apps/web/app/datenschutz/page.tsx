@@ -1,14 +1,14 @@
-import ReactMarkdown from "react-markdown"
-import { getMarkdownContent } from "@/lib/markdown"
-import { PublicPageLayout } from "@/components/layout/public-page-layout"
+import ReactMarkdown from 'react-markdown';
+import { getMarkdownContent } from '@/lib/markdown';
+import { PublicPageLayout } from '@/components/layout/public-page-layout';
 
 export const metadata = {
-  title: "Datenschutzerklärung | ClubManager",
-  description: "Datenschutzerklärung und Informationen zur Datenverarbeitung",
-}
+  title: 'Datenschutzerklärung | ClubManager',
+  description: 'Datenschutzerklärung und Informationen zur Datenverarbeitung',
+};
 
 export default async function DatenschutzPage() {
-  const content = await getMarkdownContent("datenschutz.md")
+  const content = await getMarkdownContent('datenschutz.md');
 
   return (
     <PublicPageLayout>
@@ -16,5 +16,5 @@ export default async function DatenschutzPage() {
         <ReactMarkdown>{content}</ReactMarkdown>
       </article>
     </PublicPageLayout>
-  )
+  );
 }

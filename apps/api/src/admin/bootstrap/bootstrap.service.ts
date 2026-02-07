@@ -21,18 +21,13 @@ export class BootstrapService {
    * @param userId - ID of newly created user
    * @param email - Email of newly created user
    */
-  async checkAndPromoteToSuperAdmin(
-    userId: string,
-    email: string,
-  ): Promise<boolean> {
+  async checkAndPromoteToSuperAdmin(userId: string, email: string): Promise<boolean> {
     const superAdminEmail = process.env.SUPER_ADMIN_EMAIL?.toLowerCase();
 
     // Case 1: SUPER_ADMIN_EMAIL is set and matches this user
     if (superAdminEmail && email.toLowerCase() === superAdminEmail) {
       await this.promoteToSuperAdmin(userId);
-      this.logger.log(
-        `User ${email} promoted to Super Admin (matched SUPER_ADMIN_EMAIL)`,
-      );
+      this.logger.log(`User ${email} promoted to Super Admin (matched SUPER_ADMIN_EMAIL)`);
       return true;
     }
 

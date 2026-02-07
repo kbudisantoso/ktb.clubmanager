@@ -26,13 +26,13 @@ German Vereine handle member personal data (names, addresses, bank details) unde
 
 ### Provider Evaluation
 
-| Provider | EU Data Center | Vision/OCR | Text/Completion | Cost | Notes |
-|----------|---------------|------------|-----------------|------|-------|
-| **OpenAI** | ❌ (EU residency requires enterprise agreement) | ✓ GPT-4V | ✓ GPT-4o | $$ | EU residency practically unavailable for small/mid companies |
-| **Vertex AI Gemini** | ✓ europe-west4 (Netherlands) | ✓ Gemini Pro Vision | ✓ Gemini Pro | $$ | Google Cloud EU region, strong vision capabilities |
-| **Mistral AI** | ✓ EU-native (France) | ❌ | ✓ Mistral Large | $ | Paris-based company, excellent for text |
-| **Azure OpenAI** | ✓ West Europe | ✓ GPT-4V | ✓ GPT-4o | $$$ | Enterprise pricing, requires Azure commitment |
-| **Anthropic Claude** | ❌ | ❌ | ✓ Claude 3 | $$ | No EU region, no vision |
+| Provider             | EU Data Center                                  | Vision/OCR          | Text/Completion | Cost | Notes                                                        |
+| -------------------- | ----------------------------------------------- | ------------------- | --------------- | ---- | ------------------------------------------------------------ |
+| **OpenAI**           | ❌ (EU residency requires enterprise agreement) | ✓ GPT-4V            | ✓ GPT-4o        | $$   | EU residency practically unavailable for small/mid companies |
+| **Vertex AI Gemini** | ✓ europe-west4 (Netherlands)                    | ✓ Gemini Pro Vision | ✓ Gemini Pro    | $$   | Google Cloud EU region, strong vision capabilities           |
+| **Mistral AI**       | ✓ EU-native (France)                            | ❌                  | ✓ Mistral Large | $    | Paris-based company, excellent for text                      |
+| **Azure OpenAI**     | ✓ West Europe                                   | ✓ GPT-4V            | ✓ GPT-4o        | $$$  | Enterprise pricing, requires Azure commitment                |
+| **Anthropic Claude** | ❌                                              | ❌                  | ✓ Claude 3      | $$   | No EU region, no vision                                      |
 
 ### OpenAI EU Data Residency Reality
 
@@ -116,6 +116,7 @@ function selectProvider(options: LLMOptions): ILLMAdapter {
 - **Budgets:** Per-club AI usage limits to prevent cost overrun
 
 Estimated costs:
+
 - Receipt OCR: €0.01-0.03 per receipt (Gemini Flash)
 - Categorization: €0.001 per transaction (Mistral Small)
 

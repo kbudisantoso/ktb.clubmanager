@@ -27,9 +27,7 @@ async function bootstrap() {
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('ktb.clubmanager API')
-      .setDescription(
-        'Club management and double-entry accounting API for German Vereine'
-      )
+      .setDescription('Club management and double-entry accounting API for German Vereine')
       .setVersion('0.1.0')
       .setLicense('AGPL-3.0', 'https://www.gnu.org/licenses/agpl-3.0')
       .addTag('health', 'Health check endpoints')

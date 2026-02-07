@@ -1,10 +1,10 @@
-import Link from "next/link"
-import Image from "next/image"
-import { PublicHeaderAuth } from "./public-header-auth"
-import { LegalFooterLinks } from "./legal-links"
+import Link from 'next/link';
+import Image from 'next/image';
+import { PublicHeaderAuth } from './public-header-auth';
+import { LegalFooterLinks } from './legal-links';
 
 interface PublicPageLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 /**
@@ -43,9 +43,7 @@ export function PublicPageLayout({ children }: PublicPageLayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 container mx-auto max-w-3xl py-8 px-4">
-        <div className="glass-panel rounded-2xl p-8 sm:p-10">
-          {children}
-        </div>
+        <div className="glass-panel rounded-2xl p-8 sm:p-10">{children}</div>
       </main>
 
       {/* Footer */}
@@ -55,5 +53,5 @@ export function PublicPageLayout({ children }: PublicPageLayoutProps) {
         </div>
       </footer>
     </div>
-  )
+  );
 }

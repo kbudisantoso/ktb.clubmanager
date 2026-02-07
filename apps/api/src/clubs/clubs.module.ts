@@ -15,17 +15,7 @@ import { ClubUsersService } from './club-users.service.js';
     MyPermissionsController,
     ClubUsersController,
   ],
-  providers: [
-    ClubsService,
-    AccessRequestsService,
-    MyPermissionsService,
-    ClubUsersService,
-  ],
-  exports: [
-    ClubsService,
-    AccessRequestsService,
-    MyPermissionsService,
-    ClubUsersService,
-  ],
+  providers: [ClubsService, AccessRequestsService, MyPermissionsService, ClubUsersService],
+  exports: [ClubsService, AccessRequestsService, MyPermissionsService, ClubUsersService],
 })
 export class ClubsModule {}

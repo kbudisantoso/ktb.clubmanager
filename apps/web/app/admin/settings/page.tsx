@@ -1,96 +1,90 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { Save } from "lucide-react"
-import { apiFetch } from "@/lib/api"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
+import { useEffect, useState } from 'react';
+import { Save } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { useToast } from "@/hooks/use-toast"
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 interface Settings {
-  "club.selfServiceCreation": boolean
-  "club.defaultVisibility": "PUBLIC" | "PRIVATE"
-  "club.defaultTierId": string | null
-  "tier.graceperiodDays": number
-  "mode.saas": boolean
+  'club.selfServiceCreation': boolean;
+  'club.defaultVisibility': 'PUBLIC' | 'PRIVATE';
+  'club.defaultTierId': string | null;
+  'tier.graceperiodDays': number;
+  'mode.saas': boolean;
 }
 
 interface Tier {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 export default function AdminSettingsPage() {
-  const { toast } = useToast()
-  const [settings, setSettings] = useState<Settings | null>(null)
-  const [tiers, setTiers] = useState<Tier[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
+  const { toast } = useToast();
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [tiers, setTiers] = useState<Tier[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    Promise.all([fetchSettings(), fetchTiers()]).then(() => setIsLoading(false))
-  }, [])
+    Promise.all([fetchSettings(), fetchTiers()]).then(() => setIsLoading(false));
+  }, []);
 
   async function fetchSettings() {
-    const res = await apiFetch("/api/admin/settings")
+    const res = await apiFetch('/api/admin/settings');
     if (res.ok) {
-      const data = await res.json()
-      setSettings(data)
+      const data = await res.json();
+      setSettings(data);
     }
   }
 
   async function fetchTiers() {
-    const res = await apiFetch("/api/admin/tiers")
+    const res = await apiFetch('/api/admin/tiers');
     if (res.ok) {
-      const data = await res.json()
-      setTiers(data)
+      const data = await res.json();
+      setTiers(data);
     }
   }
 
   async function handleSave() {
-    if (!settings) return
+    if (!settings) return;
 
-    setIsSaving(true)
+    setIsSaving(true);
     try {
-      const res = await apiFetch("/api/admin/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+      const res = await apiFetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
-      })
+      });
 
       if (res.ok) {
-        toast({ title: "Einstellungen gespeichert" })
+        toast({ title: 'Einstellungen gespeichert' });
       } else {
-        const error = await res.json()
+        const error = await res.json();
         toast({
-          title: "Fehler",
+          title: 'Fehler',
           description: error.message,
-          variant: "destructive",
-        })
+          variant: 'destructive',
+        });
       }
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
   }
 
   if (isLoading || !settings) {
-    return <div className="p-8">Laden...</div>
+    return <div className="p-8">Laden...</div>;
   }
 
   return (
@@ -124,9 +118,9 @@ export default function AdminSettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={settings["club.selfServiceCreation"]}
+                checked={settings['club.selfServiceCreation']}
                 onCheckedChange={(checked) =>
-                  setSettings({ ...settings, "club.selfServiceCreation": checked })
+                  setSettings({ ...settings, 'club.selfServiceCreation': checked })
                 }
               />
             </div>
@@ -134,9 +128,9 @@ export default function AdminSettingsPage() {
             <div className="space-y-2">
               <Label>Standard-Sichtbarkeit</Label>
               <Select
-                value={settings["club.defaultVisibility"]}
-                onValueChange={(value: "PUBLIC" | "PRIVATE") =>
-                  setSettings({ ...settings, "club.defaultVisibility": value })
+                value={settings['club.defaultVisibility']}
+                onValueChange={(value: 'PUBLIC' | 'PRIVATE') =>
+                  setSettings({ ...settings, 'club.defaultVisibility': value })
                 }
               >
                 <SelectTrigger className="w-[200px]">
@@ -152,11 +146,11 @@ export default function AdminSettingsPage() {
             <div className="space-y-2">
               <Label>Standard-Tarif</Label>
               <Select
-                value={settings["club.defaultTierId"] || "none"}
+                value={settings['club.defaultTierId'] || 'none'}
                 onValueChange={(value) =>
                   setSettings({
                     ...settings,
-                    "club.defaultTierId": value === "none" ? null : value,
+                    'club.defaultTierId': value === 'none' ? null : value,
                   })
                 }
               >
@@ -189,11 +183,11 @@ export default function AdminSettingsPage() {
                 type="number"
                 min="1"
                 max="90"
-                value={settings["tier.graceperiodDays"]}
+                value={settings['tier.graceperiodDays']}
                 onChange={(e) =>
                   setSettings({
                     ...settings,
-                    "tier.graceperiodDays": parseInt(e.target.value) || 14,
+                    'tier.graceperiodDays': parseInt(e.target.value) || 14,
                   })
                 }
                 className="w-[100px]"
@@ -216,20 +210,17 @@ export default function AdminSettingsPage() {
               <div className="space-y-0.5">
                 <Label>SaaS-Modus</Label>
                 <p className="text-sm text-muted-foreground">
-                  Zeigt Upgrade-Prompts für deaktivierte Funktionen (statt sie zu
-                  verstecken)
+                  Zeigt Upgrade-Prompts für deaktivierte Funktionen (statt sie zu verstecken)
                 </p>
               </div>
               <Switch
-                checked={settings["mode.saas"]}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, "mode.saas": checked })
-                }
+                checked={settings['mode.saas']}
+                onCheckedChange={(checked) => setSettings({ ...settings, 'mode.saas': checked })}
               />
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }

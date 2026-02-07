@@ -196,16 +196,16 @@ describe('permission-map', () => {
   describe('hasAnyPermission', () => {
     it('should return true when any permission matches', () => {
       const permissions = [Permission.MEMBER_READ];
-      expect(
-        hasAnyPermission(permissions, [Permission.MEMBER_READ, Permission.FINANCE_READ]),
-      ).toBe(true);
+      expect(hasAnyPermission(permissions, [Permission.MEMBER_READ, Permission.FINANCE_READ])).toBe(
+        true
+      );
     });
 
     it('should return false when no permissions match', () => {
       const permissions = [Permission.MEMBER_READ];
-      expect(
-        hasAnyPermission(permissions, [Permission.FINANCE_READ, Permission.CLUB_DELETE]),
-      ).toBe(false);
+      expect(hasAnyPermission(permissions, [Permission.FINANCE_READ, Permission.CLUB_DELETE])).toBe(
+        false
+      );
     });
 
     it('should return false for empty required array', () => {
@@ -220,16 +220,20 @@ describe('permission-map', () => {
 
   describe('hasAllPermissions', () => {
     it('should return true when all permissions present', () => {
-      const permissions = [Permission.MEMBER_READ, Permission.MEMBER_CREATE, Permission.FINANCE_READ];
+      const permissions = [
+        Permission.MEMBER_READ,
+        Permission.MEMBER_CREATE,
+        Permission.FINANCE_READ,
+      ];
       expect(
-        hasAllPermissions(permissions, [Permission.MEMBER_READ, Permission.MEMBER_CREATE]),
+        hasAllPermissions(permissions, [Permission.MEMBER_READ, Permission.MEMBER_CREATE])
       ).toBe(true);
     });
 
     it('should return false when missing a permission', () => {
       const permissions = [Permission.MEMBER_READ];
       expect(
-        hasAllPermissions(permissions, [Permission.MEMBER_READ, Permission.MEMBER_CREATE]),
+        hasAllPermissions(permissions, [Permission.MEMBER_READ, Permission.MEMBER_CREATE])
       ).toBe(false);
     });
 

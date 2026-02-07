@@ -1,5 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { render, screen, within } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
 import {
   Table,
   TableHeader,
@@ -8,10 +8,10 @@ import {
   TableHead,
   TableCell,
   TableCaption,
-} from "./table";
+} from './table';
 
-describe("Table", () => {
-  it("renders a table element", () => {
+describe('Table', () => {
+  it('renders a table element', () => {
     render(
       <Table>
         <TableBody>
@@ -21,10 +21,10 @@ describe("Table", () => {
         </TableBody>
       </Table>
     );
-    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByRole('table')).toBeInTheDocument();
   });
 
-  it("renders header cells correctly", () => {
+  it('renders header cells correctly', () => {
     render(
       <Table>
         <TableHeader>
@@ -42,15 +42,11 @@ describe("Table", () => {
       </Table>
     );
 
-    expect(
-      screen.getByRole("columnheader", { name: /name/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("columnheader", { name: /email/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /name/i })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /email/i })).toBeInTheDocument();
   });
 
-  it("renders body cells correctly", () => {
+  it('renders body cells correctly', () => {
     render(
       <Table>
         <TableBody>
@@ -66,13 +62,13 @@ describe("Table", () => {
       </Table>
     );
 
-    const rows = screen.getAllByRole("row");
+    const rows = screen.getAllByRole('row');
     expect(rows).toHaveLength(2);
-    expect(screen.getByText("John Doe")).toBeInTheDocument();
-    expect(screen.getByText("jane@example.com")).toBeInTheDocument();
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('jane@example.com')).toBeInTheDocument();
   });
 
-  it("renders caption when provided", () => {
+  it('renders caption when provided', () => {
     render(
       <Table>
         <TableCaption>Member List</TableCaption>
@@ -84,10 +80,10 @@ describe("Table", () => {
       </Table>
     );
 
-    expect(screen.getByText("Member List")).toBeInTheDocument();
+    expect(screen.getByText('Member List')).toBeInTheDocument();
   });
 
-  it("has responsive overflow container", () => {
+  it('has responsive overflow container', () => {
     const { container } = render(
       <Table>
         <TableBody>
@@ -101,10 +97,10 @@ describe("Table", () => {
     // Table should be wrapped in overflow container (overflow-x-auto)
     const wrapper = container.querySelector('[class*="overflow"]');
     expect(wrapper).toBeInTheDocument();
-    expect(within(wrapper as HTMLElement).getByRole("table")).toBeInTheDocument();
+    expect(within(wrapper as HTMLElement).getByRole('table')).toBeInTheDocument();
   });
 
-  it("applies custom className to table", () => {
+  it('applies custom className to table', () => {
     render(
       <Table className="custom-class">
         <TableBody>
@@ -115,6 +111,6 @@ describe("Table", () => {
       </Table>
     );
 
-    expect(screen.getByRole("table")).toHaveClass("custom-class");
+    expect(screen.getByRole('table')).toHaveClass('custom-class');
   });
 });

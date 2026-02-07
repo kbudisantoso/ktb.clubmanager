@@ -9,6 +9,7 @@ Accepted
 ## Context
 
 ktb.clubmanager needs validation for:
+
 - API request bodies (member creation, transaction posting)
 - Form inputs (frontend validation)
 - Configuration objects
@@ -19,16 +20,19 @@ Challenge: Avoid duplicating validation logic between TypeScript types and runti
 We evaluated approaches:
 
 **Separate TypeScript types + manual validation:**
+
 - Types and validation can drift apart
 - Duplication of field definitions
 - No runtime type safety
 
 **class-validator (decorators):**
+
 - Common in NestJS
 - Requires classes (not plain objects)
 - Types and validation separate
 
 **Zod (schema-first):**
+
 - Define schema once, infer TypeScript type
 - Runtime validation from same source
 - Works with plain objects
@@ -55,6 +59,7 @@ type Member = z.infer<typeof MemberSchema>;
 ## Consequences
 
 **Positive:**
+
 - Single source of truth: schema defines both type and validation
 - Runtime validation from compile-time type definitions
 - Excellent error messages for invalid data
@@ -63,11 +68,13 @@ type Member = z.infer<typeof MemberSchema>;
 - No class requirement (works with plain objects)
 
 **Negative:**
+
 - Learning curve for Zod API
 - Schemas can become verbose for complex types
 - Different syntax than TypeScript type definitions
 
 **Neutral:**
+
 - Schemas live in `packages/shared` for cross-package use
 - Must import schema and call `.parse()` or `.safeParse()` for validation
 - Error formatting may need customization for user-facing messages

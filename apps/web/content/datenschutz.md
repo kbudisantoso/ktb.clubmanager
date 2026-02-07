@@ -50,4 +50,4 @@ Bei Fragen zum Datenschutz wende dich bitte an:
 
 [E-Mail-Adresse für Datenschutzanfragen]
 
-*Stand: [Datum einfügen]*
+_Stand: [Datum einfügen]_

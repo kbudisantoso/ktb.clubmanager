@@ -26,13 +26,8 @@ export class BootstrapController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Check and promote user to Super Admin if eligible' })
   @ApiBody({ type: BootstrapCheckDto })
-  async checkSuperAdmin(
-    @Body() dto: BootstrapCheckDto,
-  ): Promise<{ promoted: boolean }> {
-    const promoted = await this.bootstrapService.checkAndPromoteToSuperAdmin(
-      dto.userId,
-      dto.email,
-    );
+  async checkSuperAdmin(@Body() dto: BootstrapCheckDto): Promise<{ promoted: boolean }> {
+    const promoted = await this.bootstrapService.checkAndPromoteToSuperAdmin(dto.userId, dto.email);
     return { promoted };
   }
 }

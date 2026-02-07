@@ -1,16 +1,8 @@
 import { Controller, Get, Post, Param, Body, Req } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiResponse,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { AccessRequestsService } from './access-requests.service.js';
-import {
-  CreateAccessRequestDto,
-  JoinWithCodeDto,
-} from './dto/create-access-request.dto.js';
+import { CreateAccessRequestDto, JoinWithCodeDto } from './dto/create-access-request.dto.js';
 import {
   ApproveAccessRequestDto,
   RejectAccessRequestDto,
@@ -31,10 +23,7 @@ export class AccessRequestsController {
   @ApiResponse({ status: 200, description: 'Successfully joined club' })
   @ApiResponse({ status: 400, description: 'Invalid code' })
   @ApiResponse({ status: 404, description: 'Code not found' })
-  async joinWithCode(
-    @Body() dto: JoinWithCodeDto,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  async joinWithCode(@Body() dto: JoinWithCodeDto, @Req() req: AuthenticatedRequest) {
     return this.accessRequestsService.joinWithCode(req.user.id, dto.code);
   }
 
@@ -45,24 +34,14 @@ export class AccessRequestsController {
     status: 400,
     description: 'Club is private or already requested',
   })
-  async requestAccess(
-    @Body() dto: CreateAccessRequestDto,
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.accessRequestsService.requestAccess(
-      req.user.id,
-      dto.clubIdOrSlug,
-      dto.message,
-    );
+  async requestAccess(@Body() dto: CreateAccessRequestDto, @Req() req: AuthenticatedRequest) {
+    return this.accessRequestsService.requestAccess(req.user.id, dto.clubIdOrSlug, dto.message);
   }
 
   // Club admin endpoints
   @Get(':slug/access-requests')
   @ApiOperation({ summary: 'Get pending access requests for a club (admin)' })
-  async getClubRequests(
-    @Param('slug') slug: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  async getClubRequests(@Param('slug') slug: string, @Req() req: AuthenticatedRequest) {
     return this.accessRequestsService.getClubRequests(slug, req.user.id);
   }
 
@@ -71,7 +50,7 @@ export class AccessRequestsController {
   async approve(
     @Param('id') id: string,
     @Body() dto: ApproveAccessRequestDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ) {
     return this.accessRequestsService.approve(id, dto.roles, req.user.id);
   }
@@ -81,13 +60,8 @@ export class AccessRequestsController {
   async reject(
     @Param('id') id: string,
     @Body() dto: RejectAccessRequestDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ) {
-    return this.accessRequestsService.reject(
-      id,
-      dto.reason,
-      dto.note,
-      req.user.id,
-    );
+    return this.accessRequestsService.reject(id, dto.reason, dto.note, req.user.id);
   }
 }

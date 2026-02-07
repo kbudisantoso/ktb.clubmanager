@@ -43,9 +43,7 @@ export class AccessRequestsService {
     });
 
     if (!club) {
-      throw new NotFoundException(
-        'Einladungscode nicht gefunden oder abgelaufen',
-      );
+      throw new NotFoundException('Einladungscode nicht gefunden oder abgelaufen');
     }
 
     // Check if already a member
@@ -129,7 +127,7 @@ export class AccessRequestsService {
 
     if (pendingCount >= 5) {
       throw new BadRequestException(
-        'Du hast bereits 5 ausstehende Anfragen. Bitte warte auf eine Antwort.',
+        'Du hast bereits 5 ausstehende Anfragen. Bitte warte auf eine Antwort.'
       );
     }
 
@@ -176,7 +174,7 @@ export class AccessRequestsService {
     // Check visibility
     if (club.visibility !== 'PUBLIC') {
       throw new BadRequestException(
-        'Dieser Verein ist privat. Du benoetigst einen Einladungscode.',
+        'Dieser Verein ist privat. Du benoetigst einen Einladungscode.'
       );
     }
 
@@ -196,7 +194,7 @@ export class AccessRequestsService {
 
     if (pendingCount >= 5) {
       throw new BadRequestException(
-        'Du hast bereits 5 ausstehende Anfragen. Bitte warte auf eine Antwort.',
+        'Du hast bereits 5 ausstehende Anfragen. Bitte warte auf eine Antwort.'
       );
     }
 
@@ -210,9 +208,7 @@ export class AccessRequestsService {
 
     if (existingRequest) {
       if (existingRequest.status === 'PENDING') {
-        throw new BadRequestException(
-          'Du hast bereits eine Anfrage fuer diesen Verein gestellt',
-        );
+        throw new BadRequestException('Du hast bereits eine Anfrage fuer diesen Verein gestellt');
       }
 
       if (
@@ -362,12 +358,7 @@ export class AccessRequestsService {
   /**
    * Reject an access request.
    */
-  async reject(
-    requestId: string,
-    reason: string,
-    note: string | undefined,
-    adminUserId: string,
-  ) {
+  async reject(requestId: string, reason: string, note: string | undefined, adminUserId: string) {
     const request = await this.prisma.accessRequest.findUnique({
       where: { id: requestId },
     });
@@ -449,9 +440,7 @@ export class AccessRequestsService {
     }
 
     if (request.status !== 'PENDING') {
-      throw new BadRequestException(
-        'Anfrage kann nicht mehr abgebrochen werden',
-      );
+      throw new BadRequestException('Anfrage kann nicht mehr abgebrochen werden');
     }
 
     await this.prisma.accessRequest.delete({

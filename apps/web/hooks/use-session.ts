@@ -1,60 +1,60 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { authClient } from "@/lib/auth-client"
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { authClient } from '@/lib/auth-client';
 
 /**
  * Extended user type with custom fields
  */
 export interface SessionUser {
-  id: string
-  email: string
-  name?: string
-  image?: string
-  emailVerified: boolean
-  isSuperAdmin?: boolean
+  id: string;
+  email: string;
+  name?: string;
+  image?: string;
+  emailVerified: boolean;
+  isSuperAdmin?: boolean;
 }
 
 export interface Session {
-  user: SessionUser
+  user: SessionUser;
   session: {
-    id: string
-    expiresAt: Date
-  }
+    id: string;
+    expiresAt: Date;
+  };
 }
 
 /**
  * Query keys for session
  */
 export const sessionKeys = {
-  all: ["session"] as const,
-  current: () => [...sessionKeys.all, "current"] as const,
-}
+  all: ['session'] as const,
+  current: () => [...sessionKeys.all, 'current'] as const,
+};
 
 /**
  * Fetch session from Better Auth and enrich with user data from API
  */
 async function fetchSession(): Promise<Session | null> {
-  const result = await authClient.getSession()
+  const result = await authClient.getSession();
   if (result.error || !result.data) {
-    return null
+    return null;
   }
 
-  const session = result.data as Session
+  const session = result.data as Session;
 
   // Fetch additional user data including isSuperAdmin
   try {
-    const res = await fetch("/api/users/me")
+    const res = await fetch('/api/users/me');
     if (res.ok) {
-      const userData = await res.json()
+      const userData = await res.json();
       session.user = {
         ...session.user,
         isSuperAdmin: userData.isSuperAdmin ?? false,
-      }
+      };
     }
   } catch {
     // If enrichment fails, continue with basic session
   }
 
-  return session
+  return session;
 }
 
 /**
@@ -72,7 +72,7 @@ export function useSessionQuery() {
     staleTime: 5 * 60 * 1000, // 5 Minuten - Session ändert sich selten
     gcTime: 10 * 60 * 1000, // 10 Minuten im Cache
     retry: false, // Nicht bei Auth-Fehlern wiederholen
-  })
+  });
 }
 
 /**
@@ -80,8 +80,8 @@ export function useSessionQuery() {
  * Call after login/logout.
  */
 export function useInvalidateSession() {
-  const queryClient = useQueryClient()
-  return () => queryClient.invalidateQueries({ queryKey: sessionKeys.all })
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: sessionKeys.all });
 }
 
 /**
@@ -89,6 +89,6 @@ export function useInvalidateSession() {
  * Call on logout.
  */
 export function useClearSession() {
-  const queryClient = useQueryClient()
-  return () => queryClient.setQueryData(sessionKeys.current(), null)
+  const queryClient = useQueryClient();
+  return () => queryClient.setQueryData(sessionKeys.current(), null);
 }

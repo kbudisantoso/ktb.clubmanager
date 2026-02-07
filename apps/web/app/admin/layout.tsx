@@ -1,73 +1,62 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { useRouter, usePathname } from "next/navigation"
-import Link from "next/link"
-import { useSessionQuery } from "@/hooks/use-session"
-import { apiFetch } from "@/lib/api"
-import {
-  Shield,
-  Building2,
-  Layers,
-  Settings,
-  Loader2,
-  Home,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { useSessionQuery } from '@/hooks/use-session';
+import { apiFetch } from '@/lib/api';
+import { Shield, Building2, Layers, Settings, Loader2, Home } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface NavItem {
-  href: string
-  label: string
-  icon: React.ComponentType<{ className?: string }>
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const navItems: NavItem[] = [
-  { href: "/admin", label: "Übersicht", icon: Home },
-  { href: "/admin/clubs", label: "Vereine", icon: Building2 },
-  { href: "/admin/tiers", label: "Tarife", icon: Layers },
-  { href: "/admin/settings", label: "Einstellungen", icon: Settings },
-]
+  { href: '/admin', label: 'Übersicht', icon: Home },
+  { href: '/admin/clubs', label: 'Vereine', icon: Building2 },
+  { href: '/admin/tiers', label: 'Tarife', icon: Layers },
+  { href: '/admin/settings', label: 'Einstellungen', icon: Settings },
+];
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const { data: session, isLoading: sessionLoading } = useSessionQuery()
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { data: session, isLoading: sessionLoading } = useSessionQuery();
 
-  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null)
+  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
 
   // Check Super Admin status
   useEffect(() => {
-    if (sessionLoading) return
+    if (sessionLoading) return;
 
     if (!session?.user) {
-      router.push("/login?callbackUrl=/admin")
-      return
+      router.push('/login?callbackUrl=/admin');
+      return;
     }
 
-    checkSuperAdmin()
-  }, [session, sessionLoading, router])
+    checkSuperAdmin();
+  }, [session, sessionLoading, router]);
 
   async function checkSuperAdmin() {
     try {
-      const res = await apiFetch("/api/users/me")
+      const res = await apiFetch('/api/users/me');
       if (res.ok) {
-        const user = await res.json()
+        const user = await res.json();
         if (user.isSuperAdmin) {
-          setIsSuperAdmin(true)
+          setIsSuperAdmin(true);
         } else {
-          setIsSuperAdmin(false)
-          router.push("/dashboard")
+          setIsSuperAdmin(false);
+          router.push('/dashboard');
         }
       } else {
-        router.push("/login?callbackUrl=/admin")
+        router.push('/login?callbackUrl=/admin');
       }
     } catch {
-      router.push("/dashboard")
+      router.push('/dashboard');
     }
   }
 
@@ -76,11 +65,11 @@ export default function AdminLayout({
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
-    )
+    );
   }
 
   if (isSuperAdmin === false) {
-    return null // Will redirect
+    return null; // Will redirect
   }
 
   return (
@@ -98,10 +87,10 @@ export default function AdminLayout({
           {navItems.map((item) => (
             <Link key={item.href} href={item.href}>
               <Button
-                variant={pathname === item.href ? "secondary" : "ghost"}
+                variant={pathname === item.href ? 'secondary' : 'ghost'}
                 className={cn(
-                  "w-full justify-start gap-2",
-                  pathname === item.href && "bg-secondary"
+                  'w-full justify-start gap-2',
+                  pathname === item.href && 'bg-secondary'
                 )}
               >
                 <item.icon className="h-4 w-4" />
@@ -125,5 +114,5 @@ export default function AdminLayout({
         <div className="p-8">{children}</div>
       </main>
     </div>
-  )
+  );
 }

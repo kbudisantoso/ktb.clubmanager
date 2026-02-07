@@ -1,11 +1,5 @@
 import { checkClubAccess } from '@/lib/check-club-access';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface InvitesPageProps {
   params: Promise<{ slug: string }>;
@@ -19,9 +13,7 @@ export default async function ClubInvitesSettingsPage({ params }: InvitesPagePro
       <Card>
         <CardHeader>
           <CardTitle>Einladungen</CardTitle>
-          <CardDescription>
-            Einladungscodes und Beitrittsanfragen verwalten
-          </CardDescription>
+          <CardDescription>Einladungscodes und Beitrittsanfragen verwalten</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">

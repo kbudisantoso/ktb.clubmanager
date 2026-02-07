@@ -1,9 +1,5 @@
-import type {
-  ExecutionContext} from '@nestjs/common';
-import {
-  SetMetadata,
-  createParamDecorator
-} from '@nestjs/common';
+import type { ExecutionContext } from '@nestjs/common';
+import { SetMetadata, createParamDecorator } from '@nestjs/common';
 
 export const CLUB_CONTEXT_KEY = 'require_club_context';
 
@@ -31,5 +27,5 @@ export const GetClubContext = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): ClubContext => {
     const request = ctx.switchToHttp().getRequest();
     return request.clubContext;
-  },
+  }
 );

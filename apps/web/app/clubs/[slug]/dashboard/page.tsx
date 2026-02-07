@@ -1,8 +1,8 @@
-import { checkClubAccess } from "@/lib/check-club-access"
-import { ClubDashboardClient } from "./_client"
+import { checkClubAccess } from '@/lib/check-club-access';
+import { ClubDashboardClient } from './_client';
 
 interface DashboardPageProps {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string }>;
 }
 
 /**
@@ -10,10 +10,10 @@ interface DashboardPageProps {
  * Returns proper 404 status if user doesn't have access.
  */
 export default async function ClubDashboardPage({ params }: DashboardPageProps) {
-  const { slug } = await params
+  const { slug } = await params;
 
   // Server-side access check - throws notFound() with proper 404 status
-  await checkClubAccess(slug)
+  await checkClubAccess(slug);
 
-  return <ClubDashboardClient />
+  return <ClubDashboardClient />;
 }

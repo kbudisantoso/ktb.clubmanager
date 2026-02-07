@@ -6,14 +6,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ClubRole } from '../../../../prisma/generated/client/index.js';
-import {
-  isOwner,
-  getAssignableRoles,
-} from '../common/permissions/club-permissions.js';
-import type {
-  ClubUserDto,
-  UpdateClubUserRolesDto,
-} from './dto/update-club-user-roles.dto.js';
+import { isOwner, getAssignableRoles } from '../common/permissions/club-permissions.js';
+import type { ClubUserDto, UpdateClubUserRolesDto } from './dto/update-club-user-roles.dto.js';
 
 @Injectable()
 export class ClubUsersService {
@@ -57,7 +51,7 @@ export class ClubUsersService {
     targetClubUserId: string,
     actorUserId: string,
     actorRoles: ClubRole[],
-    dto: UpdateClubUserRolesDto,
+    dto: UpdateClubUserRolesDto
   ): Promise<ClubUserDto> {
     // Find target club user
     const targetClubUser = await this.prisma.clubUser.findUnique({
@@ -78,7 +72,7 @@ export class ClubUsersService {
     // Rule: Must keep at least one role (use "leave club" to remove completely)
     if (requestedRoles.length === 0) {
       throw new BadRequestException(
-        'Mindestens eine Rolle muss zugewiesen sein. Nutze "Club verlassen" um den Club zu verlassen.',
+        'Mindestens eine Rolle muss zugewiesen sein. Nutze "Club verlassen" um den Club zu verlassen.'
       );
     }
 
@@ -112,18 +106,13 @@ export class ClubUsersService {
         // Must have another role remaining when removing OWNER
         const remainingRoles = requestedRoles.filter((r) => r !== ClubRole.OWNER);
         if (remainingRoles.length === 0) {
-          throw new BadRequestException(
-            'Wähle eine andere Rolle bevor du diese Rolle abgibst',
-          );
+          throw new BadRequestException('Wähle eine andere Rolle bevor du diese Rolle abgibst');
         }
       }
     }
 
     // Rule: Protect last OWNER (applies to both self-edit and editing others)
-    if (
-      currentRoles.includes(ClubRole.OWNER) &&
-      !requestedRoles.includes(ClubRole.OWNER)
-    ) {
+    if (currentRoles.includes(ClubRole.OWNER) && !requestedRoles.includes(ClubRole.OWNER)) {
       const ownerCount = await this.prisma.clubUser.count({
         where: {
           clubId,
@@ -133,9 +122,7 @@ export class ClubUsersService {
       });
 
       if (ownerCount <= 1) {
-        throw new BadRequestException(
-          'Übertrage zuerst die Verantwortung an eine andere Person',
-        );
+        throw new BadRequestException('Übertrage zuerst die Verantwortung an eine andere Person');
       }
     }
 
@@ -166,7 +153,7 @@ export class ClubUsersService {
   async removeClubUser(
     clubId: string,
     targetClubUserId: string,
-    actorUserId: string,
+    actorUserId: string
   ): Promise<void> {
     const targetClubUser = await this.prisma.clubUser.findUnique({
       where: { id: targetClubUserId },
@@ -192,9 +179,7 @@ export class ClubUsersService {
       });
 
       if (ownerCount <= 1) {
-        throw new BadRequestException(
-          'Der letzte Verantwortliche kann nicht entfernt werden',
-        );
+        throw new BadRequestException('Der letzte Verantwortliche kann nicht entfernt werden');
       }
     }
 

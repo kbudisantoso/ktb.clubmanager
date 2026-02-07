@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { CreateTierDto } from './dto/create-tier.dto.js';
 import { UpdateTierDto } from './dto/update-tier.dto.js';
@@ -32,9 +28,7 @@ export class TiersService {
     });
 
     if (existing) {
-      throw new BadRequestException(
-        `Tier mit Name "${dto.name}" existiert bereits`,
-      );
+      throw new BadRequestException(`Tier mit Name "${dto.name}" existiert bereits`);
     }
 
     return this.prisma.tier.create({
@@ -110,9 +104,7 @@ export class TiersService {
       });
 
       if (existing) {
-        throw new BadRequestException(
-          `Tier mit Name "${dto.name}" existiert bereits`,
-        );
+        throw new BadRequestException(`Tier mit Name "${dto.name}" existiert bereits`);
       }
     }
 
@@ -133,15 +125,13 @@ export class TiersService {
 
     // Cannot delete seeded tiers
     if (tier.isSeeded) {
-      throw new BadRequestException(
-        'Seeded Tiers können nicht gelöscht werden',
-      );
+      throw new BadRequestException('Seeded Tiers können nicht gelöscht werden');
     }
 
     // Cannot delete if clubs are assigned
     if (tier._count.clubs > 0) {
       throw new BadRequestException(
-        `Tier kann nicht gelöscht werden: ${tier._count.clubs} Verein(e) zugewiesen. Bitte zuerst Vereine umziehen.`,
+        `Tier kann nicht gelöscht werden: ${tier._count.clubs} Verein(e) zugewiesen. Bitte zuerst Vereine umziehen.`
       );
     }
 

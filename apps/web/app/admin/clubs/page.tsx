@@ -1,12 +1,12 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { Search, ExternalLink } from "lucide-react"
-import { apiFetch } from "@/lib/api"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Search, ExternalLink } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -14,40 +14,40 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { ClubAvatar } from "@/components/club-switcher/club-avatar"
+} from '@/components/ui/table';
+import { ClubAvatar } from '@/components/club-switcher/club-avatar';
 
 interface Club {
-  id: string
-  name: string
-  slug: string
-  visibility: "PUBLIC" | "PRIVATE"
-  avatarInitials?: string
-  avatarColor?: string
-  tier?: { name: string }
-  userCount?: number
-  memberCount?: number
-  createdAt: string
+  id: string;
+  name: string;
+  slug: string;
+  visibility: 'PUBLIC' | 'PRIVATE';
+  avatarInitials?: string;
+  avatarColor?: string;
+  tier?: { name: string };
+  userCount?: number;
+  memberCount?: number;
+  createdAt: string;
 }
 
 export default function AdminClubsPage() {
-  const [clubs, setClubs] = useState<Club[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
+  const [clubs, setClubs] = useState<Club[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    fetchClubs()
-  }, [])
+    fetchClubs();
+  }, []);
 
   async function fetchClubs() {
     try {
-      const res = await apiFetch("/api/clubs")
+      const res = await apiFetch('/api/clubs');
       if (res.ok) {
-        const data = await res.json()
-        setClubs(data)
+        const data = await res.json();
+        setClubs(data);
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -57,7 +57,7 @@ export default function AdminClubsPage() {
           c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           c.slug.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : clubs
+    : clubs;
 
   return (
     <div className="space-y-6">
@@ -65,7 +65,7 @@ export default function AdminClubsPage() {
         <div>
           <h1 className="text-2xl font-bold">Vereine</h1>
           <p className="text-muted-foreground">
-            {clubs.length} Verein{clubs.length !== 1 ? "e" : ""} im System
+            {clubs.length} Verein{clubs.length !== 1 ? 'e' : ''} im System
           </p>
         </div>
         <Button asChild>
@@ -107,10 +107,7 @@ export default function AdminClubsPage() {
               </TableRow>
             ) : filteredClubs.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="text-center py-8 text-muted-foreground"
-                >
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   Keine Vereine gefunden
                 </TableCell>
               </TableRow>
@@ -130,21 +127,13 @@ export default function AdminClubsPage() {
                   </TableCell>
                   <TableCell className="font-mono text-sm">{club.slug}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant={
-                        club.visibility === "PUBLIC" ? "default" : "secondary"
-                      }
-                    >
-                      {club.visibility === "PUBLIC" ? "Offentlich" : "Privat"}
+                    <Badge variant={club.visibility === 'PUBLIC' ? 'default' : 'secondary'}>
+                      {club.visibility === 'PUBLIC' ? 'Offentlich' : 'Privat'}
                     </Badge>
                   </TableCell>
-                  <TableCell>{club.tier?.name || "-"}</TableCell>
-                  <TableCell className="text-right">
-                    {club.userCount || 0}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {club.memberCount || 0}
-                  </TableCell>
+                  <TableCell>{club.tier?.name || '-'}</TableCell>
+                  <TableCell className="text-right">{club.userCount || 0}</TableCell>
+                  <TableCell className="text-right">{club.memberCount || 0}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2 justify-end">
                       <Button variant="ghost" size="sm" asChild>
@@ -161,5 +150,5 @@ export default function AdminClubsPage() {
         </Table>
       </div>
     </div>
-  )
+  );
 }

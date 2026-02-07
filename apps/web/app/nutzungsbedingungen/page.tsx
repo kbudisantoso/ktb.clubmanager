@@ -1,14 +1,14 @@
-import ReactMarkdown from "react-markdown"
-import { getMarkdownContent } from "@/lib/markdown"
-import { PublicPageLayout } from "@/components/layout/public-page-layout"
+import ReactMarkdown from 'react-markdown';
+import { getMarkdownContent } from '@/lib/markdown';
+import { PublicPageLayout } from '@/components/layout/public-page-layout';
 
 export const metadata = {
-  title: "Nutzungsbedingungen | ClubManager",
-  description: "Nutzungsbedingungen und Allgemeine Geschäftsbedingungen",
-}
+  title: 'Nutzungsbedingungen | ClubManager',
+  description: 'Nutzungsbedingungen und Allgemeine Geschäftsbedingungen',
+};
 
 export default async function NutzungsbedingungenPage() {
-  const content = await getMarkdownContent("nutzungsbedingungen.md")
+  const content = await getMarkdownContent('nutzungsbedingungen.md');
 
   return (
     <PublicPageLayout>
@@ -16,5 +16,5 @@ export default async function NutzungsbedingungenPage() {
         <ReactMarkdown>{content}</ReactMarkdown>
       </article>
     </PublicPageLayout>
-  )
+  );
 }

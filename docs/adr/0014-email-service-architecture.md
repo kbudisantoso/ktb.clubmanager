@@ -9,12 +9,14 @@ Accepted
 ## Context
 
 ktb.clubmanager requires transactional email capabilities for:
+
 - Club invitations (post-MVP)
 - Password reset emails
 - Welcome emails
 - Notification emails (access requests, approvals, etc.)
 
 Key requirements:
+
 1. **GDPR compliance** - EU data processing for German SaaS
 2. **Provider flexibility** - Avoid vendor lock-in
 3. **Dev/prod parity** - Same code path in development and production
@@ -62,12 +64,12 @@ transport: {
 
 Any provider with SMTP relay support works. Examples for GDPR-compliant options:
 
-| Provider | SMTP Host | Notes |
-|----------|-----------|-------|
-| **Brevo** | smtp-relay.brevo.com | EU company, free tier 300/day |
-| **AWS SES** | email-smtp.eu-central-1.amazonaws.com | Frankfurt region |
-| **Mailgun** | smtp.eu.mailgun.org | EU region available |
-| **Postmark** | smtp.postmarkapp.com | Best deliverability |
+| Provider     | SMTP Host                             | Notes                         |
+| ------------ | ------------------------------------- | ----------------------------- |
+| **Brevo**    | smtp-relay.brevo.com                  | EU company, free tier 300/day |
+| **AWS SES**  | email-smtp.eu-central-1.amazonaws.com | Frankfurt region              |
+| **Mailgun**  | smtp.eu.mailgun.org                   | EU region available           |
+| **Postmark** | smtp.postmarkapp.com                  | Best deliverability           |
 
 ### Development Setup
 
@@ -78,8 +80,8 @@ Mailpit runs as a Docker container, catching all outgoing emails:
 mailpit:
   image: axllent/mailpit
   ports:
-    - "1025:1025"   # SMTP
-    - "8025:8025"   # Web UI
+    - '1025:1025' # SMTP
+    - '8025:8025' # Web UI
 ```
 
 ### Email Templates

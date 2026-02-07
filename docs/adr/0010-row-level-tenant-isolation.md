@@ -16,35 +16,35 @@ Three approaches were evaluated:
 
 Single database schema with a `clubId` foreign key on all tenant-scoped tables.
 
-| Pros | Cons |
-|------|------|
+| Pros                             | Cons                                 |
+| -------------------------------- | ------------------------------------ |
 | Simple queries with WHERE clause | Risk of data leak if WHERE forgotten |
-| Single migration path | Shared indexes affect all tenants |
-| Efficient connection pooling | No physical data separation |
-| Cross-tenant reporting possible | |
-| Excellent Prisma support | |
+| Single migration path            | Shared indexes affect all tenants    |
+| Efficient connection pooling     | No physical data separation          |
+| Cross-tenant reporting possible  |                                      |
+| Excellent Prisma support         |                                      |
 
 ### Option 2: Schema-per-Tenant
 
 Separate PostgreSQL schemas per club within the same database.
 
-| Pros | Cons |
-|------|------|
-| Physical separation | Complex migrations (N schemas) |
-| Per-tenant backup/restore | Limited Prisma support |
-| Customizable per tenant | Connection pool per schema |
-| | No built-in cross-tenant queries |
+| Pros                      | Cons                             |
+| ------------------------- | -------------------------------- |
+| Physical separation       | Complex migrations (N schemas)   |
+| Per-tenant backup/restore | Limited Prisma support           |
+| Customizable per tenant   | Connection pool per schema       |
+|                           | No built-in cross-tenant queries |
 
 ### Option 3: Database-per-Tenant
 
 Completely isolated database instances per club.
 
-| Pros | Cons |
-|------|------|
-| Maximum isolation | High operational overhead |
-| Independent scaling | One connection pool per DB |
-| Easy tenant data export | No cross-tenant queries |
-| Compliance-friendly | Cost increases linearly with tenants |
+| Pros                    | Cons                                 |
+| ----------------------- | ------------------------------------ |
+| Maximum isolation       | High operational overhead            |
+| Independent scaling     | One connection pool per DB           |
+| Easy tenant data export | No cross-tenant queries              |
+| Compliance-friendly     | Cost increases linearly with tenants |
 
 ### Evaluation for Club Management
 
@@ -99,6 +99,7 @@ RLS provides a database-level safety net even if application code has bugs.
 **Priority:** Medium (before production)
 
 All tenant data access must be logged with:
+
 - User ID performing the action
 - Club ID being accessed
 - Timestamp
@@ -109,6 +110,7 @@ All tenant data access must be logged with:
 **Priority:** High (with Prisma middleware)
 
 Every repository/service must have tests verifying:
+
 - Cannot read other tenant's data
 - Cannot write to other tenant's data
 - Middleware correctly injects clubId

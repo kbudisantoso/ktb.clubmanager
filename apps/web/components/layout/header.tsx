@@ -1,10 +1,10 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import Image from "next/image"
-import { UserMenu } from "@/components/auth/user-menu"
-import { HeaderActions } from "./header-actions"
-import { ClubBadge } from "@/components/club-switcher/club-badge"
+import Link from 'next/link';
+import Image from 'next/image';
+import { UserMenu } from '@/components/auth/user-menu';
+import { HeaderActions } from './header-actions';
+import { ClubBadge } from '@/components/club-switcher/club-badge';
 
 /**
  * Application header component.
@@ -44,5 +44,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }

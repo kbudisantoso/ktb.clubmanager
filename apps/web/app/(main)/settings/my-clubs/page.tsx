@@ -3,23 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Plus,
-  LogOut,
-  Clock,
-  CheckCircle,
-  XCircle,
-  ExternalLink,
-  Key,
-} from 'lucide-react';
+import { Plus, LogOut, Clock, CheckCircle, XCircle, ExternalLink, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -47,7 +33,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 /** Format roles array to display string */
 function formatRoles(roles: string[]): string {
-  return roles.map(r => ROLE_LABELS[r] || r).join(', ');
+  return roles.map((r) => ROLE_LABELS[r] || r).join(', ');
 }
 
 export default function MyClubsPage() {
@@ -142,9 +128,7 @@ export default function MyClubsPage() {
 
   const pendingRequests = requests.filter((r) => r.status === 'PENDING');
   // Unseen rejections should be shown prominently
-  const unseenRejections = requests.filter(
-    (r) => r.status === 'REJECTED' && !r.seenAt
-  );
+  const unseenRejections = requests.filter((r) => r.status === 'REJECTED' && !r.seenAt);
   // Processed requests exclude unseen rejections (they get their own section)
   const processedRequests = requests
     .filter((r) => r.status !== 'PENDING' && !(r.status === 'REJECTED' && !r.seenAt))
@@ -167,9 +151,7 @@ export default function MyClubsPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Meine Vereine</CardTitle>
-              <CardDescription>
-                Vereine, bei denen du Mitglied bist
-              </CardDescription>
+              <CardDescription>Vereine, bei denen du Mitglied bist</CardDescription>
             </div>
             {canCreateClub && (
               <Button asChild size="sm">
@@ -234,7 +216,11 @@ export default function MyClubsPage() {
                       size="icon"
                       onClick={() => handleLeaveClub(club)}
                       disabled={club.roles.includes('OWNER')}
-                      title={club.roles.includes('OWNER') ? 'Verantwortliche können nicht austreten' : 'Verein verlassen'}
+                      title={
+                        club.roles.includes('OWNER')
+                          ? 'Verantwortliche können nicht austreten'
+                          : 'Verein verlassen'
+                      }
                     >
                       <LogOut className="h-4 w-4" />
                     </Button>
@@ -288,26 +274,15 @@ export default function MyClubsPage() {
           <CardContent>
             <div className="space-y-3">
               {pendingRequests.map((request) => (
-                <div
-                  key={request.id}
-                  className="flex items-center gap-4 p-3 rounded-lg border"
-                >
-                  <ClubAvatar
-                    name={request.club.name}
-                    size="md"
-                  />
+                <div key={request.id} className="flex items-center gap-4 p-3 rounded-lg border">
+                  <ClubAvatar name={request.club.name} size="md" />
                   <div className="flex-1">
                     <div className="font-medium">{request.club.name}</div>
                     <div className="text-sm text-muted-foreground">
-                      Angefragt am{' '}
-                      {new Date(request.createdAt).toLocaleDateString('de-DE')}
+                      Angefragt am {new Date(request.createdAt).toLocaleDateString('de-DE')}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleCancelRequest(request.id)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => handleCancelRequest(request.id)}>
                     Zurückziehen
                   </Button>
                 </div>
@@ -371,7 +346,8 @@ export default function MyClubsPage() {
           <DialogHeader>
             <DialogTitle>Verein verlassen</DialogTitle>
             <DialogDescription>
-              Möchtest du &quot;{leaveConfirmClub?.name}&quot; wirklich verlassen? Diese Aktion kann nicht rückgängig gemacht werden.
+              Möchtest du &quot;{leaveConfirmClub?.name}&quot; wirklich verlassen? Diese Aktion kann
+              nicht rückgängig gemacht werden.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">

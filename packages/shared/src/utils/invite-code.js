@@ -1,10 +1,10 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
 exports.generateInviteCode = generateInviteCode;
 exports.formatInviteCode = formatInviteCode;
 exports.normalizeInviteCode = normalizeInviteCode;
 exports.isInviteCodeValid = isInviteCodeValid;
-const nanoid_1 = require("nanoid");
+const nanoid_1 = require('nanoid');
 /**
  * Alphabet for invite codes - excludes ambiguous characters.
  * Removed: 0 (zero), O, 1, I, L (easily confused)
@@ -22,7 +22,7 @@ const generateCode = (0, nanoid_1.customAlphabet)(INVITE_ALPHABET, 8);
  * @returns 8-character uppercase code (e.g., "HXNK4P9M")
  */
 function generateInviteCode() {
-    return generateCode();
+  return generateCode();
 }
 /**
  * Formats an invite code for display.
@@ -32,11 +32,11 @@ function generateInviteCode() {
  * @returns Formatted code with hyphen
  */
 function formatInviteCode(code) {
-    const normalized = code.replace(/[\s-]/g, '').toUpperCase();
-    if (normalized.length !== 8) {
-        return normalized; // Return as-is if wrong length
-    }
-    return `${normalized.slice(0, 4)}-${normalized.slice(4)}`;
+  const normalized = code.replace(/[\s-]/g, '').toUpperCase();
+  if (normalized.length !== 8) {
+    return normalized; // Return as-is if wrong length
+  }
+  return `${normalized.slice(0, 4)}-${normalized.slice(4)}`;
 }
 /**
  * Normalizes user input to match stored code format.
@@ -46,7 +46,7 @@ function formatInviteCode(code) {
  * @returns Normalized 8-character uppercase code
  */
 function normalizeInviteCode(input) {
-    return input.replace(/[\s-]/g, '').toUpperCase();
+  return input.replace(/[\s-]/g, '').toUpperCase();
 }
 /**
  * Validates invite code format.
@@ -55,8 +55,7 @@ function normalizeInviteCode(input) {
  * @returns true if code matches expected format
  */
 function isInviteCodeValid(code) {
-    const normalized = normalizeInviteCode(code);
-    // Must be exactly 8 characters from allowed alphabet
-    return (normalized.length === 8 &&
-        /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/.test(normalized));
+  const normalized = normalizeInviteCode(code);
+  // Must be exactly 8 characters from allowed alphabet
+  return normalized.length === 8 && /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/.test(normalized);
 }

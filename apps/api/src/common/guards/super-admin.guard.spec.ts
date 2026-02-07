@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SuperAdminGuard } from './super-admin.guard.js';
 import type { Reflector } from '@nestjs/core';
 import type { PrismaService } from '../../prisma/prisma.service.js';
-import type { ExecutionContext} from '@nestjs/common';
+import type { ExecutionContext } from '@nestjs/common';
 import { ForbiddenException } from '@nestjs/common';
 
 // Mock Reflector
@@ -39,7 +39,7 @@ describe('SuperAdminGuard', () => {
     vi.clearAllMocks();
     guard = new SuperAdminGuard(
       mockReflector as unknown as Reflector,
-      mockPrisma as unknown as PrismaService,
+      mockPrisma as unknown as PrismaService
     );
   });
 
@@ -78,12 +78,8 @@ describe('SuperAdminGuard', () => {
 
       const context = createMockContext();
 
-      await expect(guard.canActivate(context)).rejects.toThrow(
-        ForbiddenException,
-      );
-      await expect(guard.canActivate(context)).rejects.toThrow(
-        'Authentifizierung erforderlich',
-      );
+      await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
+      await expect(guard.canActivate(context)).rejects.toThrow('Authentifizierung erforderlich');
     });
 
     it('should throw ForbiddenException when user not found', async () => {
@@ -92,12 +88,8 @@ describe('SuperAdminGuard', () => {
 
       const context = createMockContext('user-123');
 
-      await expect(guard.canActivate(context)).rejects.toThrow(
-        ForbiddenException,
-      );
-      await expect(guard.canActivate(context)).rejects.toThrow(
-        'Nur für Plattform-Admins',
-      );
+      await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
+      await expect(guard.canActivate(context)).rejects.toThrow('Nur für Plattform-Admins');
     });
 
     it('should throw ForbiddenException when isSuperAdmin is false', async () => {
@@ -109,12 +101,8 @@ describe('SuperAdminGuard', () => {
 
       const context = createMockContext('user-123');
 
-      await expect(guard.canActivate(context)).rejects.toThrow(
-        ForbiddenException,
-      );
-      await expect(guard.canActivate(context)).rejects.toThrow(
-        'Nur für Plattform-Admins',
-      );
+      await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
+      await expect(guard.canActivate(context)).rejects.toThrow('Nur für Plattform-Admins');
     });
 
     it('should throw ForbiddenException when isSuperAdmin is null', async () => {
@@ -126,9 +114,7 @@ describe('SuperAdminGuard', () => {
 
       const context = createMockContext('user-123');
 
-      await expect(guard.canActivate(context)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -161,7 +147,7 @@ describe('SuperAdminGuard', () => {
       expect(mockPrisma.user.findUnique).toHaveBeenCalledWith(
         expect.objectContaining({
           select: { isSuperAdmin: true },
-        }),
+        })
       );
     });
   });

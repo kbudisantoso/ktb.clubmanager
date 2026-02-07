@@ -45,13 +45,13 @@ openssl rand -base64 32
 
 Fill in the form:
 
-| Field | Value |
-|-------|-------|
-| App name | `ktb.clubmanager` |
-| User support email | Your email |
-| App logo | Optional (can add later) |
-| App domain | Leave blank for now |
-| Developer contact | Your email |
+| Field              | Value                    |
+| ------------------ | ------------------------ |
+| App name           | `ktb.clubmanager`        |
+| User support email | Your email               |
+| App logo           | Optional (can add later) |
+| App domain         | Leave blank for now      |
+| Developer contact  | Your email               |
 
 4. Click **Save and Continue**
 
@@ -105,6 +105,7 @@ Save these securely.
 ### 2.5 Publishing Status
 
 While in **Testing** mode:
+
 - Only users you added as test users can sign in
 - Maximum 100 test users
 
@@ -124,11 +125,11 @@ To allow **any Google account**:
 
 Zoho has regional datacenters. Use the one matching your users:
 
-| Region | API Console | Issuer URL |
-|--------|-------------|------------|
-| EU | [api-console.zoho.eu](https://api-console.zoho.eu/) | `https://accounts.zoho.eu` |
-| US | [api-console.zoho.com](https://api-console.zoho.com/) | `https://accounts.zoho.com` |
-| India | [api-console.zoho.in](https://api-console.zoho.in/) | `https://accounts.zoho.in` |
+| Region    | API Console                                                 | Issuer URL                     |
+| --------- | ----------------------------------------------------------- | ------------------------------ |
+| EU        | [api-console.zoho.eu](https://api-console.zoho.eu/)         | `https://accounts.zoho.eu`     |
+| US        | [api-console.zoho.com](https://api-console.zoho.com/)       | `https://accounts.zoho.com`    |
+| India     | [api-console.zoho.in](https://api-console.zoho.in/)         | `https://accounts.zoho.in`     |
 | Australia | [api-console.zoho.com.au](https://api-console.zoho.com.au/) | `https://accounts.zoho.com.au` |
 
 > **Important:** Users with Zoho accounts in different datacenters need separate provider configurations. For MVP, we use EU datacenter.
@@ -141,10 +142,10 @@ Zoho has regional datacenters. Use the one matching your users:
 
 Fill in the form:
 
-| Field | Value |
-|-------|-------|
-| Client Name | `ktb.clubmanager` |
-| Homepage URL | `http://localhost:3000` |
+| Field                    | Value                                          |
+| ------------------------ | ---------------------------------------------- |
+| Client Name              | `ktb.clubmanager`                              |
+| Homepage URL             | `http://localhost:3000`                        |
 | Authorized Redirect URIs | `http://localhost:3000/api/auth/callback/zoho` |
 
 4. Click **Create**
@@ -241,21 +242,26 @@ pnpm dev
 ### Troubleshooting
 
 **"Access blocked: This app's request is invalid"**
+
 - Check redirect URI matches exactly (no trailing slash)
 - Verify you're using the correct Client ID
 
 **"Error 401: deleted_client"**
+
 - The OAuth client was deleted; create a new one
 
 **"You can't sign in because [app] didn't complete the Google verification process"**
+
 - Your Google account is not in the test users list
 - Either add yourself as a test user or publish the app
 
 **Zoho: "Invalid client"**
+
 - Verify Client ID and Secret are correct
 - Check you're using the right datacenter's issuer URL
 
 **Session not persisting**
+
 - Ensure `AUTH_SECRET` is set
 - Check cookies are not blocked by browser
 - Verify database is running and migrations applied
@@ -290,16 +296,16 @@ DATABASE_URL=postgresql://user:pass@production-db:5432/clubmanager
 
 ## Quick Reference
 
-| Variable | Source | Example |
-|----------|--------|---------|
-| `AUTH_SECRET` | `npx auth secret` | `abc123def456...` |
-| `AUTH_GOOGLE_ID` | Google Cloud Console | `123456789.apps.googleusercontent.com` |
-| `AUTH_GOOGLE_SECRET` | Google Cloud Console | `GOCSPX-...` |
-| `AUTH_ZOHO_ID` | Zoho API Console | `1000.ABC123...` |
-| `AUTH_ZOHO_SECRET` | Zoho API Console | `abc123def456...` |
-| `AUTH_ZOHO_ISSUER` | Based on datacenter | `https://accounts.zoho.eu` |
-| `JWT_SECRET` | Generate or derive | `your-secret-here` |
+| Variable             | Source               | Example                                |
+| -------------------- | -------------------- | -------------------------------------- |
+| `AUTH_SECRET`        | `npx auth secret`    | `abc123def456...`                      |
+| `AUTH_GOOGLE_ID`     | Google Cloud Console | `123456789.apps.googleusercontent.com` |
+| `AUTH_GOOGLE_SECRET` | Google Cloud Console | `GOCSPX-...`                           |
+| `AUTH_ZOHO_ID`       | Zoho API Console     | `1000.ABC123...`                       |
+| `AUTH_ZOHO_SECRET`   | Zoho API Console     | `abc123def456...`                      |
+| `AUTH_ZOHO_ISSUER`   | Based on datacenter  | `https://accounts.zoho.eu`             |
+| `JWT_SECRET`         | Generate or derive   | `your-secret-here`                     |
 
 ---
 
-*Last updated: 2026-01-26*
+_Last updated: 2026-01-26_

@@ -1,24 +1,19 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Search, Check, Plus } from "lucide-react"
-import { useClubStore, useMyClubs } from "@/lib/club-store"
-import { ClubAvatar } from "./club-avatar"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Search, Check, Plus } from 'lucide-react';
+import { useClubStore, useMyClubs } from '@/lib/club-store';
+import { ClubAvatar } from './club-avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface ClubSwitcherModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  canCreateClub?: boolean
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  canCreateClub?: boolean;
 }
 
 /**
@@ -30,30 +25,28 @@ export function ClubSwitcherModal({
   onOpenChange,
   canCreateClub = false,
 }: ClubSwitcherModalProps) {
-  const router = useRouter()
-  const clubs = useMyClubs()
-  const { activeClubSlug, setActiveClub } = useClubStore()
-  const [searchQuery, setSearchQuery] = useState("")
+  const router = useRouter();
+  const clubs = useMyClubs();
+  const { activeClubSlug, setActiveClub } = useClubStore();
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Filter clubs by search
   const filteredClubs = searchQuery
-    ? clubs.filter((c) =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : clubs
+    ? clubs.filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : clubs;
 
   // Show search when 5+ clubs
-  const showSearch = clubs.length >= 5
+  const showSearch = clubs.length >= 5;
 
   function handleSelectClub(slug: string) {
-    setActiveClub(slug)
-    onOpenChange(false)
-    router.push(`/clubs/${slug}/dashboard`)
+    setActiveClub(slug);
+    onOpenChange(false);
+    router.push(`/clubs/${slug}/dashboard`);
   }
 
   function handleCreateClub() {
-    onOpenChange(false)
-    router.push("/clubs/new")
+    onOpenChange(false);
+    router.push('/clubs/new');
   }
 
   return (
@@ -81,17 +74,15 @@ export function ClubSwitcherModal({
           {/* Club list */}
           <div className="space-y-1 max-h-[300px] overflow-y-auto">
             {filteredClubs.map((club) => {
-              const isActive = club.slug === activeClubSlug
+              const isActive = club.slug === activeClubSlug;
 
               return (
                 <button
                   key={club.id}
                   onClick={() => handleSelectClub(club.slug)}
                   className={cn(
-                    "w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors",
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "hover:bg-accent"
+                    'w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors',
+                    isActive ? 'bg-primary/10 text-primary' : 'hover:bg-accent'
                   )}
                 >
                   <ClubAvatar club={club} size="sm" />
@@ -100,7 +91,7 @@ export function ClubSwitcherModal({
                   </div>
                   {isActive && <Check className="h-4 w-4 shrink-0" />}
                 </button>
-              )
+              );
             })}
 
             {filteredClubs.length === 0 && searchQuery && (
@@ -127,5 +118,5 @@ export function ClubSwitcherModal({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

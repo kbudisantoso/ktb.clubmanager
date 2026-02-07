@@ -8,34 +8,31 @@
  * @see https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel
  */
 
-type AuthEventType = "LOGOUT" | "LOGIN"
+type AuthEventType = 'LOGOUT' | 'LOGIN';
 
 interface AuthEvent {
-  type: AuthEventType
-  timestamp: number
+  type: AuthEventType;
+  timestamp: number;
 }
 
-type AuthEventHandler = (event: AuthEvent) => void
+type AuthEventHandler = (event: AuthEvent) => void;
 
 export class AuthBroadcast {
-  private channel: BroadcastChannel | null = null
-  private handlers: Map<AuthEventType, AuthEventHandler[]> = new Map()
+  private channel: BroadcastChannel | null = null;
+  private handlers: Map<AuthEventType, AuthEventHandler[]> = new Map();
 
   constructor() {
     // BroadcastChannel is not available during SSR
-    if (typeof window === "undefined" || !("BroadcastChannel" in window)) {
-      return
+    if (typeof window === 'undefined' || !('BroadcastChannel' in window)) {
+      return;
     }
 
-    this.channel = new BroadcastChannel("ktb_auth")
+    this.channel = new BroadcastChannel('ktb_auth');
 
-    this.channel.addEventListener(
-      "message",
-      (event: MessageEvent<AuthEvent>) => {
-        const handlers = this.handlers.get(event.data.type) ?? []
-        handlers.forEach((handler) => handler(event.data))
-      }
-    )
+    this.channel.addEventListener('message', (event: MessageEvent<AuthEvent>) => {
+      const handlers = this.handlers.get(event.data.type) ?? [];
+      handlers.forEach((handler) => handler(event.data));
+    });
   }
 
   /**
@@ -48,9 +45,9 @@ export class AuthBroadcast {
    * });
    */
   on(type: AuthEventType, handler: AuthEventHandler): void {
-    const handlers = this.handlers.get(type) ?? []
-    handlers.push(handler)
-    this.handlers.set(type, handlers)
+    const handlers = this.handlers.get(type) ?? [];
+    handlers.push(handler);
+    this.handlers.set(type, handlers);
   }
 
   /**
@@ -59,9 +56,9 @@ export class AuthBroadcast {
    */
   notifyLogout(): void {
     this.channel?.postMessage({
-      type: "LOGOUT",
+      type: 'LOGOUT',
       timestamp: Date.now(),
-    } satisfies AuthEvent)
+    } satisfies AuthEvent);
   }
 
   /**
@@ -70,9 +67,9 @@ export class AuthBroadcast {
    */
   notifyLogin(): void {
     this.channel?.postMessage({
-      type: "LOGIN",
+      type: 'LOGIN',
       timestamp: Date.now(),
-    } satisfies AuthEvent)
+    } satisfies AuthEvent);
   }
 
   /**
@@ -81,23 +78,21 @@ export class AuthBroadcast {
    * Keep ktb.ui.* (theme, sidebar state, preferences)
    */
   clearAuthState(): void {
-    if (typeof window === "undefined") return
+    if (typeof window === 'undefined') return;
 
-    const keysToRemove: string[] = []
+    const keysToRemove: string[] = [];
 
     for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
+      const key = localStorage.key(i);
       if (
         key &&
-        (key.startsWith("ktb.auth.") ||
-          key.startsWith("ktb.user.") ||
-          key.startsWith("ktb.cache."))
+        (key.startsWith('ktb.auth.') || key.startsWith('ktb.user.') || key.startsWith('ktb.cache.'))
       ) {
-        keysToRemove.push(key)
+        keysToRemove.push(key);
       }
     }
 
-    keysToRemove.forEach((key) => localStorage.removeItem(key))
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
   }
 
   /**
@@ -105,9 +100,9 @@ export class AuthBroadcast {
    * Call this when the component unmounts.
    */
   disconnect(): void {
-    this.channel?.close()
-    this.channel = null
-    this.handlers.clear()
+    this.channel?.close();
+    this.channel = null;
+    this.handlers.clear();
   }
 }
 
@@ -115,11 +110,11 @@ export class AuthBroadcast {
  * Singleton instance for app-wide use.
  * Import and use directly in components.
  */
-let authBroadcastInstance: AuthBroadcast | null = null
+let authBroadcastInstance: AuthBroadcast | null = null;
 
 export function getAuthBroadcast(): AuthBroadcast {
   if (!authBroadcastInstance) {
-    authBroadcastInstance = new AuthBroadcast()
+    authBroadcastInstance = new AuthBroadcast();
   }
-  return authBroadcastInstance
+  return authBroadcastInstance;
 }

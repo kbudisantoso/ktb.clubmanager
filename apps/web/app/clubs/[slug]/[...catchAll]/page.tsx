@@ -1,8 +1,8 @@
-import { checkClubAccess } from "@/lib/check-club-access"
-import { PageNotFound } from "@/components/page-not-found"
+import { checkClubAccess } from '@/lib/check-club-access';
+import { PageNotFound } from '@/components/page-not-found';
 
 interface CatchAllPageProps {
-  params: Promise<{ slug: string; catchAll: string[] }>
+  params: Promise<{ slug: string; catchAll: string[] }>;
 }
 
 /**
@@ -17,12 +17,12 @@ interface CatchAllPageProps {
  * - Has access, page missing: "Seite nicht gefunden" (regular 404)
  */
 export default async function CatchAllPage({ params }: CatchAllPageProps) {
-  const { slug } = await params
+  const { slug } = await params;
 
   // Check club access first - will return 404 with security message if no access
-  await checkClubAccess(slug)
+  await checkClubAccess(slug);
 
   // If we get here, user has access but path doesn't exist
   // Show regular "page not found" message (not security message)
-  return <PageNotFound backHref={`/clubs/${slug}/dashboard`} backLabel="Zurück zum Verein" />
+  return <PageNotFound backHref={`/clubs/${slug}/dashboard`} backLabel="Zurück zum Verein" />;
 }

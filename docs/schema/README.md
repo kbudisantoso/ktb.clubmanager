@@ -27,6 +27,7 @@ Chart of accounts (Kontenrahmen) based on SKR42 for German non-profit organizati
 ### MemberStatus
 
 Tracks the lifecycle of club membership:
+
 - `ACTIVE` - Currently active member
 - `INACTIVE` - Temporarily inactive (e.g., sabbatical)
 - `PENDING` - Application pending approval
@@ -35,6 +36,7 @@ Tracks the lifecycle of club membership:
 ### AccountType
 
 Categories for the chart of accounts (SKR42):
+
 - `ASSET` - Aktivkonten (Class 0-1)
 - `LIABILITY` - Passivkonten (Class 2-3)
 - `INCOME` - Ertragskonten (Class 4)
@@ -107,5 +109,5 @@ pnpm db:studio
 
 ---
 
-*Schema documentation for ktb.clubmanager*
-*See prisma/schema.prisma for authoritative definitions*
+_Schema documentation for ktb.clubmanager_
+_See prisma/schema.prisma for authoritative definitions_

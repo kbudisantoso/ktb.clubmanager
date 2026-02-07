@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { SUPER_ADMIN_KEY } from '../decorators/super-admin.decorator.js';
@@ -12,15 +7,15 @@ import { SUPER_ADMIN_KEY } from '../decorators/super-admin.decorator.js';
 export class SuperAdminGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    private prisma: PrismaService,
+    private prisma: PrismaService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if endpoint requires Super Admin
-    const requiresSuperAdmin = this.reflector.getAllAndOverride<boolean>(
-      SUPER_ADMIN_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiresSuperAdmin = this.reflector.getAllAndOverride<boolean>(SUPER_ADMIN_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (!requiresSuperAdmin) {
       return true;

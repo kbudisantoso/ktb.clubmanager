@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation"
+import { redirect } from 'next/navigation';
 
 interface ClubRedirectProps {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string }>;
 }
 
 /**
@@ -9,6 +9,6 @@ interface ClubRedirectProps {
  * Handles common typo of singular "club" instead of "clubs".
  */
 export default async function ClubRedirectPage({ params }: ClubRedirectProps) {
-  const { slug } = await params
-  redirect(`/clubs/${slug}/dashboard`)
+  const { slug } = await params;
+  redirect(`/clubs/${slug}/dashboard`);
 }

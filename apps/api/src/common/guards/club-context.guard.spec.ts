@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClubContextGuard } from './club-context.guard.js';
 import type { Reflector } from '@nestjs/core';
 import type { PrismaService } from '../../prisma/prisma.service.js';
-import type { ExecutionContext} from '@nestjs/common';
+import type { ExecutionContext } from '@nestjs/common';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 
 // Mock Reflector
@@ -21,11 +21,13 @@ const mockPrisma = {
 };
 
 // Helper to create mock ExecutionContext
-function createMockContext(overrides: {
-  userId?: string;
-  params?: Record<string, string>;
-  headers?: Record<string, string>;
-} = {}): ExecutionContext {
+function createMockContext(
+  overrides: {
+    userId?: string;
+    params?: Record<string, string>;
+    headers?: Record<string, string>;
+  } = {}
+): ExecutionContext {
   const request = {
     user: overrides.userId ? { id: overrides.userId } : undefined,
     params: overrides.params || {},
@@ -49,7 +51,7 @@ describe('ClubContextGuard', () => {
     vi.resetAllMocks();
     guard = new ClubContextGuard(
       mockReflector as unknown as Reflector,
-      mockPrisma as unknown as PrismaService,
+      mockPrisma as unknown as PrismaService
     );
   });
 
@@ -89,7 +91,7 @@ describe('ClubContextGuard', () => {
             club: { slug: 'test-club', deletedAt: null },
             status: 'ACTIVE',
           }),
-        }),
+        })
       );
     });
 
@@ -116,7 +118,7 @@ describe('ClubContextGuard', () => {
           where: expect.objectContaining({
             club: { slug: 'header-club', deletedAt: null },
           }),
-        }),
+        })
       );
     });
 
@@ -190,7 +192,7 @@ describe('ClubContextGuard', () => {
           where: expect.objectContaining({
             club: { slug: 'params-club', deletedAt: null },
           }),
-        }),
+        })
       );
     });
   });
@@ -204,7 +206,7 @@ describe('ClubContextGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        new ForbiddenException('Authentifizierung erforderlich'),
+        new ForbiddenException('Authentifizierung erforderlich')
       );
     });
 
@@ -216,7 +218,7 @@ describe('ClubContextGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        new ForbiddenException('Vereinskontext erforderlich'),
+        new ForbiddenException('Vereinskontext erforderlich')
       );
     });
 
@@ -234,7 +236,7 @@ describe('ClubContextGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        new NotFoundException('Verein nicht gefunden'),
+        new NotFoundException('Verein nicht gefunden')
       );
     });
 
@@ -252,7 +254,7 @@ describe('ClubContextGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        new ForbiddenException('Kein Zugriff auf diesen Verein'),
+        new ForbiddenException('Kein Zugriff auf diesen Verein')
       );
     });
 
@@ -272,7 +274,7 @@ describe('ClubContextGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        new ForbiddenException('Erforderliche Rolle: ADMIN oder OWNER'),
+        new ForbiddenException('Erforderliche Rolle: ADMIN oder OWNER')
       );
     });
   });

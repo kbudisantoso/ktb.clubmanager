@@ -1,7 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
 exports.DEFAULT_MEMBER_STATUS = exports.MemberStatusSchema = void 0;
-const zod_1 = require("zod");
+const zod_1 = require('zod');
 /**
  * Member status enum - tracks lifecycle of club membership.
  * Used across API and frontend for consistent status handling.

@@ -50,9 +50,9 @@ After modifying `docker-compose.local.yml`, rebuild the container:
 
 ## Files
 
-| File | Purpose | Committed |
-|------|---------|-----------|
-| `devcontainer.json` | VS Code DevContainer config | Yes |
-| `docker-compose.yml` | Container orchestration | Yes |
-| `Dockerfile` | Development image | Yes |
-| `docker-compose.local.yml` | Your local mounts | No |
+| File                       | Purpose                     | Committed |
+| -------------------------- | --------------------------- | --------- |
+| `devcontainer.json`        | VS Code DevContainer config | Yes       |
+| `docker-compose.yml`       | Container orchestration     | Yes       |
+| `Dockerfile`               | Development image           | Yes       |
+| `docker-compose.local.yml` | Your local mounts           | No        |

@@ -1,11 +1,7 @@
-import { Header } from "@/components/layout/header"
-import { ClubSync } from "@/components/providers/club-sync"
+import { Header } from '@/components/layout/header';
+import { ClubSync } from '@/components/providers/club-sync';
 
-export default function MainLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <ClubSync />
@@ -17,5 +13,5 @@ export default function MainLayout({
         <main className="flex-1">{children}</main>
       </div>
     </>
-  )
+  );
 }

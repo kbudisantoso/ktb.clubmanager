@@ -1,14 +1,14 @@
-import ReactMarkdown from "react-markdown"
-import { getMarkdownContent } from "@/lib/markdown"
-import { PublicPageLayout } from "@/components/layout/public-page-layout"
+import ReactMarkdown from 'react-markdown';
+import { getMarkdownContent } from '@/lib/markdown';
+import { PublicPageLayout } from '@/components/layout/public-page-layout';
 
 export const metadata = {
-  title: "Impressum | ClubManager",
-  description: "Impressum und rechtliche Hinweise",
-}
+  title: 'Impressum | ClubManager',
+  description: 'Impressum und rechtliche Hinweise',
+};
 
 export default async function ImpressumPage() {
-  const content = await getMarkdownContent("impressum.md")
+  const content = await getMarkdownContent('impressum.md');
 
   return (
     <PublicPageLayout>
@@ -16,5 +16,5 @@ export default async function ImpressumPage() {
         <ReactMarkdown>{content}</ReactMarkdown>
       </article>
     </PublicPageLayout>
-  )
+  );
 }

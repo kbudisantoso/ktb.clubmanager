@@ -1,6 +1,6 @@
 # Nutzungsbedingungen
 
-*Stand: Januar 2026*
+_Stand: Januar 2026_
 
 ## 1. Geltungsbereich
 
@@ -21,6 +21,7 @@ ClubManager ist eine Software zur Vereinsverwaltung mit integrierter Buchhaltung
 ## 4. Deine Pflichten
 
 Du verpflichtest dich:
+
 - Die Plattform nur für rechtmäßige Zwecke zu nutzen
 - Keine schädlichen Inhalte hochzuladen
 - Die Rechte Dritter zu respektieren
@@ -43,4 +44,4 @@ Es gilt deutsches Recht.
 
 ---
 
-*Diese Nutzungsbedingungen sind ein Platzhalter und werden vor dem produktiven Einsatz durch vollständige rechtliche Texte ersetzt.*
+_Diese Nutzungsbedingungen sind ein Platzhalter und werden vor dem produktiven Einsatz durch vollständige rechtliche Texte ersetzt._

@@ -13,14 +13,17 @@ ktb.clubmanager needs a backend framework for club management with integrated do
 We evaluated three options:
 
 **Laravel + Filament (PHP):**
+
 - Pros: Rapid admin UI development (2-4 weeks faster), mature ecosystem, excellent documentation
 - Cons: No type sharing with TypeScript frontend, PHP/JS context switching, weaker compile-time safety for financial calculations
 
 **FastAPI (Python):**
+
 - Pros: Modern async Python, good type hints, excellent for data science
 - Cons: No type sharing with frontend, Decimal handling requires care, smaller ecosystem for full-stack web apps
 
 **NestJS (TypeScript):**
+
 - Pros: End-to-end TypeScript (frontend + backend share types), Prisma ORM with native Decimal type, compile-time type safety, modular architecture
 - Cons: Slower admin UI development than Laravel/Filament
 
@@ -35,6 +38,7 @@ We accept the trade-off that building admin UIs will take longer compared to Lar
 ## Consequences
 
 **Positive:**
+
 - End-to-end TypeScript: frontend and backend share types via `packages/shared`
 - Prisma ORM with native Decimal type for currency calculations
 - Compile-time type checking catches errors before runtime
@@ -42,10 +46,12 @@ We accept the trade-off that building admin UIs will take longer compared to Lar
 - Strong NestJS ecosystem (auth, validation, documentation)
 
 **Negative:**
+
 - Admin dashboard requires manual implementation (no Filament equivalent)
 - Development velocity slower for CRUD operations compared to Laravel
 - Learning curve for developers unfamiliar with NestJS decorators
 
 **Neutral:**
+
 - Need to build custom components that Laravel/Filament provides out-of-box
 - Team must maintain TypeScript discipline for benefits to materialize

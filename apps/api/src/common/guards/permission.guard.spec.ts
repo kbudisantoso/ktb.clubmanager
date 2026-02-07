@@ -19,15 +19,17 @@ const mockPrisma = {
 };
 
 // Helper to create mock ExecutionContext
-function createMockContext(overrides: {
-  userId?: string;
-  clubContext?: {
-    clubId: string;
-    clubSlug: string;
-    roles: string[];
-  };
-  userPermissions?: string[];
-} = {}): ExecutionContext {
+function createMockContext(
+  overrides: {
+    userId?: string;
+    clubContext?: {
+      clubId: string;
+      clubSlug: string;
+      roles: string[];
+    };
+    userPermissions?: string[];
+  } = {}
+): ExecutionContext {
   const request = {
     user: overrides.userId ? { id: overrides.userId } : undefined,
     clubContext: overrides.clubContext,
@@ -50,7 +52,7 @@ describe('PermissionGuard', () => {
     vi.resetAllMocks();
     guard = new PermissionGuard(
       mockReflector as unknown as Reflector,
-      mockPrisma as unknown as PrismaService,
+      mockPrisma as unknown as PrismaService
     );
   });
 

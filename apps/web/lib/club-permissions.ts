@@ -40,10 +40,7 @@ export const PERMISSION_GROUPS = {
  * Check if user's roles include any role from the required group.
  * Returns true if at least one role matches.
  */
-function hasPermission(
-  userRoles: string[],
-  requiredGroup: readonly string[]
-): boolean {
+function hasPermission(userRoles: string[], requiredGroup: readonly string[]): boolean {
   return userRoles.some((role) => requiredGroup.includes(role));
 }
 

@@ -1,10 +1,10 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { Plus, Pencil, Trash2, Crown } from "lucide-react"
-import { apiFetch } from "@/lib/api"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { useEffect, useState } from 'react';
+import { Plus, Pencil, Trash2, Crown } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -12,156 +12,147 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
-import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Tier {
-  id: string
-  name: string
-  description?: string
-  isVisible: boolean
-  isSeeded: boolean
-  sortOrder: number
-  color?: string
-  usersLimit?: number
-  membersLimit?: number
-  storageLimit?: number
-  sepaEnabled: boolean
-  reportsEnabled: boolean
-  bankImportEnabled: boolean
-  _count?: { clubs: number }
+  id: string;
+  name: string;
+  description?: string;
+  isVisible: boolean;
+  isSeeded: boolean;
+  sortOrder: number;
+  color?: string;
+  usersLimit?: number;
+  membersLimit?: number;
+  storageLimit?: number;
+  sepaEnabled: boolean;
+  reportsEnabled: boolean;
+  bankImportEnabled: boolean;
+  _count?: { clubs: number };
 }
 
 export default function AdminTiersPage() {
-  const { toast } = useToast()
-  const [tiers, setTiers] = useState<Tier[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [editingTier, setEditingTier] = useState<Tier | null>(null)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [deletingTier, setDeletingTier] = useState<Tier | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const { toast } = useToast();
+  const [tiers, setTiers] = useState<Tier[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [editingTier, setEditingTier] = useState<Tier | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deletingTier, setDeletingTier] = useState<Tier | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    fetchTiers()
-  }, [])
+    fetchTiers();
+  }, []);
 
   async function fetchTiers() {
     try {
-      const res = await apiFetch("/api/admin/tiers")
+      const res = await apiFetch('/api/admin/tiers');
       if (res.ok) {
-        const data = await res.json()
-        setTiers(data)
+        const data = await res.json();
+        setTiers(data);
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
   async function handleSave(formData: FormData) {
     const data = {
-      name: formData.get("name") as string,
-      description: formData.get("description") as string,
-      isVisible: formData.get("isVisible") === "on",
-      usersLimit: formData.get("usersLimit")
-        ? Number(formData.get("usersLimit"))
-        : null,
-      membersLimit: formData.get("membersLimit")
-        ? Number(formData.get("membersLimit"))
-        : null,
-      storageLimit: formData.get("storageLimit")
-        ? Number(formData.get("storageLimit"))
-        : null,
-      sepaEnabled: formData.get("sepaEnabled") === "on",
-      reportsEnabled: formData.get("reportsEnabled") === "on",
-      bankImportEnabled: formData.get("bankImportEnabled") === "on",
-    }
+      name: formData.get('name') as string,
+      description: formData.get('description') as string,
+      isVisible: formData.get('isVisible') === 'on',
+      usersLimit: formData.get('usersLimit') ? Number(formData.get('usersLimit')) : null,
+      membersLimit: formData.get('membersLimit') ? Number(formData.get('membersLimit')) : null,
+      storageLimit: formData.get('storageLimit') ? Number(formData.get('storageLimit')) : null,
+      sepaEnabled: formData.get('sepaEnabled') === 'on',
+      reportsEnabled: formData.get('reportsEnabled') === 'on',
+      bankImportEnabled: formData.get('bankImportEnabled') === 'on',
+    };
 
     try {
-      const url = editingTier
-        ? `/api/admin/tiers/${editingTier.id}`
-        : "/api/admin/tiers"
-      const method = editingTier ? "PUT" : "POST"
+      const url = editingTier ? `/api/admin/tiers/${editingTier.id}` : '/api/admin/tiers';
+      const method = editingTier ? 'PUT' : 'POST';
 
       const res = await apiFetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
-      })
+      });
 
       if (res.ok) {
         toast({
-          title: editingTier ? "Tarif aktualisiert" : "Tarif erstellt",
-        })
-        fetchTiers()
-        setIsDialogOpen(false)
-        setEditingTier(null)
+          title: editingTier ? 'Tarif aktualisiert' : 'Tarif erstellt',
+        });
+        fetchTiers();
+        setIsDialogOpen(false);
+        setEditingTier(null);
       } else {
-        const error = await res.json()
+        const error = await res.json();
         toast({
-          title: "Fehler",
+          title: 'Fehler',
           description: error.message,
-          variant: "destructive",
-        })
+          variant: 'destructive',
+        });
       }
     } catch {
       toast({
-        title: "Fehler",
-        description: "Netzwerkfehler",
-        variant: "destructive",
-      })
+        title: 'Fehler',
+        description: 'Netzwerkfehler',
+        variant: 'destructive',
+      });
     }
   }
 
   function handleDeleteClick(tier: Tier) {
-    setDeletingTier(tier)
+    setDeletingTier(tier);
   }
 
   async function handleConfirmDelete() {
-    if (!deletingTier) return
+    if (!deletingTier) return;
 
-    setIsDeleting(true)
+    setIsDeleting(true);
     try {
       const res = await apiFetch(`/api/admin/tiers/${deletingTier.id}`, {
-        method: "DELETE",
-      })
+        method: 'DELETE',
+      });
 
       if (res.ok) {
-        toast({ title: "Tarif gelöscht" })
-        fetchTiers()
+        toast({ title: 'Tarif gelöscht' });
+        fetchTiers();
       } else {
-        const error = await res.json()
+        const error = await res.json();
         toast({
-          title: "Fehler",
+          title: 'Fehler',
           description: error.message,
-          variant: "destructive",
-        })
+          variant: 'destructive',
+        });
       }
     } catch {
       toast({
-        title: "Fehler",
-        description: "Netzwerkfehler",
-        variant: "destructive",
-      })
+        title: 'Fehler',
+        description: 'Netzwerkfehler',
+        variant: 'destructive',
+      });
     } finally {
-      setIsDeleting(false)
-      setDeletingTier(null)
+      setIsDeleting(false);
+      setDeletingTier(null);
     }
   }
 
-  const formatLimit = (limit?: number | null) =>
-    limit ? limit.toString() : "Unbegrenzt"
+  const formatLimit = (limit?: number | null) => (limit ? limit.toString() : 'Unbegrenzt');
 
   return (
     <div className="space-y-6">
@@ -181,19 +172,12 @@ export default function AdminTiersPage() {
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>
-                {editingTier ? "Tarif bearbeiten" : "Neuer Tarif"}
-              </DialogTitle>
+              <DialogTitle>{editingTier ? 'Tarif bearbeiten' : 'Neuer Tarif'}</DialogTitle>
             </DialogHeader>
             <form action={handleSave} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  defaultValue={editingTier?.name}
-                  required
-                />
+                <Input id="name" name="name" defaultValue={editingTier?.name} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Beschreibung</Label>
@@ -212,7 +196,7 @@ export default function AdminTiersPage() {
                     name="usersLimit"
                     type="number"
                     min="1"
-                    defaultValue={editingTier?.usersLimit || ""}
+                    defaultValue={editingTier?.usersLimit || ''}
                     placeholder="Unbegrenzt"
                   />
                 </div>
@@ -223,7 +207,7 @@ export default function AdminTiersPage() {
                     name="membersLimit"
                     type="number"
                     min="1"
-                    defaultValue={editingTier?.membersLimit || ""}
+                    defaultValue={editingTier?.membersLimit || ''}
                     placeholder="Unbegrenzt"
                   />
                 </div>
@@ -234,7 +218,7 @@ export default function AdminTiersPage() {
                     name="storageLimit"
                     type="number"
                     min="1"
-                    defaultValue={editingTier?.storageLimit || ""}
+                    defaultValue={editingTier?.storageLimit || ''}
                     placeholder="Unbegrenzt"
                   />
                 </div>
@@ -276,11 +260,7 @@ export default function AdminTiersPage() {
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Abbrechen
                 </Button>
                 <Button type="submit">Speichern</Button>
@@ -313,9 +293,7 @@ export default function AdminTiersPage() {
                 <TableRow key={tier.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {tier.isSeeded && (
-                        <Crown className="h-4 w-4 text-yellow-500" />
-                      )}
+                      {tier.isSeeded && <Crown className="h-4 w-4 text-yellow-500" />}
                       <span className="font-medium">{tier.name}</span>
                       {!tier.isVisible && (
                         <Badge variant="outline" className="text-xs">
@@ -324,9 +302,7 @@ export default function AdminTiersPage() {
                       )}
                     </div>
                     {tier.description && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {tier.description}
-                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">{tier.description}</p>
                     )}
                   </TableCell>
                   <TableCell>
@@ -334,37 +310,26 @@ export default function AdminTiersPage() {
                       <div>Benutzer: {formatLimit(tier.usersLimit)}</div>
                       <div>Mitglieder: {formatLimit(tier.membersLimit)}</div>
                       <div>
-                        Speicher:{" "}
-                        {tier.storageLimit
-                          ? `${tier.storageLimit} MB`
-                          : "Unbegrenzt"}
+                        Speicher: {tier.storageLimit ? `${tier.storageLimit} MB` : 'Unbegrenzt'}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {tier.sepaEnabled && (
-                        <Badge variant="secondary">SEPA</Badge>
-                      )}
-                      {tier.reportsEnabled && (
-                        <Badge variant="secondary">Berichte</Badge>
-                      )}
-                      {tier.bankImportEnabled && (
-                        <Badge variant="secondary">Bank-Import</Badge>
-                      )}
+                      {tier.sepaEnabled && <Badge variant="secondary">SEPA</Badge>}
+                      {tier.reportsEnabled && <Badge variant="secondary">Berichte</Badge>}
+                      {tier.bankImportEnabled && <Badge variant="secondary">Bank-Import</Badge>}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
-                    {tier._count?.clubs || 0}
-                  </TableCell>
+                  <TableCell className="text-right">{tier._count?.clubs || 0}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2 justify-end">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          setEditingTier(tier)
-                          setIsDialogOpen(true)
+                          setEditingTier(tier);
+                          setIsDialogOpen(true);
                         }}
                       >
                         <Pencil className="h-4 w-4" />
@@ -390,7 +355,7 @@ export default function AdminTiersPage() {
         open={!!deletingTier}
         onOpenChange={(open) => !open && setDeletingTier(null)}
         title="Tarif löschen"
-        description={`Möchtest du den Tarif "${deletingTier?.name ?? ""}" wirklich löschen?`}
+        description={`Möchtest du den Tarif "${deletingTier?.name ?? ''}" wirklich löschen?`}
         confirmLabel="Löschen"
         cancelLabel="Abbrechen"
         variant="destructive"
@@ -398,5 +363,5 @@ export default function AdminTiersPage() {
         loading={isDeleting}
       />
     </div>
-  )
+  );
 }

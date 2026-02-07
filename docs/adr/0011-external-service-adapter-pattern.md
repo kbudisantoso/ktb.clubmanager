@@ -17,6 +17,7 @@ ktb.clubmanager integrates with multiple external services for authentication, s
 - **AI/LLM:** Multiple providers (Gemini, Mistral, OpenAI)
 
 Direct coupling to provider-specific APIs would make the application difficult to:
+
 1. Test (requires mocked external services)
 2. Deploy in different environments (different providers per environment)
 3. Migrate to alternative providers (vendor lock-in)
@@ -108,6 +109,7 @@ model UserIdentity {
 ```
 
 This ensures:
+
 - Domain logic only uses internal `User.id`, never provider-specific IDs
 - Users can link multiple OIDC providers
 - Provider migration doesn't break referential integrity

@@ -1,6 +1,6 @@
-"use client"
+'use client';
 
-import { createAuthClient } from "better-auth/react"
+import { createAuthClient } from 'better-auth/react';
 
 /**
  * Better Auth client for React components.
@@ -20,13 +20,8 @@ import { createAuthClient } from "better-auth/react"
  * ```
  */
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:33000",
-})
+  baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:33000',
+});
 
 // Export commonly used functions for convenience
-export const {
-  signIn,
-  signUp,
-  signOut,
-  useSession,
-} = authClient
+export const { signIn, signUp, signOut, useSession } = authClient;

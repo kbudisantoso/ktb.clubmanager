@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import { useClubStore, type TierFeatures } from "./club-store"
+import { useClubStore, type TierFeatures } from './club-store';
 
 interface MyPermissionsResponse {
-  permissions: string[]
-  features: TierFeatures
-  roles: string[]
+  permissions: string[];
+  features: TierFeatures;
+  roles: string[];
 }
 
 /**
@@ -17,20 +17,20 @@ interface MyPermissionsResponse {
  */
 export async function fetchAndStorePermissions(clubSlug: string): Promise<void> {
   try {
-    const response = await fetch(`/api/clubs/${clubSlug}/my-permissions`)
+    const response = await fetch(`/api/clubs/${clubSlug}/my-permissions`);
 
     if (!response.ok) {
-      console.error("Failed to fetch permissions:", response.status)
-      return
+      console.error('Failed to fetch permissions:', response.status);
+      return;
     }
 
-    const data: MyPermissionsResponse = await response.json()
+    const data: MyPermissionsResponse = await response.json();
 
     // Update the store with permissions
-    const { setClubPermissions } = useClubStore.getState()
-    setClubPermissions(clubSlug, data.permissions, data.features)
+    const { setClubPermissions } = useClubStore.getState();
+    setClubPermissions(clubSlug, data.permissions, data.features);
   } catch (error) {
-    console.error("Error fetching permissions:", error)
+    console.error('Error fetching permissions:', error);
   }
 }
 
@@ -40,6 +40,6 @@ export async function fetchAndStorePermissions(clubSlug: string): Promise<void> 
  */
 export function useRefreshPermissions() {
   return async (clubSlug: string) => {
-    await fetchAndStorePermissions(clubSlug)
-  }
+    await fetchAndStorePermissions(clubSlug);
+  };
 }

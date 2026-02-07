@@ -1,6 +1,6 @@
-import { zxcvbn, zxcvbnOptions } from "@zxcvbn-ts/core";
-import * as zxcvbnCommonPackage from "@zxcvbn-ts/language-common";
-import * as zxcvbnDePackage from "@zxcvbn-ts/language-de";
+import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core';
+import * as zxcvbnCommonPackage from '@zxcvbn-ts/language-common';
+import * as zxcvbnDePackage from '@zxcvbn-ts/language-de';
 
 // Initialize zxcvbn with German dictionary
 const options = {
@@ -61,17 +61,13 @@ export async function validatePassword(
 
   // Require minimum strength score
   if (result.score < minScore) {
-    errors.push(
-      "Passwort ist zu schwach. Bitte wähle ein stärkeres Passwort."
-    );
+    errors.push('Passwort ist zu schwach. Bitte wähle ein stärkeres Passwort.');
   }
 
   // Blocklist check (HaveIBeenPwned API - k-anonymity)
   const isCompromised = await checkPwnedPassword(password);
   if (isCompromised) {
-    errors.push(
-      "Dieses Passwort wurde in einem Datenleck gefunden. Bitte wähle ein anderes."
-    );
+    errors.push('Dieses Passwort wurde in einem Datenleck gefunden. Bitte wähle ein anderes.');
   }
 
   return {
@@ -109,40 +105,35 @@ async function checkPwnedPassword(password: string): Promise<boolean> {
     // SHA-1 hash of password
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest("SHA-1", data);
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
+    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
     const hashUpper = hashHex.toUpperCase();
 
     // Send only first 5 chars (k-anonymity)
     const prefix = hashUpper.substring(0, 5);
     const suffix = hashUpper.substring(5);
 
-    const response = await fetch(
-      `https://api.pwnedpasswords.com/range/${prefix}`,
-      {
-        headers: {
-          "Add-Padding": "true", // Reduce info leakage
-        },
-      }
-    );
+    const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
+      headers: {
+        'Add-Padding': 'true', // Reduce info leakage
+      },
+    });
 
     if (!response.ok) {
       // API error - fail open (don't block user)
-      console.error("HaveIBeenPwned API error:", response.status);
+      console.error('HaveIBeenPwned API error:', response.status);
       return false;
     }
 
     const text = await response.text();
-    const hashes = text.split("\n");
+    const hashes = text.split('\n');
 
     // Check if suffix appears in response
     return hashes.some((line) => line.startsWith(suffix));
   } catch (error) {
     // Network error - fail open
-    console.error("HaveIBeenPwned API error:", error);
+    console.error('HaveIBeenPwned API error:', error);
     return false;
   }
 }

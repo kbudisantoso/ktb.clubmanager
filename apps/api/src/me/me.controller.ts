@@ -1,18 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Req,
-  HttpCode,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiResponse,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Delete, Param, Req, HttpCode } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { ClubsService } from '../clubs/clubs.service.js';
 import { AccessRequestsService } from '../clubs/access-requests/access-requests.service.js';
@@ -29,7 +16,7 @@ export class MeController {
   constructor(
     private clubsService: ClubsService,
     private accessRequestsService: AccessRequestsService,
-    private prisma: PrismaService,
+    private prisma: PrismaService
   ) {}
 
   @Get('clubs')
@@ -53,10 +40,7 @@ export class MeController {
   @ApiResponse({ status: 204, description: 'Request cancelled' })
   @ApiResponse({ status: 403, description: 'Not your request' })
   @ApiResponse({ status: 404, description: 'Request not found' })
-  async cancelAccessRequest(
-    @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  async cancelAccessRequest(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.accessRequestsService.cancelRequest(id, req.user.id);
   }
 
@@ -67,10 +51,7 @@ export class MeController {
   @ApiResponse({ status: 400, description: 'Request is not rejected' })
   @ApiResponse({ status: 403, description: 'Not your request' })
   @ApiResponse({ status: 404, description: 'Request not found' })
-  async markRequestAsSeen(
-    @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  async markRequestAsSeen(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.accessRequestsService.markAsSeen(id, req.user.id);
   }
 

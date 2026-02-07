@@ -59,10 +59,7 @@ export class AppSettingsService {
    * @param key - Setting key
    * @param value - Value to set
    */
-  async set<K extends AppSettingKey>(
-    key: K,
-    value: AppSettingValues[K],
-  ): Promise<void> {
+  async set<K extends AppSettingKey>(key: K, value: AppSettingValues[K]): Promise<void> {
     const serialized = JSON.stringify(value);
 
     await this.prisma.appSetting.upsert({
@@ -83,9 +80,7 @@ export class AppSettingsService {
 
     for (const setting of settings) {
       if (setting.key in result) {
-        (result as Record<string, unknown>)[setting.key] = JSON.parse(
-          setting.value,
-        );
+        (result as Record<string, unknown>)[setting.key] = JSON.parse(setting.value);
       }
     }
 

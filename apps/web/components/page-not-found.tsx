@@ -1,13 +1,13 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileQuestion } from "lucide-react"
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { FileQuestion } from 'lucide-react';
 
 interface PageNotFoundProps {
-  backHref?: string
-  backLabel?: string
+  backHref?: string;
+  backLabel?: string;
 }
 
 /**
@@ -15,8 +15,8 @@ interface PageNotFoundProps {
  * but navigated to a non-existent page within their accessible area.
  */
 export function PageNotFound({
-  backHref = "/dashboard",
-  backLabel = "Zurück zum Dashboard"
+  backHref = '/dashboard',
+  backLabel = 'Zurück zum Dashboard',
 }: PageNotFoundProps) {
   return (
     <div className="flex-1 flex items-center justify-center p-4">
@@ -26,9 +26,7 @@ export function PageNotFound({
             <FileQuestion className="h-8 w-8 text-muted-foreground" />
           </div>
           <CardTitle>Seite nicht gefunden</CardTitle>
-          <CardDescription>
-            Die angeforderte Seite existiert nicht.
-          </CardDescription>
+          <CardDescription>Die angeforderte Seite existiert nicht.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button asChild>
@@ -37,5 +35,5 @@ export function PageNotFound({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

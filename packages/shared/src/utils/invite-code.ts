@@ -57,8 +57,5 @@ export function normalizeInviteCode(input: string): string {
 export function isInviteCodeValid(code: string): boolean {
   const normalized = normalizeInviteCode(code);
   // Must be exactly 8 characters from allowed alphabet
-  return (
-    normalized.length === 8 &&
-    /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/.test(normalized)
-  );
+  return normalized.length === 8 && /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/.test(normalized);
 }

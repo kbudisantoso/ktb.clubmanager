@@ -1,8 +1,8 @@
-import { redirect } from "next/navigation"
-import { checkClubAccess } from "@/lib/check-club-access"
+import { redirect } from 'next/navigation';
+import { checkClubAccess } from '@/lib/check-club-access';
 
 interface ClubPageProps {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string }>;
 }
 
 /**
@@ -14,10 +14,10 @@ interface ClubPageProps {
  * 3. Redirects to dashboard if access is granted
  */
 export default async function ClubPage({ params }: ClubPageProps) {
-  const { slug } = await params
+  const { slug } = await params;
 
   // Server-side access check - throws notFound() with proper 404 status if no access
-  await checkClubAccess(slug)
+  await checkClubAccess(slug);
 
-  redirect(`/clubs/${slug}/dashboard`)
+  redirect(`/clubs/${slug}/dashboard`);
 }

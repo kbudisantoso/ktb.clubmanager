@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  generateSlug,
-  isSlugValid,
-  isSlugReserved,
-  validateSlug,
-} from './slug.js';
+import { generateSlug, isSlugValid, isSlugReserved, validateSlug } from './slug.js';
 
 describe('generateSlug', () => {
   it('should convert name to lowercase slug', () => {
@@ -17,9 +12,7 @@ describe('generateSlug', () => {
 
   it('should handle club names with umlauts', () => {
     // The slugify library should handle these properly
-    expect(generateSlug('Muenchener Sportverein')).toBe(
-      'muenchener-sportverein',
-    );
+    expect(generateSlug('Muenchener Sportverein')).toBe('muenchener-sportverein');
   });
 });
 
