@@ -57,6 +57,9 @@ async function checkSuperAdminBootstrap(userId: string, email: string): Promise<
  * Note: Prisma is lazily initialized to avoid SSG issues.
  */
 export const auth = betterAuth({
+  // Base URL for callbacks and redirects
+  baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+
   database: prismaAdapter(getPrisma(), {
     provider: 'postgresql',
   }),
