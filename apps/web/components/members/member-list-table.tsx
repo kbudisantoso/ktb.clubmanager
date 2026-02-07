@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MemberStatusBadge } from './member-status-badge';
 import { MemberAvatar } from './member-avatar';
+import { HouseholdBadge } from './household-badge';
 
 /** Membership type German labels */
 const MEMBERSHIP_TYPE_LABELS: Record<string, string> = {
@@ -258,6 +259,15 @@ export function MemberListTable({
                     />
                     <div className="min-w-0">
                       <div className="font-medium truncate">{displayName}</div>
+                      {/* Household badge below name */}
+                      {member.household && (
+                        <div className="mt-0.5">
+                          <HouseholdBadge
+                            name={member.household.name}
+                            householdId={member.household.id}
+                          />
+                        </div>
+                      )}
                       {/* Show status on mobile since column is hidden */}
                       <div className="md:hidden mt-0.5">
                         <MemberStatusBadge status={member.status} />

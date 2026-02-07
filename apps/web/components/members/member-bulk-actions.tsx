@@ -37,12 +37,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useBulkChangeStatus, useUpdateMember } from '@/hooks/use-members';
 import { useCreateHousehold } from '@/hooks/use-households';
 import { useToast } from '@/hooks/use-toast';
@@ -271,8 +266,7 @@ export function MemberBulkActions({
         });
       }
 
-      const fieldLabel =
-        BULK_EDIT_FIELDS.find((f) => f.value === editField)?.label ?? editField;
+      const fieldLabel = BULK_EDIT_FIELDS.find((f) => f.value === editField)?.label ?? editField;
 
       toast({
         title: `${fieldLabel} fuer ${selectedMembers.length} Mitglieder geaendert`,
@@ -340,15 +334,10 @@ export function MemberBulkActions({
             </Tooltip>
             <DropdownMenuContent>
               {commonTransitions.length === 0 ? (
-                <DropdownMenuItem disabled>
-                  Keine gemeinsamen Statusuebergaenge
-                </DropdownMenuItem>
+                <DropdownMenuItem disabled>Keine gemeinsamen Statusuebergaenge</DropdownMenuItem>
               ) : (
                 commonTransitions.map((status) => (
-                  <DropdownMenuItem
-                    key={status}
-                    onClick={() => handleBulkStatusChange(status)}
-                  >
+                  <DropdownMenuItem key={status} onClick={() => handleBulkStatusChange(status)}>
                     {STATUS_LABELS[status] ?? status}
                   </DropdownMenuItem>
                 ))
@@ -373,9 +362,7 @@ export function MemberBulkActions({
               </span>
             </TooltipTrigger>
             <TooltipContent>
-              {canCreateHousehold
-                ? 'Haushalt erstellen'
-                : 'Mindestens 2 Mitglieder auswaehlen'}
+              {canCreateHousehold ? 'Haushalt erstellen' : 'Mindestens 2 Mitglieder auswaehlen'}
             </TooltipContent>
           </Tooltip>
 
@@ -458,7 +445,13 @@ export function MemberBulkActions({
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label>Feld</Label>
-              <Select value={editField} onValueChange={(v) => { setEditField(v); setEditValue(''); }}>
+              <Select
+                value={editField}
+                onValueChange={(v) => {
+                  setEditField(v);
+                  setEditValue('');
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Feld auswaehlen..." />
                 </SelectTrigger>
