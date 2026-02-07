@@ -9,12 +9,16 @@ import { RequirePermission } from '../common/decorators/permissions.decorator.js
 import { Permission } from '../common/permissions/permissions.enum.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { MembersService } from './members.service.js';
+import { MemberStatusService } from './member-status.service.js';
 import {
   CreateMemberDto,
   UpdateMemberDto,
   MemberResponseDto,
   PaginatedMembersResponseDto,
   MemberQueryDto,
+  ChangeStatusDto,
+  SetCancellationDto,
+  BulkChangeStatusDto,
 } from './dto/index.js';
 
 class SoftDeleteBodyDto {
@@ -26,7 +30,10 @@ class SoftDeleteBodyDto {
 @Controller('clubs/:slug/members')
 @RequireClubContext()
 export class MembersController {
-  constructor(private membersService: MembersService) {}
+  constructor(
+    private membersService: MembersService,
+    private memberStatusService: MemberStatusService
+  ) {}
 
   @Get()
   @RequirePermission(Permission.MEMBER_READ)
@@ -131,5 +138,68 @@ export class MembersController {
     @CurrentUser('id') userId: string
   ) {
     return this.membersService.anonymize(ctx.clubId, id, userId);
+  }
+
+  @Post(':id/change-status')
+  @RequirePermission(Permission.MEMBER_UPDATE)
+  @ApiOperation({ summary: 'Change member status (validates transitions)' })
+  @ApiParam({ name: 'id', description: 'Member ID' })
+  @ApiResponse({ status: 200, description: 'Status changed' })
+  @ApiResponse({ status: 400, description: 'Invalid status transition' })
+  @ApiResponse({ status: 404, description: 'Member not found' })
+  async changeStatus(
+    @GetClubContext() ctx: ClubContext,
+    @Param('id') id: string,
+    @Body() dto: ChangeStatusDto,
+    @CurrentUser('id') userId: string
+  ) {
+    return this.memberStatusService.changeStatus(
+      ctx.clubId,
+      id,
+      dto.newStatus,
+      dto.reason,
+      userId,
+      dto.effectiveDate
+    );
+  }
+
+  @Post(':id/cancel')
+  @RequirePermission(Permission.MEMBER_UPDATE)
+  @ApiOperation({ summary: 'Set cancellation date for a member' })
+  @ApiParam({ name: 'id', description: 'Member ID' })
+  @ApiResponse({ status: 200, description: 'Cancellation set' })
+  @ApiResponse({ status: 400, description: 'Member not active/inactive' })
+  @ApiResponse({ status: 404, description: 'Member not found' })
+  async setCancellation(
+    @GetClubContext() ctx: ClubContext,
+    @Param('id') id: string,
+    @Body() dto: SetCancellationDto,
+    @CurrentUser('id') userId: string
+  ) {
+    return this.memberStatusService.setCancellation(
+      ctx.clubId,
+      id,
+      dto.cancellationDate,
+      dto.cancellationReceivedAt,
+      userId
+    );
+  }
+
+  @Post('bulk/change-status')
+  @RequirePermission(Permission.MEMBER_UPDATE)
+  @ApiOperation({ summary: 'Bulk status change for multiple members' })
+  @ApiResponse({ status: 200, description: 'Bulk status change result' })
+  async bulkChangeStatus(
+    @GetClubContext() ctx: ClubContext,
+    @Body() dto: BulkChangeStatusDto,
+    @CurrentUser('id') userId: string
+  ) {
+    return this.memberStatusService.bulkChangeStatus(
+      ctx.clubId,
+      dto.memberIds,
+      dto.newStatus,
+      dto.reason,
+      userId
+    );
   }
 }
