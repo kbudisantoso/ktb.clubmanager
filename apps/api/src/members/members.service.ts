@@ -225,7 +225,7 @@ export class MembersService {
   /**
    * Update a member's fields.
    */
-  async update(clubId: string, id: string, dto: UpdateMemberDto, userId: string) {
+  async update(clubId: string, id: string, dto: UpdateMemberDto, _userId: string) {
     const db = this.prisma.forClub(clubId);
 
     // Check member exists and is not deleted
@@ -273,19 +273,12 @@ export class MembersService {
       'mobile',
       'notes',
       'memberNumber',
-      'status',
     ] as const;
 
     for (const field of fields) {
       if (dto[field] !== undefined) {
         updateData[field] = dto[field];
       }
-    }
-
-    // Track status change
-    if (dto.status && dto.status !== existing.status) {
-      updateData.statusChangedAt = new Date();
-      updateData.statusChangedBy = userId;
     }
 
     const updated = await db.member.update({
