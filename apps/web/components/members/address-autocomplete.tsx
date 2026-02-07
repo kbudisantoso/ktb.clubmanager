@@ -1,7 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { type UseFormRegister, type UseFormSetValue, type UseFormWatch } from 'react-hook-form';
+import {
+  type FieldValues,
+  type UseFormRegister,
+  type UseFormSetValue,
+  type UseFormWatch,
+} from 'react-hook-form';
 import { Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,24 +21,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useOpenPlzLocalities, type Locality } from '@/hooks/use-openplz';
 import { cn } from '@/lib/utils';
 
-// Form shape expected by this component
-interface AddressFields {
-  postalCode?: string;
-  city?: string;
-  street?: string;
-  houseNumber?: string;
-  addressExtra?: string;
-  country: string;
-  [key: string]: unknown;
-}
-
-interface AddressAutocompleteProps {
+interface AddressAutocompleteProps<T extends FieldValues = FieldValues> {
   /** react-hook-form register function */
-  register: UseFormRegister<AddressFields>;
+  register: UseFormRegister<T>;
   /** react-hook-form setValue function (for programmatic city fill) */
-  setValue: UseFormSetValue<AddressFields>;
+  setValue: UseFormSetValue<T>;
   /** react-hook-form watch function (for reactive PLZ tracking) */
-  watch: UseFormWatch<AddressFields>;
+  watch: UseFormWatch<T>;
   /** Form errors object for inline error display */
   errors?: Record<string, { message?: string }>;
   /** Whether the form is disabled */
@@ -56,14 +50,22 @@ const COUNTRY_OPTIONS = [
  * - Graceful fallback: never blocks form submission, user can always type manually
  * - German labels and two-column responsive layout
  */
-export function AddressAutocomplete({
-  register,
-  setValue,
-  watch,
+export function AddressAutocomplete<T extends FieldValues = FieldValues>({
+  register: rawRegister,
+  setValue: rawSetValue,
+  watch: rawWatch,
   errors,
   disabled = false,
-}: AddressAutocompleteProps) {
-  const postalCode = watch('postalCode') ?? '';
+}: AddressAutocompleteProps<T>) {
+  // Cast form utilities for address field access (component only accesses address-specific fields)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const reg = rawRegister as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const set = rawSetValue as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const w = rawWatch as any;
+
+  const postalCode = w('postalCode') ?? '';
   const { data: localities, isLoading: isLoadingLocalities } = useOpenPlzLocalities(postalCode);
 
   const [showLocalityPicker, setShowLocalityPicker] = useState(false);
@@ -82,17 +84,17 @@ export function AddressAutocomplete({
 
     if (localities.length === 1) {
       // Single result: auto-fill immediately
-      setValue('city', localities[0].name, { shouldValidate: true });
+      set('city', localities[0].name, { shouldValidate: true });
       hasAutoFilled.current = true;
       setShowLocalityPicker(false);
     } else {
       // Multiple results: show picker
       setShowLocalityPicker(true);
     }
-  }, [localities, postalCode, setValue]);
+  }, [localities, postalCode, set]);
 
   const handleSelectLocality = (locality: Locality) => {
-    setValue('city', locality.name, { shouldValidate: true });
+    set('city', locality.name, { shouldValidate: true });
     hasAutoFilled.current = true;
     setShowLocalityPicker(false);
   };
@@ -112,7 +114,7 @@ export function AddressAutocomplete({
                   maxLength={5}
                   disabled={disabled}
                   aria-invalid={!!errors?.postalCode}
-                  {...register('postalCode')}
+                  {...reg('postalCode')}
                 />
               </PopoverTrigger>
               {localities && localities.length > 1 && (
@@ -128,11 +130,12 @@ export function AddressAutocomplete({
                       onClick={() => handleSelectLocality(locality)}
                     >
                       <span>{locality.name}</span>
-                      {locality.municipality?.name && locality.municipality.name !== locality.name && (
-                        <span className="ml-auto text-xs text-muted-foreground">
-                          {locality.municipality.name}
-                        </span>
-                      )}
+                      {locality.municipality?.name &&
+                        locality.municipality.name !== locality.name && (
+                          <span className="ml-auto text-xs text-muted-foreground">
+                            {locality.municipality.name}
+                          </span>
+                        )}
                     </button>
                   ))}
                 </PopoverContent>
@@ -154,7 +157,7 @@ export function AddressAutocomplete({
             placeholder="Stadt"
             disabled={disabled}
             aria-invalid={!!errors?.city}
-            {...register('city')}
+            {...reg('city')}
           />
           {errors?.city && <p className="text-xs text-destructive">{errors.city.message}</p>}
         </div>
@@ -169,7 +172,7 @@ export function AddressAutocomplete({
             placeholder="Musterstrasse"
             disabled={disabled}
             aria-invalid={!!errors?.street}
-            {...register('street')}
+            {...reg('street')}
           />
           {errors?.street && <p className="text-xs text-destructive">{errors.street.message}</p>}
         </div>
@@ -181,7 +184,7 @@ export function AddressAutocomplete({
             placeholder="42a"
             disabled={disabled}
             aria-invalid={!!errors?.houseNumber}
-            {...register('houseNumber')}
+            {...reg('houseNumber')}
           />
           {errors?.houseNumber && (
             <p className="text-xs text-destructive">{errors.houseNumber.message}</p>
@@ -197,7 +200,7 @@ export function AddressAutocomplete({
           placeholder="c/o, Apartment, etc."
           disabled={disabled}
           aria-invalid={!!errors?.addressExtra}
-          {...register('addressExtra')}
+          {...reg('addressExtra')}
         />
         {errors?.addressExtra && (
           <p className="text-xs text-destructive">{errors.addressExtra.message}</p>
@@ -207,11 +210,7 @@ export function AddressAutocomplete({
       {/* Row 4: Land (full width) */}
       <div className="space-y-1.5">
         <Label htmlFor="country">Land</Label>
-        <Select
-          defaultValue="DE"
-          disabled={disabled}
-          onValueChange={(val) => setValue('country', val)}
-        >
+        <Select defaultValue="DE" disabled={disabled} onValueChange={(val) => set('country', val)}>
           <SelectTrigger className={cn('w-full', errors?.country && 'border-destructive')}>
             <SelectValue placeholder="Land waehlen" />
           </SelectTrigger>

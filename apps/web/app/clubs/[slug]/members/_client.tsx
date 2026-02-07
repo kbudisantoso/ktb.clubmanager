@@ -4,11 +4,7 @@ import { Suspense, useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from '@/components/ui/resizable';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useMembersInfinite } from '@/hooks/use-members';
 import { useNumberRanges } from '@/hooks/use-number-ranges';
@@ -16,10 +12,7 @@ import { MemberSearch } from '@/components/members/member-search';
 import { MemberEmptyState } from '@/components/members/member-empty-state';
 import { MemberListTable } from '@/components/members/member-list-table';
 import { MemberCreateSheet } from '@/components/members/member-create-sheet';
-import {
-  MemberDetailPanel,
-  useMemberPanelUrl,
-} from '@/components/members/member-detail-panel';
+import { MemberDetailPanel, useMemberPanelUrl } from '@/components/members/member-detail-panel';
 
 /** Status filter options */
 const STATUS_FILTERS = [
@@ -201,11 +194,7 @@ function MembersClientInner() {
       )}
 
       {/* Quick-create member sheet */}
-      <MemberCreateSheet
-        slug={slug}
-        open={isCreateSheetOpen}
-        onOpenChange={setIsCreateSheetOpen}
-      />
+      <MemberCreateSheet slug={slug} open={isCreateSheetOpen} onOpenChange={setIsCreateSheetOpen} />
     </div>
   );
 
@@ -225,10 +214,7 @@ function MembersClientInner() {
           {/* Detail panel */}
           <ResizablePanel defaultSize={45} minSize={30}>
             <div className="h-full overflow-auto border-l">
-              <MemberDetailPanel
-                selectedMemberId={selectedMemberId}
-                onClose={closePanel}
-              />
+              <MemberDetailPanel selectedMemberId={selectedMemberId} onClose={closePanel} />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>

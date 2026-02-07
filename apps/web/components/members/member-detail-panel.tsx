@@ -3,16 +3,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { X, ExternalLink, Loader2 } from 'lucide-react';
+import { X, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMember } from '@/hooks/use-member-detail';
 import { MemberDetailHeader } from './member-detail-header';
@@ -112,12 +107,7 @@ function DetailContent({ memberId, onClose, showFullPageLink = true }: DetailCon
             In voller Seite oeffnen
           </Link>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 ml-auto"
-          onClick={onClose}
-        >
+        <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto" onClick={onClose}>
           <X className="h-4 w-4" />
           <span className="sr-only">Panel schliessen</span>
         </Button>
@@ -125,11 +115,7 @@ function DetailContent({ memberId, onClose, showFullPageLink = true }: DetailCon
 
       {/* Header */}
       <div className="p-4 border-b">
-        <MemberDetailHeader
-          member={member}
-          slug={slug}
-          avatarSize="md"
-        />
+        <MemberDetailHeader member={member} slug={slug} avatarSize="md" />
       </div>
 
       {/* Tabs */}
@@ -227,24 +213,14 @@ export function MemberDetailPanel({ selectedMemberId, onClose }: MemberDetailPan
           <SheetHeader className="sr-only">
             <SheetTitle>Mitglied Details</SheetTitle>
           </SheetHeader>
-          <DetailContent
-            memberId={selectedMemberId}
-            onClose={onClose}
-            showFullPageLink={true}
-          />
+          <DetailContent memberId={selectedMemberId} onClose={onClose} showFullPageLink={true} />
         </SheetContent>
       </Sheet>
     );
   }
 
   // Desktop: Render panel content directly (parent wraps in ResizablePanel)
-  return (
-    <DetailContent
-      memberId={selectedMemberId}
-      onClose={onClose}
-      showFullPageLink={true}
-    />
-  );
+  return <DetailContent memberId={selectedMemberId} onClose={onClose} showFullPageLink={true} />;
 }
 
 // ============================================================================
@@ -268,7 +244,7 @@ export function useMemberPanelUrl() {
     if (memberParam) {
       setSelectedMemberId(memberParam);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- Only on mount
+  }, [searchParams]);
 
   // Select a member (updates URL)
   const selectMember = useCallback(
