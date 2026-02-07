@@ -154,10 +154,10 @@ export class CreateMemberDto {
   @MaxLength(100)
   addressExtra?: string;
 
-  @ApiPropertyOptional({ description: 'Postal code (PLZ)', example: '12345' })
+  @ApiPropertyOptional({ description: 'Postal code (PLZ, 5-digit German format)', example: '12345' })
   @IsString()
   @IsOptional()
-  @MaxLength(10)
+  @Matches(/^\d{5}$/, { message: 'PLZ muss genau 5 Ziffern haben' })
   postalCode?: string;
 
   @ApiPropertyOptional({ description: 'City (Ort)', example: 'Musterstadt' })
