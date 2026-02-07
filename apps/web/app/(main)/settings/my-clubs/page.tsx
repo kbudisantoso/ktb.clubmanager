@@ -35,7 +35,7 @@ import { ClubAvatar } from '@/components/club-switcher/club-avatar';
 import { RejectionNotice } from '@/components/club/rejection-notice';
 import { useClubStore, type ClubContext } from '@/lib/club-store';
 import { useToast } from '@/hooks/use-toast';
-import { useMyClubsQuery, useMyAccessRequestsQuery, useLeaveClubMutation, useJoinClubMutation, type AccessRequest } from '@/hooks/use-clubs';
+import { useMyClubsQuery, useMyAccessRequestsQuery, useLeaveClubMutation } from '@/hooks/use-clubs';
 
 const ROLE_LABELS: Record<string, string> = {
   OWNER: 'Verantwortlicher',

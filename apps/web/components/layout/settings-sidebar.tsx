@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { User, Bell, Building2, Settings, Users, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useActiveClub } from '@/lib/club-store';
 import { useCanManageSettings } from '@/lib/club-permissions';

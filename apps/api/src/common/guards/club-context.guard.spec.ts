@@ -4,8 +4,6 @@ import type { Reflector } from '@nestjs/core';
 import type { PrismaService } from '../../prisma/prisma.service.js';
 import type { ExecutionContext} from '@nestjs/common';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { CLUB_CONTEXT_KEY } from '../decorators/club-context.decorator.js';
-import { ROLES_KEY } from '../decorators/roles.decorator.js';
 
 // Mock Reflector
 const mockReflector = {

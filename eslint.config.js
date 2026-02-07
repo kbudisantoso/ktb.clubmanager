@@ -28,6 +28,10 @@ export default tseslint.config(
       'prisma.config.ts',
       // Generated files
       'prisma/generated/**',
+      // Compiled JS output in shared package
+      'packages/shared/src/**/*.js',
+      // Prisma seed script (not in tsconfig)
+      'prisma/seed.ts',
       // Hidden directories (except .github, .devcontainer)
       '.*/**',
     ],
