@@ -88,8 +88,9 @@ interface UpdateMemberInput extends Partial<CreateMemberInput> {
 
 interface ChangeStatusInput {
   id: string;
-  status: string;
-  reason?: string;
+  newStatus: string;
+  reason: string;
+  effectiveDate?: string;
 }
 
 interface BulkChangeStatusInput {
@@ -220,13 +221,14 @@ export function useChangeStatus(slug: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status, reason }: ChangeStatusInput) => {
-      const res = await apiFetch(`/api/clubs/${slug}/members/${id}`, {
-        method: 'PATCH',
+    mutationFn: async ({ id, newStatus, reason, effectiveDate }: ChangeStatusInput) => {
+      const res = await apiFetch(`/api/clubs/${slug}/members/${id}/change-status`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          status,
-          statusChangeReason: reason,
+          newStatus,
+          reason,
+          ...(effectiveDate && { effectiveDate }),
         }),
       });
       if (!res.ok) {

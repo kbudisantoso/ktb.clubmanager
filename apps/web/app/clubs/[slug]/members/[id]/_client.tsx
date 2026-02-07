@@ -1,23 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMember } from '@/hooks/use-member-detail';
 import { MemberDetailHeader } from '@/components/members/member-detail-header';
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-/** Tab definitions for the full-page detail view */
-const TABS = [
-  { value: 'stammdaten', label: 'Stammdaten' },
-  { value: 'adresse', label: 'Adresse & Kontakt' },
-  { value: 'mitgliedschaft', label: 'Mitgliedschaft' },
-  { value: 'notizen', label: 'Notizen' },
-] as const;
+import { MemberForm } from '@/components/members/member-form/member-form';
+import { MemberStatusDialog } from '@/components/members/member-status-dialog';
 
 // ============================================================================
 // Types
@@ -37,11 +26,12 @@ interface MemberDetailClientProps {
 /**
  * Full-page member detail client component.
  * Renders the complete member detail view with back navigation,
- * header, and tabbed content areas.
+ * header, and tabbed content areas using MemberForm.
  */
 export function MemberDetailClient({ slug, memberId }: MemberDetailClientProps) {
   const router = useRouter();
   const { data: member, isLoading, isError } = useMember(slug, memberId);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
   // Keyboard: Escape returns to list
   useEffect(() => {
@@ -84,45 +74,23 @@ export function MemberDetailClient({ slug, memberId }: MemberDetailClientProps) 
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header with back link */}
-      <MemberDetailHeader member={member} slug={slug} avatarSize="lg" showBackLink />
+      <MemberDetailHeader
+        member={member}
+        slug={slug}
+        avatarSize="lg"
+        showBackLink
+        onChangeStatus={() => setStatusDialogOpen(true)}
+      />
 
-      {/* Tabs */}
-      <Tabs defaultValue="stammdaten">
-        <TabsList variant="line" className="w-full justify-start">
-          {TABS.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      {/* Tabbed form content */}
+      <MemberForm member={member} slug={slug} onChangeStatus={() => setStatusDialogOpen(true)} />
 
-        <div className="mt-4">
-          <TabsContent value="stammdaten">
-            <TabPlaceholder label="Stammdaten" />
-          </TabsContent>
-          <TabsContent value="adresse">
-            <TabPlaceholder label="Adresse & Kontakt" />
-          </TabsContent>
-          <TabsContent value="mitgliedschaft">
-            <TabPlaceholder label="Mitgliedschaft" />
-          </TabsContent>
-          <TabsContent value="notizen">
-            <TabPlaceholder label="Notizen" />
-          </TabsContent>
-        </div>
-      </Tabs>
-    </div>
-  );
-}
-
-// ============================================================================
-// Tab Placeholder
-// ============================================================================
-
-function TabPlaceholder({ label }: { label: string }) {
-  return (
-    <div className="flex items-center justify-center h-64 rounded-lg border border-dashed text-muted-foreground text-sm">
-      {label} - Inhalte werden in Plan 11 implementiert
+      {/* Status change dialog */}
+      <MemberStatusDialog
+        member={member}
+        open={statusDialogOpen}
+        onOpenChange={setStatusDialogOpen}
+      />
     </div>
   );
 }

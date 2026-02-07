@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { X, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMember } from '@/hooks/use-member-detail';
 import { MemberDetailHeader } from './member-detail-header';
+import { MemberForm } from './member-form/member-form';
+import { MemberStatusDialog } from './member-status-dialog';
 
 // ============================================================================
 // Constants
@@ -18,14 +19,6 @@ import { MemberDetailHeader } from './member-detail-header';
 
 /** Breakpoint for switching between panel and sheet modes */
 const MOBILE_BREAKPOINT = 768;
-
-/** Tab definitions for the detail view */
-const TABS = [
-  { value: 'stammdaten', label: 'Stammdaten' },
-  { value: 'adresse', label: 'Adresse & Kontakt' },
-  { value: 'mitgliedschaft', label: 'Mitgliedschaft' },
-  { value: 'notizen', label: 'Notizen' },
-] as const;
 
 // ============================================================================
 // Types
@@ -78,6 +71,7 @@ function DetailContent({ memberId, onClose, showFullPageLink = true }: DetailCon
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
   const { data: member, isLoading, isError } = useMember(slug, memberId);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
   if (isLoading) {
     return <DetailSkeleton />;
@@ -115,50 +109,30 @@ function DetailContent({ memberId, onClose, showFullPageLink = true }: DetailCon
 
       {/* Header */}
       <div className="p-4 border-b">
-        <MemberDetailHeader member={member} slug={slug} avatarSize="md" />
+        <MemberDetailHeader
+          member={member}
+          slug={slug}
+          avatarSize="md"
+          onChangeStatus={() => setStatusDialogOpen(true)}
+        />
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="stammdaten" className="flex-1 flex flex-col min-h-0">
-        <div className="px-4 pt-2 border-b">
-          <TabsList variant="line" className="w-full justify-start">
-            {TABS.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value} className="text-xs">
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
+      {/* Tabbed form content */}
+      <ScrollArea className="flex-1">
+        <MemberForm
+          member={member}
+          slug={slug}
+          compact
+          onChangeStatus={() => setStatusDialogOpen(true)}
+        />
+      </ScrollArea>
 
-        <ScrollArea className="flex-1">
-          <div className="p-4">
-            <TabsContent value="stammdaten">
-              <TabPlaceholder label="Stammdaten" />
-            </TabsContent>
-            <TabsContent value="adresse">
-              <TabPlaceholder label="Adresse & Kontakt" />
-            </TabsContent>
-            <TabsContent value="mitgliedschaft">
-              <TabPlaceholder label="Mitgliedschaft" />
-            </TabsContent>
-            <TabsContent value="notizen">
-              <TabPlaceholder label="Notizen" />
-            </TabsContent>
-          </div>
-        </ScrollArea>
-      </Tabs>
-    </div>
-  );
-}
-
-// ============================================================================
-// Tab Placeholder
-// ============================================================================
-
-function TabPlaceholder({ label }: { label: string }) {
-  return (
-    <div className="flex items-center justify-center h-40 rounded-lg border border-dashed text-muted-foreground text-sm">
-      {label} - Inhalte werden in Plan 11 implementiert
+      {/* Status change dialog */}
+      <MemberStatusDialog
+        member={member}
+        open={statusDialogOpen}
+        onOpenChange={setStatusDialogOpen}
+      />
     </div>
   );
 }
