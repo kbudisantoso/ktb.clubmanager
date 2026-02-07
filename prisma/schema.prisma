@@ -586,6 +586,8 @@ model NumberRange {
   padLength    Int     @default(4)
   /// Whether to reset counter at year boundary
   yearReset    Boolean @default(false)
+  /// Year of last counter reset (used for year-reset detection, avoids updatedAt ambiguity)
+  lastResetYear Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

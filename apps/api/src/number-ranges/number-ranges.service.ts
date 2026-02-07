@@ -151,29 +151,21 @@ export class NumberRangesService {
         throw new NotFoundException(`Nummernkreis fuer Typ "${entityType}" nicht gefunden`);
       }
 
-      // Handle year reset: if yearReset is true and prefix contains {YYYY},
-      // check if the current year differs from what's stored.
-      // We detect year change by checking if the resolved prefix year differs.
+      // Handle year reset: compare lastResetYear with current year
       let resetValue = false;
-      if (current.yearReset && current.prefix.includes('{YYYY}')) {
-        const currentYear = new Date().getFullYear().toString();
-        // If currentValue > 0, check if we need to reset
-        // We store the year implicitly in the prefix pattern usage
-        // A simple approach: reset if the number has been used before
-        // and the updatedAt year differs from current year
-        if (current.currentValue > 0) {
-          const lastUpdateYear = current.updatedAt.getFullYear().toString();
-          if (lastUpdateYear !== currentYear) {
-            resetValue = true;
-          }
+      const currentYear = new Date().getFullYear();
+      if (current.yearReset && current.currentValue > 0) {
+        if (current.lastResetYear !== currentYear) {
+          resetValue = true;
         }
       }
 
-      // Atomic increment (or reset + set to 1)
+      // Atomic increment (or reset + set to 1), update lastResetYear
       const updated = await tx.numberRange.update({
         where: { id: current.id },
         data: {
           currentValue: resetValue ? 1 : { increment: 1 },
+          lastResetYear: currentYear,
         },
       });
 
