@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsEnum, IsOptional, IsString, ArrayMinSize } from 'class-validator';
+import { IsArray, IsEnum, IsOptional, IsString, ArrayMinSize, MaxLength } from 'class-validator';
 import { ClubRole } from '../../../../../prisma/generated/client/index.js';
 
 export class ClubUserDto {
@@ -44,5 +44,6 @@ export class RemoveClubUserDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(500, { message: 'Begründung darf maximal 500 Zeichen lang sein' })
   reason?: string;
 }
