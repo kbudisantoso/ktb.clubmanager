@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -125,7 +125,7 @@ export function MemberForm({ member, slug, compact = false, onChangeStatus }: Me
   } = form;
 
   // Reset form when member data changes (e.g., after save or external refresh)
-  useMemo(() => {
+  useEffect(() => {
     if (!editingTab) {
       reset(memberToFormValues(member));
     }

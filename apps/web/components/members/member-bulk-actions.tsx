@@ -159,7 +159,7 @@ export function MemberBulkActions({
       try {
         await bulkChangeStatus.mutateAsync({
           memberIds,
-          status: targetStatus,
+          newStatus: targetStatus,
           reason: 'Sammelaenderung',
         });
 
@@ -173,7 +173,7 @@ export function MemberBulkActions({
                 try {
                   await bulkChangeStatus.mutateAsync({
                     memberIds: [orig.id],
-                    status: orig.status,
+                    newStatus: orig.status,
                     reason: 'Sammelaenderung rueckgaengig gemacht',
                   });
                 } catch {
