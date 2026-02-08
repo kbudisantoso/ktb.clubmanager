@@ -33,13 +33,19 @@ function RegisterContent() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEmailExistsError, setIsEmailExistsError] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const userInputs = [email, name].filter(Boolean);
 
+  const clearError = () => {
+    setError(null);
+    setIsEmailExistsError(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    clearError();
     setIsLoading(true);
 
     // Validate email
@@ -79,7 +85,9 @@ function RegisterContent() {
           signUpError.message?.includes('already exists') ||
           signUpError.code === 'USER_ALREADY_EXISTS'
         ) {
-          setError('Ein Konto mit dieser E-Mail-Adresse existiert bereits');
+          // SEC-011: Show recovery links for existing email
+          setError('Ein Konto mit dieser E-Mail-Adresse existiert bereits.');
+          setIsEmailExistsError(true);
         } else {
           setError(signUpError.message || 'Registrierung fehlgeschlagen');
         }
@@ -258,7 +266,7 @@ function RegisterContent() {
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  setError(null);
+                  clearError();
                 }}
                 autoComplete="email"
                 required
@@ -275,7 +283,7 @@ function RegisterContent() {
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
-                  setError(null);
+                  clearError();
                 }}
                 autoComplete="name"
                 className="glass-input"
@@ -290,7 +298,7 @@ function RegisterContent() {
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  setError(null);
+                  clearError();
                 }}
                 autoComplete="new-password"
                 required
@@ -307,7 +315,7 @@ function RegisterContent() {
                 value={confirmPassword}
                 onChange={(e) => {
                   setConfirmPassword(e.target.value);
-                  setError(null);
+                  clearError();
                 }}
                 autoComplete="new-password"
                 required
@@ -318,7 +326,21 @@ function RegisterContent() {
               )}
             </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error &&
+              (isEmailExistsError ? (
+                <div className="text-sm text-destructive">
+                  {error}{' '}
+                  <Link href="/login" className="underline font-medium">
+                    Anmelden
+                  </Link>{' '}
+                  oder{' '}
+                  <Link href="/forgot-password" className="underline font-medium">
+                    Passwort vergessen?
+                  </Link>
+                </div>
+              ) : (
+                <p className="text-sm text-destructive">{error}</p>
+              ))}
 
             <Button type="submit" className="w-full " disabled={isLoading}>
               {isLoading ? (
