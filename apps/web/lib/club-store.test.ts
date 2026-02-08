@@ -6,22 +6,11 @@ import {
   useMyClubs,
   useNeedsClubRefresh,
   type ClubContext,
-  type TierFeatures,
 } from './club-store';
 
-/** Default tier features for test fixtures */
-const defaultFeatures: TierFeatures = { sepa: true, reports: true, bankImport: true };
-
-/** Helper to create ClubContext with default permissions/features */
-function createTestClub(
-  partial: Omit<ClubContext, 'permissions' | 'features'> &
-    Partial<Pick<ClubContext, 'permissions' | 'features'>>
-): ClubContext {
-  return {
-    ...partial,
-    permissions: partial.permissions ?? [],
-    features: partial.features ?? defaultFeatures,
-  };
+/** Helper to create ClubContext */
+function createTestClub(partial: ClubContext): ClubContext {
+  return { ...partial };
 }
 
 describe('club-store', () => {

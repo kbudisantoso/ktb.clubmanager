@@ -3,12 +3,12 @@
 import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useClubStore } from '@/lib/club-store';
-import { fetchAndStorePermissions } from '@/lib/fetch-permissions';
 import { useMyClubsQuery } from '@/hooks/use-clubs';
+import { useClubPermissionsQuery } from '@/hooks/use-club-permissions';
 
 /**
  * Client component for club layout effects.
- * Handles setting active club and fetching permissions.
+ * Handles setting active club and pre-fetching permissions via TanStack Query.
  * Access control is handled server-side by checkClubAccess in page components.
  */
 export function ClubLayoutClient({ children }: { children: React.ReactNode }) {
@@ -19,16 +19,13 @@ export function ClubLayoutClient({ children }: { children: React.ReactNode }) {
 
   const slug = params.slug as string;
 
+  // Pre-fetch permissions via TanStack Query (auto-cached, no localStorage)
+  useClubPermissionsQuery(slug);
+
   useEffect(() => {
     const club = clubs.find((c) => c.slug === slug);
     if (club) {
       setActiveClub(slug);
-
-      // Fetch permissions if not already loaded for this club
-      const hasPermissions = club.permissions && club.permissions.length > 0;
-      if (!hasPermissions) {
-        fetchAndStorePermissions(slug);
-      }
     }
   }, [clubs, slug, setActiveClub]);
 
