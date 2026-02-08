@@ -94,6 +94,10 @@ export function useCreatePeriod(slug: string, memberId: string) {
         queryKey: memberKeys.detail(slug, memberId),
       });
     },
+    onError: (error) => {
+      throw error;
+    },
+    retry: 1,
   });
 }
 
@@ -124,6 +128,10 @@ export function useUpdatePeriod(slug: string, memberId: string) {
         queryKey: memberKeys.detail(slug, memberId),
       });
     },
+    onError: (error) => {
+      throw error;
+    },
+    retry: 1,
   });
 }
 
@@ -156,6 +164,10 @@ export function useClosePeriod(slug: string, memberId: string) {
       // Refresh member list too (active period display)
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
     },
+    onError: (error) => {
+      throw error;
+    },
+    retry: 1,
   });
 }
 

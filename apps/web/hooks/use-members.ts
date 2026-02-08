@@ -138,6 +138,10 @@ export function useCreateMember(slug: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
     },
+    onError: (error) => {
+      throw error;
+    },
+    retry: 1,
   });
 }
 
@@ -167,6 +171,10 @@ export function useUpdateMember(slug: string) {
       });
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
     },
+    onError: (error) => {
+      throw error;
+    },
+    retry: 1,
   });
 }
 
@@ -192,6 +200,9 @@ export function useDeleteMember(slug: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
+    },
+    onError: (error) => {
+      throw error;
     },
   });
 }
@@ -225,6 +236,10 @@ export function useChangeStatus(slug: string) {
       });
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
     },
+    onError: (error) => {
+      throw error;
+    },
+    retry: 1,
   });
 }
 
@@ -250,6 +265,10 @@ export function useBulkChangeStatus(slug: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
     },
+    onError: (error) => {
+      throw error;
+    },
+    retry: 1,
   });
 }
 
@@ -273,6 +292,9 @@ export function useAnonymizeMember(slug: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
+    },
+    onError: (error) => {
+      throw error;
     },
   });
 }

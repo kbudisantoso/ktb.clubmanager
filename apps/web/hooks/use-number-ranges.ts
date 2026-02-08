@@ -109,6 +109,10 @@ export function useCreateNumberRange(slug: string) {
         queryKey: numberRangeKeys.all(slug),
       });
     },
+    onError: (error) => {
+      throw error;
+    },
+    retry: 1,
   });
 }
 
@@ -142,6 +146,10 @@ export function useUpdateNumberRange(slug: string) {
         queryKey: numberRangeKeys.all(slug),
       });
     },
+    onError: (error) => {
+      throw error;
+    },
+    retry: 1,
   });
 }
 
@@ -165,6 +173,9 @@ export function useDeleteNumberRange(slug: string) {
       queryClient.invalidateQueries({
         queryKey: numberRangeKeys.all(slug),
       });
+    },
+    onError: (error) => {
+      throw error;
     },
   });
 }

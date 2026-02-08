@@ -119,6 +119,10 @@ export function useCreateHousehold(slug: string) {
       // Also invalidate members since they get householdId assigned
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
     },
+    onError: (error) => {
+      throw error;
+    },
+    retry: 1,
   });
 }
 
@@ -149,6 +153,10 @@ export function useUpdateHousehold(slug: string) {
         queryKey: householdKeys.list(slug),
       });
     },
+    onError: (error) => {
+      throw error;
+    },
+    retry: 1,
   });
 }
 
@@ -180,6 +188,10 @@ export function useAddHouseholdMember(slug: string) {
       });
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
     },
+    onError: (error) => {
+      throw error;
+    },
+    retry: 1,
   });
 }
 
@@ -212,6 +224,9 @@ export function useRemoveHouseholdMember(slug: string) {
       });
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
     },
+    onError: (error) => {
+      throw error;
+    },
   });
 }
 
@@ -240,6 +255,9 @@ export function useSyncAddresses(slug: string) {
       });
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
     },
+    onError: (error) => {
+      throw error;
+    },
   });
 }
 
@@ -265,6 +283,9 @@ export function useDissolveHousehold(slug: string) {
         queryKey: householdKeys.all(slug),
       });
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
+    },
+    onError: (error) => {
+      throw error;
     },
   });
 }
