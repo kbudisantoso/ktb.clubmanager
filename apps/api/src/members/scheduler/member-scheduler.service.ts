@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { SystemUserService } from '../../common/services/system-user.service.js';
 
 /**
  * Scheduled service for automatic member status transitions.
@@ -12,7 +13,10 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 export class MemberSchedulerService {
   private readonly logger = new Logger(MemberSchedulerService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private systemUserService: SystemUserService
+  ) {}
 
   /**
    * Daily cron job: Auto-transition members with expired cancellation dates to LEFT.
@@ -56,7 +60,7 @@ export class MemberSchedulerService {
             data: {
               status: 'LEFT',
               statusChangedAt: new Date(),
-              statusChangedBy: 'SYSTEM',
+              statusChangedBy: this.systemUserService.getSystemUserId(),
               statusChangeReason: 'Automatischer Austritt nach Ablauf der Kuendigungsfrist',
             },
           });
