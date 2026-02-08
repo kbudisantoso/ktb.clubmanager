@@ -1,5 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEnum, IsInt, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsInt,
+  Min,
+  Max,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { MemberStatusDto } from './create-member.dto.js';
 
@@ -23,6 +32,8 @@ export class MemberQueryDto {
   })
   @IsString()
   @IsOptional()
+  @MinLength(2, { message: 'Suchbegriff muss mindestens 2 Zeichen lang sein' })
+  @MaxLength(100, { message: 'Suchbegriff darf maximal 100 Zeichen lang sein' })
   search?: string;
 
   @ApiPropertyOptional({
