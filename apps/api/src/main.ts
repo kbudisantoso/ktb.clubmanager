@@ -1,9 +1,10 @@
 import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -32,6 +33,10 @@ async function bootstrap() {
       transform: true,
     })
   );
+
+  // Register global exception filter (catches Prisma errors, returns safe messages)
+  const httpAdapterHost = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost));
 
   // Only enable Swagger in non-production environments
   if (process.env.NODE_ENV !== 'production') {

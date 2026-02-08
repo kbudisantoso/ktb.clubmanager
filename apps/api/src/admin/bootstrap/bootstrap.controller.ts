@@ -1,9 +1,17 @@
 import { Controller, Post, Body, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsEmail } from 'class-validator';
+import { Public } from '../../auth/decorators/public.decorator.js';
 import { BootstrapService } from './bootstrap.service.js';
 
 class BootstrapCheckDto {
+  @IsString()
+  @IsNotEmpty()
   userId!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsEmail()
   email!: string;
 }
 
@@ -18,6 +26,7 @@ class BootstrapCheckDto {
  * The bootstrap logic itself is idempotent and safe.
  */
 @ApiTags('Admin - Bootstrap')
+@Public()
 @Controller('admin/bootstrap')
 export class BootstrapController {
   constructor(private bootstrapService: BootstrapService) {}
