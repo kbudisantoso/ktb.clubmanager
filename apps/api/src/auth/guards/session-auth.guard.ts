@@ -83,7 +83,17 @@ export class SessionAuthGuard implements CanActivate {
    *
    * Checks in order:
    * 1. Authorization: Bearer <token> header
-   * 2. better-auth.session_token cookie
+   * 2. Session cookie (__Secure- prefixed or plain)
+   *
+   * SEC-006: Token signature handling rationale
+   * Better Auth signs cookies as "<tokenId>.<hmacSignature>" to prevent
+   * cookie tampering on the client side. We strip the signature here because:
+   * - The NestJS API validates sessions by querying the database directly
+   * - The tokenId alone is sufficient for DB lookup (it's the primary key)
+   * - HMAC verification would require sharing the BETTER_AUTH_SECRET with
+   *   the API service, creating an unnecessary secret coupling
+   * - Session validity is enforced by DB state (existence + expiry check),
+   *   which is equally secure as signature verification
    */
   private extractToken(request: Request): string | null {
     // Check Authorization header first
@@ -92,12 +102,14 @@ export class SessionAuthGuard implements CanActivate {
       return authHeader.slice(7);
     }
 
-    // Check cookie
-    // Better Auth signs the token: format is "<tokenId>.<signature>"
-    // We only need the tokenId part to query the database
-    const cookieToken = request.cookies?.['better-auth.session_token'];
+    // Check cookie - handle both variants:
+    // - Production with useSecureCookies: "__Secure-better-auth.session_token"
+    // - Development without secure prefix: "better-auth.session_token"
+    const cookieToken =
+      request.cookies?.['__Secure-better-auth.session_token'] ||
+      request.cookies?.['better-auth.session_token'];
     if (cookieToken) {
-      // Extract just the token ID (before the dot)
+      // Extract just the token ID (before the dot), stripping the HMAC signature
       const [tokenId] = cookieToken.split('.');
       return tokenId;
     }
