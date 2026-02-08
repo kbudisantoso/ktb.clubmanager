@@ -228,7 +228,16 @@ export function MemberListTable({
                 key={member.id}
                 data-state={isSelected ? 'selected' : undefined}
                 className="cursor-pointer"
+                role="button"
+                tabIndex={0}
+                aria-label={`Mitglied ${displayName} oeffnen`}
                 onClick={() => onSelectMember(member.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelectMember(member.id);
+                  }
+                }}
               >
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <Checkbox
