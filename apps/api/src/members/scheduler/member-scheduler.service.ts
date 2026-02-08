@@ -49,25 +49,27 @@ export class MemberSchedulerService {
 
     for (const member of members) {
       try {
-        // Update status to LEFT
-        await this.prisma.member.update({
-          where: { id: member.id },
-          data: {
-            status: 'LEFT',
-            statusChangedAt: new Date(),
-            statusChangedBy: 'SYSTEM',
-            statusChangeReason: 'Automatischer Austritt nach Ablauf der Kuendigungsfrist',
-          },
-        });
-
-        // Close active membership period
-        const activePeriod = member.membershipPeriods[0];
-        if (activePeriod) {
-          await this.prisma.membershipPeriod.update({
-            where: { id: activePeriod.id },
-            data: { leaveDate: member.cancellationDate },
+        await this.prisma.$transaction(async (tx) => {
+          // Update status to LEFT
+          await tx.member.update({
+            where: { id: member.id },
+            data: {
+              status: 'LEFT',
+              statusChangedAt: new Date(),
+              statusChangedBy: 'SYSTEM',
+              statusChangeReason: 'Automatischer Austritt nach Ablauf der Kuendigungsfrist',
+            },
           });
-        }
+
+          // Close active membership period
+          const activePeriod = member.membershipPeriods[0];
+          if (activePeriod) {
+            await tx.membershipPeriod.update({
+              where: { id: activePeriod.id },
+              data: { leaveDate: member.cancellationDate },
+            });
+          }
+        });
 
         successCount++;
         this.logger.log(
