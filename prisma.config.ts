@@ -7,8 +7,7 @@ export default defineConfig({
     seed: 'tsx prisma/seed.ts',
   },
   datasource: {
-    url:
-      process.env.DATABASE_URL ??
-      'postgresql://clubmanager:clubmanager@localhost:35432/clubmanager',
+    // Prisma CLI loads DATABASE_URL from .env automatically when not set
+    url: process.env.DATABASE_URL,
   },
 });

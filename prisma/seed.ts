@@ -2,7 +2,12 @@ import { PrismaClient } from './generated/client/index.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 
-// Create pg pool for Prisma adapter
+// Production guard: seed must never run in production
+if (process.env.NODE_ENV === 'production') {
+  throw new Error('Seed must not run in production');
+}
+
+// WARNING: Fallback for local development only. In CI/production, DATABASE_URL must be set.
 const pool = new pg.Pool({
   connectionString:
     process.env.DATABASE_URL || 'postgresql://clubmanager:clubmanager@localhost:35432/clubmanager',
@@ -18,6 +23,9 @@ async function main() {
 
   // Seed default tiers
   await seedTiers();
+
+  // Seed system user for automated actions
+  await seedSystemUser();
 
   console.log('Seeding complete.');
 }
@@ -79,6 +87,29 @@ async function seedTiers() {
     },
   });
   console.log(`Seeded tier: ${minimalTier.name}`);
+}
+
+/**
+ * Seed the system user for automated actions (e.g., scheduler, migrations).
+ *
+ * Uses SYSTEM_USER_EMAIL_DOMAIN env var for the email domain,
+ * defaulting to 'noreply.localhost' for local development.
+ */
+async function seedSystemUser() {
+  const emailDomain = process.env.SYSTEM_USER_EMAIL_DOMAIN || 'noreply.localhost';
+  const systemEmail = `system@${emailDomain}`;
+
+  const systemUser = await prisma.user.upsert({
+    where: { email: systemEmail },
+    update: {}, // Don't overwrite if already exists
+    create: {
+      email: systemEmail,
+      emailVerified: true,
+      name: 'System',
+      isSystemUser: true,
+    },
+  });
+  console.log(`Seeded system user: ${systemUser.email} (${systemUser.id})`);
 }
 
 main()

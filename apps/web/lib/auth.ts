@@ -9,10 +9,13 @@ let prismaInstance: PrismaClient | null = null;
 
 function getPrisma(): PrismaClient {
   if (!prismaInstance) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error('DATABASE_URL environment variable is required');
+    }
     const pool = new Pool({
-      connectionString:
-        process.env.DATABASE_URL ||
-        'postgresql://clubmanager:clubmanager@localhost:35432/clubmanager',
+      connectionString,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : undefined,
     });
     prismaInstance = new PrismaClient({
       adapter: new PrismaPg(pool),
