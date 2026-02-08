@@ -1,8 +1,23 @@
 import { betterAuth } from 'better-auth';
+import { createAuthMiddleware, APIError } from 'better-auth/api';
+import { captcha } from 'better-auth/plugins';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { PrismaClient } from '../../../prisma/generated/client/index.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core';
+import * as zxcvbnCommonPackage from '@zxcvbn-ts/language-common';
+import * as zxcvbnDePackage from '@zxcvbn-ts/language-de';
+
+// Initialize zxcvbn with German + common dictionaries (runs once at module load)
+zxcvbnOptions.setOptions({
+  dictionary: {
+    ...zxcvbnCommonPackage.dictionary,
+    ...zxcvbnDePackage.dictionary,
+  },
+  graphs: zxcvbnCommonPackage.adjacencyGraphs,
+  translations: zxcvbnDePackage.translations,
+});
 
 // Lazy-initialized singleton to avoid SSG issues
 let prismaInstance: PrismaClient | null = null;
@@ -55,7 +70,9 @@ async function checkSuperAdminBootstrap(userId: string, email: string): Promise<
  * - Optional Google OAuth (when GOOGLE_CLIENT_ID is set)
  * - Database sessions via Prisma
  * - Session cookies with secure defaults
+ * - Server-side password strength validation (zxcvbn score >= 3)
  * - Super Admin bootstrap on first user registration
+ * - Optional Cloudflare Turnstile CAPTCHA protection
  *
  * Note: Prisma is lazily initialized to avoid SSG issues.
  */
@@ -94,6 +111,41 @@ export const auth = betterAuth({
       }
     : undefined,
 
+  // SEC-004: Server-side password strength validation
+  // Enforces zxcvbn score >= 3 on email signup to prevent weak passwords.
+  // This complements the client-side check but cannot be bypassed via API.
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === '/sign-up/email') {
+        const password = ctx.body?.password;
+        const email = ctx.body?.email;
+        if (password) {
+          const userInputs = email ? [email] : [];
+          const result = zxcvbn(password, userInputs);
+          if (result.score < 3) {
+            throw new APIError('BAD_REQUEST', {
+              message: 'Passwort ist zu schwach. Bitte waehle ein staerkeres Passwort.',
+            });
+          }
+        }
+      }
+    }),
+  },
+
+  // SEC-008/SEC-020: CAPTCHA plugin for bot protection (conditionally loaded)
+  // Requires TURNSTILE_SECRET_KEY env var to activate Cloudflare Turnstile
+  plugins: [
+    ...(process.env.TURNSTILE_SECRET_KEY
+      ? [
+          captcha({
+            provider: 'cloudflare-turnstile',
+            secretKey: process.env.TURNSTILE_SECRET_KEY,
+            endpoints: ['/sign-up/email', '/sign-in/email', '/forget-password'],
+          }),
+        ]
+      : []),
+  ],
+
   // Database hooks for Super Admin bootstrap
   databaseHooks: {
     user: {
@@ -112,6 +164,14 @@ export const auth = betterAuth({
     useSecureCookies: process.env.NODE_ENV === 'production',
     // Cookie name prefix
     cookiePrefix: 'better-auth',
+    // SEC-005: Explicit cookie flags for defense-in-depth
+    // httpOnly prevents XSS access, secure ensures HTTPS-only in prod,
+    // sameSite 'lax' prevents CSRF while allowing top-level navigations
+    defaultCookieAttributes: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    },
   },
 
   // Trust proxy for correct IP address detection
