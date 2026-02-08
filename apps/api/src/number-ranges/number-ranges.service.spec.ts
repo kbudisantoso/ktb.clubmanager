@@ -143,9 +143,9 @@ describe('NumberRangesService', () => {
         entityType: 'MEMBER',
       });
 
-      await expect(
-        service.create('club-1', { entityType: 'MEMBER' } as never)
-      ).rejects.toThrow(ConflictException);
+      await expect(service.create('club-1', { entityType: 'MEMBER' } as never)).rejects.toThrow(
+        ConflictException
+      );
     });
 
     it('should create range when entityType is unique', async () => {

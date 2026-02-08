@@ -6,9 +6,7 @@ describe('MemberSearch', () => {
   it('renders with placeholder text', () => {
     render(<MemberSearch value="" onChange={vi.fn()} />);
 
-    expect(
-      screen.getByPlaceholderText('Name oder Mitgliedsnummer suchen...')
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Name oder Mitgliedsnummer suchen...')).toBeInTheDocument();
   });
 
   it('calls onChange when typing', () => {

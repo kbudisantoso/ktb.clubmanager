@@ -12,9 +12,7 @@ describe('MemberEmptyState', () => {
     render(<MemberEmptyState variant="no-number-ranges" />);
 
     expect(screen.getByText('Mitgliederverwaltung einrichten')).toBeInTheDocument();
-    expect(
-      screen.getByText(/Nummernkreise fuer die Mitgliedsnummern/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Nummernkreise fuer die Mitgliedsnummern/)).toBeInTheDocument();
   });
 
   it('renders link to number ranges settings for no-number-ranges', () => {

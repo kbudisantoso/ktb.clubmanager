@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
+import type { NumberRangeResponse, CreateNumberRange, UpdateNumberRange } from '@ktb/shared';
 
 // ============================================================================
 // Query Key Factory
@@ -13,44 +14,19 @@ export const numberRangeKeys = {
 };
 
 // ============================================================================
-// Types
+// Types - imported from @ktb/shared, re-exported for backwards compatibility
 // ============================================================================
 
-/**
- * Number range entity from the API.
- */
-export interface NumberRange {
-  id: string;
-  clubId: string;
-  entityType: string;
-  prefix: string;
-  padLength: number;
-  currentValue: number;
-  yearReset: boolean;
-  lastResetYear: number | null;
-  createdAt: string;
-  updatedAt: string;
-}
+/** Number range entity from the API (re-exported from @ktb/shared) */
+export type NumberRange = NumberRangeResponse;
 
-/**
- * Input for creating a number range.
- */
-export interface CreateNumberRangeInput {
-  entityType: string;
-  prefix?: string;
-  padLength?: number;
-  yearReset?: boolean;
-}
+/** Input for creating a number range (re-exported from @ktb/shared) */
+export type CreateNumberRangeInput = CreateNumberRange;
 
-/**
- * Input for updating a number range.
- */
-export interface UpdateNumberRangeInput {
-  prefix?: string;
-  padLength?: number;
-  yearReset?: boolean;
-}
+/** Input for updating a number range (re-exported from @ktb/shared) */
+export type UpdateNumberRangeInput = UpdateNumberRange;
 
+/** API-specific preview response (not in shared schemas) */
 interface PreviewResponse {
   preview: string;
   currentValue: number;

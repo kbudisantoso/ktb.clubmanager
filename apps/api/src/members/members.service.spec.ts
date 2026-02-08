@@ -163,11 +163,7 @@ describe('MembersService', () => {
       );
 
       await expect(
-        service.create(
-          'club-1',
-          { firstName: 'Max', lastName: 'Mustermann' } as never,
-          'user-1'
-        )
+        service.create('club-1', { firstName: 'Max', lastName: 'Mustermann' } as never, 'user-1')
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -302,9 +298,9 @@ describe('MembersService', () => {
     it('should throw when status is not LEFT', async () => {
       mockDb.member.findFirst.mockResolvedValue(makeMember({ status: 'ACTIVE' }));
 
-      await expect(
-        service.softDelete('club-1', 'member-1', 'user-1', 'AUSTRITT')
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.softDelete('club-1', 'member-1', 'user-1', 'AUSTRITT')).rejects.toThrow(
+        BadRequestException
+      );
     });
   });
 
@@ -351,9 +347,7 @@ describe('MembersService', () => {
         })
       );
 
-      await expect(service.hardDelete('club-1', 'member-1')).rejects.toThrow(
-        BadRequestException
-      );
+      await expect(service.hardDelete('club-1', 'member-1')).rejects.toThrow(BadRequestException);
     });
   });
 
