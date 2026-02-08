@@ -90,6 +90,7 @@ export class MemberStatusService {
         statusChangedAt: new Date(),
         statusChangedBy: userId,
         statusChangeReason: reason,
+        version: { increment: 1 },
       },
     });
 
@@ -143,6 +144,7 @@ export class MemberStatusService {
         statusChangeReason: `Kuendigung zum ${cancellationDate} erfasst`,
         statusChangedAt: new Date(),
         statusChangedBy: userId,
+        version: { increment: 1 },
       },
     });
 
