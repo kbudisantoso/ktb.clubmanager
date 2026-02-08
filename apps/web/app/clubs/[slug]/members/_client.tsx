@@ -4,6 +4,7 @@ import { Suspense, useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useMembersInfinite } from '@/hooks/use-members';
@@ -258,6 +259,33 @@ function MembersLoadingFallback() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Mitglieder</h1>
         </div>
+        <Skeleton className="h-10 w-36" />
+      </div>
+
+      {/* Search bar skeleton */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <Skeleton className="h-10 w-full max-w-sm" />
+        {/* Status filter skeleton */}
+        <div className="flex items-center gap-1">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-8 w-20 rounded-full" />
+          ))}
+        </div>
+      </div>
+
+      {/* Table rows skeleton */}
+      <div className="space-y-3">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="flex items-center gap-4 py-2">
+            <Skeleton className="h-4 w-4" />
+            <Skeleton className="h-7 w-7 rounded-full" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-16 hidden md:block" />
+            <Skeleton className="h-5 w-16 rounded-md hidden md:block" />
+            <Skeleton className="h-4 w-40 hidden xl:block" />
+            <Skeleton className="h-4 w-28 hidden xl:block" />
+          </div>
+        ))}
       </div>
     </div>
   );

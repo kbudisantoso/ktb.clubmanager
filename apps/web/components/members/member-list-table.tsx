@@ -2,7 +2,6 @@
 
 import { useRef, useCallback, useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -315,11 +314,19 @@ export function MemberListTable({
       {/* Infinite scroll sentinel */}
       <div ref={sentinelRef} className="h-1" />
 
-      {/* Loading indicator for next page */}
+      {/* Loading skeleton for next page */}
       {isFetchingNextPage && (
-        <div className="flex items-center justify-center py-4 text-muted-foreground text-sm gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Lade weitere Mitglieder...
+        <div className="space-y-3 p-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <Skeleton className="h-4 w-4" />
+              <Skeleton className="h-7 w-7 rounded-full" />
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-16 hidden md:block" />
+              <Skeleton className="h-5 w-16 rounded-md hidden md:block" />
+              <Skeleton className="h-4 w-40 hidden xl:block" />
+            </div>
+          ))}
         </div>
       )}
     </>
