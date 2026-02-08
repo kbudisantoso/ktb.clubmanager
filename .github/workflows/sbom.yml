@@ -41,14 +41,14 @@ jobs:
         run: grype sbom:sbom.json -o cyclonedx-json > vex.json || true
 
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sbom-cyclonedx
           path: sbom.json
           retention-days: 90
 
       - name: Upload VEX artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: vex-cyclonedx
           path: vex.json
