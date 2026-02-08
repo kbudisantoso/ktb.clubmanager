@@ -21,6 +21,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -116,6 +126,10 @@ export function MemberBulkActions({
   const [bulkEditDialogOpen, setBulkEditDialogOpen] = useState(false);
   const [householdDialogOpen, setHouseholdDialogOpen] = useState(false);
   const [householdName, setHouseholdName] = useState('');
+  const [statusConfirmState, setStatusConfirmState] = useState<{
+    open: boolean;
+    targetStatus: string;
+  }>({ open: false, targetStatus: '' });
 
   // Bulk edit state
   const [editField, setEditField] = useState<string>('');
@@ -337,7 +351,10 @@ export function MemberBulkActions({
                 <DropdownMenuItem disabled>Keine gemeinsamen Statusuebergaenge</DropdownMenuItem>
               ) : (
                 commonTransitions.map((status) => (
-                  <DropdownMenuItem key={status} onClick={() => handleBulkStatusChange(status)}>
+                  <DropdownMenuItem
+                    key={status}
+                    onClick={() => setStatusConfirmState({ open: true, targetStatus: status })}
+                  >
                     {STATUS_LABELS[status] ?? status}
                   </DropdownMenuItem>
                 ))
@@ -424,6 +441,36 @@ export function MemberBulkActions({
           <X className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Status Change Confirmation AlertDialog (CONV-010) */}
+      <AlertDialog
+        open={statusConfirmState.open}
+        onOpenChange={(open) => {
+          if (!open) setStatusConfirmState({ open: false, targetStatus: '' });
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Status fuer {count} {count === 1 ? 'Mitglied' : 'Mitglieder'} aendern?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Der Status wird auf &ldquo;{STATUS_LABELS[statusConfirmState.targetStatus] ?? statusConfirmState.targetStatus}&rdquo; geaendert.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                handleBulkStatusChange(statusConfirmState.targetStatus);
+                setStatusConfirmState({ open: false, targetStatus: '' });
+              }}
+            >
+              Status aendern
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* CSV Export Dialog */}
       <MemberCsvExportDialog
