@@ -13,11 +13,11 @@ const STATUS_CONFIG: Record<MemberStatus, { label: string; className: string }> 
   },
   INACTIVE: {
     label: 'Inaktiv',
-    className: 'bg-amber-500/15 text-amber-600 border-amber-500/25 dark:text-amber-400',
+    className: 'bg-warning/15 text-warning-foreground border-warning/25',
   },
   PENDING: {
     label: 'Ausstehend',
-    className: 'bg-blue-500/15 text-blue-600 border-blue-500/25 dark:text-blue-400',
+    className: 'bg-accent/15 text-accent-foreground border-accent/25',
   },
   LEFT: {
     label: 'Ausgetreten',

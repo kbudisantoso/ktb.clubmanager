@@ -112,6 +112,8 @@ function MembersClientInner() {
       }
 
       if (e.key === 'Escape' && selectedMemberId) {
+        // Don't close the panel when a Radix dialog is open — the dialog handles its own Escape
+        if (document.querySelector('[role="dialog"][data-state="open"]')) return;
         e.preventDefault();
         closePanel();
       } else if (e.key === 'j' || e.key === 'ArrowDown') {

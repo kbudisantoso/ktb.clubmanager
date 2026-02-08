@@ -33,10 +33,12 @@ export function MemberDetailClient({ slug, memberId }: MemberDetailClientProps) 
   const { data: member, isLoading, isError } = useMember(slug, memberId);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
-  // Keyboard: Escape returns to list
+  // Keyboard: Escape returns to list (skipped when a dialog is open)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
+        // Don't close the panel when a Radix dialog is open — the dialog handles its own Escape
+        if (document.querySelector('[role="dialog"][data-state="open"]')) return;
         e.preventDefault();
         router.push(`/clubs/${slug}/members`);
       }

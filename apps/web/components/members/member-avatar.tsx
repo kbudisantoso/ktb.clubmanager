@@ -7,16 +7,14 @@ import { cn } from '@/lib/utils';
  * Deterministic selection via hash of member ID.
  */
 const AVATAR_PALETTE = [
-  'bg-blue-500',
-  'bg-green-500',
-  'bg-purple-500',
-  'bg-pink-500',
-  'bg-indigo-500',
-  'bg-cyan-500',
-  'bg-orange-500',
-  'bg-red-500',
-  'bg-yellow-500',
-  'bg-teal-500',
+  'bg-[oklch(var(--avatar-1))]',
+  'bg-[oklch(var(--avatar-2))]',
+  'bg-[oklch(var(--avatar-3))]',
+  'bg-[oklch(var(--avatar-4))]',
+  'bg-[oklch(var(--avatar-5))]',
+  'bg-[oklch(var(--avatar-6))]',
+  'bg-[oklch(var(--avatar-7))]',
+  'bg-[oklch(var(--avatar-8))]',
 ] as const;
 
 /** Size presets for different usage contexts */

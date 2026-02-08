@@ -11,20 +11,20 @@ describe('MemberStatusBadge', () => {
     expect(badge.className).toContain('text-success');
   });
 
-  it('renders "Inaktiv" with amber styling for INACTIVE', () => {
+  it('renders "Inaktiv" with warning styling for INACTIVE', () => {
     render(<MemberStatusBadge status="INACTIVE" />);
 
     const badge = screen.getByText('Inaktiv');
     expect(badge).toBeInTheDocument();
-    expect(badge.className).toContain('text-amber-600');
+    expect(badge.className).toContain('text-warning-foreground');
   });
 
-  it('renders "Ausstehend" with blue styling for PENDING', () => {
+  it('renders "Ausstehend" with accent styling for PENDING', () => {
     render(<MemberStatusBadge status="PENDING" />);
 
     const badge = screen.getByText('Ausstehend');
     expect(badge).toBeInTheDocument();
-    expect(badge.className).toContain('text-blue-600');
+    expect(badge.className).toContain('text-accent-foreground');
   });
 
   it('renders "Ausgetreten" with muted styling for LEFT', () => {
