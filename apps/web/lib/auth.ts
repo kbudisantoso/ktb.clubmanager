@@ -8,6 +8,13 @@ import { Pool } from 'pg';
 import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core';
 import * as zxcvbnCommonPackage from '@zxcvbn-ts/language-common';
 import * as zxcvbnDePackage from '@zxcvbn-ts/language-de';
+import {
+  loginAccountLimiter,
+  loginIpLimiter,
+  registrationIpLimiter,
+  resetEmailLimiter,
+  resetIpLimiter,
+} from './rate-limit';
 
 // Initialize zxcvbn with German + common dictionaries (runs once at module load)
 zxcvbnOptions.setOptions({
@@ -102,6 +109,9 @@ export const auth = betterAuth({
   },
 
   // Social providers (optional)
+  // SEC-010: OAuth state parameter validation is handled internally by Better Auth.
+  // Better Auth stores state + PKCE in the database. Verified secure per security audit.
+  // See: RESEARCH.md "OAuth State Parameter Verification" section.
   socialProviders: process.env.GOOGLE_CLIENT_ID
     ? {
         google: {
@@ -111,12 +121,39 @@ export const auth = betterAuth({
       }
     : undefined,
 
-  // SEC-004: Server-side password strength validation
-  // Enforces zxcvbn score >= 3 on email signup to prevent weak passwords.
-  // This complements the client-side check but cannot be bypassed via API.
+  // SEC-008/SEC-020: Rate limiting for auth endpoints (brute-force protection)
+  // SEC-004: Server-side password strength validation (zxcvbn score >= 3)
+  // Rate limiting applies universally; CAPTCHA (Turnstile) is additive when configured.
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      // Extract IP from request headers (X-Forwarded-For or fallback)
+      const ip = ctx.headers?.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+
+      // Rate limiting for login (SEC-008)
+      if (ctx.path === '/sign-in/email') {
+        const email = ctx.body?.email?.toLowerCase();
+        if (email && loginAccountLimiter.isRateLimited(`login:account:${email}`)) {
+          throw new APIError('TOO_MANY_REQUESTS', {
+            message: 'Zu viele Anmeldeversuche. Bitte versuche es in 15 Minuten erneut.',
+          });
+        }
+        if (loginIpLimiter.isRateLimited(`login:ip:${ip}`)) {
+          throw new APIError('TOO_MANY_REQUESTS', {
+            message:
+              'Zu viele Anmeldeversuche von dieser Adresse. Bitte versuche es spaeter erneut.',
+          });
+        }
+      }
+
+      // Rate limiting for registration (SEC-008)
       if (ctx.path === '/sign-up/email') {
+        if (registrationIpLimiter.isRateLimited(`register:ip:${ip}`)) {
+          throw new APIError('TOO_MANY_REQUESTS', {
+            message: 'Zu viele Registrierungen. Bitte versuche es spaeter erneut.',
+          });
+        }
+
+        // SEC-004: Password strength validation
         const password = ctx.body?.password;
         const email = ctx.body?.email;
         if (password) {
@@ -127,6 +164,21 @@ export const auth = betterAuth({
               message: 'Passwort ist zu schwach. Bitte waehle ein staerkeres Passwort.',
             });
           }
+        }
+      }
+
+      // Rate limiting for password reset (SEC-008)
+      if (ctx.path === '/forget-password') {
+        const email = ctx.body?.email?.toLowerCase();
+        if (email && resetEmailLimiter.isRateLimited(`reset:email:${email}`)) {
+          throw new APIError('TOO_MANY_REQUESTS', {
+            message: 'Zu viele Anfragen. Bitte versuche es spaeter erneut.',
+          });
+        }
+        if (resetIpLimiter.isRateLimited(`reset:ip:${ip}`)) {
+          throw new APIError('TOO_MANY_REQUESTS', {
+            message: 'Zu viele Anfragen von dieser Adresse. Bitte versuche es spaeter erneut.',
+          });
         }
       }
     }),
