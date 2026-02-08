@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import type { HouseholdRole } from '../../../../../prisma/generated/client/index.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { CreateHouseholdDto } from './dto/create-household.dto.js';
 import type { UpdateHouseholdDto } from './dto/update-household.dto.js';
@@ -115,7 +116,7 @@ export class HouseholdsService {
     }
 
     // Create household
-    const household = await this.prisma.household.create({
+    const household = await db.household.create({
       data: {
         clubId,
         name: dto.name,
@@ -186,7 +187,7 @@ export class HouseholdsService {
   /**
    * Add a member to a household with a role.
    */
-  async addMember(clubId: string, householdId: string, memberId: string, role: string) {
+  async addMember(clubId: string, householdId: string, memberId: string, role: HouseholdRole) {
     const db = this.prisma.forClub(clubId);
 
     // Validate household exists
@@ -218,7 +219,7 @@ export class HouseholdsService {
       where: { id: memberId },
       data: {
         householdId,
-        householdRole: role as 'HEAD' | 'SPOUSE' | 'CHILD' | 'OTHER',
+        householdRole: role,
       },
     });
 

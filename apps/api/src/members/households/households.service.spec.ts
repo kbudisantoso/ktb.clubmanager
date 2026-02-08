@@ -21,12 +21,6 @@ const mockDb = {
 
 const mockPrisma = {
   forClub: vi.fn(() => mockDb),
-  household: {
-    create: vi.fn(),
-  },
-  membershipPeriod: {
-    findMany: vi.fn(),
-  },
 } as unknown as PrismaService;
 
 function makeHousehold(overrides: Record<string, unknown> = {}) {
@@ -74,7 +68,7 @@ describe('HouseholdsService', () => {
         { id: 'member-2', deletedAt: null },
       ];
       mockDb.member.findMany.mockResolvedValue(members);
-      (mockPrisma.household.create as ReturnType<typeof vi.fn>).mockResolvedValue({
+      mockDb.household.create.mockResolvedValue({
         id: 'household-1',
       });
       mockDb.member.update.mockResolvedValue({});
@@ -143,7 +137,7 @@ describe('HouseholdsService', () => {
         .mockResolvedValueOnce({ id: 'household-1', deletedAt: null }) // validate
         .mockResolvedValueOnce(makeHousehold()); // findOne
 
-      const result = await service.addMember('club-1', 'household-1', 'member-3', 'CHILD');
+      await service.addMember('club-1', 'household-1', 'member-3', 'CHILD');
 
       expect(mockDb.member.update).toHaveBeenCalledWith(
         expect.objectContaining({

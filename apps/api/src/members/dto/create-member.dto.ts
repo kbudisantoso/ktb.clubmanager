@@ -154,6 +154,7 @@ export class CreateMemberDto {
   @MaxLength(100)
   addressExtra?: string;
 
+  // Germany-only PLZ format (5 digits). International postal codes deferred.
   @ApiPropertyOptional({
     description: 'Postal code (PLZ, 5-digit German format)',
     example: '12345',

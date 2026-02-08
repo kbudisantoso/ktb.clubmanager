@@ -47,3 +47,33 @@ export const AddHouseholdMemberSchema = z.object({
 });
 
 export type AddHouseholdMember = z.infer<typeof AddHouseholdMemberSchema>;
+
+/**
+ * Schema for a household member as returned in API responses.
+ * Subset of Member fields included via Prisma select.
+ */
+export const HouseholdMemberResponseSchema = z.object({
+  id: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  householdRole: HouseholdRoleSchema.nullable(),
+  memberNumber: z.string(),
+});
+
+export type HouseholdMemberResponse = z.infer<typeof HouseholdMemberResponseSchema>;
+
+/**
+ * Full household response schema including server-generated fields.
+ * Matches the shape returned by HouseholdsService.findAll/findOne.
+ */
+export const HouseholdResponseSchema = z.object({
+  id: z.string(),
+  clubId: z.string(),
+  name: z.string(),
+  primaryContactId: z.string().nullable(),
+  members: z.array(HouseholdMemberResponseSchema),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export type HouseholdResponse = z.infer<typeof HouseholdResponseSchema>;

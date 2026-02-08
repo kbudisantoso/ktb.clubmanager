@@ -15,6 +15,7 @@ export const AddressSchema = z.object({
   /** Additional address info (c/o, apartment, Hinterhaus) */
   addressExtra: z.string().max(100).optional(),
 
+  // Germany-only PLZ format (5 digits). International postal codes deferred.
   /** 5-digit German postal code (PLZ) */
   postalCode: z
     .string()

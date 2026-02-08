@@ -4,6 +4,8 @@ import {
   PersonTypeSchema,
   SalutationSchema,
   MembershipTypeSchema,
+  HouseholdRoleSchema,
+  DeletionReasonSchema,
 } from './member-status.js';
 import { AddressSchema } from './address.js';
 
@@ -110,7 +112,8 @@ export const UpdateMemberSchema = z
     mobile: z.string().max(30).optional(),
     notes: z.string().max(5000).optional(),
     memberNumber: z.string().max(50).optional(),
-    status: MemberStatusSchema.optional(),
+    // Note: status removed from UpdateMemberSchema — status changes go through
+    // dedicated ChangeStatusSchema endpoint (see C-3 consistency requirement)
     joinDate: z.string().date().optional(),
     membershipType: MembershipTypeSchema.optional(),
   })
@@ -163,12 +166,22 @@ export const MemberResponseSchema = z.object({
   cancellationReceivedAt: z.string().nullable().optional(),
 
   householdId: z.string().nullable().optional(),
+  /** Role within the household (HEAD, SPOUSE, CHILD, OTHER) */
+  householdRole: HouseholdRoleSchema.nullable().optional(),
+
+  /** Link to application User account (nullable, set by OWNER/SECRETARY) */
+  userId: z.string().nullable().optional(),
+
+  /** Date when DSGVO deletion was requested (date-only YYYY-MM-DD) */
+  dsgvoRequestDate: z.string().date().nullable().optional(),
 
   anonymizedAt: z.string().nullable().optional(),
   anonymizedBy: z.string().nullable().optional(),
 
   deletedAt: z.string().nullable().optional(),
   deletedBy: z.string().nullable().optional(),
+  /** Reason for deletion (AUSTRITT, AUSSCHLUSS, DATENSCHUTZ, SONSTIGES) */
+  deletionReason: DeletionReasonSchema.nullable().optional(),
 
   createdAt: z.string(),
   updatedAt: z.string(),

@@ -68,3 +68,22 @@ export const UpdateMembershipPeriodSchema = z
   );
 
 export type UpdateMembershipPeriod = z.infer<typeof UpdateMembershipPeriodSchema>;
+
+/**
+ * Full membership period response schema including server-generated fields.
+ * Matches the shape returned by MembershipPeriodsService.
+ */
+export const MembershipPeriodResponseSchema = z.object({
+  id: z.string(),
+  memberId: z.string(),
+  /** Start date of the membership period (YYYY-MM-DD) */
+  joinDate: z.string().nullable(),
+  /** End date of the membership period (null = current/ongoing) */
+  leaveDate: z.string().nullable(),
+  membershipType: MembershipTypeSchema,
+  notes: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export type MembershipPeriodResponse = z.infer<typeof MembershipPeriodResponseSchema>;

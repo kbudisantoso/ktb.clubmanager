@@ -51,6 +51,8 @@ export const NumberRangeResponseSchema = z.object({
   currentValue: z.number().int(),
   padLength: z.number().int(),
   yearReset: z.boolean(),
+  /** Year of last counter reset (null if never reset or yearReset disabled) */
+  lastResetYear: z.number().int().nullable(),
 
   createdAt: z.string(),
   updatedAt: z.string(),
