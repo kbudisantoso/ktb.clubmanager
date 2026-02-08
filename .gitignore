@@ -69,3 +69,7 @@ temp/
 
 # Next.js documentation
 .next-docs/
+
+# SBOM / VEX (generated in CI)
+sbom.json
+vex.json

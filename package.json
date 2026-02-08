@@ -21,7 +21,9 @@
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare-commit": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test",
+    "prepare-commit": "pnpm lint && pnpm format:check",
+    "prepare-push": "pnpm prepare-commit && pnpm typecheck && pnpm test",
+    "prepare": "simple-git-hooks",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
@@ -31,10 +33,10 @@
     "seed": "tsx prisma/seed.ts"
   },
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=24.0.0",
     "pnpm": ">=9.0.0"
   },
-  "packageManager": "pnpm@10.28.2",
+  "packageManager": "pnpm@10.29.1",
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "dotenv-cli": "^11.0.0",
@@ -42,6 +44,7 @@
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.1",
     "prisma": "^7.3.0",
+    "simple-git-hooks": "^2.13.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.54.0",
@@ -52,9 +55,11 @@
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "@prisma/client-runtime-utils": "^7.3.0",
-    "@sindresorhus/slugify": "^3.0.0",
-    "nanoid": "^5.1.6",
     "pg": "^8.18.0"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm prepare-commit",
+    "pre-push": "pnpm prepare-push"
   },
   "pnpm": {
     "overrides": {

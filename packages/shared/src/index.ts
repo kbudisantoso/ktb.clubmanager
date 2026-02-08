@@ -3,7 +3,7 @@
 export const VERSION = '0.0.1';
 
 // Schemas (Zod is source of truth, types are inferred)
-export * from './schemas/member-status.js';
+export * from './schemas/index.js';
 
 // Utilities
 export * from './utils/slug.js';

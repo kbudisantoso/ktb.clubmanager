@@ -6,8 +6,11 @@ import { Prisma } from '../../../../../prisma/generated/client/index.js';
  */
 const TENANT_SCOPED_MODELS = [
   'Member',
+  'Household',
+  'NumberRange',
   'LedgerAccount',
   // Future models: Transaction, TransactionLine, FeeCategory, etc.
+  // Note: MembershipPeriod is scoped via Member relation (no clubId column)
 ] as const;
 
 type TenantScopedModel = (typeof TENANT_SCOPED_MODELS)[number];

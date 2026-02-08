@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
@@ -7,6 +8,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { SettingsModule } from './settings/settings.module';
 import { AdminModule } from './admin/admin.module';
 import { ClubsModule } from './clubs/clubs.module';
+import { NumberRangesModule } from './number-ranges/number-ranges.module';
+import { MembersModule } from './members/members.module';
 import { MeModule } from './me/me.module';
 import { SessionAuthGuard } from './auth/guards/session-auth.guard.js';
 import { SuperAdminGuard } from './common/guards/super-admin.guard.js';
@@ -20,12 +23,15 @@ import { PermissionGuard } from './common/guards/permission.guard.js';
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     SettingsModule,
     AuthModule,
     AdminModule,
     MeModule,
     ClubsModule,
+    NumberRangesModule,
+    MembersModule,
     HealthModule,
   ],
   providers: [

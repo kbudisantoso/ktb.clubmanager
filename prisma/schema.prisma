@@ -53,6 +53,8 @@ model Club {
   clubUsers      ClubUser[]
   accessRequests AccessRequest[]
   members        Member[]
+  households     Household[]
+  numberRanges   NumberRange[]
   ledgerAccounts LedgerAccount[]
 
   @@map("clubs")
@@ -307,20 +309,83 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+// =============================================================================
+// Member Management Models (Phase 10)
+// =============================================================================
+// Member CRUD, status lifecycle, household grouping, membership periods,
+// and Nummernkreise (number ranges) infrastructure.
+
 /// Status of a club member
 enum MemberStatus {
   /// Currently active member with full privileges
   ACTIVE
-  /// Temporarily inactive (e.g., sabbatical)
+  /// Temporarily inactive (e.g., sabbatical, Ruhende Mitgliedschaft)
   INACTIVE
   /// Application pending approval
   PENDING
-  /// Left the club (historical record)
+  /// Left the club (historical record, terminal state)
   LEFT
+}
+
+/// Type of person (natural person vs. legal entity like company/organization)
+enum PersonType {
+  /// Natural person (natuerliche Person)
+  NATURAL
+  /// Legal entity (juristische Person, e.g., company, organization)
+  LEGAL_ENTITY
+}
+
+/// Salutation for member correspondence (German conventions)
+enum Salutation {
+  /// Herr
+  HERR
+  /// Frau
+  FRAU
+  /// Divers
+  DIVERS
+}
+
+/// Type of membership within a period
+enum MembershipType {
+  /// Ordentliches Mitglied (full member with voting rights)
+  ORDENTLICH
+  /// Passives Mitglied (no active participation, reduced duties)
+  PASSIV
+  /// Ehrenmitglied (honorary member, typically fee-exempt)
+  EHREN
+  /// Foerdermitglied (supporting member, financial support only)
+  FOERDER
+  /// Jugendmitglied (youth member, age-based)
+  JUGEND
+}
+
+/// Role of a member within a household
+enum HouseholdRole {
+  /// Head of household (Haushaltsvorstand), primary contact
+  HEAD
+  /// Spouse/partner (Ehepartner/Lebenspartner)
+  SPOUSE
+  /// Child (Kind)
+  CHILD
+  /// Other household member (Sonstige)
+  OTHER
+}
+
+/// Reason for soft-deleting a member record
+enum DeletionReason {
+  /// Voluntary departure (Austritt)
+  AUSTRITT
+  /// Exclusion by board decision (Ausschluss)
+  AUSSCHLUSS
+  /// DSGVO/GDPR data deletion request (Datenschutz)
+  DATENSCHUTZ
+  /// Other reason (Sonstiges)
+  SONSTIGES
 }
 
 /// A member of a club with contact information and membership details.
 /// Members belong to exactly one club (tenant isolation).
+/// Supports both natural persons and legal entities (Personenart).
 model Member {
   /// Unique identifier (CUID format)
   id     String @id @default(cuid())
@@ -329,26 +394,133 @@ model Member {
   /// The club this member belongs to
   club   Club   @relation(fields: [clubId], references: [id])
 
-  /// Member's full name
-  name  String
-  /// Email address (unique within club)
-  email String?
-  /// Phone number
-  phone String?
+  /// Member number (unique per club, alphanumeric, e.g., "TSV-001")
+  memberNumber String
 
-  /// Street address
-  street     String?
-  /// Postal/ZIP code
-  postalCode String?
-  /// City
-  city       String?
+  /// Person type: natural person or legal entity
+  personType PersonType @default(NATURAL)
 
-  /// Current membership status
-  status   MemberStatus @default(ACTIVE)
-  /// Date when member joined the club
-  joinedAt DateTime?
-  /// Date when member left (if status is LEFT)
-  leftAt   DateTime?
+  // --- Name fields (natural person) ---
+  /// Salutation (Anrede): Herr, Frau, Divers
+  salutation Salutation?
+  /// Academic or professional title (e.g., Dr., Prof. Dr.)
+  title      String?
+  /// First name (Vorname) - required
+  firstName  String
+  /// Last name (Nachname) - required
+  lastName   String
+  /// Nickname or club name (Spitzname/Clubname)
+  nickname   String?
+
+  // --- Legal entity fields ---
+  /// Organization name (required for LEGAL_ENTITY)
+  organizationName String?
+  /// Contact person first name
+  contactFirstName String?
+  /// Contact person last name
+  contactLastName  String?
+  /// Department within the organization
+  department       String?
+  /// Position/role within the organization
+  position         String?
+  /// VAT ID / Steuernummer
+  vatId            String?
+
+  // --- Address (structured for SEPA pain.008 compliance) ---
+  /// Street name (Strasse)
+  street       String?
+  /// House number including suffixes (e.g., "42a", "7-9")
+  houseNumber  String?
+  /// Address supplement (c/o, Apartment, Hinterhaus)
+  addressExtra String?
+  /// Postal code (PLZ, 5-digit for Germany)
+  postalCode   String?
+  /// City (Ort)
+  city         String?
+  /// Country (ISO 3166-1 alpha-2, default "DE")
+  country      String  @default("DE")
+
+  // --- Contact ---
+  /// Email address for club communication (independent of User login email)
+  email  String?
+  /// Phone number (landline or general)
+  phone  String?
+  /// Mobile phone number
+  mobile String?
+  /// Free-text notes (additional information, preferred contact method, etc.)
+  notes  String?
+
+  // --- Status lifecycle ---
+  /// Current membership status (PENDING -> ACTIVE -> INACTIVE/LEFT)
+  status             MemberStatus @default(PENDING)
+  /// When the status was last changed
+  statusChangedAt    DateTime?
+  /// User ID who changed the status
+  statusChangedBy    String?
+  /// Reason for the last status change (visible in timeline)
+  statusChangeReason String?
+  /// Date when membership WILL end (Kuendigungsdatum, date-only to avoid TZ issues)
+  cancellationDate       DateTime? @db.Date
+  /// When the club received the cancellation notice (Kuendigungseingang)
+  cancellationReceivedAt DateTime?
+
+  // --- DSGVO / GDPR ---
+  /// Date when DSGVO deletion was requested (date-only)
+  dsgvoRequestDate DateTime? @db.Date
+  /// When personal data was anonymized (irreversible)
+  anonymizedAt     DateTime?
+  /// User ID who performed the anonymization
+  anonymizedBy     String?
+
+  // --- User linking ---
+  /// Link to application User account (nullable, set by OWNER/SECRETARY)
+  userId String?
+
+  // --- Household ---
+  /// Household this member belongs to
+  householdId   String?
+  /// Relation to household entity
+  household     Household?     @relation(fields: [householdId], references: [id])
+  /// Role within the household
+  householdRole HouseholdRole?
+
+  // --- Soft deletion (CONV-006) ---
+  /// Soft deletion timestamp
+  deletedAt      DateTime?
+  /// User ID who performed the soft deletion
+  deletedBy      String?
+  /// Reason for deletion
+  deletionReason DeletionReason?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  /// Membership periods (supports re-entry with multiple periods)
+  membershipPeriods MembershipPeriod[]
+
+  @@unique([clubId, memberNumber])
+  @@index([clubId])
+  @@index([clubId, lastName])
+  @@index([clubId, status])
+  @@map("members")
+}
+
+/// A household groups related members (e.g., family).
+/// Address lives on each member individually for independence.
+/// SEWOBE-style model with roles and primary contact.
+model Household {
+  /// Unique identifier (CUID format)
+  id     String @id @default(cuid())
+  /// Reference to the parent club (tenant)
+  clubId String
+  /// The club this household belongs to
+  club   Club   @relation(fields: [clubId], references: [id])
+
+  /// Household name/label (e.g., "Familie Mustermann")
+  name             String
+  /// ID of the primary contact member (HEAD)
+  primaryContactId String?
 
   /// Soft deletion timestamp
   deletedAt DateTime?
@@ -358,9 +530,71 @@ model Member {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([clubId, email])
+  /// Members belonging to this household
+  members Member[]
+
   @@index([clubId])
-  @@map("members")
+  @@map("households")
+}
+
+/// A membership period represents a continuous span of membership.
+/// Supports re-entry: a member can have multiple non-overlapping periods.
+/// Membership type (Mitgliedsart) lives here, not on Member, to allow type changes.
+model MembershipPeriod {
+  /// Unique identifier (CUID format)
+  id       String @id @default(cuid())
+  /// Reference to the member
+  memberId String
+  /// The member this period belongs to
+  member   Member @relation(fields: [memberId], references: [id])
+
+  /// Date when this membership period started (date-only, inclusive)
+  joinDate       DateTime       @db.Date
+  /// Date when this membership period ended (date-only, inclusive, null = current)
+  leaveDate      DateTime?      @db.Date
+  /// Type of membership during this period
+  membershipType MembershipType
+  /// Optional notes about this period
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([memberId])
+  @@map("membership_periods")
+}
+
+/// Reusable number range infrastructure for sequential number generation.
+/// Used for member numbers (Phase 10), transaction numbers (Phase 13),
+/// SEPA mandate references (Phase 16).
+/// Pattern: {prefix}{zero-padded sequential} with optional {YYYY} placeholder.
+model NumberRange {
+  /// Unique identifier (CUID format)
+  id     String @id @default(cuid())
+  /// Reference to the parent club (tenant)
+  clubId String
+  /// The club this number range belongs to
+  club   Club   @relation(fields: [clubId], references: [id])
+
+  /// Entity type this range is for (e.g., 'MEMBER', 'TRANSACTION', 'SEPA_MANDATE')
+  entityType   String
+  /// Prefix for generated numbers (may contain {YYYY} placeholder)
+  prefix       String  @default("")
+  /// Current counter value (atomically incremented)
+  currentValue Int     @default(0)
+  /// Number of digits to pad to (e.g., 4 -> "0001")
+  padLength    Int     @default(4)
+  /// Whether to reset counter at year boundary
+  yearReset    Boolean @default(false)
+  /// Year of last counter reset (used for year-reset detection, avoids updatedAt ambiguity)
+  lastResetYear Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clubId, entityType])
+  @@index([clubId])
+  @@map("number_ranges")
 }
 
 /// Type of account in the chart of accounts (SKR42)
