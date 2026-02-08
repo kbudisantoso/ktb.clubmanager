@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Query, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
 import {
   RequireClubContext,
   GetClubContext,
@@ -22,6 +23,9 @@ import {
 } from './dto/index.js';
 
 class SoftDeleteBodyDto {
+  @IsString({ message: 'Begruendung muss ein Text sein' })
+  @IsNotEmpty({ message: 'Begruendung ist erforderlich' })
+  @MaxLength(500, { message: 'Begruendung darf maximal 500 Zeichen lang sein' })
   reason!: string;
 }
 

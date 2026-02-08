@@ -4,6 +4,8 @@ import {
   IsOptional,
   IsEnum,
   IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
   MinLength,
   MaxLength,
   Matches,
@@ -69,6 +71,8 @@ export class BulkChangeStatusDto {
     type: [String],
   })
   @IsArray()
+  @ArrayMinSize(1, { message: 'Mindestens ein Mitglied muss ausgewaehlt werden' })
+  @ArrayMaxSize(100, { message: 'Maximal 100 Mitglieder gleichzeitig aenderbar' })
   @IsString({ each: true })
   memberIds!: string[];
 

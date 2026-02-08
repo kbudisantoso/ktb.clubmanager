@@ -4,6 +4,8 @@ import {
   IsOptional,
   IsArray,
   IsEnum,
+  IsObject,
+  IsNotEmpty,
   MinLength,
   MaxLength,
   ArrayMinSize,
@@ -42,6 +44,8 @@ export class CreateHouseholdDto {
     description: 'Roles for each member (key: memberId, value: HouseholdRole)',
     example: { memberId1: 'HEAD', memberId2: 'SPOUSE' },
   })
+  @IsObject({ message: 'Rollen muessen als Objekt angegeben werden' })
+  @IsNotEmpty({ message: 'Mindestens eine Rolle muss zugeordnet werden' })
   roles!: Record<string, HouseholdRoleDto>;
 
   @ApiPropertyOptional({

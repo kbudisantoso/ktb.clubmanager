@@ -101,7 +101,7 @@ export class CreateMemberDto {
   })
   @IsString()
   @IsOptional()
-  @MaxLength(255)
+  @MaxLength(200)
   organizationName?: string;
 
   @ApiPropertyOptional({ description: 'Contact person first name' })
