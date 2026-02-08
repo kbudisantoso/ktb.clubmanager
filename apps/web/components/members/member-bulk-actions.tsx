@@ -452,7 +452,9 @@ export function MemberBulkActions({
               Status fuer {count} {count === 1 ? 'Mitglied' : 'Mitglieder'} aendern?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Der Status wird auf &ldquo;{STATUS_LABELS[statusConfirmState.targetStatus] ?? statusConfirmState.targetStatus}&rdquo; geaendert.
+              Der Status wird auf &ldquo;
+              {STATUS_LABELS[statusConfirmState.targetStatus] ?? statusConfirmState.targetStatus}
+              &rdquo; geaendert.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

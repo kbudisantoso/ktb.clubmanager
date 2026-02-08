@@ -39,6 +39,7 @@ This blocks merges on critical/high CodeQL findings:
 ## Verification
 
 After configuration:
+
 1. Create a test PR
 2. Verify CodeQL analysis runs automatically
 3. Verify the `CI Success` status check is required

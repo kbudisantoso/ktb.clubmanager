@@ -13,10 +13,7 @@ export default function Error({
       <p className="text-muted-foreground mt-2">
         {error.message || 'Ein unbekannter Fehler ist aufgetreten'}
       </p>
-      <button
-        onClick={reset}
-        className="mt-4 text-primary hover:underline"
-      >
+      <button onClick={reset} className="mt-4 text-primary hover:underline">
         Erneut versuchen
       </button>
     </div>
