@@ -65,7 +65,7 @@ export class NumberRangesController {
     return this.numberRangesService.delete(ctx.clubId, id);
   }
 
-  @Post(':id/preview')
+  @Get(':id/preview')
   @RequirePermission(Permission.CLUB_SETTINGS)
   @ApiOperation({ summary: 'Preview the next number without generating it' })
   @ApiResponse({ status: 200, description: 'Preview of next number' })

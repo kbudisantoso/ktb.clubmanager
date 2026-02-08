@@ -70,9 +70,7 @@ export function usePreviewNumber(slug: string, rangeId: string) {
   return useQuery<PreviewResponse>({
     queryKey: numberRangeKeys.preview(slug, rangeId),
     queryFn: async () => {
-      const res = await apiFetch(`/api/clubs/${slug}/number-ranges/${rangeId}/preview`, {
-        method: 'POST',
-      });
+      const res = await apiFetch(`/api/clubs/${slug}/number-ranges/${rangeId}/preview`);
       if (!res.ok) {
         throw new Error('Fehler beim Laden der Vorschau');
       }
