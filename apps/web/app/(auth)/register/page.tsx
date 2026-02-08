@@ -12,6 +12,7 @@ import { validatePassword } from '@/lib/password-validation';
 import { authClient } from '@/lib/auth-client';
 import { useSessionQuery, useClearSession } from '@/hooks/use-session';
 import { getAuthBroadcast } from '@/lib/broadcast-auth';
+import { sanitizeCallbackUrl } from '@/lib/url-validation';
 import { ArrowLeft, Loader2, Check, Sparkles, LogOut, LayoutDashboard } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -25,7 +26,7 @@ function RegisterContent() {
   const searchParams = useSearchParams();
   const { data: session, isLoading: isPending } = useSessionQuery();
   const clearSession = useClearSession();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = sanitizeCallbackUrl(searchParams.get('callbackUrl'));
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');

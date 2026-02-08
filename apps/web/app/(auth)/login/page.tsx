@@ -11,6 +11,7 @@ import { GoogleIcon } from '@/components/icons';
 import { authClient } from '@/lib/auth-client';
 import { useSessionQuery } from '@/hooks/use-session';
 import { getAuthBroadcast } from '@/lib/broadcast-auth';
+import { sanitizeCallbackUrl } from '@/lib/url-validation';
 import { ArrowLeft, Loader2, Check } from 'lucide-react';
 import { LegalFooterLinks } from '@/components/layout/legal-links';
 
@@ -21,7 +22,7 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const { data: session, isLoading: isPending } = useSessionQuery();
   const signedOut = searchParams.get('signedOut') === 'true';
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = sanitizeCallbackUrl(searchParams.get('callbackUrl'));
 
   // Redirect to dashboard if already logged in
   useEffect(() => {
