@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
-import type { NumberRangeResponse, CreateNumberRange, UpdateNumberRange } from '@ktb/shared';
+import type { NumberRangeResponse, UpdateNumberRange } from '@ktb/shared';
 
 // ============================================================================
 // Query Key Factory
@@ -20,8 +20,14 @@ export const numberRangeKeys = {
 /** Number range entity from the API (re-exported from @ktb/shared) */
 export type NumberRange = NumberRangeResponse;
 
-/** Input for creating a number range (re-exported from @ktb/shared) */
-export type CreateNumberRangeInput = CreateNumberRange;
+// CreateNumberRangeInput kept local because shared CreateNumberRange uses z.infer (output type)
+// where .default() makes fields required, but callers pass them as optional (API applies defaults).
+export interface CreateNumberRangeInput {
+  entityType: string;
+  prefix?: string;
+  padLength?: number;
+  yearReset?: boolean;
+}
 
 /** Input for updating a number range (re-exported from @ktb/shared) */
 export type UpdateNumberRangeInput = UpdateNumberRange;

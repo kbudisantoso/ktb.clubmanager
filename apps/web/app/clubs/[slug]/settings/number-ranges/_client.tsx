@@ -187,7 +187,7 @@ export function NumberRangesSettingsClient() {
       try {
         await createMutation.mutateAsync({
           entityType: formState.entityType,
-          prefix: formState.prefix || undefined,
+          prefix: formState.prefix || '',
           padLength: formState.padLength,
           yearReset: formState.yearReset,
         });

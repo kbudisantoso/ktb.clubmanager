@@ -3,15 +3,11 @@ import { MembershipPeriodsService } from './membership-periods.service.js';
 import type { PrismaService } from '../../prisma/prisma.service.js';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
-// Mock forClub() scoped DB
+// Mock forClub() scoped DB — all membershipPeriod calls now go through db
 const mockDb = {
   member: {
     findFirst: vi.fn(),
   },
-};
-
-const mockPrisma = {
-  forClub: vi.fn(() => mockDb),
   membershipPeriod: {
     findMany: vi.fn(),
     findFirst: vi.fn(),
@@ -19,6 +15,10 @@ const mockPrisma = {
     create: vi.fn(),
     update: vi.fn(),
   },
+};
+
+const mockPrisma = {
+  forClub: vi.fn(() => mockDb),
 } as unknown as PrismaService;
 
 function makePeriod(overrides: Record<string, unknown> = {}) {
@@ -46,11 +46,9 @@ describe('MembershipPeriodsService', () => {
   describe('create()', () => {
     it('should create period for member', async () => {
       mockDb.member.findFirst.mockResolvedValue({ id: 'member-1', deletedAt: null });
-      (mockPrisma.membershipPeriod.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null); // no open period
-      (mockPrisma.membershipPeriod.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]); // no overlap
-      (mockPrisma.membershipPeriod.create as ReturnType<typeof vi.fn>).mockResolvedValue(
-        makePeriod()
-      );
+      mockDb.membershipPeriod.findFirst.mockResolvedValue(null); // no open period
+      mockDb.membershipPeriod.findMany.mockResolvedValue([]); // no overlap
+      mockDb.membershipPeriod.create.mockResolvedValue(makePeriod());
 
       const result = await service.create('club-1', 'member-1', {
         joinDate: '2025-01-01',
@@ -63,7 +61,7 @@ describe('MembershipPeriodsService', () => {
 
     it('should throw when open period exists', async () => {
       mockDb.member.findFirst.mockResolvedValue({ id: 'member-1', deletedAt: null });
-      (mockPrisma.membershipPeriod.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockDb.membershipPeriod.findFirst.mockResolvedValue(
         makePeriod() // open period (leaveDate=null)
       );
 
@@ -77,8 +75,8 @@ describe('MembershipPeriodsService', () => {
 
     it('should throw for overlapping periods', async () => {
       mockDb.member.findFirst.mockResolvedValue({ id: 'member-1', deletedAt: null });
-      (mockPrisma.membershipPeriod.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-      (mockPrisma.membershipPeriod.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+      mockDb.membershipPeriod.findFirst.mockResolvedValue(null);
+      mockDb.membershipPeriod.findMany.mockResolvedValue([
         makePeriod({
           joinDate: new Date('2024-01-01'),
           leaveDate: new Date('2025-06-30'),
@@ -96,14 +94,14 @@ describe('MembershipPeriodsService', () => {
 
     it('should create second period after closing first', async () => {
       mockDb.member.findFirst.mockResolvedValue({ id: 'member-1', deletedAt: null });
-      (mockPrisma.membershipPeriod.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null); // no open period
-      (mockPrisma.membershipPeriod.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+      mockDb.membershipPeriod.findFirst.mockResolvedValue(null); // no open period
+      mockDb.membershipPeriod.findMany.mockResolvedValue([
         makePeriod({
           joinDate: new Date('2024-01-01'),
           leaveDate: new Date('2024-12-31'), // closed
         }),
       ]);
-      (mockPrisma.membershipPeriod.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockDb.membershipPeriod.create.mockResolvedValue(
         makePeriod({ id: 'period-2', joinDate: new Date('2025-06-01') })
       );
 
@@ -129,11 +127,11 @@ describe('MembershipPeriodsService', () => {
 
   describe('closePeriod()', () => {
     it('should close open period with leaveDate', async () => {
-      (mockPrisma.membershipPeriod.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockDb.membershipPeriod.findUnique.mockResolvedValue(
         makePeriod({ member: { id: 'member-1' } })
       );
       mockDb.member.findFirst.mockResolvedValue({ id: 'member-1', deletedAt: null });
-      (mockPrisma.membershipPeriod.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockDb.membershipPeriod.update.mockResolvedValue(
         makePeriod({ leaveDate: new Date('2025-12-31') })
       );
 
@@ -143,7 +141,7 @@ describe('MembershipPeriodsService', () => {
     });
 
     it('should throw when leaveDate before joinDate', async () => {
-      (mockPrisma.membershipPeriod.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockDb.membershipPeriod.findUnique.mockResolvedValue(
         makePeriod({
           joinDate: new Date('2025-06-01'),
           member: { id: 'member-1' },
@@ -151,13 +149,13 @@ describe('MembershipPeriodsService', () => {
       );
       mockDb.member.findFirst.mockResolvedValue({ id: 'member-1', deletedAt: null });
 
-      await expect(
-        service.closePeriod('club-1', 'period-1', '2025-01-01')
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.closePeriod('club-1', 'period-1', '2025-01-01')).rejects.toThrow(
+        BadRequestException
+      );
     });
 
     it('should throw when period already closed', async () => {
-      (mockPrisma.membershipPeriod.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockDb.membershipPeriod.findUnique.mockResolvedValue(
         makePeriod({
           leaveDate: new Date('2025-06-30'),
           member: { id: 'member-1' },
@@ -165,9 +163,9 @@ describe('MembershipPeriodsService', () => {
       );
       mockDb.member.findFirst.mockResolvedValue({ id: 'member-1', deletedAt: null });
 
-      await expect(
-        service.closePeriod('club-1', 'period-1', '2025-12-31')
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.closePeriod('club-1', 'period-1', '2025-12-31')).rejects.toThrow(
+        BadRequestException
+      );
     });
   });
 });

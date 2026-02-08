@@ -240,9 +240,9 @@ describe('HouseholdsService', () => {
     it('should throw for non-existent household', async () => {
       mockDb.household.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.dissolve('club-1', 'household-1', 'user-1')
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.dissolve('club-1', 'household-1', 'user-1')).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 
@@ -262,12 +262,7 @@ describe('HouseholdsService', () => {
       mockDb.member.findMany.mockResolvedValue([{ id: 'member-2', householdId: 'household-1' }]);
       mockDb.member.update.mockResolvedValue({});
 
-      const result = await service.syncAddresses(
-        'club-1',
-        'household-1',
-        'member-1',
-        ['member-2']
-      );
+      const result = await service.syncAddresses('club-1', 'household-1', 'member-1', ['member-2']);
 
       expect(result.updatedMemberIds).toContain('member-2');
       expect(mockDb.member.update).toHaveBeenCalledWith(

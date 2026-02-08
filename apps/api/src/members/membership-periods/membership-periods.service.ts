@@ -35,7 +35,7 @@ export class MembershipPeriodsService {
       throw new NotFoundException('Mitglied nicht gefunden');
     }
 
-    const periods = await this.prisma.membershipPeriod.findMany({
+    const periods = await db.membershipPeriod.findMany({
       where: { memberId },
       orderBy: { joinDate: 'desc' },
     });
@@ -60,7 +60,7 @@ export class MembershipPeriodsService {
     }
 
     // Check for open period (leaveDate is null)
-    const openPeriod = await this.prisma.membershipPeriod.findFirst({
+    const openPeriod = await db.membershipPeriod.findFirst({
       where: { memberId, leaveDate: null },
     });
 
@@ -71,9 +71,9 @@ export class MembershipPeriodsService {
     }
 
     // Validate no overlap with existing periods
-    await this.validateNoOverlap(memberId, dto.joinDate, dto.leaveDate);
+    await this.validateNoOverlap(db, memberId, dto.joinDate, dto.leaveDate);
 
-    const period = await this.prisma.membershipPeriod.create({
+    const period = await db.membershipPeriod.create({
       data: {
         memberId,
         joinDate: new Date(dto.joinDate),
@@ -96,7 +96,7 @@ export class MembershipPeriodsService {
   async update(clubId: string, periodId: string, dto: UpdatePeriodDto) {
     const db = this.prisma.forClub(clubId);
 
-    const period = await this.prisma.membershipPeriod.findUnique({
+    const period = await db.membershipPeriod.findUnique({
       where: { id: periodId },
       include: { member: true },
     });
@@ -118,7 +118,7 @@ export class MembershipPeriodsService {
     const newLeaveDate = dto.leaveDate ?? toDateString(period.leaveDate) ?? undefined;
 
     // Validate no overlap (exclude current period)
-    await this.validateNoOverlap(period.memberId, newJoinDate, newLeaveDate, periodId);
+    await this.validateNoOverlap(db, period.memberId, newJoinDate, newLeaveDate, periodId);
 
     const updateData: Record<string, unknown> = {};
     if (dto.joinDate !== undefined) updateData.joinDate = new Date(dto.joinDate);
@@ -126,7 +126,7 @@ export class MembershipPeriodsService {
     if (dto.membershipType !== undefined) updateData.membershipType = dto.membershipType;
     if (dto.notes !== undefined) updateData.notes = dto.notes;
 
-    const updated = await this.prisma.membershipPeriod.update({
+    const updated = await db.membershipPeriod.update({
       where: { id: periodId },
       data: updateData,
     });
@@ -140,7 +140,7 @@ export class MembershipPeriodsService {
   async closePeriod(clubId: string, periodId: string, leaveDate: string) {
     const db = this.prisma.forClub(clubId);
 
-    const period = await this.prisma.membershipPeriod.findUnique({
+    const period = await db.membershipPeriod.findUnique({
       where: { id: periodId },
       include: { member: true },
     });
@@ -167,7 +167,7 @@ export class MembershipPeriodsService {
       throw new BadRequestException('Austrittsdatum darf nicht vor dem Eintrittsdatum liegen');
     }
 
-    const updated = await this.prisma.membershipPeriod.update({
+    const updated = await db.membershipPeriod.update({
       where: { id: periodId },
       data: { leaveDate: leaveDateObj },
     });
@@ -181,12 +181,13 @@ export class MembershipPeriodsService {
    * Validate that a new/updated period does not overlap with existing periods.
    */
   private async validateNoOverlap(
+    db: ReturnType<PrismaService['forClub']>,
     memberId: string,
     joinDate: string,
     leaveDate?: string,
     excludePeriodId?: string
   ) {
-    const existingPeriods = await this.prisma.membershipPeriod.findMany({
+    const existingPeriods = await db.membershipPeriod.findMany({
       where: {
         memberId,
         ...(excludePeriodId && { id: { not: excludePeriodId } }),

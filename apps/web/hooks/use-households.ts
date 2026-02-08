@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
+import type { HouseholdResponse, HouseholdMemberResponse, UpdateHousehold } from '@ktb/shared';
 import { memberKeys } from './use-members';
 
 // ============================================================================
@@ -13,37 +14,24 @@ export const householdKeys = {
 };
 
 // ============================================================================
-// Types
+// Types - shared types imported from @ktb/shared where applicable
 // ============================================================================
 
-interface HouseholdMember {
-  id: string;
-  firstName: string;
-  lastName: string;
-  householdRole: string | null;
-  memberNumber: string;
-}
+/** Household member (re-exported from @ktb/shared) */
+export type HouseholdMember = HouseholdMemberResponse;
 
-interface Household {
-  id: string;
-  clubId: string;
-  name: string;
-  primaryContactId: string | null;
-  members: HouseholdMember[];
-  createdAt: string;
-  updatedAt: string;
-}
+/** Household entity (re-exported from @ktb/shared) */
+export type Household = HouseholdResponse;
 
+// API-specific input types not in shared schemas (shapes differ from Zod schemas)
 interface CreateHouseholdInput {
   name: string;
   primaryContactId?: string;
   memberIds?: string[];
 }
 
-interface UpdateHouseholdInput {
-  name?: string;
-  primaryContactId?: string;
-}
+/** Update household input (re-exported from @ktb/shared) */
+type UpdateHouseholdInput = UpdateHousehold;
 
 interface AddHouseholdMemberInput {
   householdId: string;
@@ -281,4 +269,4 @@ export function useDissolveHousehold(slug: string) {
   });
 }
 
-export type { Household, HouseholdMember, CreateHouseholdInput };
+export type { CreateHouseholdInput };

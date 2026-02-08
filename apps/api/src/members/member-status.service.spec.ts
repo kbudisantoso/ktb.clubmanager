@@ -227,7 +227,7 @@ describe('MemberStatusService', () => {
 
       expect(result.updated).toContain('member-1');
       expect(result.skipped).toHaveLength(1);
-      expect(result.skipped[0].id).toBe('member-2');
+      expect(result.skipped[0]?.id).toBe('member-2');
     });
   });
 });

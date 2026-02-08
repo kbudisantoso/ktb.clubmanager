@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
+import type { MembershipPeriodResponse } from '@ktb/shared';
 import { memberKeys } from './use-members';
 
 // ============================================================================
@@ -12,20 +13,13 @@ export const periodKeys = {
 };
 
 // ============================================================================
-// Types
+// Types - response type from @ktb/shared, input types API-specific
 // ============================================================================
 
-interface MembershipPeriod {
-  id: string;
-  memberId: string;
-  joinDate: string | null;
-  leaveDate: string | null;
-  membershipType: string;
-  notes: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-}
+/** Membership period entity (re-exported from @ktb/shared) */
+export type MembershipPeriod = MembershipPeriodResponse;
 
+// API-specific input types (shapes differ from shared schemas: include URL params like periodId)
 interface CreatePeriodInput {
   joinDate: string;
   membershipType: string;
@@ -165,4 +159,4 @@ export function useClosePeriod(slug: string, memberId: string) {
   });
 }
 
-export type { MembershipPeriod, CreatePeriodInput };
+export type { CreatePeriodInput };

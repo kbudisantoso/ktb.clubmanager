@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
+import type { MemberListItem } from '@/components/members/member-list-table';
 
 // ============================================================================
 // Query Key Factory
@@ -18,33 +19,9 @@ export const memberKeys = {
 // Types
 // ============================================================================
 
-interface MemberListItem {
-  id: string;
-  clubId: string;
-  memberNumber: string;
-  personType: string;
-  salutation: string | null;
-  title: string | null;
-  firstName: string;
-  lastName: string;
-  nickname: string | null;
-  organizationName: string | null;
-  email: string | null;
-  phone: string | null;
-  mobile: string | null;
-  status: string;
-  householdId: string | null;
-  householdRole: string | null;
-  household: { id: string; name: string } | null;
-  membershipPeriods: {
-    id: string;
-    joinDate: string | null;
-    leaveDate: string | null;
-    membershipType: string;
-  }[];
-  createdAt: string | null;
-  updatedAt: string | null;
-}
+// MemberListItem imported from @/components/members/member-list-table (canonical location)
+// This type includes nested relations (household, membershipPeriods) that differ
+// from the flat MemberResponse schema in @ktb/shared.
 
 interface PaginatedMembersResponse {
   items: MemberListItem[];
@@ -52,6 +29,11 @@ interface PaginatedMembersResponse {
   hasMore: boolean;
   totalCount: number;
 }
+
+// Input types kept local — shapes differ from @ktb/shared schemas:
+// - CreateMemberInput uses loose string types (API does validation)
+// - UpdateMemberInput/ChangeStatusInput include `id` (URL param, not in shared schemas)
+// - BulkChangeStatusInput is API-specific (no shared schema equivalent)
 
 interface CreateMemberInput {
   personType?: string;
