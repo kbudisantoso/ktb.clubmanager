@@ -55,8 +55,6 @@
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "@prisma/client-runtime-utils": "^7.3.0",
-    "@sindresorhus/slugify": "^3.0.0",
-    "nanoid": "^5.1.6",
     "pg": "^8.18.0"
   },
   "simple-git-hooks": {
