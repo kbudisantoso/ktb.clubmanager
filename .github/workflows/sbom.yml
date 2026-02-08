@@ -1,0 +1,62 @@
+name: SBOM & VEX
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  sbom:
+    name: Generate SBOM & VEX
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate SBOM (CycloneDX)
+        run: pnpm dlx @cyclonedx/cdxgen -o sbom.json --spec-version 1.6
+
+      - name: Install Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Generate VEX document
+        run: grype sbom:sbom.json -o cyclonedx-json > vex.json || true
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx
+          path: sbom.json
+          retention-days: 90
+
+      - name: Upload VEX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vex-cyclonedx
+          path: vex.json
+          retention-days: 90
+
+      - name: Attest SBOM (on tag/release)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/attest-sbom@v3
+        with:
+          subject-path: sbom.json
+          sbom-path: sbom.json
