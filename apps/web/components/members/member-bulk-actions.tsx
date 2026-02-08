@@ -272,38 +272,35 @@ export function MemberBulkActions({
   const handleBulkEditSubmit = useCallback(async () => {
     if (!editField || !editValue) return;
 
-    try {
-      for (const member of selectedMembers) {
-        await updateMember.mutateAsync({
+    const fieldLabel = BULK_EDIT_FIELDS.find((f) => f.value === editField)?.label ?? editField;
+
+    const results = await Promise.allSettled(
+      selectedMembers.map((member) =>
+        updateMember.mutateAsync({
           id: member.id,
           [editField]: editValue,
-        });
-      }
+        })
+      )
+    );
 
-      const fieldLabel = BULK_EDIT_FIELDS.find((f) => f.value === editField)?.label ?? editField;
+    const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
 
+    if (failed > 0) {
       toast({
-        title: `${fieldLabel} fuer ${selectedMembers.length} Mitglieder geaendert`,
-        action: {
-          label: 'Rueckgaengig',
-          onClick: async () => {
-            // Undo is complex for bulk edit — notify user
-            toast({ title: 'Bitte manuell zuruecksetzen' });
-          },
-        },
+        title: `${succeeded} erfolgreich, ${failed} fehlgeschlagen`,
+        variant: failed === results.length ? 'destructive' : 'default',
       });
-
-      setBulkEditDialogOpen(false);
-      setEditField('');
-      setEditValue('');
-      onClearSelection();
-    } catch (err) {
+    } else {
       toast({
-        title: 'Fehler bei der Massenbearbeitung',
-        description: err instanceof Error ? err.message : 'Unbekannter Fehler',
-        variant: 'destructive',
+        title: `${fieldLabel} fuer ${succeeded} Mitglieder geaendert`,
       });
     }
+
+    setBulkEditDialogOpen(false);
+    setEditField('');
+    setEditValue('');
+    onClearSelection();
   }, [editField, editValue, selectedMembers, updateMember, toast, onClearSelection]);
 
   if (count === 0) return null;
