@@ -31,7 +31,8 @@ export class SystemUserService implements OnModuleInit {
     }
 
     this.systemUserId = systemUser.id;
-    this.logger.log(`System user resolved: ${systemUser.email} (${systemUser.id})`);
+    // SEC-013: Log ID only — no PII in application logs
+    this.logger.log(`System user resolved: ${systemUser.id}`);
   }
 
   getSystemUserId(): string {
