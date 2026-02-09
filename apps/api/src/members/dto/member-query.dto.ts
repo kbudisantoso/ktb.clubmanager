@@ -4,12 +4,13 @@ import {
   IsOptional,
   IsEnum,
   IsInt,
+  IsArray,
   Min,
   Max,
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { MemberStatusDto } from './create-member.dto.js';
 
 export enum MemberSortBy {
@@ -57,12 +58,39 @@ export class MemberQueryDto {
   limit?: number;
 
   @ApiPropertyOptional({
-    description: 'Filter by member status',
-    enum: MemberStatusDto,
+    description: 'Filter by member status (comma-separated for multi-select)',
+    example: 'ACTIVE,PENDING',
   })
-  @IsEnum(MemberStatusDto)
   @IsOptional()
-  status?: MemberStatusDto;
+  @Transform(({ value }) => {
+    if (!value) return undefined;
+    if (Array.isArray(value)) return value;
+    return typeof value === 'string' ? value.split(',') : [value];
+  })
+  @IsArray()
+  @IsEnum(MemberStatusDto, { each: true })
+  status?: MemberStatusDto[];
+
+  @ApiPropertyOptional({
+    description:
+      'Filter by household: HAS (has any household), NONE (no household), or comma-separated household IDs',
+    example: 'HAS',
+  })
+  @IsString()
+  @IsOptional()
+  householdFilter?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter by membership period year — returns members who had an active membership period overlapping this year',
+    example: '2025',
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
+  @IsInt()
+  @Min(1900)
+  @Max(2100)
+  periodYear?: number;
 
   @ApiPropertyOptional({
     description: 'Sort by field',
