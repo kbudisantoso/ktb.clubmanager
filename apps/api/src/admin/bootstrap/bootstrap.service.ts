@@ -27,7 +27,8 @@ export class BootstrapService {
     // Case 1: SUPER_ADMIN_EMAIL is set and matches this user
     if (superAdminEmail && email.toLowerCase() === superAdminEmail) {
       await this.promoteToSuperAdmin(userId);
-      this.logger.log(`User ${email} promoted to Super Admin (matched SUPER_ADMIN_EMAIL)`);
+      // SEC-013: Log userId instead of email to avoid PII in application logs
+      this.logger.log(`User ${userId} promoted to Super Admin (matched SUPER_ADMIN_EMAIL)`);
       return true;
     }
 
@@ -45,7 +46,8 @@ export class BootstrapService {
 
         if (userCount === 0) {
           await this.promoteToSuperAdmin(userId);
-          this.logger.log(`User ${email} promoted to Super Admin (first user)`);
+          // SEC-013: Log userId instead of email to avoid PII in application logs
+          this.logger.log(`User ${userId} promoted to Super Admin (first user)`);
           return true;
         }
       }
@@ -57,6 +59,9 @@ export class BootstrapService {
   /**
    * Promotes a user to Super Admin.
    *
+   * After promotion, all existing sessions for this user are revoked
+   * to force re-authentication with elevated privileges (SEC-009).
+   *
    * @param userId - User ID to promote
    */
   async promoteToSuperAdmin(userId: string): Promise<void> {
@@ -64,6 +69,16 @@ export class BootstrapService {
       where: { id: userId },
       data: { isSuperAdmin: true },
     });
+
+    // SEC-009: Revoke all sessions after privilege escalation
+    // Forces re-authentication so the new session reflects elevated privileges.
+    // This prevents session fixation attacks where a pre-escalation session
+    // could be reused without the security context being refreshed.
+    await this.prisma.session.deleteMany({
+      where: { userId },
+    });
+
+    this.logger.log(`All sessions revoked for user ${userId} after Super Admin promotion`);
   }
 
   /**

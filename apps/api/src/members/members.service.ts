@@ -10,7 +10,7 @@ import { NumberRangesService } from '../number-ranges/number-ranges.service.js';
 import type { CreateMemberDto } from './dto/create-member.dto.js';
 import type { UpdateMemberDto } from './dto/update-member.dto.js';
 import type { MemberQueryDto } from './dto/member-query.dto.js';
-import type { Prisma } from '../../../../prisma/generated/client/index.js';
+import { Prisma } from '../../../../prisma/generated/client/index.js';
 
 /**
  * Helper to format a Date to YYYY-MM-DD string.
@@ -33,6 +33,15 @@ function toISOStringOrNull(date: Date | null | undefined): string | null {
   return date.toISOString();
 }
 
+/** Safe mapping of sortBy values to Prisma column names (defense-in-depth). */
+const SORT_FIELD_MAP: Record<string, string> = {
+  lastName: 'lastName',
+  firstName: 'firstName',
+  memberNumber: 'memberNumber',
+  status: 'status',
+  createdAt: 'createdAt',
+};
+
 @Injectable()
 export class MembersService {
   private readonly logger = new Logger(MembersService.name);
@@ -48,7 +57,7 @@ export class MembersService {
   async findAll(clubId: string, query: MemberQueryDto) {
     const db = this.prisma.forClub(clubId);
     const limit = query.limit ?? 50;
-    const sortBy = query.sortBy ?? 'lastName';
+    const sortBy = SORT_FIELD_MAP[query.sortBy ?? 'lastName'] ?? 'lastName';
     const sortOrder = query.sortOrder ?? 'asc';
 
     // Build WHERE clause
@@ -224,9 +233,13 @@ export class MembersService {
 
   /**
    * Update a member's fields.
+   * Uses optimistic locking via version field to prevent concurrent update races.
    */
   async update(clubId: string, id: string, dto: UpdateMemberDto, _userId: string) {
     const db = this.prisma.forClub(clubId);
+
+    // Extract version for optimistic locking
+    const { version, ...dtoFields } = dto;
 
     // Check member exists and is not deleted
     const existing = await db.member.findFirst({
@@ -238,12 +251,14 @@ export class MembersService {
     }
 
     // If memberNumber changed, validate uniqueness
-    if (dto.memberNumber && dto.memberNumber !== existing.memberNumber) {
+    if (dtoFields.memberNumber && dtoFields.memberNumber !== existing.memberNumber) {
       const duplicate = await db.member.findFirst({
-        where: { memberNumber: dto.memberNumber, id: { not: id } },
+        where: { memberNumber: dtoFields.memberNumber, id: { not: id } },
       });
       if (duplicate) {
-        throw new ConflictException(`Mitgliedsnummer "${dto.memberNumber}" ist bereits vergeben`);
+        throw new ConflictException(
+          `Mitgliedsnummer "${dtoFields.memberNumber}" ist bereits vergeben`
+        );
       }
     }
 
@@ -276,23 +291,32 @@ export class MembersService {
     ] as const;
 
     for (const field of fields) {
-      if (dto[field] !== undefined) {
-        updateData[field] = dto[field];
+      if (dtoFields[field] !== undefined) {
+        updateData[field] = dtoFields[field];
       }
     }
 
-    const updated = await db.member.update({
-      where: { id },
-      data: updateData,
-      include: {
-        household: { select: { id: true, name: true } },
-        membershipPeriods: {
-          orderBy: { joinDate: 'desc' },
+    try {
+      const updated = await db.member.update({
+        where: { id, version },
+        data: { ...updateData, version: { increment: 1 } },
+        include: {
+          household: { select: { id: true, name: true } },
+          membershipPeriods: {
+            orderBy: { joinDate: 'desc' },
+          },
         },
-      },
-    });
+      });
 
-    return this.formatMemberResponse(updated);
+      return this.formatMemberResponse(updated);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new ConflictException(
+          'Der Datensatz wurde zwischenzeitlich geaendert. Bitte lade die Daten neu und versuche es erneut.'
+        );
+      }
+      throw error;
+    }
   }
 
   /**
@@ -464,6 +488,13 @@ export class MembersService {
       },
     });
 
+    // SEC-021: Clear MembershipPeriod notes (may contain PII)
+    // MembershipPeriod dates (joinDate, leaveDate) are retained as statistical data.
+    await db.membershipPeriod.updateMany({
+      where: { memberId: id },
+      data: { notes: null },
+    });
+
     this.logger.log(`Member ${id} anonymized by user ${userId}`);
 
     return this.formatMemberResponse(updated);
@@ -530,6 +561,7 @@ export class MembersService {
       deletedAt: toISOStringOrNull(member.deletedAt),
       deletedBy: member.deletedBy ?? null,
       deletionReason: member.deletionReason ?? null,
+      version: member.version ?? 0,
       createdAt: toISOStringOrNull(member.createdAt),
       updatedAt: toISOStringOrNull(member.updatedAt),
     };

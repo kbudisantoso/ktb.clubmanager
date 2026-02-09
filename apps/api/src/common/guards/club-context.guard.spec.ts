@@ -228,7 +228,6 @@ describe('ClubContextGuard', () => {
         .mockReturnValueOnce(null); // RequireRoles
 
       mockPrisma.clubUser.findFirst.mockResolvedValue(null);
-      mockPrisma.club.findFirst.mockResolvedValue(null);
 
       const context = createMockContext({
         userId: 'user-123',
@@ -240,21 +239,21 @@ describe('ClubContextGuard', () => {
       );
     });
 
-    it('should throw ForbiddenException when no membership', async () => {
+    it('should throw NotFoundException when no membership (SEC-012: no info leakage)', async () => {
       mockReflector.getAllAndOverride
         .mockReturnValueOnce(true) // RequireClubContext
         .mockReturnValueOnce(null); // RequireRoles
 
       mockPrisma.clubUser.findFirst.mockResolvedValue(null);
-      mockPrisma.club.findFirst.mockResolvedValue({ id: 'club-1' });
 
       const context = createMockContext({
         userId: 'user-123',
         params: { slug: 'test-club' },
       });
 
+      // SEC-012: Returns 404 even when club exists but user has no access
       await expect(guard.canActivate(context)).rejects.toThrow(
-        new ForbiddenException('Kein Zugriff auf diesen Verein')
+        new NotFoundException('Verein nicht gefunden')
       );
     });
 

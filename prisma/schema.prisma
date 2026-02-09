@@ -495,6 +495,9 @@ model Member {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// Optimistic locking version (incremented on every update)
+  version Int @default(0)
+
   // Relations
   /// Membership periods (supports re-entry with multiple periods)
   membershipPeriods MembershipPeriod[]
@@ -672,6 +675,9 @@ model User {
 
   /// System-wide super admin flag (first user gets this automatically)
   isSuperAdmin Boolean @default(false)
+
+  /// Whether this is the system user (for automated actions like scheduler)
+  isSystemUser Boolean @default(false)
 
   /// Terms & Conditions acceptance timestamp
   termsAcceptedAt DateTime?

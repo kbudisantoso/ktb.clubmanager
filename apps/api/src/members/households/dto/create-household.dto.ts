@@ -4,12 +4,12 @@ import {
   IsOptional,
   IsArray,
   IsEnum,
-  IsObject,
-  IsNotEmpty,
   MinLength,
   MaxLength,
   ArrayMinSize,
+  ArrayMaxSize,
 } from 'class-validator';
+import { IsHouseholdRoleMap } from '../validators/household-roles.validator.js';
 
 export enum HouseholdRoleDto {
   HEAD = 'HEAD',
@@ -37,6 +37,7 @@ export class CreateHouseholdDto {
   })
   @IsArray()
   @ArrayMinSize(1, { message: 'Mindestens ein Mitglied muss zugeordnet werden' })
+  @ArrayMaxSize(500, { message: 'Maximal 500 Mitglieder pro Haushalt' })
   @IsString({ each: true })
   memberIds!: string[];
 
@@ -44,8 +45,7 @@ export class CreateHouseholdDto {
     description: 'Roles for each member (key: memberId, value: HouseholdRole)',
     example: { memberId1: 'HEAD', memberId2: 'SPOUSE' },
   })
-  @IsObject({ message: 'Rollen muessen als Objekt angegeben werden' })
-  @IsNotEmpty({ message: 'Mindestens eine Rolle muss zugeordnet werden' })
+  @IsHouseholdRoleMap({ message: 'Jeder Rollenwert muss HEAD, SPOUSE, CHILD oder OTHER sein' })
   roles!: Record<string, HouseholdRoleDto>;
 
   @ApiPropertyOptional({
@@ -80,6 +80,7 @@ export class SyncAddressesDto {
   })
   @IsArray()
   @ArrayMinSize(1, { message: 'Mindestens ein Zielmitglied angeben' })
+  @ArrayMaxSize(500, { message: 'Maximal 500 Zielmitglieder' })
   @IsString({ each: true })
   targetMemberIds!: string[];
 }

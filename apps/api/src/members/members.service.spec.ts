@@ -3,6 +3,7 @@ import { MembersService } from './members.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import type { NumberRangesService } from '../number-ranges/number-ranges.service.js';
 import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Prisma } from '../../../../prisma/generated/client/index.js';
 
 // Mock forClub() pattern — returns scoped DB mock
 const mockDb = {
@@ -13,6 +14,9 @@ const mockDb = {
     update: vi.fn(),
     delete: vi.fn(),
     count: vi.fn(),
+  },
+  membershipPeriod: {
+    updateMany: vi.fn(),
   },
 };
 
@@ -69,6 +73,7 @@ function makeMember(overrides: Record<string, unknown> = {}) {
     deletedAt: null,
     deletedBy: null,
     deletionReason: null,
+    version: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -251,25 +256,47 @@ describe('MembersService', () => {
   });
 
   describe('update()', () => {
-    it('should update member fields', async () => {
+    it('should update member fields with optimistic locking', async () => {
       mockDb.member.findFirst.mockResolvedValue(makeMember());
-      mockDb.member.update.mockResolvedValue(makeMember({ lastName: 'Updated' }));
+      mockDb.member.update.mockResolvedValue(makeMember({ lastName: 'Updated', version: 1 }));
 
       const result = await service.update(
         'club-1',
         'member-1',
-        { lastName: 'Updated' } as never,
+        { lastName: 'Updated', version: 0 } as never,
         'user-1'
       );
 
       expect(result.lastName).toBe('Updated');
+      expect(mockDb.member.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'member-1', version: 0 },
+          data: expect.objectContaining({
+            version: { increment: 1 },
+          }),
+        })
+      );
+    });
+
+    it('should throw ConflictException on version mismatch (P2025)', async () => {
+      mockDb.member.findFirst.mockResolvedValue(makeMember());
+      mockDb.member.update.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Record not found', {
+          code: 'P2025',
+          clientVersion: '0.0.0',
+        })
+      );
+
+      await expect(
+        service.update('club-1', 'member-1', { lastName: 'Test', version: 99 } as never, 'user-1')
+      ).rejects.toThrow(ConflictException);
     });
 
     it('should throw NotFoundException for non-existent member', async () => {
       mockDb.member.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.update('club-1', 'member-1', { lastName: 'Test' } as never, 'user-1')
+        service.update('club-1', 'member-1', { lastName: 'Test', version: 0 } as never, 'user-1')
       ).rejects.toThrow(NotFoundException);
     });
   });

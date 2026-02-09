@@ -15,17 +15,16 @@ export interface TierFeatures {
 
 /**
  * Club data stored in the client-side context.
+ * Only non-sensitive display data is persisted to localStorage.
+ * Permissions, roles, and features are fetched via TanStack Query (see use-club-permissions.ts).
+ * Roles are populated in-memory by useMyClubsQuery() but stripped from localStorage (SEC-031).
  */
 export interface ClubContext {
   id: string;
   name: string;
   slug: string;
-  /** User's roles in this club (multiple roles possible) */
-  roles: string[];
-  /** Permissions derived from roles (set after fetching /my-permissions) */
-  permissions: string[];
-  /** Tier features available to this club */
-  features: TierFeatures;
+  /** User's roles in this club — in-memory only, NOT persisted to localStorage (SEC-031) */
+  roles?: string[];
   avatarUrl?: string;
   avatarInitials?: string;
   avatarColor?: string;
@@ -52,8 +51,6 @@ interface ClubState {
   clearActiveClub: () => void;
   setClubs: (clubs: ClubContext[]) => void;
   clearClubs: () => void;
-  /** Update permissions and features for a specific club */
-  setClubPermissions: (slug: string, permissions: string[], features: TierFeatures) => void;
 }
 
 /**
@@ -70,18 +67,16 @@ export const useClubStore = create<ClubState>()(
       clearActiveClub: () => set({ activeClubSlug: null }),
       setClubs: (clubs) => set({ clubs, lastFetched: Date.now() }),
       clearClubs: () => set({ clubs: [], lastFetched: null, activeClubSlug: null }),
-      setClubPermissions: (slug, permissions, features) =>
-        set((state) => ({
-          clubs: state.clubs.map((c) => (c.slug === slug ? { ...c, permissions, features } : c)),
-        })),
     }),
     {
       name: 'club-context',
       storage: createJSONStorage(() => localStorage),
-      // Only persist certain fields
+      // SEC-031: Only persist non-sensitive UI state
+      // Permissions, roles, and features are fetched via TanStack Query (not persisted)
       partialize: (state) => ({
         activeClubSlug: state.activeClubSlug,
-        clubs: state.clubs,
+        // Strip roles from persistence — re-fetched via API on mount
+        clubs: state.clubs.map(({ roles: _roles, ...rest }) => rest),
         lastFetched: state.lastFetched,
       }),
     }

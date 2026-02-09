@@ -6,22 +6,11 @@ import {
   useMyClubs,
   useNeedsClubRefresh,
   type ClubContext,
-  type TierFeatures,
 } from './club-store';
 
-/** Default tier features for test fixtures */
-const defaultFeatures: TierFeatures = { sepa: true, reports: true, bankImport: true };
-
-/** Helper to create ClubContext with default permissions/features */
-function createTestClub(
-  partial: Omit<ClubContext, 'permissions' | 'features'> &
-    Partial<Pick<ClubContext, 'permissions' | 'features'>>
-): ClubContext {
-  return {
-    ...partial,
-    permissions: partial.permissions ?? [],
-    features: partial.features ?? defaultFeatures,
-  };
+/** Helper to create ClubContext */
+function createTestClub(partial: ClubContext): ClubContext {
+  return { ...partial };
 }
 
 describe('club-store', () => {
@@ -231,6 +220,46 @@ describe('club-store', () => {
       expect(result.current).toHaveLength(2);
       expect(result.current[0].name).toBe('Club One');
       expect(result.current[1].name).toBe('Club Two');
+    });
+  });
+
+  describe('localStorage persistence (SEC-031)', () => {
+    it('should NOT persist roles to localStorage', () => {
+      act(() => {
+        useClubStore.getState().setClubs([
+          createTestClub({ id: '1', name: 'Club One', slug: 'club-one', roles: ['OWNER'] }),
+          createTestClub({
+            id: '2',
+            name: 'Club Two',
+            slug: 'club-two',
+            roles: ['MEMBER', 'TREASURER'],
+          }),
+        ]);
+      });
+
+      // Read persisted state from localStorage
+      const stored = JSON.parse(localStorage.getItem('club-context') ?? '{}');
+      const persistedClubs = stored?.state?.clubs ?? [];
+
+      // Verify roles are stripped from persistence
+      expect(persistedClubs).toHaveLength(2);
+      expect(persistedClubs[0]).not.toHaveProperty('roles');
+      expect(persistedClubs[1]).not.toHaveProperty('roles');
+      // Verify non-sensitive data is still persisted
+      expect(persistedClubs[0].name).toBe('Club One');
+      expect(persistedClubs[0].slug).toBe('club-one');
+    });
+
+    it('should still have roles available in memory', () => {
+      act(() => {
+        useClubStore
+          .getState()
+          .setClubs([createTestClub({ id: '1', name: 'Club', slug: 'club', roles: ['OWNER'] })]);
+      });
+
+      // In-memory state should still have roles
+      const clubs = useClubStore.getState().clubs;
+      expect(clubs[0].roles).toEqual(['OWNER']);
     });
   });
 

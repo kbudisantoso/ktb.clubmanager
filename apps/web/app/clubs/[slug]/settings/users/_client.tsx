@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
 import { useActiveClub } from '@/lib/club-store';
 import { useHasPermission } from '@/lib/permission-hooks';
+import { useClubPermissions } from '@/lib/club-permissions';
 import { AccessDenied } from '@/components/access-denied';
 import { UserManagementTable } from '@/components/club/user-management-table';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ export function UsersSettingsClient() {
   const params = useParams<{ slug: string }>();
   const { data: session } = useSession();
   const activeClub = useActiveClub();
+  const { roles: currentUserRoles } = useClubPermissions();
   const hasPermission = useHasPermission('users:read');
   const [users, setUsers] = useState<ClubUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,7 +134,7 @@ export function UsersSettingsClient() {
           <UserManagementTable
             users={users}
             currentUserId={session?.user?.id ?? ''}
-            currentUserRoles={activeClub?.roles ?? []}
+            currentUserRoles={currentUserRoles}
             clubSlug={params.slug}
             onRefresh={fetchUsers}
           />

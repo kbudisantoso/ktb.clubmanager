@@ -1,21 +1,54 @@
 import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import { json } from 'express';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Security headers via helmet (SEC-003)
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'blob:'],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          frameAncestors: ["'none'"],
+        },
+      },
+      hsts:
+        process.env.NODE_ENV === 'production'
+          ? { maxAge: 31536000, includeSubDomains: true }
+          : false,
+      crossOriginEmbedderPolicy: false,
+    })
+  );
+
+  // Explicit body size limit (SEC-019) — configurable via BODY_LIMIT_MB env var
+  app.use(json({ limit: process.env.BODY_LIMIT_MB ? `${process.env.BODY_LIMIT_MB}mb` : '10mb' }));
+
   // Parse cookies (required for session auth)
   app.use(cookieParser());
 
-  // Enable CORS for frontend
+  // Enable CORS for frontend (SEC-024: reject wildcard at startup)
   const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || [
     'http://localhost:3000',
     'http://localhost:33000',
   ];
+
+  if (allowedOrigins.includes('*')) {
+    throw new Error('CORS_ORIGINS must not contain wildcard (*). Set specific origins.');
+  }
+
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
@@ -32,6 +65,10 @@ async function bootstrap() {
       transform: true,
     })
   );
+
+  // Register global exception filter (catches Prisma errors, returns safe messages)
+  const httpAdapterHost = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost));
 
   // Only enable Swagger in non-production environments
   if (process.env.NODE_ENV !== 'production') {

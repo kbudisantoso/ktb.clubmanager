@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemberSchedulerService } from './member-scheduler.service.js';
 import type { PrismaService } from '../../prisma/prisma.service.js';
+import type { SystemUserService } from '../../common/services/system-user.service.js';
 
 // Transaction client mock — receives all calls inside $transaction
 const mockTx = {
@@ -22,6 +23,11 @@ const mockPrisma = {
   },
   $transaction: vi.fn(async (fn: (tx: typeof mockTx) => Promise<void>) => fn(mockTx)),
 } as unknown as PrismaService;
+
+const SYSTEM_USER_ID = 'system-user-uuid-123';
+const mockSystemUserService = {
+  getSystemUserId: vi.fn(() => SYSTEM_USER_ID),
+} as unknown as SystemUserService;
 
 function makeMemberWithPeriod(overrides: Record<string, unknown> = {}) {
   return {
@@ -46,7 +52,7 @@ describe('MemberSchedulerService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new MemberSchedulerService(mockPrisma);
+    service = new MemberSchedulerService(mockPrisma, mockSystemUserService);
   });
 
   describe('handleCancellationTransitions()', () => {
@@ -63,7 +69,7 @@ describe('MemberSchedulerService', () => {
           where: { id: 'member-1' },
           data: expect.objectContaining({
             status: 'LEFT',
-            statusChangedBy: 'SYSTEM',
+            statusChangedBy: SYSTEM_USER_ID,
           }),
         })
       );

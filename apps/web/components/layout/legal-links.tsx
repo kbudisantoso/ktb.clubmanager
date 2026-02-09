@@ -10,7 +10,30 @@ interface LegalLinkProps {
  * Legal page links that support external URL overrides via env vars.
  * If NEXT_PUBLIC_*_URL is set, links to external site.
  * Otherwise, links to internal routes.
+ *
+ * Runtime URL validation enforces HTTPS in production (SEC-032).
+ * This prevents compromised environment variables from redirecting users to attacker sites.
  */
+
+/**
+ * Validate that a legal URL is safe to render.
+ * In production, only HTTPS URLs are allowed.
+ * In development, both HTTP and HTTPS are allowed.
+ */
+function isValidLegalUrl(url: string | undefined): boolean {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    // In production, enforce HTTPS
+    if (process.env.NODE_ENV === 'production') {
+      return parsed.protocol === 'https:';
+    }
+    // In development, allow http and https
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
 
 function getLegalUrl(page: 'impressum' | 'datenschutz' | 'nutzungsbedingungen'): string {
   const envMap = {
@@ -19,7 +42,14 @@ function getLegalUrl(page: 'impressum' | 'datenschutz' | 'nutzungsbedingungen'):
     nutzungsbedingungen: process.env.NEXT_PUBLIC_NUTZUNGSBEDINGUNGEN_URL,
   };
 
-  return envMap[page] || `/${page}`;
+  const envUrl = envMap[page];
+
+  // Validate external URLs - fall back to internal route if invalid (SEC-032)
+  if (envUrl && !isValidLegalUrl(envUrl)) {
+    return `/${page}`;
+  }
+
+  return envUrl || `/${page}`;
 }
 
 function isExternalUrl(url: string): boolean {

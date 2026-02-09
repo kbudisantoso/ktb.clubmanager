@@ -13,7 +13,6 @@ let mockClubs: Array<{
   slug: string;
   name: string;
   roles: string[];
-  permissions?: string[];
 }> = [];
 vi.mock('@/hooks/use-clubs', () => ({
   useMyClubsQuery: () => ({
@@ -30,9 +29,13 @@ vi.mock('@/lib/club-store', () => ({
   }),
 }));
 
-// Mock fetch permissions
-vi.mock('@/lib/fetch-permissions', () => ({
-  fetchAndStorePermissions: vi.fn(),
+// Mock permissions query (TanStack Query replaces fetch-permissions)
+vi.mock('@/hooks/use-club-permissions', () => ({
+  useClubPermissionsQuery: () => ({
+    data: null,
+    isLoading: false,
+    error: null,
+  }),
 }));
 
 // Mock Header component to simplify tests

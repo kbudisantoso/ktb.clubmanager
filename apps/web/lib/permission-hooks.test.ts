@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import {
   useHasPermission,
   useHasAnyPermission,
@@ -7,7 +7,8 @@ import {
   useCanAccess,
   usePermissions,
 } from './permission-hooks';
-import { useClubStore, type ClubContext, type TierFeatures } from './club-store';
+import { useClubStore } from './club-store';
+import type { TierFeatures } from './club-store';
 
 /** Default tier features for test fixtures */
 const defaultFeatures: TierFeatures = {
@@ -16,17 +17,20 @@ const defaultFeatures: TierFeatures = {
   bankImport: true,
 };
 
-/** Helper to create ClubContext with default permissions/features */
-function createTestClub(
-  partial: Omit<ClubContext, 'permissions' | 'features'> &
-    Partial<Pick<ClubContext, 'permissions' | 'features'>>
-): ClubContext {
-  return {
-    ...partial,
-    permissions: partial.permissions ?? [],
-    features: partial.features ?? defaultFeatures,
-  };
-}
+// Mock the TanStack Query hook
+let mockPermissionsData: {
+  permissions: string[];
+  features: TierFeatures;
+  roles: string[];
+} | null = null;
+
+vi.mock('@/hooks/use-club-permissions', () => ({
+  useClubPermissionsQuery: () => ({
+    data: mockPermissionsData,
+    isLoading: false,
+    error: null,
+  }),
+}));
 
 describe('permission-hooks', () => {
   beforeEach(() => {
@@ -36,6 +40,7 @@ describe('permission-hooks', () => {
       clubs: [],
       lastFetched: null,
     });
+    mockPermissionsData = null;
   });
 
   afterEach(() => {
@@ -44,492 +49,217 @@ describe('permission-hooks', () => {
 
   describe('useHasPermission', () => {
     it('should return false when no active club', () => {
-      const { result, rerender } = renderHook(() => useHasPermission('member:create'));
-
-      // Trigger hydration
-      rerender();
-
+      const { result } = renderHook(() => useHasPermission('member:create'));
       expect(result.current).toBe(false);
     });
 
-    it('should handle missing permissions array gracefully', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          {
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: ['TREASURER'],
-            permissions: undefined as unknown as string[],
-            features: defaultFeatures,
-          },
-        ],
-      });
+    it('should return false when no permissions data', () => {
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = null;
 
-      const { result, rerender } = renderHook(() => useHasPermission('member:create'));
-
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current).toBe(false);
-      });
+      const { result } = renderHook(() => useHasPermission('member:create'));
+      expect(result.current).toBe(false);
     });
 
-    it('should return true when permission exists', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: ['TREASURER'],
-            permissions: ['member:create', 'member:read'],
-          }),
-        ],
-      });
+    it('should return true when permission exists', () => {
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = {
+        permissions: ['member:create', 'member:read'],
+        features: defaultFeatures,
+        roles: ['TREASURER'],
+      };
 
-      const { result, rerender } = renderHook(() => useHasPermission('member:create'));
-
-      // Trigger hydration
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current).toBe(true);
-      });
+      const { result } = renderHook(() => useHasPermission('member:create'));
+      expect(result.current).toBe(true);
     });
 
-    it('should return false when permission missing', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: ['MEMBER'],
-            permissions: ['member:read'],
-          }),
-        ],
-      });
+    it('should return false when permission missing', () => {
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = {
+        permissions: ['member:read'],
+        features: defaultFeatures,
+        roles: ['MEMBER'],
+      };
 
-      const { result, rerender } = renderHook(() => useHasPermission('member:create'));
-
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current).toBe(false);
-      });
-    });
-
-    it('should return false when active club not in clubs array', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'nonexistent-club',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: ['OWNER'],
-            permissions: ['member:create'],
-          }),
-        ],
-      });
-
-      const { result, rerender } = renderHook(() => useHasPermission('member:create'));
-
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current).toBe(false);
-      });
+      const { result } = renderHook(() => useHasPermission('member:create'));
+      expect(result.current).toBe(false);
     });
   });
 
   describe('useHasAnyPermission', () => {
     it('should return false when no active club', () => {
-      const { result, rerender } = renderHook(() =>
-        useHasAnyPermission(['member:create', 'member:read'])
-      );
-
-      rerender();
-
+      const { result } = renderHook(() => useHasAnyPermission(['member:create', 'member:read']));
       expect(result.current).toBe(false);
     });
 
-    it('should return true when any permission matches', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: ['MEMBER'],
-            permissions: ['member:read'],
-          }),
-        ],
-      });
+    it('should return true when any permission matches', () => {
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = {
+        permissions: ['member:read'],
+        features: defaultFeatures,
+        roles: ['MEMBER'],
+      };
 
-      const { result, rerender } = renderHook(() =>
-        useHasAnyPermission(['member:read', 'member:create'])
-      );
-
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current).toBe(true);
-      });
+      const { result } = renderHook(() => useHasAnyPermission(['member:read', 'member:create']));
+      expect(result.current).toBe(true);
     });
 
-    it('should return false when no permissions match', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: ['MEMBER'],
-            permissions: ['dashboard:read'],
-          }),
-        ],
-      });
+    it('should return false when no permissions match', () => {
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = {
+        permissions: ['dashboard:read'],
+        features: defaultFeatures,
+        roles: ['MEMBER'],
+      };
 
-      const { result, rerender } = renderHook(() =>
-        useHasAnyPermission(['member:create', 'finance:create'])
-      );
-
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current).toBe(false);
-      });
+      const { result } = renderHook(() => useHasAnyPermission(['member:create', 'finance:create']));
+      expect(result.current).toBe(false);
     });
 
-    it('should return false for empty permissions array', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: ['OWNER'],
-            permissions: ['member:create'],
-          }),
-        ],
-      });
+    it('should return false for empty permissions array', () => {
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = {
+        permissions: ['member:create'],
+        features: defaultFeatures,
+        roles: ['OWNER'],
+      };
 
-      const { result, rerender } = renderHook(() => useHasAnyPermission([]));
-
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current).toBe(false);
-      });
+      const { result } = renderHook(() => useHasAnyPermission([]));
+      expect(result.current).toBe(false);
     });
   });
 
   describe('useTierFeature', () => {
-    it('should return true by default during hydration', () => {
-      // Default to true to avoid flash of disabled state
+    it('should return true by default when no active club', () => {
       const { result } = renderHook(() => useTierFeature('sepa'));
-
       expect(result.current).toBe(true);
     });
 
-    it('should return true when feature enabled', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: [],
-            permissions: [],
-            features: { sepa: true, reports: false, bankImport: true },
-          }),
-        ],
-      });
+    it('should return true when feature enabled', () => {
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = {
+        permissions: [],
+        features: { sepa: true, reports: false, bankImport: true },
+        roles: [],
+      };
 
-      const { result, rerender } = renderHook(() => useTierFeature('sepa'));
-
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current).toBe(true);
-      });
+      const { result } = renderHook(() => useTierFeature('sepa'));
+      expect(result.current).toBe(true);
     });
 
-    it('should return false when feature disabled', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: [],
-            permissions: [],
-            features: { sepa: true, reports: false, bankImport: true },
-          }),
-        ],
-      });
+    it('should return false when feature disabled', () => {
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = {
+        permissions: [],
+        features: { sepa: true, reports: false, bankImport: true },
+        roles: [],
+      };
 
-      const { result, rerender } = renderHook(() => useTierFeature('reports'));
-
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current).toBe(false);
-      });
+      const { result } = renderHook(() => useTierFeature('reports'));
+      expect(result.current).toBe(false);
     });
 
-    it('should return true when no active club', async () => {
-      // Default behavior - allow if no club context
-      const { result, rerender } = renderHook(() => useTierFeature('sepa'));
+    it('should check bankImport feature', () => {
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = {
+        permissions: [],
+        features: { sepa: false, reports: false, bankImport: false },
+        roles: [],
+      };
 
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current).toBe(true);
-      });
-    });
-
-    it('should check bankImport feature', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: [],
-            permissions: [],
-            features: { sepa: false, reports: false, bankImport: false },
-          }),
-        ],
-      });
-
-      const { result, rerender } = renderHook(() => useTierFeature('bankImport'));
-
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current).toBe(false);
-      });
+      const { result } = renderHook(() => useTierFeature('bankImport'));
+      expect(result.current).toBe(false);
     });
   });
 
   describe('useCanAccess', () => {
-    it('should return combined permission and feature check', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: ['TREASURER'],
-            permissions: ['finance:create'],
-            features: { sepa: true, reports: true, bankImport: true },
-          }),
-        ],
-      });
+    it('should return combined permission and feature check', () => {
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = {
+        permissions: ['finance:create'],
+        features: { sepa: true, reports: true, bankImport: true },
+        roles: ['TREASURER'],
+      };
 
-      const { result, rerender } = renderHook(() => useCanAccess('finance:create', 'sepa'));
+      const { result } = renderHook(() => useCanAccess('finance:create', 'sepa'));
 
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current.hasPermission).toBe(true);
-        expect(result.current.hasFeature).toBe(true);
-        expect(result.current.canAccess).toBe(true);
-      });
+      expect(result.current.hasPermission).toBe(true);
+      expect(result.current.hasFeature).toBe(true);
+      expect(result.current.canAccess).toBe(true);
     });
 
-    it('should return false canAccess when permission missing', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: ['MEMBER'],
-            permissions: ['dashboard:read'],
-            features: { sepa: true, reports: true, bankImport: true },
-          }),
-        ],
-      });
+    it('should return false canAccess when permission missing', () => {
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = {
+        permissions: ['dashboard:read'],
+        features: { sepa: true, reports: true, bankImport: true },
+        roles: ['MEMBER'],
+      };
 
-      const { result, rerender } = renderHook(() => useCanAccess('finance:create', 'sepa'));
+      const { result } = renderHook(() => useCanAccess('finance:create', 'sepa'));
 
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current.hasPermission).toBe(false);
-        expect(result.current.hasFeature).toBe(true);
-        expect(result.current.canAccess).toBe(false);
-      });
+      expect(result.current.hasPermission).toBe(false);
+      expect(result.current.hasFeature).toBe(true);
+      expect(result.current.canAccess).toBe(false);
     });
 
-    it('should return false canAccess when feature disabled', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: ['TREASURER'],
-            permissions: ['finance:create'],
-            features: { sepa: false, reports: true, bankImport: true },
-          }),
-        ],
-      });
+    it('should return false canAccess when feature disabled', () => {
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = {
+        permissions: ['finance:create'],
+        features: { sepa: false, reports: true, bankImport: true },
+        roles: ['TREASURER'],
+      };
 
-      const { result, rerender } = renderHook(() => useCanAccess('finance:create', 'sepa'));
+      const { result } = renderHook(() => useCanAccess('finance:create', 'sepa'));
 
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current.hasPermission).toBe(true);
-        expect(result.current.hasFeature).toBe(false);
-        expect(result.current.canAccess).toBe(false);
-      });
+      expect(result.current.hasPermission).toBe(true);
+      expect(result.current.hasFeature).toBe(false);
+      expect(result.current.canAccess).toBe(false);
     });
 
-    it('should work without feature requirement', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: ['MEMBER'],
-            permissions: ['dashboard:read'],
-          }),
-        ],
-      });
+    it('should work without feature requirement', () => {
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = {
+        permissions: ['dashboard:read'],
+        features: defaultFeatures,
+        roles: ['MEMBER'],
+      };
 
-      const { result, rerender } = renderHook(() => useCanAccess('dashboard:read'));
+      const { result } = renderHook(() => useCanAccess('dashboard:read'));
 
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current.hasPermission).toBe(true);
-        expect(result.current.hasFeature).toBe(true); // Always true when no feature
-        expect(result.current.canAccess).toBe(true);
-      });
+      expect(result.current.hasPermission).toBe(true);
+      expect(result.current.hasFeature).toBe(true);
+      expect(result.current.canAccess).toBe(true);
     });
   });
 
   describe('usePermissions', () => {
     it('should return empty array when no active club', () => {
-      const { result, rerender } = renderHook(() => usePermissions());
-
-      rerender();
-
+      const { result } = renderHook(() => usePermissions());
       expect(result.current).toEqual([]);
     });
 
-    it('should return all permissions after hydration', async () => {
+    it('should return all permissions from TanStack Query', () => {
       const permissions = ['member:read', 'member:create', 'finance:read'];
 
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: ['TREASURER'],
-            permissions,
-          }),
-        ],
-      });
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = {
+        permissions,
+        features: defaultFeatures,
+        roles: ['TREASURER'],
+      };
 
-      const { result, rerender } = renderHook(() => usePermissions());
-
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current).toEqual(permissions);
-      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current).toEqual(permissions);
     });
 
-    it('should handle missing permissions array gracefully', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'test-club',
-        clubs: [
-          {
-            id: '1',
-            name: 'Test Club',
-            slug: 'test-club',
-            roles: ['OWNER'],
-            permissions: undefined as unknown as string[],
-            features: defaultFeatures,
-          },
-        ],
-      });
+    it('should return empty array when no permissions data', () => {
+      useClubStore.setState({ activeClubSlug: 'test-club' });
+      mockPermissionsData = null;
 
-      const { result, rerender } = renderHook(() => usePermissions());
-
-      rerender();
-
-      await waitFor(() => {
-        expect(result.current).toEqual([]);
-      });
-    });
-  });
-
-  describe('hydration safety', () => {
-    it('should handle club switching after hydration', async () => {
-      useClubStore.setState({
-        activeClubSlug: 'club-1',
-        clubs: [
-          createTestClub({
-            id: '1',
-            name: 'Club One',
-            slug: 'club-1',
-            roles: ['MEMBER'],
-            permissions: ['dashboard:read'],
-          }),
-          createTestClub({
-            id: '2',
-            name: 'Club Two',
-            slug: 'club-2',
-            roles: ['OWNER'],
-            permissions: ['member:create', 'club:delete'],
-          }),
-        ],
-      });
-
-      const { result, rerender } = renderHook(() => useHasPermission('member:create'));
-
-      rerender();
-
-      // Initially on club-1 which doesn't have member:create
-      await waitFor(() => {
-        expect(result.current).toBe(false);
-      });
-
-      // Switch to club-2
-      act(() => {
-        useClubStore.setState({ activeClubSlug: 'club-2' });
-      });
-
-      rerender();
-
-      // Now has member:create
-      await waitFor(() => {
-        expect(result.current).toBe(true);
-      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current).toEqual([]);
     });
   });
 });

@@ -53,7 +53,7 @@ export function ClubDashboardClient() {
 
   async function copyInviteLink() {
     if (club?.inviteCode && typeof window !== 'undefined') {
-      const link = `${window.location.origin}/join/${club.inviteCode}`;
+      const link = `${window.location.origin}/join/${encodeURIComponent(club.inviteCode)}`;
       await navigator.clipboard.writeText(link);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
@@ -144,8 +144,8 @@ export function ClubDashboardClient() {
                 <p className="text-sm text-muted-foreground flex-1 truncate">
                   Einladungslink:{' '}
                   {typeof window !== 'undefined'
-                    ? `${window.location.origin}/join/${club.inviteCode}`
-                    : `/join/${club.inviteCode}`}
+                    ? `${window.location.origin}/join/${encodeURIComponent(club.inviteCode)}`
+                    : `/join/${encodeURIComponent(club.inviteCode)}`}
                 </p>
                 <Button
                   variant="ghost"

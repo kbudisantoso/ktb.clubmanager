@@ -5,6 +5,7 @@ import { ThemeProvider } from 'next-themes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { getAuthBroadcast } from '@/lib/broadcast-auth';
+import { sanitizeCallbackUrl } from '@/lib/url-validation';
 
 /**
  * AuthSyncProvider handles cross-tab authentication synchronization.
@@ -27,7 +28,7 @@ function AuthSyncProvider({ children }: { children: React.ReactNode }) {
     authBroadcast.on('LOGIN', () => {
       // If we're on the login page, redirect to dashboard
       if (window.location.pathname === '/login') {
-        const returnUrl = sessionStorage.getItem('ktb.returnUrl') || '/dashboard';
+        const returnUrl = sanitizeCallbackUrl(sessionStorage.getItem('ktb.returnUrl'));
         window.location.href = returnUrl;
       }
     });

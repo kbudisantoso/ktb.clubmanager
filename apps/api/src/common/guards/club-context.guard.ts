@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+// SEC-012: API returns 404 for both non-existent and unauthorized clubs (no information leakage)
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { CLUB_CONTEXT_KEY, ClubContext } from '../decorators/club-context.decorator.js';
@@ -62,16 +63,8 @@ export class ClubContextGuard implements CanActivate {
     });
 
     if (!clubUser) {
-      // Check if club exists (for better error message)
-      const club = await this.prisma.club.findFirst({
-        where: { slug: clubSlug, deletedAt: null },
-      });
-
-      if (!club) {
-        throw new NotFoundException('Verein nicht gefunden');
-      }
-
-      throw new ForbiddenException('Kein Zugriff auf diesen Verein');
+      // SEC-012: Always return 404 regardless of whether club exists (no information leakage)
+      throw new NotFoundException('Verein nicht gefunden');
     }
 
     // User exists but has no roles = no access

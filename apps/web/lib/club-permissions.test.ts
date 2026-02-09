@@ -12,16 +12,35 @@ import {
   useIsAdminOnly,
 } from './club-permissions';
 
-// Mock the club store
-let mockActiveClub: { roles: string[] } | null = null;
+// Mock the club store (activeClubSlug only — roles come from TanStack Query now)
+let mockActiveClubSlug: string | null = null;
 
 vi.mock('./club-store', () => ({
-  useActiveClub: () => mockActiveClub,
+  useClubStore: (selector: (s: { activeClubSlug: string | null }) => unknown) =>
+    selector({ activeClubSlug: mockActiveClubSlug }),
 }));
+
+// Mock TanStack Query permissions hook (SEC-031: roles fetched via API)
+let mockPermissionsData: { roles: string[] } | null = null;
+
+vi.mock('@/hooks/use-club-permissions', () => ({
+  useClubPermissionsQuery: () => ({
+    data: mockPermissionsData,
+    isLoading: false,
+    error: null,
+  }),
+}));
+
+/** Helper to set up roles for a test */
+function setRoles(roles: string[]) {
+  mockActiveClubSlug = 'test-club';
+  mockPermissionsData = { roles };
+}
 
 describe('club-permissions', () => {
   beforeEach(() => {
-    mockActiveClub = null;
+    mockActiveClubSlug = null;
+    mockPermissionsData = null;
   });
 
   describe('PERMISSION_GROUPS', () => {
@@ -67,8 +86,8 @@ describe('club-permissions', () => {
   });
 
   describe('useClubPermissions()', () => {
-    it('returns all false when no active club', () => {
-      mockActiveClub = null;
+    it('returns all false when no active club slug', () => {
+      mockActiveClubSlug = null;
       const { result } = renderHook(() => useClubPermissions());
 
       expect(result.current.roles).toEqual([]);
@@ -83,8 +102,18 @@ describe('club-permissions', () => {
       expect(result.current.canManageProtocols).toBe(false);
     });
 
+    it('returns all false when query data is undefined (loading)', () => {
+      mockActiveClubSlug = 'test-club';
+      mockPermissionsData = null;
+      const { result } = renderHook(() => useClubPermissions());
+
+      expect(result.current.roles).toEqual([]);
+      expect(result.current.hasAccess).toBe(false);
+      expect(result.current.isOwner).toBe(false);
+    });
+
     it('returns correct permissions for OWNER', () => {
-      mockActiveClub = { roles: ['OWNER'] };
+      setRoles(['OWNER']);
       const { result } = renderHook(() => useClubPermissions());
 
       expect(result.current.roles).toEqual(['OWNER']);
@@ -100,7 +129,7 @@ describe('club-permissions', () => {
     });
 
     it('returns correct permissions for ADMIN only', () => {
-      mockActiveClub = { roles: ['ADMIN'] };
+      setRoles(['ADMIN']);
       const { result } = renderHook(() => useClubPermissions());
 
       expect(result.current.hasAccess).toBe(true);
@@ -115,7 +144,7 @@ describe('club-permissions', () => {
     });
 
     it('returns correct permissions for ADMIN with MEMBER role', () => {
-      mockActiveClub = { roles: ['ADMIN', 'MEMBER'] };
+      setRoles(['ADMIN', 'MEMBER']);
       const { result } = renderHook(() => useClubPermissions());
 
       expect(result.current.hasAccess).toBe(true);
@@ -126,7 +155,7 @@ describe('club-permissions', () => {
     });
 
     it('returns correct permissions for MEMBER', () => {
-      mockActiveClub = { roles: ['MEMBER'] };
+      setRoles(['MEMBER']);
       const { result } = renderHook(() => useClubPermissions());
 
       expect(result.current.hasAccess).toBe(true);
@@ -141,7 +170,7 @@ describe('club-permissions', () => {
     });
 
     it('returns correct permissions for TREASURER', () => {
-      mockActiveClub = { roles: ['TREASURER'] };
+      setRoles(['TREASURER']);
       const { result } = renderHook(() => useClubPermissions());
 
       expect(result.current.isClubMember).toBe(true);
@@ -152,7 +181,7 @@ describe('club-permissions', () => {
     });
 
     it('returns correct permissions for SECRETARY', () => {
-      mockActiveClub = { roles: ['SECRETARY'] };
+      setRoles(['SECRETARY']);
       const { result } = renderHook(() => useClubPermissions());
 
       expect(result.current.isClubMember).toBe(true);
@@ -166,19 +195,19 @@ describe('club-permissions', () => {
   describe('individual permission hooks', () => {
     describe('useCanManageSettings()', () => {
       it('returns true for OWNER', () => {
-        mockActiveClub = { roles: ['OWNER'] };
+        setRoles(['OWNER']);
         const { result } = renderHook(() => useCanManageSettings());
         expect(result.current).toBe(true);
       });
 
       it('returns true for ADMIN', () => {
-        mockActiveClub = { roles: ['ADMIN'] };
+        setRoles(['ADMIN']);
         const { result } = renderHook(() => useCanManageSettings());
         expect(result.current).toBe(true);
       });
 
       it('returns false for MEMBER', () => {
-        mockActiveClub = { roles: ['MEMBER'] };
+        setRoles(['MEMBER']);
         const { result } = renderHook(() => useCanManageSettings());
         expect(result.current).toBe(false);
       });
@@ -186,19 +215,19 @@ describe('club-permissions', () => {
 
     describe('useCanManageUsers()', () => {
       it('returns true for OWNER', () => {
-        mockActiveClub = { roles: ['OWNER'] };
+        setRoles(['OWNER']);
         const { result } = renderHook(() => useCanManageUsers());
         expect(result.current).toBe(true);
       });
 
       it('returns true for ADMIN', () => {
-        mockActiveClub = { roles: ['ADMIN'] };
+        setRoles(['ADMIN']);
         const { result } = renderHook(() => useCanManageUsers());
         expect(result.current).toBe(true);
       });
 
       it('returns false for MEMBER', () => {
-        mockActiveClub = { roles: ['MEMBER'] };
+        setRoles(['MEMBER']);
         const { result } = renderHook(() => useCanManageUsers());
         expect(result.current).toBe(false);
       });
@@ -206,13 +235,13 @@ describe('club-permissions', () => {
 
     describe('useCanManageFinances()', () => {
       it('returns true for TREASURER', () => {
-        mockActiveClub = { roles: ['TREASURER'] };
+        setRoles(['TREASURER']);
         const { result } = renderHook(() => useCanManageFinances());
         expect(result.current).toBe(true);
       });
 
       it('returns false for ADMIN', () => {
-        mockActiveClub = { roles: ['ADMIN'] };
+        setRoles(['ADMIN']);
         const { result } = renderHook(() => useCanManageFinances());
         expect(result.current).toBe(false);
       });
@@ -220,19 +249,19 @@ describe('club-permissions', () => {
 
     describe('useIsBoardMember()', () => {
       it('returns true for TREASURER', () => {
-        mockActiveClub = { roles: ['TREASURER'] };
+        setRoles(['TREASURER']);
         const { result } = renderHook(() => useIsBoardMember());
         expect(result.current).toBe(true);
       });
 
       it('returns false for ADMIN', () => {
-        mockActiveClub = { roles: ['ADMIN'] };
+        setRoles(['ADMIN']);
         const { result } = renderHook(() => useIsBoardMember());
         expect(result.current).toBe(false);
       });
 
       it('returns false for MEMBER', () => {
-        mockActiveClub = { roles: ['MEMBER'] };
+        setRoles(['MEMBER']);
         const { result } = renderHook(() => useIsBoardMember());
         expect(result.current).toBe(false);
       });
@@ -240,13 +269,13 @@ describe('club-permissions', () => {
 
     describe('useIsOwner()', () => {
       it('returns true for OWNER', () => {
-        mockActiveClub = { roles: ['OWNER'] };
+        setRoles(['OWNER']);
         const { result } = renderHook(() => useIsOwner());
         expect(result.current).toBe(true);
       });
 
       it('returns false for ADMIN', () => {
-        mockActiveClub = { roles: ['ADMIN'] };
+        setRoles(['ADMIN']);
         const { result } = renderHook(() => useIsOwner());
         expect(result.current).toBe(false);
       });
@@ -254,19 +283,19 @@ describe('club-permissions', () => {
 
     describe('useIsClubMember()', () => {
       it('returns true for MEMBER', () => {
-        mockActiveClub = { roles: ['MEMBER'] };
+        setRoles(['MEMBER']);
         const { result } = renderHook(() => useIsClubMember());
         expect(result.current).toBe(true);
       });
 
       it('returns false for ADMIN only', () => {
-        mockActiveClub = { roles: ['ADMIN'] };
+        setRoles(['ADMIN']);
         const { result } = renderHook(() => useIsClubMember());
         expect(result.current).toBe(false);
       });
 
       it('returns true for ADMIN with MEMBER', () => {
-        mockActiveClub = { roles: ['ADMIN', 'MEMBER'] };
+        setRoles(['ADMIN', 'MEMBER']);
         const { result } = renderHook(() => useIsClubMember());
         expect(result.current).toBe(true);
       });
@@ -274,25 +303,25 @@ describe('club-permissions', () => {
 
     describe('useIsAdminOnly()', () => {
       it('returns true for ADMIN only', () => {
-        mockActiveClub = { roles: ['ADMIN'] };
+        setRoles(['ADMIN']);
         const { result } = renderHook(() => useIsAdminOnly());
         expect(result.current).toBe(true);
       });
 
       it('returns false for ADMIN with MEMBER', () => {
-        mockActiveClub = { roles: ['ADMIN', 'MEMBER'] };
+        setRoles(['ADMIN', 'MEMBER']);
         const { result } = renderHook(() => useIsAdminOnly());
         expect(result.current).toBe(false);
       });
 
       it('returns false for OWNER', () => {
-        mockActiveClub = { roles: ['OWNER'] };
+        setRoles(['OWNER']);
         const { result } = renderHook(() => useIsAdminOnly());
         expect(result.current).toBe(false);
       });
 
       it('returns false for MEMBER', () => {
-        mockActiveClub = { roles: ['MEMBER'] };
+        setRoles(['MEMBER']);
         const { result } = renderHook(() => useIsAdminOnly());
         expect(result.current).toBe(false);
       });

@@ -54,7 +54,7 @@ export default function MyClubsPage() {
   const isLeaveConfirmValid = leaveConfirmInput.toUpperCase() === 'VERLASSEN';
 
   function handleLeaveClub(club: ClubContext) {
-    if (club.roles.includes('OWNER')) {
+    if (club.roles?.includes('OWNER')) {
       toast({
         title: 'Nicht möglich',
         description:
@@ -192,7 +192,7 @@ export default function MyClubsPage() {
                   >
                     <div className="font-medium truncate">{club.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {formatRoles(club.roles)}
+                      {formatRoles(club.roles ?? [])}
                       {club.slug === activeClubSlug && (
                         <Badge variant="outline" className="text-xs ml-2">
                           Aktiv
@@ -215,9 +215,9 @@ export default function MyClubsPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleLeaveClub(club)}
-                      disabled={club.roles.includes('OWNER')}
+                      disabled={club.roles?.includes('OWNER')}
                       title={
-                        club.roles.includes('OWNER')
+                        club.roles?.includes('OWNER')
                           ? 'Verantwortliche können nicht austreten'
                           : 'Verein verlassen'
                       }

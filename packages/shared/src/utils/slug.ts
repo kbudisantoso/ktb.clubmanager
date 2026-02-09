@@ -94,6 +94,10 @@ export function generateSlug(name: string): string {
  * @returns true if valid
  */
 export function isSlugValid(slug: string): boolean {
+  // Runtime guard: HTTP request params can be string | string[] despite TypeScript types.
+  // CodeQL flags this as "type confusion through parameter tampering" (critical).
+  if (Array.isArray(slug)) slug = slug[0] ?? '';
+
   // Must be 3-50 characters
   if (slug.length < 3 || slug.length > 50) {
     return false;
@@ -120,6 +124,9 @@ export function isSlugValid(slug: string): boolean {
  * @returns true if reserved
  */
 export function isSlugReserved(slug: string): boolean {
+  // Runtime guard: see isSlugValid for rationale (CodeQL type-confusion finding).
+  if (Array.isArray(slug)) slug = slug[0] ?? '';
+
   return RESERVED_SLUGS.includes(slug.toLowerCase() as (typeof RESERVED_SLUGS)[number]);
 }
 
@@ -130,6 +137,9 @@ export function isSlugReserved(slug: string): boolean {
  * @returns { valid: boolean, reason?: string }
  */
 export function validateSlug(slug: string): { valid: boolean; reason?: string } {
+  // Runtime guard: see isSlugValid for rationale (CodeQL type-confusion finding).
+  if (Array.isArray(slug)) slug = slug[0] ?? '';
+
   if (!isSlugValid(slug)) {
     return {
       valid: false,

@@ -12,6 +12,8 @@ import { validatePassword } from '@/lib/password-validation';
 import { authClient } from '@/lib/auth-client';
 import { useSessionQuery, useClearSession } from '@/hooks/use-session';
 import { getAuthBroadcast } from '@/lib/broadcast-auth';
+import { TurnstileWidget } from '@/components/auth/turnstile-widget';
+import { sanitizeCallbackUrl } from '@/lib/url-validation';
 import { ArrowLeft, Loader2, Check, Sparkles, LogOut, LayoutDashboard } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -25,20 +27,27 @@ function RegisterContent() {
   const searchParams = useSearchParams();
   const { data: session, isLoading: isPending } = useSessionQuery();
   const clearSession = useClearSession();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = sanitizeCallbackUrl(searchParams.get('callbackUrl'));
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEmailExistsError, setIsEmailExistsError] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const userInputs = [email, name].filter(Boolean);
 
+  const clearError = () => {
+    setError(null);
+    setIsEmailExistsError(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    clearError();
     setIsLoading(true);
 
     // Validate email
@@ -70,6 +79,9 @@ function RegisterContent() {
         email,
         password,
         name: name.trim() || email.split('@')[0],
+        fetchOptions: captchaToken
+          ? { headers: { 'x-captcha-response': captchaToken } }
+          : undefined,
       });
 
       if (signUpError) {
@@ -78,10 +90,13 @@ function RegisterContent() {
           signUpError.message?.includes('already exists') ||
           signUpError.code === 'USER_ALREADY_EXISTS'
         ) {
-          setError('Ein Konto mit dieser E-Mail-Adresse existiert bereits');
+          // SEC-011: Show recovery links for existing email
+          setError('Ein Konto mit dieser E-Mail-Adresse existiert bereits.');
+          setIsEmailExistsError(true);
         } else {
           setError(signUpError.message || 'Registrierung fehlgeschlagen');
         }
+        setCaptchaToken(null);
         setIsLoading(false);
         return;
       }
@@ -100,6 +115,7 @@ function RegisterContent() {
       }
     } catch {
       setError('Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
+      setCaptchaToken(null);
       setIsLoading(false);
     }
   };
@@ -257,7 +273,7 @@ function RegisterContent() {
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  setError(null);
+                  clearError();
                 }}
                 autoComplete="email"
                 required
@@ -274,7 +290,7 @@ function RegisterContent() {
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
-                  setError(null);
+                  clearError();
                 }}
                 autoComplete="name"
                 className="glass-input"
@@ -289,7 +305,7 @@ function RegisterContent() {
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  setError(null);
+                  clearError();
                 }}
                 autoComplete="new-password"
                 required
@@ -306,7 +322,7 @@ function RegisterContent() {
                 value={confirmPassword}
                 onChange={(e) => {
                   setConfirmPassword(e.target.value);
-                  setError(null);
+                  clearError();
                 }}
                 autoComplete="new-password"
                 required
@@ -317,7 +333,27 @@ function RegisterContent() {
               )}
             </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error &&
+              (isEmailExistsError ? (
+                <div className="text-sm text-destructive">
+                  {error}{' '}
+                  <Link href="/login" className="underline font-medium">
+                    Anmelden
+                  </Link>{' '}
+                  oder{' '}
+                  <Link href="/forgot-password" className="underline font-medium">
+                    Passwort vergessen?
+                  </Link>
+                </div>
+              ) : (
+                <p className="text-sm text-destructive">{error}</p>
+              ))}
+
+            <TurnstileWidget
+              onToken={setCaptchaToken}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+            />
 
             <Button type="submit" className="w-full " disabled={isLoading}>
               {isLoading ? (

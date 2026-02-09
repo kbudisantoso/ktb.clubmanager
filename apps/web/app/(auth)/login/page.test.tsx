@@ -41,6 +41,24 @@ vi.mock('@/lib/broadcast-auth', () => ({
   }),
 }));
 
+// Mock Turnstile widget - renders a button that triggers onToken when clicked
+vi.mock('@/components/auth/turnstile-widget', () => ({
+  TurnstileWidget: ({
+    onToken,
+  }: {
+    onToken: (t: string) => void;
+    onExpire?: () => void;
+    onError?: () => void;
+  }) => {
+    return (
+      <button data-testid="turnstile-mock" onClick={() => onToken('mock-captcha-token')}>
+        Turnstile
+      </button>
+    );
+  },
+  isTurnstileEnabled: () => true,
+}));
+
 // Import component after mocks
 import LoginPage from './page';
 
@@ -110,6 +128,37 @@ describe('LoginPage', () => {
         expect(mockSignInEmail).toHaveBeenCalledWith({
           email: 'test@example.de',
           password: 'password123',
+          fetchOptions: undefined,
+        });
+      });
+    });
+
+    it('passes captcha token to signIn when Turnstile provides token', async () => {
+      const user = userEvent.setup();
+      mockSignInEmail.mockResolvedValue({ data: { session: {} }, error: null });
+
+      render(<LoginPage />);
+
+      // Enter email
+      const emailInput = await screen.findByLabelText(/e-mail-adresse/i);
+      await user.type(emailInput, 'test@example.de');
+      await user.click(screen.getByRole('button', { name: /weiter/i }));
+
+      // Wait for password step
+      await screen.findByLabelText(/passwort/i);
+
+      // Click Turnstile mock to provide token
+      await user.click(screen.getByTestId('turnstile-mock'));
+
+      // Enter password and submit
+      await user.type(screen.getByLabelText(/passwort/i), 'password123');
+      await user.click(screen.getByRole('button', { name: /anmelden/i }));
+
+      await waitFor(() => {
+        expect(mockSignInEmail).toHaveBeenCalledWith({
+          email: 'test@example.de',
+          password: 'password123',
+          fetchOptions: { headers: { 'x-captcha-response': 'mock-captcha-token' } },
         });
       });
     });
@@ -173,7 +222,55 @@ describe('LoginPage', () => {
         expect(mockSignInEmail).toHaveBeenCalledWith({
           email: 'test@example.de',
           password: 'password123',
+          fetchOptions: undefined,
         });
+      });
+    });
+  });
+
+  describe('captcha integration', () => {
+    it('resets captcha token on sign-in error', async () => {
+      const user = userEvent.setup();
+      mockSignInEmail.mockResolvedValue({
+        data: null,
+        error: { message: 'Invalid credentials' },
+      });
+
+      render(<LoginPage />);
+
+      // Go to password step
+      const emailInput = await screen.findByLabelText(/e-mail-adresse/i);
+      await user.type(emailInput, 'test@example.de');
+      await user.click(screen.getByRole('button', { name: /weiter/i }));
+
+      await screen.findByLabelText(/passwort/i);
+
+      // Provide captcha token
+      await user.click(screen.getByTestId('turnstile-mock'));
+
+      // Submit with wrong password
+      await user.type(screen.getByLabelText(/passwort/i), 'wrongpassword');
+      await user.click(screen.getByRole('button', { name: /anmelden/i }));
+
+      // Error shown
+      await waitFor(() => {
+        expect(screen.getByText(/falsch/i)).toBeInTheDocument();
+      });
+
+      // Clear mock calls and submit again — token should be reset (undefined)
+      mockSignInEmail.mockClear();
+      mockSignInEmail.mockResolvedValue({ data: { session: {} }, error: null });
+
+      await user.clear(screen.getByLabelText(/passwort/i));
+      await user.type(screen.getByLabelText(/passwort/i), 'newpassword');
+      await user.click(screen.getByRole('button', { name: /anmelden/i }));
+
+      await waitFor(() => {
+        expect(mockSignInEmail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            fetchOptions: undefined,
+          })
+        );
       });
     });
   });

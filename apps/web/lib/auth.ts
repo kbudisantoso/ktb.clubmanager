@@ -1,18 +1,43 @@
 import { betterAuth } from 'better-auth';
+import { createAuthMiddleware, APIError } from 'better-auth/api';
+import { captcha } from 'better-auth/plugins';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { PrismaClient } from '../../../prisma/generated/client/index.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core';
+import * as zxcvbnCommonPackage from '@zxcvbn-ts/language-common';
+import * as zxcvbnDePackage from '@zxcvbn-ts/language-de';
+import {
+  loginAccountLimiter,
+  loginIpLimiter,
+  registrationIpLimiter,
+  resetEmailLimiter,
+  resetIpLimiter,
+} from './rate-limit';
+
+// Initialize zxcvbn with German + common dictionaries (runs once at module load)
+zxcvbnOptions.setOptions({
+  dictionary: {
+    ...zxcvbnCommonPackage.dictionary,
+    ...zxcvbnDePackage.dictionary,
+  },
+  graphs: zxcvbnCommonPackage.adjacencyGraphs,
+  translations: zxcvbnDePackage.translations,
+});
 
 // Lazy-initialized singleton to avoid SSG issues
 let prismaInstance: PrismaClient | null = null;
 
 function getPrisma(): PrismaClient {
   if (!prismaInstance) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error('DATABASE_URL environment variable is required');
+    }
     const pool = new Pool({
-      connectionString:
-        process.env.DATABASE_URL ||
-        'postgresql://clubmanager:clubmanager@localhost:35432/clubmanager',
+      connectionString,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : undefined,
     });
     prismaInstance = new PrismaClient({
       adapter: new PrismaPg(pool),
@@ -52,7 +77,9 @@ async function checkSuperAdminBootstrap(userId: string, email: string): Promise<
  * - Optional Google OAuth (when GOOGLE_CLIENT_ID is set)
  * - Database sessions via Prisma
  * - Session cookies with secure defaults
+ * - Server-side password strength validation (zxcvbn score >= 3)
  * - Super Admin bootstrap on first user registration
+ * - Optional Cloudflare Turnstile CAPTCHA protection
  *
  * Note: Prisma is lazily initialized to avoid SSG issues.
  */
@@ -82,6 +109,9 @@ export const auth = betterAuth({
   },
 
   // Social providers (optional)
+  // SEC-010: OAuth state parameter validation is handled internally by Better Auth.
+  // Better Auth stores state + PKCE in the database. Verified secure per security audit.
+  // See: RESEARCH.md "OAuth State Parameter Verification" section.
   socialProviders: process.env.GOOGLE_CLIENT_ID
     ? {
         google: {
@@ -90,6 +120,83 @@ export const auth = betterAuth({
         },
       }
     : undefined,
+
+  // SEC-008/SEC-020: Rate limiting for auth endpoints (brute-force protection)
+  // SEC-004: Server-side password strength validation (zxcvbn score >= 3)
+  // Rate limiting applies universally; CAPTCHA (Turnstile) is additive when configured.
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      // Extract IP from request headers (X-Forwarded-For or fallback)
+      const ip = ctx.headers?.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+
+      // Rate limiting for login (SEC-008)
+      if (ctx.path === '/sign-in/email') {
+        const email = ctx.body?.email?.toLowerCase();
+        if (email && loginAccountLimiter.isRateLimited(`login:account:${email}`)) {
+          throw new APIError('TOO_MANY_REQUESTS', {
+            message: 'Zu viele Anmeldeversuche. Bitte versuche es in 15 Minuten erneut.',
+          });
+        }
+        if (loginIpLimiter.isRateLimited(`login:ip:${ip}`)) {
+          throw new APIError('TOO_MANY_REQUESTS', {
+            message:
+              'Zu viele Anmeldeversuche von dieser Adresse. Bitte versuche es spaeter erneut.',
+          });
+        }
+      }
+
+      // Rate limiting for registration (SEC-008)
+      if (ctx.path === '/sign-up/email') {
+        if (registrationIpLimiter.isRateLimited(`register:ip:${ip}`)) {
+          throw new APIError('TOO_MANY_REQUESTS', {
+            message: 'Zu viele Registrierungen. Bitte versuche es spaeter erneut.',
+          });
+        }
+
+        // SEC-004: Password strength validation
+        const password = ctx.body?.password;
+        const email = ctx.body?.email;
+        if (password) {
+          const userInputs = email ? [email] : [];
+          const result = zxcvbn(password, userInputs);
+          if (result.score < 3) {
+            throw new APIError('BAD_REQUEST', {
+              message: 'Passwort ist zu schwach. Bitte waehle ein staerkeres Passwort.',
+            });
+          }
+        }
+      }
+
+      // Rate limiting for password reset (SEC-008)
+      if (ctx.path === '/forget-password') {
+        const email = ctx.body?.email?.toLowerCase();
+        if (email && resetEmailLimiter.isRateLimited(`reset:email:${email}`)) {
+          throw new APIError('TOO_MANY_REQUESTS', {
+            message: 'Zu viele Anfragen. Bitte versuche es spaeter erneut.',
+          });
+        }
+        if (resetIpLimiter.isRateLimited(`reset:ip:${ip}`)) {
+          throw new APIError('TOO_MANY_REQUESTS', {
+            message: 'Zu viele Anfragen von dieser Adresse. Bitte versuche es spaeter erneut.',
+          });
+        }
+      }
+    }),
+  },
+
+  // SEC-008/SEC-020: CAPTCHA plugin for bot protection (conditionally loaded)
+  // Requires TURNSTILE_SECRET_KEY env var to activate Cloudflare Turnstile
+  plugins: [
+    ...(process.env.TURNSTILE_SECRET_KEY
+      ? [
+          captcha({
+            provider: 'cloudflare-turnstile',
+            secretKey: process.env.TURNSTILE_SECRET_KEY,
+            endpoints: ['/sign-up/email', '/sign-in/email', '/forget-password'],
+          }),
+        ]
+      : []),
+  ],
 
   // Database hooks for Super Admin bootstrap
   databaseHooks: {
@@ -109,6 +216,14 @@ export const auth = betterAuth({
     useSecureCookies: process.env.NODE_ENV === 'production',
     // Cookie name prefix
     cookiePrefix: 'better-auth',
+    // SEC-005: Explicit cookie flags for defense-in-depth
+    // httpOnly prevents XSS access, secure ensures HTTPS-only in prod,
+    // sameSite 'lax' prevents CSRF while allowing top-level navigations
+    defaultCookieAttributes: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    },
   },
 
   // Trust proxy for correct IP address detection

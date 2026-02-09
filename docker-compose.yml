@@ -14,8 +14,9 @@ services:
       POSTGRES_USER: clubmanager
       POSTGRES_PASSWORD: clubmanager
       POSTGRES_DB: clubmanager
+    # Bound to 127.0.0.1 for security (SEC-017). DevContainer handles port forwarding separately.
     ports:
-      - '35432:5432'
+      - '127.0.0.1:35432:5432'
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U clubmanager -d clubmanager']
       interval: 5s
@@ -32,7 +33,7 @@ services:
     volumes:
       - clubmanager-redis-data:/data
     ports:
-      - '36379:6379'
+      - '127.0.0.1:36379:6379'
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
@@ -49,7 +50,7 @@ services:
     environment:
       PGWEB_DATABASE_URL: postgresql://clubmanager:clubmanager@postgres:5432/clubmanager?sslmode=disable
     ports:
-      - '35050:8081'
+      - '127.0.0.1:35050:8081'
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,8 +74,8 @@ services:
     volumes:
       - clubmanager-minio-data:/data
     ports:
-      - '35900:9000'
-      - '35901:9001'
+      - '127.0.0.1:35900:9000'
+      - '127.0.0.1:35901:9001'
     healthcheck:
       test: ['CMD', 'mc', 'ready', 'local']
       interval: 10s
@@ -91,7 +92,7 @@ services:
     environment:
       REDIS_HOSTS: local:redis:6379
     ports:
-      - '38081:8081'
+      - '127.0.0.1:38081:8081'
     depends_on:
       redis:
         condition: service_healthy

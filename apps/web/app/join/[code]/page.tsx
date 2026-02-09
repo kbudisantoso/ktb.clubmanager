@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSessionQuery } from '@/hooks/use-session';
 import { useClubStore } from '@/lib/club-store';
 import { useJoinClubMutation } from '@/hooks/use-clubs';
+import { sanitizeCallbackUrl } from '@/lib/url-validation';
 import { Loader2, CheckCircle, XCircle, Building2, Clock, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,7 +64,8 @@ export default function JoinPage() {
 
   function handleLoginRedirect() {
     // Store the join URL to redirect back after login
-    const callbackUrl = encodeURIComponent(`/join/${code}`);
+    const joinUrl = sanitizeCallbackUrl(`/join/${code}`, '/dashboard');
+    const callbackUrl = encodeURIComponent(joinUrl);
     router.push(`/login?callbackUrl=${callbackUrl}`);
   }
 
@@ -96,7 +98,9 @@ export default function JoinPage() {
             <Button onClick={handleLoginRedirect} className="w-full">
               Anmelden
             </Button>
-            <Link href={`/register?callbackUrl=/join/${code}`}>
+            <Link
+              href={`/register?callbackUrl=${encodeURIComponent(sanitizeCallbackUrl(`/join/${code}`, '/dashboard'))}`}
+            >
               <Button variant="outline" className="w-full">
                 Registrieren
               </Button>

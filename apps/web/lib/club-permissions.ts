@@ -1,6 +1,7 @@
 'use client';
 
-import { useActiveClub } from './club-store';
+import { useClubStore } from './club-store';
+import { useClubPermissionsQuery } from '@/hooks/use-club-permissions';
 
 /**
  * Permission groups for club access control.
@@ -46,11 +47,13 @@ function hasPermission(userRoles: string[], requiredGroup: readonly string[]): b
 
 /**
  * Hook that returns all permission checks for the active club.
+ * Uses TanStack Query for roles (SEC-031: not persisted to localStorage).
  * Use this for components that need multiple permission checks.
  */
 export function useClubPermissions() {
-  const activeClub = useActiveClub();
-  const roles = activeClub?.roles ?? [];
+  const activeClubSlug = useClubStore((state) => state.activeClubSlug);
+  const { data } = useClubPermissionsQuery(activeClubSlug);
+  const roles = data?.roles ?? [];
 
   const isClubMember = hasPermission(roles, PERMISSION_GROUPS.CLUB_MEMBERS);
   const canManageSettings = hasPermission(roles, PERMISSION_GROUPS.SETTINGS_MANAGERS);
