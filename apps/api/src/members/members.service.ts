@@ -488,6 +488,13 @@ export class MembersService {
       },
     });
 
+    // SEC-021: Clear MembershipPeriod notes (may contain PII)
+    // MembershipPeriod dates (joinDate, leaveDate) are retained as statistical data.
+    await db.membershipPeriod.updateMany({
+      where: { memberId: id },
+      data: { notes: null },
+    });
+
     this.logger.log(`Member ${id} anonymized by user ${userId}`);
 
     return this.formatMemberResponse(updated);

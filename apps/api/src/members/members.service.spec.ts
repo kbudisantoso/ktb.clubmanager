@@ -15,6 +15,9 @@ const mockDb = {
     delete: vi.fn(),
     count: vi.fn(),
   },
+  membershipPeriod: {
+    updateMany: vi.fn(),
+  },
 };
 
 const mockPrisma = {
