@@ -2,7 +2,7 @@
  * URL validation utilities to prevent open redirect attacks.
  *
  * Only allows relative URLs starting with a single slash.
- * Rejects external URLs, protocol-relative URLs, javascript: URIs, and data: URIs.
+ * Rejects external URLs, protocol-relative URLs, javascript:/data:/vbscript: URIs.
  */
 
 /**
@@ -22,7 +22,8 @@ export function isValidCallbackUrl(url: string | null | undefined): boolean {
 
   // Reject dangerous URI schemes
   const lower = url.toLowerCase();
-  if (lower.startsWith('javascript:') || lower.startsWith('data:')) return false;
+  if (lower.startsWith('javascript:') || lower.startsWith('data:') || lower.startsWith('vbscript:'))
+    return false;
 
   return true;
 }

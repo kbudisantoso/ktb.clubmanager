@@ -36,6 +36,13 @@ describe('url-validation', () => {
       }
     );
 
+    it.each(['vbscript:MsgBox("XSS")', 'VBSCRIPT:MsgBox("XSS")'])(
+      'rejects vbscript: scheme: %s',
+      (url) => {
+        expect(isValidCallbackUrl(url)).toBe(false);
+      }
+    );
+
     it.each(['https://evil.com', 'http://evil.com', 'ftp://evil.com', 'evil.com'])(
       'rejects absolute/non-slash URLs: %s',
       (url) => {
