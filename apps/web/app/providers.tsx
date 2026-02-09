@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { Toaster } from '@/components/ui/sonner';
 import { getAuthBroadcast } from '@/lib/broadcast-auth';
 import { sanitizeCallbackUrl } from '@/lib/url-validation';
@@ -44,6 +45,7 @@ function AuthSyncProvider({ children }: { children: React.ReactNode }) {
 /**
  * Root providers component that wraps the application.
  * Includes ThemeProvider for dark/light mode support.
+ * Includes NuqsAdapter for type-safe URL search param state management.
  * Includes AuthSyncProvider for cross-tab authentication sync.
  * Includes QueryClientProvider for server state management.
  */
@@ -70,10 +72,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-        <AuthSyncProvider>
-          {children}
-          <Toaster richColors />
-        </AuthSyncProvider>
+        <NuqsAdapter>
+          <AuthSyncProvider>
+            {children}
+            <Toaster richColors />
+          </AuthSyncProvider>
+        </NuqsAdapter>
       </ThemeProvider>
     </QueryClientProvider>
   );
