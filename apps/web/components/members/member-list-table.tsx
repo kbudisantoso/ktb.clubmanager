@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { ColumnKey } from '@/hooks/use-column-visibility';
 import { MemberStatusBadge } from './member-status-badge';
 import { MemberAvatar } from './member-avatar';
 import { HouseholdBadge } from './household-badge';
@@ -50,6 +51,7 @@ interface MemberListItem {
     leaveDate: string | null;
     membershipType: string;
   }[];
+  notes: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -71,12 +73,26 @@ interface MemberListTableProps {
   onSelectionChange: (ids: Set<string>) => void;
   /** Called when a member row is clicked */
   onSelectMember: (id: string) => void;
+  /** Column visibility state from useColumnVisibility hook */
+  columnVisibility?: Record<ColumnKey, boolean>;
 }
 
 /**
- * Member list table with 7 responsive columns, checkbox selection,
- * and infinite scroll via intersection observer.
+ * Member list table with 9 responsive columns, checkbox selection,
+ * column visibility control, and infinite scroll via intersection observer.
  */
+/** Responsive breakpoint classes for each toggleable column */
+const COLUMN_BREAKPOINTS: Record<ColumnKey, string> = {
+  memberNumber: 'hidden md:table-cell',
+  status: 'hidden md:table-cell',
+  email: 'hidden xl:table-cell',
+  phone: 'hidden xl:table-cell',
+  household: 'hidden xl:table-cell',
+  membershipType: 'hidden xl:table-cell',
+  joinDate: 'hidden xl:table-cell',
+  notes: 'hidden xl:table-cell',
+};
+
 export function MemberListTable({
   members,
   isLoading,
@@ -86,8 +102,19 @@ export function MemberListTable({
   selectedIds,
   onSelectionChange,
   onSelectMember,
+  columnVisibility,
 }: MemberListTableProps) {
   const lastShiftClickIndex = useRef<number | null>(null);
+
+  /**
+   * Get the CSS class for a column based on visibility and responsive breakpoints.
+   * If user disabled the column, it's always hidden.
+   * If user enabled (or no visibility prop), use the responsive breakpoint class.
+   */
+  const colClass = (key: ColumnKey) => {
+    if (columnVisibility && columnVisibility[key] === false) return 'hidden';
+    return COLUMN_BREAKPOINTS[key];
+  };
 
   // Intersection observer for infinite scroll sentinel
   const { ref: sentinelRef, inView } = useInView({
@@ -147,12 +174,14 @@ export function MemberListTable({
               <Checkbox disabled />
             </TableHead>
             <TableHead>Name</TableHead>
-            <TableHead className="hidden md:table-cell">Nr.</TableHead>
-            <TableHead className="hidden md:table-cell">Status</TableHead>
-            <TableHead className="hidden xl:table-cell">E-Mail</TableHead>
-            <TableHead className="hidden xl:table-cell">Telefon</TableHead>
-            <TableHead className="hidden xl:table-cell">Beitragsart</TableHead>
-            <TableHead className="hidden xl:table-cell">Eintritt</TableHead>
+            <TableHead className={colClass('memberNumber')}>Nr.</TableHead>
+            <TableHead className={colClass('status')}>Status</TableHead>
+            <TableHead className={colClass('email')}>E-Mail</TableHead>
+            <TableHead className={colClass('phone')}>Telefon</TableHead>
+            <TableHead className={colClass('household')}>Haushalt</TableHead>
+            <TableHead className={colClass('membershipType')}>Beitragsart</TableHead>
+            <TableHead className={colClass('joinDate')}>Eintritt</TableHead>
+            <TableHead className={colClass('notes')}>Notizen</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -167,23 +196,29 @@ export function MemberListTable({
                   <Skeleton className="h-4 w-32" />
                 </div>
               </TableCell>
-              <TableCell className="hidden md:table-cell">
+              <TableCell className={colClass('memberNumber')}>
                 <Skeleton className="h-4 w-16" />
               </TableCell>
-              <TableCell className="hidden md:table-cell">
+              <TableCell className={colClass('status')}>
                 <Skeleton className="h-5 w-16 rounded-md" />
               </TableCell>
-              <TableCell className="hidden xl:table-cell">
+              <TableCell className={colClass('email')}>
                 <Skeleton className="h-4 w-40" />
               </TableCell>
-              <TableCell className="hidden xl:table-cell">
+              <TableCell className={colClass('phone')}>
                 <Skeleton className="h-4 w-28" />
               </TableCell>
-              <TableCell className="hidden xl:table-cell">
+              <TableCell className={colClass('household')}>
                 <Skeleton className="h-4 w-20" />
               </TableCell>
-              <TableCell className="hidden xl:table-cell">
+              <TableCell className={colClass('membershipType')}>
                 <Skeleton className="h-4 w-20" />
+              </TableCell>
+              <TableCell className={colClass('joinDate')}>
+                <Skeleton className="h-4 w-20" />
+              </TableCell>
+              <TableCell className={colClass('notes')}>
+                <Skeleton className="h-4 w-24" />
               </TableCell>
             </TableRow>
           ))}
@@ -208,12 +243,14 @@ export function MemberListTable({
               />
             </TableHead>
             <TableHead>Name</TableHead>
-            <TableHead className="hidden md:table-cell">Nr.</TableHead>
-            <TableHead className="hidden md:table-cell">Status</TableHead>
-            <TableHead className="hidden xl:table-cell">E-Mail</TableHead>
-            <TableHead className="hidden xl:table-cell">Telefon</TableHead>
-            <TableHead className="hidden xl:table-cell">Beitragsart</TableHead>
-            <TableHead className="hidden xl:table-cell">Eintritt</TableHead>
+            <TableHead className={colClass('memberNumber')}>Nr.</TableHead>
+            <TableHead className={colClass('status')}>Status</TableHead>
+            <TableHead className={colClass('email')}>E-Mail</TableHead>
+            <TableHead className={colClass('phone')}>Telefon</TableHead>
+            <TableHead className={colClass('household')}>Haushalt</TableHead>
+            <TableHead className={colClass('membershipType')}>Beitragsart</TableHead>
+            <TableHead className={colClass('joinDate')}>Eintritt</TableHead>
+            <TableHead className={colClass('notes')}>Notizen</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -284,35 +321,54 @@ export function MemberListTable({
                   </div>
                 </TableCell>
 
-                {/* Nr. - hidden on mobile */}
-                <TableCell className="hidden md:table-cell">
+                {/* Nr. */}
+                <TableCell className={colClass('memberNumber')}>
                   <code className="text-sm font-mono">{member.memberNumber}</code>
                 </TableCell>
 
-                {/* Status - hidden on mobile */}
-                <TableCell className="hidden md:table-cell">
+                {/* Status */}
+                <TableCell className={colClass('status')}>
                   <MemberStatusBadge status={member.status} />
                 </TableCell>
 
-                {/* E-Mail - desktop only */}
-                <TableCell className="hidden xl:table-cell">
+                {/* E-Mail */}
+                <TableCell className={colClass('email')}>
                   <span className="truncate block max-w-48">{member.email ?? '-'}</span>
                 </TableCell>
 
-                {/* Telefon - desktop only */}
-                <TableCell className="hidden xl:table-cell">{displayPhone ?? '-'}</TableCell>
+                {/* Telefon */}
+                <TableCell className={colClass('phone')}>{displayPhone ?? '-'}</TableCell>
 
-                {/* Beitragsart - desktop only */}
-                <TableCell className="hidden xl:table-cell">
+                {/* Haushalt */}
+                <TableCell className={colClass('household')}>
+                  {member.household ? (
+                    <HouseholdBadge
+                      name={member.household.name}
+                      householdId={member.household.id}
+                    />
+                  ) : (
+                    '-'
+                  )}
+                </TableCell>
+
+                {/* Beitragsart */}
+                <TableCell className={colClass('membershipType')}>
                   {activePeriod
                     ? (MEMBERSHIP_TYPE_LABELS[activePeriod.membershipType] ??
                       activePeriod.membershipType)
                     : '-'}
                 </TableCell>
 
-                {/* Eintritt - desktop only */}
-                <TableCell className="hidden xl:table-cell">
+                {/* Eintritt */}
+                <TableCell className={colClass('joinDate')}>
                   {activePeriod?.joinDate ? formatDate(activePeriod.joinDate) : '-'}
+                </TableCell>
+
+                {/* Notizen */}
+                <TableCell className={colClass('notes')}>
+                  <span className="text-muted-foreground text-sm truncate block max-w-48">
+                    {member.notes ? truncateText(member.notes, 30) : '-'}
+                  </span>
                 </TableCell>
               </TableRow>
             );
@@ -382,6 +438,14 @@ function formatDate(isoDate: string): string {
   const [year, month, day] = isoDate.split('-');
   if (!year || !month || !day) return isoDate;
   return `${day}.${month}.${year}`;
+}
+
+/**
+ * Truncate text to a maximum length with ellipsis.
+ */
+function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength)}...`;
 }
 
 export type { MemberListItem };
