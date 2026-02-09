@@ -52,6 +52,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "@marsidev/react-turnstile": "^1.4.2",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "@prisma/client-runtime-utils": "^7.3.0",

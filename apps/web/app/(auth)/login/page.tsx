@@ -11,6 +11,7 @@ import { GoogleIcon } from '@/components/icons';
 import { authClient } from '@/lib/auth-client';
 import { useSessionQuery } from '@/hooks/use-session';
 import { getAuthBroadcast } from '@/lib/broadcast-auth';
+import { TurnstileWidget } from '@/components/auth/turnstile-widget';
 import { sanitizeCallbackUrl } from '@/lib/url-validation';
 import { ArrowLeft, Loader2, Check } from 'lucide-react';
 import { LegalFooterLinks } from '@/components/layout/legal-links';
@@ -36,6 +37,7 @@ function LoginContent() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   // Refs for focus management
   const emailInputRef = useRef<HTMLInputElement>(null);
@@ -110,10 +112,14 @@ function LoginContent() {
       const { data, error: signInError } = await authClient.signIn.email({
         email,
         password,
+        fetchOptions: captchaToken
+          ? { headers: { 'x-captcha-response': captchaToken } }
+          : undefined,
       });
 
       if (signInError) {
         setError('E-Mail oder Passwort ist falsch');
+        setCaptchaToken(null);
         setIsLoading(false);
         return;
       }
@@ -126,6 +132,7 @@ function LoginContent() {
       }
     } catch {
       setError('Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
+      setCaptchaToken(null);
       setIsLoading(false);
     }
   };
@@ -317,6 +324,12 @@ function LoginContent() {
                 </div>
 
                 {error && <p className="text-sm text-destructive">{error}</p>}
+
+                <TurnstileWidget
+                  onToken={setCaptchaToken}
+                  onExpire={() => setCaptchaToken(null)}
+                  onError={() => setCaptchaToken(null)}
+                />
 
                 <Button type="submit" className="w-full " disabled={isLoading}>
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

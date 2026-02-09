@@ -12,6 +12,7 @@ import { validatePassword } from '@/lib/password-validation';
 import { authClient } from '@/lib/auth-client';
 import { useSessionQuery, useClearSession } from '@/hooks/use-session';
 import { getAuthBroadcast } from '@/lib/broadcast-auth';
+import { TurnstileWidget } from '@/components/auth/turnstile-widget';
 import { sanitizeCallbackUrl } from '@/lib/url-validation';
 import { ArrowLeft, Loader2, Check, Sparkles, LogOut, LayoutDashboard } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -35,6 +36,7 @@ function RegisterContent() {
   const [error, setError] = useState<string | null>(null);
   const [isEmailExistsError, setIsEmailExistsError] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const userInputs = [email, name].filter(Boolean);
 
@@ -77,6 +79,9 @@ function RegisterContent() {
         email,
         password,
         name: name.trim() || email.split('@')[0],
+        fetchOptions: captchaToken
+          ? { headers: { 'x-captcha-response': captchaToken } }
+          : undefined,
       });
 
       if (signUpError) {
@@ -91,6 +96,7 @@ function RegisterContent() {
         } else {
           setError(signUpError.message || 'Registrierung fehlgeschlagen');
         }
+        setCaptchaToken(null);
         setIsLoading(false);
         return;
       }
@@ -109,6 +115,7 @@ function RegisterContent() {
       }
     } catch {
       setError('Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
+      setCaptchaToken(null);
       setIsLoading(false);
     }
   };
@@ -341,6 +348,12 @@ function RegisterContent() {
               ) : (
                 <p className="text-sm text-destructive">{error}</p>
               ))}
+
+            <TurnstileWidget
+              onToken={setCaptchaToken}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+            />
 
             <Button type="submit" className="w-full " disabled={isLoading}>
               {isLoading ? (

@@ -60,6 +60,24 @@ vi.mock('@/lib/broadcast-auth', () => ({
   }),
 }));
 
+// Mock Turnstile widget
+vi.mock('@/components/auth/turnstile-widget', () => ({
+  TurnstileWidget: ({
+    onToken,
+  }: {
+    onToken: (t: string) => void;
+    onExpire?: () => void;
+    onError?: () => void;
+  }) => {
+    return (
+      <button data-testid="turnstile-mock" onClick={() => onToken('mock-captcha-token')}>
+        Turnstile
+      </button>
+    );
+  },
+  isTurnstileEnabled: () => true,
+}));
+
 // Import after mocks
 import RegisterPage from './page';
 import { validatePassword } from '@/lib/password-validation';
@@ -105,12 +123,13 @@ describe('RegisterPage', () => {
       // Submit
       await user.click(screen.getByRole('button', { name: /konto erstellen/i }));
 
-      // Verify API was called
+      // Verify API was called (fetchOptions: undefined when captcha not clicked)
       await waitFor(() => {
         expect(mockSignUpEmail).toHaveBeenCalledWith({
           email: 'test@example.de',
           password: 'StrongP@ss123!',
           name: 'Test User',
+          fetchOptions: undefined,
         });
       });
 
@@ -138,6 +157,7 @@ describe('RegisterPage', () => {
           email: 'john@example.de',
           password: 'StrongP@ss123!',
           name: 'john', // Uses email prefix
+          fetchOptions: undefined,
         });
       });
     });
@@ -248,6 +268,108 @@ describe('RegisterPage', () => {
 
       await waitFor(() => {
         expect(screen.getByText(/unknown error/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('captcha integration', () => {
+    it('passes captcha token to signUp when Turnstile provides token', async () => {
+      const user = userEvent.setup();
+      mockSignUpEmail.mockResolvedValue({ data: { user: {} }, error: null });
+
+      render(<RegisterPage />);
+
+      // Click Turnstile mock to provide token
+      await user.click(screen.getByTestId('turnstile-mock'));
+
+      // Fill out the form
+      await user.type(screen.getByLabelText(/e-mail-adresse/i), 'test@example.de');
+      await user.type(screen.getByLabelText(/name/i), 'Test User');
+      await user.type(screen.getByLabelText('Passwort'), 'StrongP@ss123!');
+      await user.type(screen.getByLabelText(/passwort bestätigen/i), 'StrongP@ss123!');
+
+      await user.click(screen.getByRole('button', { name: /konto erstellen/i }));
+
+      await waitFor(() => {
+        expect(mockSignUpEmail).toHaveBeenCalledWith({
+          email: 'test@example.de',
+          password: 'StrongP@ss123!',
+          name: 'Test User',
+          fetchOptions: { headers: { 'x-captcha-response': 'mock-captcha-token' } },
+        });
+      });
+    });
+
+    it('resets captcha token on registration error', async () => {
+      const user = userEvent.setup();
+      mockSignUpEmail.mockResolvedValue({
+        data: null,
+        error: { message: 'Unknown error' },
+      });
+
+      render(<RegisterPage />);
+
+      // Provide captcha token
+      await user.click(screen.getByTestId('turnstile-mock'));
+
+      // Fill form and submit
+      await user.type(screen.getByLabelText(/e-mail-adresse/i), 'test@example.de');
+      await user.type(screen.getByLabelText('Passwort'), 'StrongP@ss123!');
+      await user.type(screen.getByLabelText(/passwort bestätigen/i), 'StrongP@ss123!');
+      await user.click(screen.getByRole('button', { name: /konto erstellen/i }));
+
+      // Error shown
+      await waitFor(() => {
+        expect(screen.getByText(/unknown error/i)).toBeInTheDocument();
+      });
+
+      // Clear mock and retry — token should be reset
+      mockSignUpEmail.mockClear();
+      mockSignUpEmail.mockResolvedValue({ data: { user: {} }, error: null });
+
+      await user.click(screen.getByRole('button', { name: /konto erstellen/i }));
+
+      await waitFor(() => {
+        expect(mockSignUpEmail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            fetchOptions: undefined,
+          })
+        );
+      });
+    });
+
+    it('resets captcha token on network error', async () => {
+      const user = userEvent.setup();
+      mockSignUpEmail.mockRejectedValue(new Error('Network error'));
+
+      render(<RegisterPage />);
+
+      // Provide captcha token
+      await user.click(screen.getByTestId('turnstile-mock'));
+
+      // Fill form and submit
+      await user.type(screen.getByLabelText(/e-mail-adresse/i), 'test@example.de');
+      await user.type(screen.getByLabelText('Passwort'), 'StrongP@ss123!');
+      await user.type(screen.getByLabelText(/passwort bestätigen/i), 'StrongP@ss123!');
+      await user.click(screen.getByRole('button', { name: /konto erstellen/i }));
+
+      // Error shown
+      await waitFor(() => {
+        expect(screen.getByText(/fehler ist aufgetreten/i)).toBeInTheDocument();
+      });
+
+      // Clear mock and retry — token should be reset
+      mockSignUpEmail.mockClear();
+      mockSignUpEmail.mockResolvedValue({ data: { user: {} }, error: null });
+
+      await user.click(screen.getByRole('button', { name: /konto erstellen/i }));
+
+      await waitFor(() => {
+        expect(mockSignUpEmail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            fetchOptions: undefined,
+          })
+        );
       });
     });
   });
