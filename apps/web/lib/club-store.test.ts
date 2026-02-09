@@ -223,6 +223,46 @@ describe('club-store', () => {
     });
   });
 
+  describe('localStorage persistence (SEC-031)', () => {
+    it('should NOT persist roles to localStorage', () => {
+      act(() => {
+        useClubStore.getState().setClubs([
+          createTestClub({ id: '1', name: 'Club One', slug: 'club-one', roles: ['OWNER'] }),
+          createTestClub({
+            id: '2',
+            name: 'Club Two',
+            slug: 'club-two',
+            roles: ['MEMBER', 'TREASURER'],
+          }),
+        ]);
+      });
+
+      // Read persisted state from localStorage
+      const stored = JSON.parse(localStorage.getItem('club-context') ?? '{}');
+      const persistedClubs = stored?.state?.clubs ?? [];
+
+      // Verify roles are stripped from persistence
+      expect(persistedClubs).toHaveLength(2);
+      expect(persistedClubs[0]).not.toHaveProperty('roles');
+      expect(persistedClubs[1]).not.toHaveProperty('roles');
+      // Verify non-sensitive data is still persisted
+      expect(persistedClubs[0].name).toBe('Club One');
+      expect(persistedClubs[0].slug).toBe('club-one');
+    });
+
+    it('should still have roles available in memory', () => {
+      act(() => {
+        useClubStore
+          .getState()
+          .setClubs([createTestClub({ id: '1', name: 'Club', slug: 'club', roles: ['OWNER'] })]);
+      });
+
+      // In-memory state should still have roles
+      const clubs = useClubStore.getState().clubs;
+      expect(clubs[0].roles).toEqual(['OWNER']);
+    });
+  });
+
   describe('useNeedsClubRefresh()', () => {
     it('should return true when no clubs', () => {
       const { result } = renderHook(() => useNeedsClubRefresh());

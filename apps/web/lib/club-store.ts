@@ -16,14 +16,15 @@ export interface TierFeatures {
 /**
  * Club data stored in the client-side context.
  * Only non-sensitive display data is persisted to localStorage.
- * Permissions and features are fetched via TanStack Query (see use-club-permissions.ts).
+ * Permissions, roles, and features are fetched via TanStack Query (see use-club-permissions.ts).
+ * Roles are populated in-memory by useMyClubsQuery() but stripped from localStorage (SEC-031).
  */
 export interface ClubContext {
   id: string;
   name: string;
   slug: string;
-  /** User's roles in this club (multiple roles possible) */
-  roles: string[];
+  /** User's roles in this club — in-memory only, NOT persisted to localStorage (SEC-031) */
+  roles?: string[];
   avatarUrl?: string;
   avatarInitials?: string;
   avatarColor?: string;
@@ -70,11 +71,12 @@ export const useClubStore = create<ClubState>()(
     {
       name: 'club-context',
       storage: createJSONStorage(() => localStorage),
-      // Only persist non-sensitive UI state (SEC-031)
-      // Permissions and features are fetched via TanStack Query (not persisted)
+      // SEC-031: Only persist non-sensitive UI state
+      // Permissions, roles, and features are fetched via TanStack Query (not persisted)
       partialize: (state) => ({
         activeClubSlug: state.activeClubSlug,
-        clubs: state.clubs,
+        // Strip roles from persistence — re-fetched via API on mount
+        clubs: state.clubs.map(({ roles: _roles, ...rest }) => rest),
         lastFetched: state.lastFetched,
       }),
     }

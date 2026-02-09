@@ -51,8 +51,8 @@ const ROLE_PRIORITY: Record<string, number> = {
 /**
  * Get the primary (highest priority) role from a list of roles
  */
-function getPrimaryRole(roles: string[]): string {
-  if (roles.length === 0) return 'MEMBER';
+function getPrimaryRole(roles?: string[]): string {
+  if (!roles || roles.length === 0) return 'MEMBER';
   return roles.reduce((primary, role) =>
     (ROLE_PRIORITY[role] ?? 99) < (ROLE_PRIORITY[primary] ?? 99) ? role : primary
   );

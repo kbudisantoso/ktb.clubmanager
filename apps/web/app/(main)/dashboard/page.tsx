@@ -491,7 +491,7 @@ export default function DashboardPage() {
                 <div className="flex-1">
                   <div className="font-medium">{club.name}</div>
                   <div className="text-sm text-muted-foreground capitalize">
-                    {club.roles.map((r) => r.toLowerCase()).join(', ')}
+                    {(club.roles ?? []).map((r) => r.toLowerCase()).join(', ')}
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground" />
