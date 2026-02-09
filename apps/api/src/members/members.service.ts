@@ -63,7 +63,30 @@ export class MembersService {
     // Build WHERE clause
     const where: Prisma.MemberWhereInput = {
       deletedAt: null,
-      ...(query.status && { status: query.status }),
+      ...(query.status &&
+        query.status.length > 0 && {
+          status:
+            query.status.length === 1
+              ? query.status[0] // Single value: exact match (backwards compat)
+              : { in: query.status }, // Multiple values: IN query
+        }),
+      ...(query.householdFilter === 'HAS' && { householdId: { not: null } }),
+      ...(query.householdFilter === 'NONE' && { householdId: null }),
+      ...(query.householdFilter &&
+        !['HAS', 'NONE'].includes(query.householdFilter) && {
+          householdId: { in: query.householdFilter.split(',') },
+        }),
+      ...(query.periodYear && {
+        membershipPeriods: {
+          some: {
+            joinDate: { lte: new Date(`${query.periodYear}-12-31`) },
+            OR: [
+              { leaveDate: null },
+              { leaveDate: { gte: new Date(`${query.periodYear}-01-01`) } },
+            ],
+          },
+        },
+      }),
       ...(query.search && {
         OR: [
           { firstName: { contains: query.search, mode: 'insensitive' as const } },
