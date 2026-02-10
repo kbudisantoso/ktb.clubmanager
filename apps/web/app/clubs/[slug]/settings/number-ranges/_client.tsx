@@ -97,7 +97,7 @@ const DEFAULT_FORM_STATE: NumberRangeFormState = {
 export function NumberRangesSettingsClient() {
   const params = useParams<{ slug: string }>();
   const activeClub = useActiveClub();
-  const hasPermission = useHasPermission('club_settings:manage');
+  const hasPermission = useHasPermission('club:settings');
   const [permissionChecked, setPermissionChecked] = useState(false);
   const { toast } = useToast();
 
