@@ -214,14 +214,14 @@ export function NumberRangesSettingsClient() {
     try {
       await deleteMutation.mutateAsync(deleteTarget.id);
       toast({
-        title: 'Nummernkreis geloescht',
+        title: 'Nummernkreis gelöscht',
         description: `${ENTITY_TYPE_LABELS[deleteTarget.entityType] ?? deleteTarget.entityType} wurde entfernt.`,
       });
       setDeleteTarget(null);
     } catch (err) {
       toast({
         title: 'Fehler',
-        description: err instanceof Error ? err.message : 'Fehler beim Loeschen des Nummernkreises',
+        description: err instanceof Error ? err.message : 'Fehler beim Löschen des Nummernkreises',
         variant: 'destructive',
       });
       setDeleteTarget(null);
@@ -243,7 +243,7 @@ export function NumberRangesSettingsClient() {
       <AccessDenied
         feature="die Nummernkreise-Einstellungen"
         backHref={`/clubs/${params.slug}/dashboard`}
-        backLabel="Zurueck zum Verein"
+        backLabel="Zurück zum Verein"
       />
     );
   }
@@ -282,14 +282,14 @@ export function NumberRangesSettingsClient() {
                 Nummernkreise
               </CardTitle>
               <CardDescription>
-                Konfiguriere die automatische Nummernvergabe fuer Mitglieder, Buchungen und
+                Konfiguriere die automatische Nummernvergabe für Mitglieder, Buchungen und
                 SEPA-Mandate.
               </CardDescription>
             </div>
             {!isEmpty && (
               <Button onClick={() => openCreate()}>
                 <Plus className="h-4 w-4 mr-2" />
-                Nummernkreis hinzufuegen
+                Nummernkreis hinzufügen
               </Button>
             )}
           </div>
@@ -303,12 +303,12 @@ export function NumberRangesSettingsClient() {
               </div>
               <h3 className="text-lg font-semibold mb-2">Noch keine Nummernkreise konfiguriert</h3>
               <p className="text-muted-foreground max-w-md mb-6">
-                Richte mindestens einen Nummernkreis fuer Mitgliedsnummern ein, bevor du Mitglieder
+                Richte mindestens einen Nummernkreis für Mitgliedsnummern ein, bevor du Mitglieder
                 anlegen kannst.
               </p>
               <Button onClick={() => openCreate('MEMBER')}>
                 <Plus className="h-4 w-4 mr-2" />
-                Nummernkreis fuer Mitglieder einrichten
+                Nummernkreis für Mitglieder einrichten
               </Button>
             </div>
           ) : (
@@ -318,9 +318,9 @@ export function NumberRangesSettingsClient() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Typ</TableHead>
-                    <TableHead>Praefix</TableHead>
-                    <TableHead className="text-center">Laenge</TableHead>
-                    <TableHead className="text-center">Jaehrlich zuruecksetzen</TableHead>
+                    <TableHead>Präfix</TableHead>
+                    <TableHead className="text-center">Länge</TableHead>
+                    <TableHead className="text-center">Jährlich zurücksetzen</TableHead>
                     <TableHead className="text-right">Aktueller Wert</TableHead>
                     <TableHead>Naechste Nummer</TableHead>
                     <TableHead className="w-25"></TableHead>
@@ -374,8 +374,8 @@ export function NumberRangesSettingsClient() {
                             </TooltipTrigger>
                             <TooltipContent>
                               {range.currentValue > 0
-                                ? 'Kann nicht geloescht werden (bereits Nummern vergeben)'
-                                : 'Loeschen'}
+                                ? 'Kann nicht gelöscht werden (bereits Nummern vergeben)'
+                                : 'Löschen'}
                             </TooltipContent>
                           </Tooltip>
                         </div>
@@ -394,12 +394,12 @@ export function NumberRangesSettingsClient() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingRange ? 'Nummernkreis bearbeiten' : 'Nummernkreis hinzufuegen'}
+              {editingRange ? 'Nummernkreis bearbeiten' : 'Nummernkreis hinzufügen'}
             </DialogTitle>
             <DialogDescription>
               {editingRange
-                ? 'Aendere die Konfiguration des Nummernkreises.'
-                : 'Konfiguriere einen neuen Nummernkreis fuer die automatische Nummernvergabe.'}
+                ? 'Ändere die Konfiguration des Nummernkreises.'
+                : 'Konfiguriere einen neuen Nummernkreis für die automatische Nummernvergabe.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -421,7 +421,7 @@ export function NumberRangesSettingsClient() {
                   }
                 >
                   <SelectTrigger id="entityType">
-                    <SelectValue placeholder="Typ waehlen" />
+                    <SelectValue placeholder="Typ wählen" />
                   </SelectTrigger>
                   <SelectContent>
                     {ENTITY_TYPES.map((type) => {
@@ -439,7 +439,7 @@ export function NumberRangesSettingsClient() {
                             )}
                             {DISABLED_ENTITY_TYPES.includes(type) && !isExisting && (
                               <span className="text-xs text-muted-foreground">
-                                (verfuegbar in spaeterer Phase)
+                                (verfügbar in späterer Phase)
                               </span>
                             )}
                           </span>
@@ -453,7 +453,7 @@ export function NumberRangesSettingsClient() {
 
             {/* Prefix */}
             <div className="space-y-2">
-              <Label htmlFor="prefix">Praefix</Label>
+              <Label htmlFor="prefix">Präfix</Label>
               <Input
                 id="prefix"
                 value={formState.prefix}
@@ -463,13 +463,13 @@ export function NumberRangesSettingsClient() {
               />
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Info className="h-3 w-3" />
-                Optional. Verwende {'{YYYY}'} als Platzhalter fuer das aktuelle Jahr.
+                Optional. Verwende {'{YYYY}'} als Platzhalter für das aktuelle Jahr.
               </p>
             </div>
 
             {/* Pad Length */}
             <div className="space-y-2">
-              <Label htmlFor="padLength">Laenge (Stellen)</Label>
+              <Label htmlFor="padLength">Länge (Stellen)</Label>
               <Input
                 id="padLength"
                 type="number"
@@ -492,10 +492,10 @@ export function NumberRangesSettingsClient() {
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
                 <Label htmlFor="yearReset" className="text-sm font-medium">
-                  Jaehrlich zuruecksetzen
+                  Jährlich zurücksetzen
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Nummerierung wird jaehrlich zurueckgesetzt
+                  Nummerierung wird jährlich zurückgesetzt
                 </p>
               </div>
               <Switch
@@ -512,7 +512,7 @@ export function NumberRangesSettingsClient() {
               <div className="text-sm font-medium mb-1">Vorschau</div>
               <div className="font-mono text-lg">{preview}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                So sieht die naechste generierte Nummer aus.
+                So sieht die nächste generierte Nummer aus.
               </p>
             </div>
           </div>
@@ -542,11 +542,11 @@ export function NumberRangesSettingsClient() {
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Nummernkreis loeschen?</AlertDialogTitle>
+            <AlertDialogTitle>Nummernkreis löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Moechtest du den Nummernkreis &quot;
+              Möchtest du den Nummernkreis &quot;
               {ENTITY_TYPE_LABELS[deleteTarget?.entityType ?? ''] ?? deleteTarget?.entityType}
-              &quot; wirklich loeschen? Diese Aktion kann nicht rueckgaengig gemacht werden.
+              &quot; wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -557,7 +557,7 @@ export function NumberRangesSettingsClient() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Loeschen
+              Löschen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

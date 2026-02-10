@@ -113,7 +113,7 @@ export function MemberDetailHeader({
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Zurueck zu Mitgliedern
+          Zurück zu Mitgliedern
         </Link>
       )}
 

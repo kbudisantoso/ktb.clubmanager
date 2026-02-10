@@ -13,7 +13,7 @@ interface MemberEmptyStateProps {
   variant: EmptyStateVariant;
   /** Called when "Erstes Mitglied anlegen" is clicked */
   onCreateMember?: () => void;
-  /** Called when "Suche zuruecksetzen" is clicked */
+  /** Called when "Suche zurücksetzen" is clicked */
   onClearSearch?: () => void;
 }
 
@@ -29,7 +29,7 @@ const VARIANTS: Record<
     icon: Settings2,
     title: 'Mitgliederverwaltung einrichten',
     description:
-      'Bevor du Mitglieder anlegen kannst, richte zunaechst die Nummernkreise fuer die Mitgliedsnummern ein.',
+      'Bevor du Mitglieder anlegen kannst, richte zunächst die Nummernkreise für die Mitgliedsnummern ein.',
   },
   'no-members': {
     icon: Users,
@@ -81,7 +81,7 @@ export function MemberEmptyState({
 
           {variant === 'no-results' && (
             <Button variant="outline" onClick={onClearSearch}>
-              Suche zuruecksetzen
+              Suche zurücksetzen
             </Button>
           )}
         </CardContent>
