@@ -22,7 +22,7 @@ const MEMBERSHIP_TYPE_LABELS: Record<string, string> = {
   ORDENTLICH: 'Ordentlich',
   PASSIV: 'Passiv',
   EHREN: 'Ehren',
-  FOERDER: 'Foerder',
+  FOERDER: 'Förder',
   JUGEND: 'Jugend',
 };
 
@@ -239,7 +239,7 @@ export function MemberListTable({
               <Checkbox
                 checked={someSelected ? 'indeterminate' : allSelected}
                 onCheckedChange={toggleSelectAll}
-                aria-label="Alle Mitglieder auswaehlen"
+                aria-label="Alle Mitglieder auswählen"
               />
             </TableHead>
             <TableHead>Name</TableHead>
@@ -287,7 +287,7 @@ export function MemberListTable({
                         toggleSelection(member.id, index, true);
                       }
                     }}
-                    aria-label={`${displayName} auswaehlen`}
+                    aria-label={`${displayName} auswählen`}
                   />
                 </TableCell>
 

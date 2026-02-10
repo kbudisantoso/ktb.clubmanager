@@ -77,7 +77,7 @@ const MEMBERSHIP_TYPE_OPTIONS = [
   { value: 'ORDENTLICH', label: 'Ordentlich' },
   { value: 'PASSIV', label: 'Passiv' },
   { value: 'EHREN', label: 'Ehren' },
-  { value: 'FOERDER', label: 'Foerder' },
+  { value: 'FOERDER', label: 'Förder' },
   { value: 'JUGEND', label: 'Jugend' },
 ];
 
@@ -174,13 +174,13 @@ export function MemberBulkActions({
         await bulkChangeStatus.mutateAsync({
           memberIds,
           newStatus: targetStatus,
-          reason: 'Sammelaenderung',
+          reason: 'Sammeländerung',
         });
 
         toast({
-          title: `Status fuer ${memberIds.length} Mitglieder geaendert`,
+          title: `Status für ${memberIds.length} Mitglieder geändert`,
           action: {
-            label: 'Rueckgaengig',
+            label: 'Rückgängig',
             onClick: async () => {
               // Undo: restore original statuses individually
               for (const orig of originalStatuses) {
@@ -188,13 +188,13 @@ export function MemberBulkActions({
                   await bulkChangeStatus.mutateAsync({
                     memberIds: [orig.id],
                     newStatus: orig.status,
-                    reason: 'Sammelaenderung rueckgaengig gemacht',
+                    reason: 'Sammeländerung rückgängig gemacht',
                   });
                 } catch {
                   // Best effort undo
                 }
               }
-              toast({ title: 'Statusaenderung rueckgaengig gemacht' });
+              toast({ title: 'Statusänderung rückgängig gemacht' });
             },
           },
         });
@@ -202,7 +202,7 @@ export function MemberBulkActions({
         onClearSelection();
       } catch (err) {
         toast({
-          title: 'Fehler bei der Statusaenderung',
+          title: 'Fehler bei der Statusänderung',
           description: err instanceof Error ? err.message : 'Unbekannter Fehler',
           variant: 'destructive',
         });
@@ -293,7 +293,7 @@ export function MemberBulkActions({
       });
     } else {
       toast({
-        title: `${fieldLabel} fuer ${succeeded} Mitglieder geaendert`,
+        title: `${fieldLabel} für ${succeeded} Mitglieder geändert`,
       });
     }
 
@@ -317,7 +317,7 @@ export function MemberBulkActions({
       >
         {/* Selection count */}
         <span className="text-sm font-medium whitespace-nowrap">
-          {count} von {totalCount} ausgewaehlt
+          {count} von {totalCount} ausgewählt
         </span>
 
         {/* Divider */}
@@ -341,11 +341,11 @@ export function MemberBulkActions({
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
-              <TooltipContent>Status aendern</TooltipContent>
+              <TooltipContent>Status ändern</TooltipContent>
             </Tooltip>
             <DropdownMenuContent>
               {commonTransitions.length === 0 ? (
-                <DropdownMenuItem disabled>Keine gemeinsamen Statusuebergaenge</DropdownMenuItem>
+                <DropdownMenuItem disabled>Keine gemeinsamen Statusübergänge</DropdownMenuItem>
               ) : (
                 commonTransitions.map((status) => (
                   <DropdownMenuItem
@@ -376,7 +376,7 @@ export function MemberBulkActions({
               </span>
             </TooltipTrigger>
             <TooltipContent>
-              {canCreateHousehold ? 'Haushalt erstellen' : 'Mindestens 2 Mitglieder auswaehlen'}
+              {canCreateHousehold ? 'Haushalt erstellen' : 'Mindestens 2 Mitglieder auswählen'}
             </TooltipContent>
           </Tooltip>
 
@@ -449,12 +449,12 @@ export function MemberBulkActions({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Status fuer {count} {count === 1 ? 'Mitglied' : 'Mitglieder'} aendern?
+              Status für {count} {count === 1 ? 'Mitglied' : 'Mitglieder'} ändern?
             </AlertDialogTitle>
             <AlertDialogDescription>
               Der Status wird auf &ldquo;
               {STATUS_LABELS[statusConfirmState.targetStatus] ?? statusConfirmState.targetStatus}
-              &rdquo; geaendert.
+              &rdquo; geändert.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -465,7 +465,7 @@ export function MemberBulkActions({
                 setStatusConfirmState({ open: false, targetStatus: '' });
               }}
             >
-              Status aendern
+              Status ändern
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -484,7 +484,7 @@ export function MemberBulkActions({
           <DialogHeader>
             <DialogTitle>Massenbearbeitung</DialogTitle>
             <DialogDescription>
-              Aendere ein Feld fuer {count} {count === 1 ? 'Mitglied' : 'Mitglieder'}.
+              Ändere ein Feld für {count} {count === 1 ? 'Mitglied' : 'Mitglieder'}.
             </DialogDescription>
           </DialogHeader>
 
@@ -499,7 +499,7 @@ export function MemberBulkActions({
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Feld auswaehlen..." />
+                  <SelectValue placeholder="Feld auswählen..." />
                 </SelectTrigger>
                 <SelectContent>
                   {BULK_EDIT_FIELDS.map((f) => (
@@ -516,7 +516,7 @@ export function MemberBulkActions({
                 <Label>Neuer Wert</Label>
                 <Select value={editValue} onValueChange={setEditValue}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Mitgliedsart auswaehlen..." />
+                    <SelectValue placeholder="Mitgliedsart auswählen..." />
                   </SelectTrigger>
                   <SelectContent>
                     {MEMBERSHIP_TYPE_OPTIONS.map((opt) => (

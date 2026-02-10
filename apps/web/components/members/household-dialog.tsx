@@ -378,7 +378,7 @@ export function HouseholdDialog({
 
               {selectedMembers.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-2">
-                  Noch keine Mitglieder ausgewaehlt
+                  Noch keine Mitglieder ausgewählt
                 </p>
               ) : (
                 <div className="space-y-2">
@@ -505,7 +505,7 @@ export function HouseholdDialog({
                 disabled={isPending}
                 className="sm:mr-auto"
               >
-                Haushalt aufloesen
+                Haushalt auflösen
               </Button>
             )}
 
@@ -529,10 +529,10 @@ export function HouseholdDialog({
       <AlertDialog open={showDissolveConfirm} onOpenChange={setShowDissolveConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Haushalt aufloesen?</AlertDialogTitle>
+            <AlertDialogTitle>Haushalt auflösen?</AlertDialogTitle>
             <AlertDialogDescription>
               Alle Mitglieder werden aus dem Haushalt entfernt. Die Mitgliederdaten bleiben
-              erhalten. Diese Aktion kann nicht rueckgaengig gemacht werden.
+              erhalten. Diese Aktion kann nicht rückgängig gemacht werden.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -542,7 +542,7 @@ export function HouseholdDialog({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {dissolveHousehold.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Endgueltig aufloesen
+              Endgültig auflösen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

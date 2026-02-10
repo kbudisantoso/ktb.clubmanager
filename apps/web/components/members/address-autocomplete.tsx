@@ -212,7 +212,7 @@ export function AddressAutocomplete<T extends FieldValues = FieldValues>({
         <Label htmlFor="country">Land</Label>
         <Select defaultValue="DE" disabled={disabled} onValueChange={(val) => set('country', val)}>
           <SelectTrigger className={cn('w-full', errors?.country && 'border-destructive')}>
-            <SelectValue placeholder="Land waehlen" />
+            <SelectValue placeholder="Land wählen" />
           </SelectTrigger>
           <SelectContent>
             {COUNTRY_OPTIONS.map((c) => (

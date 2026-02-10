@@ -86,7 +86,7 @@ function DetailContent({ memberId, onClose, showFullPageLink = true }: DetailCon
       <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground p-6">
         <p className="text-sm">Mitglied nicht gefunden</p>
         <Button variant="outline" size="sm" onClick={onClose}>
-          Schliessen
+          Schließen
         </Button>
       </div>
     );

@@ -103,15 +103,15 @@ export function MemberAnonymizeDialog({
       <AlertDialog open={open} onOpenChange={handleClose}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Anonymisierung nicht moeglich</AlertDialogTitle>
+            <AlertDialogTitle>Anonymisierung nicht möglich</AlertDialogTitle>
             <AlertDialogDescription>
               {!isLeft
-                ? 'Mitglieder koennen nur nach Austritt anonymisiert werden.'
-                : 'Nur Inhaber koennen Mitglieder anonymisieren.'}
+                ? 'Mitglieder können nur nach Austritt anonymisiert werden.'
+                : 'Nur Inhaber können Mitglieder anonymisieren.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleClose}>Schliessen</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleClose}>Schließen</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -124,7 +124,7 @@ export function MemberAnonymizeDialog({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <ShieldAlert className="h-5 w-5 text-destructive" />
-            {step === 1 ? 'Mitglied anonymisieren?' : 'Anonymisierung bestaetigen'}
+            {step === 1 ? 'Mitglied anonymisieren?' : 'Anonymisierung bestätigen'}
           </AlertDialogTitle>
           <AlertDialogDescription>
             {displayName} ({member.memberNumber})
@@ -136,7 +136,7 @@ export function MemberAnonymizeDialog({
           <div className="space-y-4">
             <div className="rounded-md bg-destructive/10 border border-destructive/25 p-4 space-y-3">
               <p className="text-sm font-medium text-destructive">
-                Alle persoenlichen Daten (Name, Adresse, Kontakt, Notizen) werden unwiderruflich
+                Alle persönlichen Daten (Name, Adresse, Kontakt, Notizen) werden unwiderruflich
                 durch &quot;Anonymisiert&quot; ersetzt.
               </p>
               <div className="text-sm text-muted-foreground space-y-1">
@@ -144,12 +144,12 @@ export function MemberAnonymizeDialog({
                 <ul className="list-disc list-inside space-y-0.5 ml-1">
                   <li>Mitgliedsnummer</li>
                   <li>Daten (Eintritt, Austritt)</li>
-                  <li>Finanzbezuege</li>
+                  <li>Finanzbezüge</li>
                   <li>Status</li>
                 </ul>
               </div>
               <p className="text-sm font-semibold text-destructive">
-                Dieser Vorgang kann nicht rueckgaengig gemacht werden.
+                Dieser Vorgang kann nicht rückgängig gemacht werden.
               </p>
             </div>
           </div>
@@ -160,7 +160,7 @@ export function MemberAnonymizeDialog({
               <Label htmlFor="anonymize-confirm">
                 Gib die Mitgliedsnummer{' '}
                 <code className="font-mono font-bold">{member.memberNumber}</code> ein, um die
-                Anonymisierung zu bestaetigen:
+                Anonymisierung zu bestätigen:
               </Label>
               <Input
                 id="anonymize-confirm"

@@ -34,7 +34,7 @@ const MEMBERSHIP_TYPE_LABELS: Record<string, string> = {
   ORDENTLICH: 'Ordentlich',
   PASSIV: 'Passiv',
   EHREN: 'Ehren',
-  FOERDER: 'Foerder',
+  FOERDER: 'Förder',
   JUGEND: 'Jugend',
 };
 
@@ -249,7 +249,7 @@ export function MemberCsvExportDialog({ members, open, onOpenChange }: MemberCsv
         <DialogHeader>
           <DialogTitle>CSV-Export</DialogTitle>
           <DialogDescription>
-            Waehle die Spalten fuer den Export von {members.length}{' '}
+            Wähle die Spalten für den Export von {members.length}{' '}
             {members.length === 1 ? 'Mitglied' : 'Mitgliedern'}.
           </DialogDescription>
         </DialogHeader>

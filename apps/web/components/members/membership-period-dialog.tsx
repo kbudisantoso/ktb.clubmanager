@@ -37,7 +37,7 @@ const MEMBERSHIP_TYPE_OPTIONS = [
   { value: 'ORDENTLICH', label: 'Ordentlich' },
   { value: 'PASSIV', label: 'Passiv' },
   { value: 'EHREN', label: 'Ehren' },
-  { value: 'FOERDER', label: 'Foerder' },
+  { value: 'FOERDER', label: 'Förder' },
   { value: 'JUGEND', label: 'Jugend' },
 ] as const;
 
@@ -326,7 +326,7 @@ export function MembershipPeriodDialog({
                 </Label>
                 <Select value={membershipType} onValueChange={setMembershipType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Mitgliedsart waehlen" />
+                    <SelectValue placeholder="Mitgliedsart wählen" />
                   </SelectTrigger>
                   <SelectContent>
                     {MEMBERSHIP_TYPE_OPTIONS.map((opt) => (
@@ -427,7 +427,7 @@ function DatePickerField({
             <CalendarIcon className="mr-2 h-4 w-4" />
             {value
               ? format(new Date(value + 'T00:00:00'), 'dd.MM.yyyy', { locale: de })
-              : (placeholder ?? 'Datum waehlen')}
+              : (placeholder ?? 'Datum wählen')}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">

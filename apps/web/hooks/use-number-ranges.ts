@@ -166,7 +166,7 @@ export function useDeleteNumberRange(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Fehler beim Loeschen des Nummernkreises');
+        throw new Error(error.message || 'Fehler beim Löschen des Nummernkreises');
       }
     },
     onSuccess: () => {

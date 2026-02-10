@@ -205,7 +205,7 @@ export function useDeleteMember(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Fehler beim Loeschen des Mitglieds');
+        throw new Error(error.message || 'Fehler beim Löschen des Mitglieds');
       }
       return res.json();
     },
@@ -237,7 +237,7 @@ export function useChangeStatus(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Fehler beim Aendern des Status');
+        throw new Error(error.message || 'Fehler beim Ändern des Status');
       }
       return res.json();
     },
@@ -269,7 +269,7 @@ export function useBulkChangeStatus(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Fehler beim Aendern des Status');
+        throw new Error(error.message || 'Fehler beim Ändern des Status');
       }
       return res.json();
     },

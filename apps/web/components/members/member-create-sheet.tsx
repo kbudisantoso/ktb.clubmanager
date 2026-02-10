@@ -60,7 +60,7 @@ const MEMBERSHIP_TYPE_OPTIONS = [
   { value: 'ORDENTLICH', label: 'Ordentlich' },
   { value: 'PASSIV', label: 'Passiv' },
   { value: 'EHREN', label: 'Ehren' },
-  { value: 'FOERDER', label: 'Foerder' },
+  { value: 'FOERDER', label: 'Förder' },
   { value: 'JUGEND', label: 'Jugend' },
 ] as const;
 
@@ -159,7 +159,7 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
         <SheetHeader>
           <SheetTitle>Neues Mitglied</SheetTitle>
           <SheetDescription>
-            Erfasse die wichtigsten Daten. Details kannst du spaeter ergaenzen.
+            Erfasse die wichtigsten Daten. Details kannst du später ergänzen.
           </SheetDescription>
         </SheetHeader>
 
@@ -183,7 +183,7 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
                     onValueChange={(val) => setValue('salutation', val as FormValues['salutation'])}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Bitte waehlen" />
+                      <SelectValue placeholder="Bitte wählen" />
                     </SelectTrigger>
                     <SelectContent>
                       {SALUTATION_OPTIONS.map((s) => (
@@ -388,7 +388,7 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
               onValueChange={(val) => setValue('status', val as FormValues['status'])}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Status waehlen" />
+                <SelectValue placeholder="Status wählen" />
               </SelectTrigger>
               <SelectContent>
                 {STATUS_OPTIONS.map((s) => (
@@ -422,7 +422,7 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
                 }
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Mitgliedsart waehlen" />
+                  <SelectValue placeholder="Mitgliedsart wählen" />
                 </SelectTrigger>
                 <SelectContent>
                   {MEMBERSHIP_TYPE_OPTIONS.map((m) => (
@@ -538,7 +538,7 @@ function DatePickerField({ value, onChange, disabled, error }: DatePickerFieldPr
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {selectedDate ? format(selectedDate, 'dd.MM.yyyy', { locale: de }) : 'Datum waehlen'}
+            {selectedDate ? format(selectedDate, 'dd.MM.yyyy', { locale: de }) : 'Datum wählen'}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
