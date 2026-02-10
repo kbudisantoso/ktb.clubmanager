@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateSlug, isSlugValid, isSlugReserved, validateSlug } from './slug.js';
+import { generateSlug, isSlugValid, isSlugReserved, validateSlug } from './slug.ts';
 
 describe('generateSlug', () => {
   it('should convert name to lowercase slug', () => {

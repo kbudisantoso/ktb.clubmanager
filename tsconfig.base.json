@@ -13,6 +13,8 @@
     "declarationMap": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "noEmit": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true

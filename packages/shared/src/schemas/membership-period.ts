@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MembershipTypeSchema } from './member-status.js';
+import { MembershipTypeSchema } from './member-status.ts';
 
 /**
  * Schema for creating a new membership period.

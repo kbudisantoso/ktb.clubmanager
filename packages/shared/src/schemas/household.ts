@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { HouseholdRoleSchema } from './member-status.js';
+import { HouseholdRoleSchema } from './member-status.ts';
 
 /**
  * Schema for creating a new household group.

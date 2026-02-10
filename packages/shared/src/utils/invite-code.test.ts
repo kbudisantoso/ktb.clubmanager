@@ -4,7 +4,7 @@ import {
   formatInviteCode,
   normalizeInviteCode,
   isInviteCodeValid,
-} from './invite-code.js';
+} from './invite-code.ts';
 
 describe('generateInviteCode', () => {
   it('should generate 8-character code', () => {
