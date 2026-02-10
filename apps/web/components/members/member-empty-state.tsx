@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Settings2, Users, SearchX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 type EmptyStateVariant = 'no-number-ranges' | 'no-members' | 'no-results';
 
@@ -56,30 +57,35 @@ export function MemberEmptyState({
   const Icon = config.icon;
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-        <Icon className="h-8 w-8 text-muted-foreground" />
-      </div>
-      <h3 className="text-lg font-semibold mb-2">{config.title}</h3>
-      <p className="text-muted-foreground max-w-md mb-6">{config.description}</p>
+    <div className="flex-1 flex items-center justify-center p-4">
+      <Card className="max-w-md w-full text-center">
+        <CardHeader>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+            <Icon className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <CardTitle>{config.title}</CardTitle>
+          <CardDescription>{config.description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {variant === 'no-number-ranges' && (
+            <Button asChild>
+              <Link href={`/clubs/${params.slug}/settings/number-ranges`}>
+                Nummernkreise einrichten
+              </Link>
+            </Button>
+          )}
 
-      {variant === 'no-number-ranges' && (
-        <Button asChild>
-          <Link href={`/clubs/${params.slug}/settings/number-ranges`}>
-            Nummernkreise einrichten
-          </Link>
-        </Button>
-      )}
+          {variant === 'no-members' && (
+            <Button onClick={onCreateMember}>Erstes Mitglied anlegen</Button>
+          )}
 
-      {variant === 'no-members' && (
-        <Button onClick={onCreateMember}>Erstes Mitglied anlegen</Button>
-      )}
-
-      {variant === 'no-results' && (
-        <Button variant="outline" onClick={onClearSearch}>
-          Suche zuruecksetzen
-        </Button>
-      )}
+          {variant === 'no-results' && (
+            <Button variant="outline" onClick={onClearSearch}>
+              Suche zuruecksetzen
+            </Button>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
