@@ -39,8 +39,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={cn(plusJakartaSans.variable, inter.variable)}
     >
       <body className="font-body antialiased">
-        {/* Unified background for all pages */}
-        <div className="app-bg" />
         <Providers>{children}</Providers>
       </body>
     </html>
