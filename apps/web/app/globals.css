@@ -1,11 +1,9 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
-
-@custom-variant dark (&:is(.dark *));
-@plugin "@tailwindcss/typography";
+@plugin '@tailwindcss/typography';
 
 /* Enable dark mode via class (for next-themes) */
-@variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark *));
 
 :root {
   /* Brand Colors (OKLCH format per Tailwind v4) */
@@ -62,7 +60,7 @@
   --sidebar-accent-foreground: oklch(0.25 0.02 265);
   --sidebar-border: oklch(0.92 0.01 265);
   --sidebar-ring: var(--brand-cyan);
-  --sidebar: hsl(0 0% 98%);
+  --sidebar: var(--sidebar-background);
 }
 
 .dark {
@@ -109,7 +107,7 @@
   --sidebar-accent-foreground: oklch(0.9 0.01 265);
   --sidebar-border: oklch(0.25 0.02 265);
   --sidebar-ring: var(--brand-cyan);
-  --sidebar: hsl(240 5.9% 10%);
+  --sidebar: var(--sidebar-background);
 }
 
 @theme inline {
@@ -230,8 +228,5 @@ input[data-slot='input']:focus-visible {
 @layer base {
   * {
     @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
   }
 }
