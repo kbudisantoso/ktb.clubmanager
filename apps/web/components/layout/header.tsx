@@ -12,7 +12,7 @@ import { ClubBadge } from '@/components/club-switcher/club-badge';
  */
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full bg-transparent backdrop-blur-sm">
+    <header className="sticky top-0 z-50 w-full bg-background border-b">
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
         {/* Logo - Left */}
         <Link href="/dashboard" className="flex items-center shrink-0">
