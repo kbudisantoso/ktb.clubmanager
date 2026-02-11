@@ -170,193 +170,194 @@ function LoginContent() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
       <div className="w-full max-w-md">
-        {/* Glass Panel */}
-        <div className="glass-panel rounded-2xl p-8 sm:p-10">
-          {/* Logo */}
-          <div className="flex justify-center mb-8">
-            <Image
-              src="/logo.svg"
-              alt="ClubManager"
-              width={200}
-              height={50}
-              className="h-10 w-auto dark:hidden"
-              priority
-            />
-            <Image
-              src="/logo-darkbg.svg"
-              alt="ClubManager"
-              width={200}
-              height={50}
-              className="h-10 w-auto hidden dark:block"
-              priority
-            />
-          </div>
-
-          {step === 'email' ? (
-            /* Step 1: Email input */
-            <div className="space-y-6">
-              <div className="text-center">
-                <h1 className="text-2xl font-display font-bold gradient-text">Willkommen zurück</h1>
-                <p className="text-muted-foreground mt-2">Melde dich an, um fortzufahren</p>
-              </div>
-
-              {signedOut && (
-                <div className="glass-card rounded-lg p-3 text-sm text-success border-success/20">
-                  <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4" />
-                    Du wurdest erfolgreich abgemeldet.
-                  </div>
-                </div>
-              )}
-
-              <form onSubmit={handleEmailSubmit} className="space-y-4" noValidate>
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-Mail-Adresse</Label>
-                  <Input
-                    ref={emailInputRef}
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="name@example.de"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      setError(null);
-                    }}
-                    onKeyDown={handleEmailKeyDown}
-                    autoComplete="username email"
-                    className="glass-input"
-                  />
-                </div>
-
-                {error && <p className="text-sm text-destructive">{error}</p>}
-
-                <Button type="submit" className="w-full " disabled={isLoading}>
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Weiter
-                </Button>
-              </form>
-
-              {googleEnabled && (
-                <>
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-border/50" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="glass-card px-3 py-1 rounded-full text-muted-foreground">
-                        oder
-                      </span>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full glass-input hover:bg-white/80 dark:hover:bg-white/10"
-                    onClick={handleGoogleSignIn}
-                    disabled={isLoading}
-                  >
-                    <GoogleIcon className="mr-2 h-5 w-5" />
-                    Mit Google anmelden
-                  </Button>
-                </>
-              )}
-
-              <p className="text-center text-sm text-muted-foreground">
-                Noch kein Konto?{' '}
-                <Link
-                  href={
-                    callbackUrl !== '/dashboard'
-                      ? `/register?callbackUrl=${encodeURIComponent(callbackUrl)}`
-                      : '/register'
-                  }
-                  className="text-accent hover:underline font-medium"
-                >
-                  Jetzt registrieren
-                </Link>
-              </p>
+        {/* Card */}
+        <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
+          <div className="h-1 bg-linear-to-r from-(--brand-cobalt) via-(--brand-cyan) to-(--brand-green)" />
+          <div className="p-8 sm:p-10">
+            {/* Logo */}
+            <div className="flex justify-center mb-8">
+              <Image
+                src="/logo.svg"
+                alt="ClubManager"
+                width={200}
+                height={50}
+                className="h-10 w-auto dark:hidden"
+                priority
+              />
+              <Image
+                src="/logo-darkbg.svg"
+                alt="ClubManager"
+                width={200}
+                height={50}
+                className="h-10 w-auto hidden dark:block"
+                priority
+              />
             </div>
-          ) : (
-            /* Step 2: Password input */
-            <div className="space-y-6">
-              <button
-                type="button"
-                onClick={goBack}
-                className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ArrowLeft className="mr-1 h-4 w-4" />
-                {email}
-              </button>
 
-              <div className="text-center">
-                <h1 className="text-2xl font-display font-bold gradient-text">Passwort eingeben</h1>
-              </div>
-
-              <form onSubmit={handlePasswordSignIn} className="space-y-4" noValidate>
-                {/* Hidden email field for password manager to correctly save credentials */}
-                <input
-                  type="email"
-                  name="email"
-                  value={email}
-                  autoComplete="username email"
-                  readOnly
-                  className="sr-only"
-                  tabIndex={-1}
-                  aria-hidden="true"
-                />
-                <div className="space-y-2">
-                  <Label htmlFor="password">Passwort</Label>
-                  <Input
-                    ref={passwordInputRef}
-                    id="password"
-                    name="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setError(null);
-                    }}
-                    onKeyDown={handlePasswordKeyDown}
-                    autoComplete="current-password"
-                    className="glass-input"
-                  />
+            {step === 'email' ? (
+              /* Step 1: Email input */
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h1 className="text-2xl font-display font-bold">Willkommen zurück</h1>
+                  <p className="text-muted-foreground mt-2">Melde dich an, um fortzufahren</p>
                 </div>
 
-                {error && <p className="text-sm text-destructive">{error}</p>}
+                {signedOut && (
+                  <div className="bg-muted rounded-lg p-3 text-sm text-success border border-success/20">
+                    <div className="flex items-center gap-2">
+                      <Check className="h-4 w-4" />
+                      Du wurdest erfolgreich abgemeldet.
+                    </div>
+                  </div>
+                )}
 
-                <TurnstileWidget
-                  onToken={setCaptchaToken}
-                  onExpire={() => setCaptchaToken(null)}
-                  onError={() => setCaptchaToken(null)}
-                />
+                <form onSubmit={handleEmailSubmit} className="space-y-4" noValidate>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">E-Mail-Adresse</Label>
+                    <Input
+                      ref={emailInputRef}
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="name@example.de"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setError(null);
+                      }}
+                      onKeyDown={handleEmailKeyDown}
+                      autoComplete="username email"
+                    />
+                  </div>
 
-                <Button type="submit" className="w-full " disabled={isLoading}>
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Anmelden
-                </Button>
+                  {error && <p className="text-sm text-destructive">{error}</p>}
 
-                <div className="flex justify-between text-sm">
+                  <Button type="submit" className="w-full " disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Weiter
+                  </Button>
+                </form>
+
+                {googleEnabled && (
+                  <>
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-border/50" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-card px-3 py-1 rounded-full text-muted-foreground">
+                          oder
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleGoogleSignIn}
+                      disabled={isLoading}
+                    >
+                      <GoogleIcon className="mr-2 h-5 w-5" />
+                      Mit Google anmelden
+                    </Button>
+                  </>
+                )}
+
+                <p className="text-center text-sm text-muted-foreground">
+                  Noch kein Konto?{' '}
                   <Link
                     href={
                       callbackUrl !== '/dashboard'
                         ? `/register?callbackUrl=${encodeURIComponent(callbackUrl)}`
                         : '/register'
                     }
-                    className="text-muted-foreground hover:text-foreground hover:underline"
+                    className="text-accent hover:underline font-medium"
                   >
-                    Konto erstellen
+                    Jetzt registrieren
                   </Link>
-                  <Link
-                    href="/forgot-password"
-                    className="text-muted-foreground hover:text-foreground hover:underline"
-                  >
-                    Passwort vergessen?
-                  </Link>
+                </p>
+              </div>
+            ) : (
+              /* Step 2: Password input */
+              <div className="space-y-6">
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft className="mr-1 h-4 w-4" />
+                  {email}
+                </button>
+
+                <div className="text-center">
+                  <h1 className="text-2xl font-display font-bold">Passwort eingeben</h1>
                 </div>
-              </form>
-            </div>
-          )}
+
+                <form onSubmit={handlePasswordSignIn} className="space-y-4" noValidate>
+                  {/* Hidden email field for password manager to correctly save credentials */}
+                  <input
+                    type="email"
+                    name="email"
+                    value={email}
+                    autoComplete="username email"
+                    readOnly
+                    className="sr-only"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Passwort</Label>
+                    <Input
+                      ref={passwordInputRef}
+                      id="password"
+                      name="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setError(null);
+                      }}
+                      onKeyDown={handlePasswordKeyDown}
+                      autoComplete="current-password"
+                    />
+                  </div>
+
+                  {error && <p className="text-sm text-destructive">{error}</p>}
+
+                  <TurnstileWidget
+                    onToken={setCaptchaToken}
+                    onExpire={() => setCaptchaToken(null)}
+                    onError={() => setCaptchaToken(null)}
+                  />
+
+                  <Button type="submit" className="w-full " disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Anmelden
+                  </Button>
+
+                  <div className="flex justify-between text-sm">
+                    <Link
+                      href={
+                        callbackUrl !== '/dashboard'
+                          ? `/register?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                          : '/register'
+                      }
+                      className="text-muted-foreground hover:text-foreground hover:underline"
+                    >
+                      Konto erstellen
+                    </Link>
+                    <Link
+                      href="/forgot-password"
+                      className="text-muted-foreground hover:text-foreground hover:underline"
+                    >
+                      Passwort vergessen?
+                    </Link>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer */}
@@ -380,7 +381,7 @@ function LoginPageSkeleton() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
       <div className="w-full max-w-md">
-        <div className="glass-panel rounded-2xl p-8 sm:p-10 animate-pulse">
+        <div className="bg-card border rounded-2xl p-8 sm:p-10 shadow-sm animate-pulse">
           <div className="h-10 w-40 bg-muted/50 rounded mx-auto mb-8" />
           <div className="h-8 w-48 bg-muted/50 rounded mx-auto mb-2" />
           <div className="h-4 w-36 bg-muted/50 rounded mx-auto mb-8" />

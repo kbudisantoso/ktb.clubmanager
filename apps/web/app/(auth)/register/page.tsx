@@ -133,7 +133,7 @@ function RegisterContent() {
     return (
       <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
         <div className="w-full max-w-md">
-          <div className="glass-panel rounded-2xl p-8 sm:p-10 animate-pulse">
+          <div className="bg-card border rounded-2xl p-8 sm:p-10 shadow-sm animate-pulse">
             <div className="h-6 w-32 bg-muted/50 rounded mb-6" />
             <div className="h-9 w-40 bg-muted/50 rounded mx-auto mb-6" />
             <div className="h-8 w-48 bg-muted/50 rounded mx-auto mb-2" />
@@ -154,7 +154,97 @@ function RegisterContent() {
     return (
       <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
         <div className="w-full max-w-md">
-          <div className="glass-panel rounded-2xl p-8 sm:p-10 text-center">
+          <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
+            <div className="h-1 bg-linear-to-r from-(--brand-cobalt) via-(--brand-cyan) to-(--brand-green)" />
+            <div className="p-8 sm:p-10 text-center">
+              {/* Logo */}
+              <div className="flex justify-center mb-6">
+                <Image
+                  src="/logo.svg"
+                  alt="ClubManager"
+                  width={180}
+                  height={45}
+                  className="h-9 w-auto dark:hidden"
+                  priority
+                />
+                <Image
+                  src="/logo-darkbg.svg"
+                  alt="ClubManager"
+                  width={180}
+                  height={45}
+                  className="h-9 w-auto hidden dark:block"
+                  priority
+                />
+              </div>
+
+              <h2 className="text-2xl font-display font-bold mb-2">Bereits angemeldet</h2>
+              <p className="text-muted-foreground mb-6">
+                Du bist als{' '}
+                <span className="font-medium text-foreground">{session.user.email}</span>{' '}
+                angemeldet.
+              </p>
+
+              <div className="space-y-3">
+                <Button onClick={() => router.push('/dashboard')} className="w-full">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  Zum Dashboard
+                </Button>
+                <Button variant="outline" onClick={handleLogoutAndRegister} className="w-full">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Abmelden und neues Konto erstellen
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <footer className="mt-8 text-xs text-center text-foreground/70 space-x-4">
+            <LegalFooterLinks />
+          </footer>
+        </div>
+      </div>
+    );
+  }
+
+  if (success) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
+        <div className="w-full max-w-md">
+          <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
+            <div className="h-1 bg-linear-to-r from-(--brand-cobalt) via-(--brand-cyan) to-(--brand-green)" />
+            <div className="p-8 sm:p-10 text-center">
+              <div className="mx-auto w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mb-6">
+                <Check className="h-8 w-8 text-success" />
+              </div>
+              <h2 className="text-2xl font-display font-bold mb-2">Konto erstellt!</h2>
+              <p className="text-muted-foreground">Du wirst zum Dashboard weitergeleitet...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
+      <div className="w-full max-w-md">
+        {/* Card */}
+        <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
+          <div className="h-1 bg-linear-to-r from-(--brand-cobalt) via-(--brand-cyan) to-(--brand-green)" />
+          <div className="p-8 sm:p-10">
+            {/* Back link */}
+            <Link
+              href={
+                callbackUrl !== '/dashboard'
+                  ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                  : '/login'
+              }
+              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+            >
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Zurück zur Anmeldung
+            </Link>
+
             {/* Logo */}
             <div className="flex justify-center mb-6">
               <Image
@@ -175,205 +265,119 @@ function RegisterContent() {
               />
             </div>
 
-            <h2 className="text-2xl font-display font-bold gradient-text mb-2">
-              Bereits angemeldet
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              Du bist als <span className="font-medium text-foreground">{session.user.email}</span>{' '}
-              angemeldet.
+            <div className="text-center mb-6">
+              <h1 className="text-2xl font-display font-bold">Konto erstellen</h1>
+              <p className="text-muted-foreground mt-2">Starte mit ClubManager durch</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              <div className="space-y-2">
+                <Label htmlFor="email">E-Mail-Adresse</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="name@example.de"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    clearError();
+                  }}
+                  autoComplete="email"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="name">Name (optional)</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Max Mustermann"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    clearError();
+                  }}
+                  autoComplete="name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Passwort</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    clearError();
+                  }}
+                  autoComplete="new-password"
+                  required
+                />
+                <PasswordStrength password={password} userInputs={userInputs} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    clearError();
+                  }}
+                  autoComplete="new-password"
+                  required
+                />
+                {confirmPassword && password !== confirmPassword && (
+                  <p className="text-sm text-destructive">Die Passwörter stimmen nicht überein</p>
+                )}
+              </div>
+
+              {error &&
+                (isEmailExistsError ? (
+                  <div className="text-sm text-destructive">
+                    {error}{' '}
+                    <Link href="/login" className="underline font-medium">
+                      Anmelden
+                    </Link>{' '}
+                    oder{' '}
+                    <Link href="/forgot-password" className="underline font-medium">
+                      Passwort vergessen?
+                    </Link>
+                  </div>
+                ) : (
+                  <p className="text-sm text-destructive">{error}</p>
+                ))}
+
+              <TurnstileWidget
+                onToken={setCaptchaToken}
+                onExpire={() => setCaptchaToken(null)}
+                onError={() => setCaptchaToken(null)}
+              />
+
+              <Button type="submit" className="w-full " disabled={isLoading}>
+                {isLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-4 w-4" />
+                )}
+                Konto erstellen
+              </Button>
+            </form>
+
+            <p className="text-xs text-center text-muted-foreground mt-6">
+              Mit der Registrierung akzeptierst du unsere{' '}
+              <NutzungsbedingungenLink className="text-accent hover:underline" /> und{' '}
+              <DatenschutzLink className="text-accent hover:underline" />
             </p>
-
-            <div className="space-y-3">
-              <Button onClick={() => router.push('/dashboard')} className="w-full">
-                <LayoutDashboard className="mr-2 h-4 w-4" />
-                Zum Dashboard
-              </Button>
-              <Button variant="outline" onClick={handleLogoutAndRegister} className="w-full">
-                <LogOut className="mr-2 h-4 w-4" />
-                Abmelden und neues Konto erstellen
-              </Button>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <footer className="mt-8 text-xs text-center text-foreground/70 space-x-4">
-            <LegalFooterLinks />
-          </footer>
-        </div>
-      </div>
-    );
-  }
-
-  if (success) {
-    return (
-      <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
-        <div className="w-full max-w-md">
-          <div className="glass-panel rounded-2xl p-8 sm:p-10 text-center">
-            <div className="mx-auto w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mb-6">
-              <Check className="h-8 w-8 text-success" />
-            </div>
-            <h2 className="text-2xl font-display font-bold gradient-text mb-2">Konto erstellt!</h2>
-            <p className="text-muted-foreground">Du wirst zum Dashboard weitergeleitet...</p>
           </div>
         </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
-      <div className="w-full max-w-md">
-        {/* Glass Panel */}
-        <div className="glass-panel rounded-2xl p-8 sm:p-10">
-          {/* Back link */}
-          <Link
-            href={
-              callbackUrl !== '/dashboard'
-                ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
-                : '/login'
-            }
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
-          >
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            Zurück zur Anmeldung
-          </Link>
-
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
-            <Image
-              src="/logo.svg"
-              alt="ClubManager"
-              width={180}
-              height={45}
-              className="h-9 w-auto dark:hidden"
-              priority
-            />
-            <Image
-              src="/logo-darkbg.svg"
-              alt="ClubManager"
-              width={180}
-              height={45}
-              className="h-9 w-auto hidden dark:block"
-              priority
-            />
-          </div>
-
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-display font-bold gradient-text">Konto erstellen</h1>
-            <p className="text-muted-foreground mt-2">Starte mit ClubManager durch</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            <div className="space-y-2">
-              <Label htmlFor="email">E-Mail-Adresse</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.de"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  clearError();
-                }}
-                autoComplete="email"
-                required
-                className="glass-input"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="name">Name (optional)</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Max Mustermann"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  clearError();
-                }}
-                autoComplete="name"
-                className="glass-input"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Passwort</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  clearError();
-                }}
-                autoComplete="new-password"
-                required
-                className="glass-input"
-              />
-              <PasswordStrength password={password} userInputs={userInputs} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  clearError();
-                }}
-                autoComplete="new-password"
-                required
-                className="glass-input"
-              />
-              {confirmPassword && password !== confirmPassword && (
-                <p className="text-sm text-destructive">Die Passwörter stimmen nicht überein</p>
-              )}
-            </div>
-
-            {error &&
-              (isEmailExistsError ? (
-                <div className="text-sm text-destructive">
-                  {error}{' '}
-                  <Link href="/login" className="underline font-medium">
-                    Anmelden
-                  </Link>{' '}
-                  oder{' '}
-                  <Link href="/forgot-password" className="underline font-medium">
-                    Passwort vergessen?
-                  </Link>
-                </div>
-              ) : (
-                <p className="text-sm text-destructive">{error}</p>
-              ))}
-
-            <TurnstileWidget
-              onToken={setCaptchaToken}
-              onExpire={() => setCaptchaToken(null)}
-              onError={() => setCaptchaToken(null)}
-            />
-
-            <Button type="submit" className="w-full " disabled={isLoading}>
-              {isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
-              )}
-              Konto erstellen
-            </Button>
-          </form>
-
-          <p className="text-xs text-center text-muted-foreground mt-6">
-            Mit der Registrierung akzeptierst du unsere{' '}
-            <NutzungsbedingungenLink className="text-accent hover:underline" /> und{' '}
-            <DatenschutzLink className="text-accent hover:underline" />
-          </p>
-        </div>
-
-        {/* Benefits - Below glass panel */}
-        <div className="mt-8 glass-card rounded-xl p-4">
+        {/* Benefits */}
+        <div className="mt-8 bg-muted border rounded-xl p-4">
           <div className="flex items-center gap-3 text-sm">
             <div className="shrink-0 w-8 h-8 rounded-full bg-success/20 flex items-center justify-center">
               <Check className="h-4 w-4 text-success" />
@@ -406,7 +410,7 @@ function RegisterPageSkeleton() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
       <div className="w-full max-w-md">
-        <div className="glass-panel rounded-2xl p-8 sm:p-10 animate-pulse">
+        <div className="bg-card border rounded-2xl p-8 sm:p-10 shadow-sm animate-pulse">
           <div className="h-6 w-32 bg-muted/50 rounded mb-6" />
           <div className="h-9 w-40 bg-muted/50 rounded mx-auto mb-6" />
           <div className="h-8 w-48 bg-muted/50 rounded mx-auto mb-2" />
