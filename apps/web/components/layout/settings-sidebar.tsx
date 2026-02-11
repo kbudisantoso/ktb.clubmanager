@@ -37,7 +37,7 @@ export function SettingsSidebar() {
 
   return (
     <nav className="w-full md:w-56 shrink-0">
-      <div className="glass-card rounded-xl border p-4 space-y-6">
+      <div className="bg-card rounded-xl border p-4 space-y-6">
         {/* Personal Section */}
         <div>
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">
