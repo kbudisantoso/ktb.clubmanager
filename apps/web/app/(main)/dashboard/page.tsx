@@ -10,6 +10,7 @@ import {
   useCancelAccessRequestMutation,
 } from '@/hooks/use-clubs';
 import { RejectionNotice } from '@/components/club/rejection-notice';
+import { PageHeader } from '@/components/layout/page-header';
 import { Building2, Key, ArrowRight, Loader2, Clock, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -322,142 +323,145 @@ export default function DashboardPage() {
   // No clubs empty state
   if (clubs.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-12 max-w-2xl">
-        {/* Unseen Rejections - shown prominently at top */}
-        {unseenRejections.length > 0 && (
-          <div className="mb-6 space-y-3">
-            {unseenRejections.map((request) => (
-              <RejectionNotice key={request.id} request={request} />
-            ))}
-          </div>
-        )}
-
-        <div className="text-center mb-8">
-          <Building2 className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h1 className="text-2xl font-bold mb-2">Willkommen bei ktb.clubmanager</h1>
-          <p className="text-muted-foreground">
-            {canCreateClub
-              ? 'Du bist noch keinem Verein zugeordnet. Erstelle einen neuen Verein oder tritt einem bestehenden bei.'
-              : 'Du bist noch keinem Verein zugeordnet. Tritt einem Verein bei, indem du einen Einladungscode eingibst.'}
-          </p>
-        </div>
-
-        {/* Pending access requests */}
-        {pendingRequests.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-warning" />
-                Offene Beitrittsanfragen
-              </CardTitle>
-              <CardDescription>
-                Diese Anfragen warten auf Genehmigung durch einen Administrator.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {pendingRequests.map((request) => (
-                <div
-                  key={request.id}
-                  className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary font-bold text-sm">
-                      {request.club.name.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="font-medium">{request.club.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Angefragt am {new Date(request.createdAt).toLocaleDateString('de-DE')}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">Ausstehend</Badge>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleCancelRequest(request.id)}
-                      disabled={cancelRequest.isPending}
-                      title="Anfrage zurückziehen"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+      <div>
+        <PageHeader title="Dashboard" />
+        <div className="container mx-auto px-4 py-12 max-w-2xl">
+          {/* Unseen Rejections - shown prominently at top */}
+          {unseenRejections.length > 0 && (
+            <div className="mb-6 space-y-3">
+              {unseenRejections.map((request) => (
+                <RejectionNotice key={request.id} request={request} />
               ))}
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          )}
 
-        <div className={`grid gap-6 ${canCreateClub ? 'md:grid-cols-2' : 'max-w-md mx-auto'}`}>
-          {/* Create club card - only show if allowed */}
-          {canCreateClub && (
-            <Card>
+          <div className="text-center mb-8">
+            <Building2 className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+            <h1 className="text-2xl font-bold mb-2">Willkommen bei ktb.clubmanager</h1>
+            <p className="text-muted-foreground">
+              {canCreateClub
+                ? 'Du bist noch keinem Verein zugeordnet. Erstelle einen neuen Verein oder tritt einem bestehenden bei.'
+                : 'Du bist noch keinem Verein zugeordnet. Tritt einem Verein bei, indem du einen Einladungscode eingibst.'}
+            </p>
+          </div>
+
+          {/* Pending access requests */}
+          {pendingRequests.length > 0 && (
+            <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  Verein erstellen
+                  <Clock className="h-5 w-5 text-warning" />
+                  Offene Beitrittsanfragen
                 </CardTitle>
                 <CardDescription>
-                  Starte mit einem neuen Verein und lade Mitglieder ein.
+                  Diese Anfragen warten auf Genehmigung durch einen Administrator.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button onClick={handleCreateClub} className="w-full gap-2">
-                  Verein erstellen
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
+              <CardContent className="space-y-3">
+                {pendingRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary font-bold text-sm">
+                        {request.club.name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-medium">{request.club.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Angefragt am {new Date(request.createdAt).toLocaleDateString('de-DE')}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">Ausstehend</Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleCancelRequest(request.id)}
+                        disabled={cancelRequest.isPending}
+                        title="Anfrage zurückziehen"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           )}
 
-          {/* Join with code card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Key className="h-5 w-5" />
-                Einladungscode
-              </CardTitle>
-              <CardDescription>
-                Du hast einen Einladungscode erhalten? Gib ihn hier ein.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-center gap-2">
-                <Input
-                  ref={part1Ref}
-                  placeholder="XXXX"
-                  value={codePart1}
-                  onChange={handleCodePart1Change}
-                  onKeyDown={handlePart1KeyDown}
-                  onPaste={handlePaste}
-                  className="font-mono text-lg tracking-wider w-[9ch] px-[2.1ch] box-border"
-                  autoComplete="off"
-                />
-                <span className="text-xl font-mono text-muted-foreground">-</span>
-                <Input
-                  ref={part2Ref}
-                  placeholder="XXXX"
-                  value={codePart2}
-                  onChange={handleCodePart2Change}
-                  onKeyDown={handlePart2KeyDown}
-                  onFocus={handlePart2Focus}
-                  onPaste={handlePaste}
-                  className="font-mono text-lg tracking-wider w-[9ch] px-[2.1ch] box-border"
-                  autoComplete="off"
-                />
-              </div>
-              <Button
-                onClick={handleJoinWithCode}
-                variant="outline"
-                className="w-full gap-2"
-                disabled={codePart1.length + codePart2.length < 8}
-              >
-                Code einlösen
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </CardContent>
-          </Card>
+          <div className={`grid gap-6 ${canCreateClub ? 'md:grid-cols-2' : 'max-w-md mx-auto'}`}>
+            {/* Create club card - only show if allowed */}
+            {canCreateClub && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    Verein erstellen
+                  </CardTitle>
+                  <CardDescription>
+                    Starte mit einem neuen Verein und lade Mitglieder ein.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button onClick={handleCreateClub} className="w-full gap-2">
+                    Verein erstellen
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Join with code card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Key className="h-5 w-5" />
+                  Einladungscode
+                </CardTitle>
+                <CardDescription>
+                  Du hast einen Einladungscode erhalten? Gib ihn hier ein.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-center gap-2">
+                  <Input
+                    ref={part1Ref}
+                    placeholder="XXXX"
+                    value={codePart1}
+                    onChange={handleCodePart1Change}
+                    onKeyDown={handlePart1KeyDown}
+                    onPaste={handlePaste}
+                    className="font-mono text-lg tracking-wider w-[9ch] px-[2.1ch] box-border"
+                    autoComplete="off"
+                  />
+                  <span className="text-xl font-mono text-muted-foreground">-</span>
+                  <Input
+                    ref={part2Ref}
+                    placeholder="XXXX"
+                    value={codePart2}
+                    onChange={handleCodePart2Change}
+                    onKeyDown={handlePart2KeyDown}
+                    onFocus={handlePart2Focus}
+                    onPaste={handlePaste}
+                    className="font-mono text-lg tracking-wider w-[9ch] px-[2.1ch] box-border"
+                    autoComplete="off"
+                  />
+                </div>
+                <Button
+                  onClick={handleJoinWithCode}
+                  variant="outline"
+                  className="w-full gap-2"
+                  disabled={codePart1.length + codePart2.length < 8}
+                >
+                  Code einlösen
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
@@ -466,15 +470,12 @@ export default function DashboardPage() {
   // Multiple clubs - show selector (should rarely reach here due to auto-redirect)
   if (clubs.length > 1 && !activeClubSlug) {
     return (
-      <div className="container mx-auto px-4 py-12 max-w-2xl">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold mb-2">Verein auswählen</h1>
-          <p className="text-muted-foreground">
-            Wähle den Verein aus, mit dem du arbeiten möchtest.
-          </p>
-        </div>
-
-        <div className="space-y-4">
+      <div>
+        <PageHeader
+          title="Verein auswählen"
+          description="Wähle den Verein aus, mit dem du arbeiten möchtest."
+        />
+        <div className="container mx-auto px-4 max-w-2xl space-y-4">
           {clubs.map((club) => (
             <Card
               key={club.id}

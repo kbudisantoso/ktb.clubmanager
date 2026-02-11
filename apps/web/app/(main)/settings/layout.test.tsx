@@ -7,6 +7,15 @@ vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname,
 }));
 
+// Mock PageHeader (uses SidebarProvider context)
+vi.mock('@/components/layout/page-header', () => ({
+  PageHeader: ({ title }: { title: string }) => (
+    <div data-testid="page-header">
+      <h1>{title}</h1>
+    </div>
+  ),
+}));
+
 // Mock club store and permissions
 vi.mock('@/lib/club-store', () => ({
   useActiveClub: () => null,

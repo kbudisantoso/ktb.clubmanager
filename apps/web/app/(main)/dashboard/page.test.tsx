@@ -25,6 +25,16 @@ vi.mock('@/lib/club-store', () => ({
   }),
 }));
 
+// Mock PageHeader (uses SidebarProvider context)
+vi.mock('@/components/layout/page-header', () => ({
+  PageHeader: ({ title, description }: { title: string; description?: string }) => (
+    <div data-testid="page-header">
+      <h1>{title}</h1>
+      {description && <p>{description}</p>}
+    </div>
+  ),
+}));
+
 // Mock clubs hooks - no clubs (shows invite code UI)
 const mockCancelMutate = vi.fn();
 vi.mock('@/hooks/use-clubs', () => ({
