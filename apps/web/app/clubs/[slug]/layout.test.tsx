@@ -65,14 +65,14 @@ describe('ClubLayout', () => {
       expect(screen.getByTestId('child-content')).toBeInTheDocument();
     });
 
-    it('renders app background', () => {
+    it('renders main content area with glass-panel', () => {
       const { container } = render(
         <ClubLayout>
           <div>Content</div>
         </ClubLayout>
       );
 
-      expect(container.querySelector('.app-background')).toBeInTheDocument();
+      expect(container.querySelector('.glass-panel')).toBeInTheDocument();
     });
   });
 

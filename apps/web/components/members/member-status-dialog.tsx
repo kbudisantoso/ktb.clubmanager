@@ -2,9 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { CalendarIcon, Loader2, AlertTriangle, Info } from 'lucide-react';
-import { format } from 'date-fns';
-import { de } from 'date-fns/locale';
+import { Loader2, AlertTriangle, Info } from 'lucide-react';
 import { VALID_TRANSITIONS, type MemberStatus } from '@ktb/shared';
 import {
   Dialog,
@@ -18,13 +16,11 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { DateInput } from '@/components/ui/date-input';
 import { useChangeStatus } from '@/hooks/use-members';
 import { useToast } from '@/hooks/use-toast';
 import { MemberStatusBadge } from './member-status-badge';
 import type { MemberDetail } from '@/hooks/use-member-detail';
-import { cn } from '@/lib/utils';
 
 // ============================================================================
 // Constants
@@ -203,42 +199,7 @@ export function MemberStatusDialog({ member, open, onOpenChange }: MemberStatusD
               {/* Effective date */}
               <div className="space-y-1.5">
                 <Label>Gültig ab (optional)</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !effectiveDate && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {effectiveDate
-                        ? format(new Date(effectiveDate + 'T00:00:00'), 'dd.MM.yyyy', {
-                            locale: de,
-                          })
-                        : 'Heute (Standard)'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={effectiveDate ? new Date(effectiveDate + 'T00:00:00') : undefined}
-                      onSelect={(date) => {
-                        if (date) {
-                          const year = date.getFullYear();
-                          const month = String(date.getMonth() + 1).padStart(2, '0');
-                          const day = String(date.getDate()).padStart(2, '0');
-                          setEffectiveDate(`${year}-${month}-${day}`);
-                        } else {
-                          setEffectiveDate(undefined);
-                        }
-                      }}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <DateInput value={effectiveDate} onChange={setEffectiveDate} />
               </div>
 
               {/* Error display */}

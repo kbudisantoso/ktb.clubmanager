@@ -3,9 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CalendarIcon, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { de } from 'date-fns/locale';
+import { Loader2 } from 'lucide-react';
 import { CreateMemberSchema } from '@ktb/shared';
 import {
   Sheet,
@@ -25,14 +23,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { DateInput } from '@/components/ui/date-input';
 import { useCreateMember } from '@/hooks/use-members';
 import { useNumberRanges } from '@/hooks/use-number-ranges';
 import { useToast } from '@/hooks/use-toast';
 import { PersonTypeToggle } from './person-type-toggle';
 import { AddressAutocomplete } from './address-autocomplete';
-import { cn } from '@/lib/utils';
 
 /**
  * Form values type extracted from schema input shape.
@@ -403,12 +399,15 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
           {/* Section 6: Join Date */}
           <div className="space-y-1.5">
             <Label>Eintrittsdatum</Label>
-            <DatePickerField
+            <DateInput
               value={joinDate}
               onChange={(date) => setValue('joinDate', date, { shouldValidate: true })}
               disabled={isSubmitting}
-              error={errors.joinDate?.message}
+              hasError={!!errors.joinDate}
             />
+            {errors.joinDate?.message && (
+              <p className="text-xs text-destructive">{errors.joinDate.message}</p>
+            )}
           </div>
 
           {/* Section 7: Membership Type (only shown when joinDate is set) */}
@@ -506,61 +505,5 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
         </form>
       </SheetContent>
     </Sheet>
-  );
-}
-
-// ============================================================================
-// Internal DatePicker component (Calendar + Popover pattern)
-// ============================================================================
-
-interface DatePickerFieldProps {
-  value?: string;
-  onChange: (date?: string) => void;
-  disabled?: boolean;
-  error?: string;
-}
-
-function DatePickerField({ value, onChange, disabled, error }: DatePickerFieldProps) {
-  const selectedDate = value ? new Date(value + 'T00:00:00') : undefined;
-
-  return (
-    <div className="space-y-1.5">
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={disabled}
-            className={cn(
-              'w-full justify-start text-left font-normal',
-              !value && 'text-muted-foreground',
-              error && 'border-destructive'
-            )}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {selectedDate ? format(selectedDate, 'dd.MM.yyyy', { locale: de }) : 'Datum wählen'}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={(date) => {
-              if (date) {
-                // Format as YYYY-MM-DD for the schema
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                onChange(`${year}-${month}-${day}`);
-              } else {
-                onChange(undefined);
-              }
-            }}
-            initialFocus
-          />
-        </PopoverContent>
-      </Popover>
-      {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
   );
 }
