@@ -20,7 +20,7 @@ interface MembershipTabProps {
   member: MemberDetail;
   /** Club slug for API calls */
   slug: string;
-  /** Called when "Status aendern" is clicked */
+  /** Called when "Status ändern" is clicked */
   onChangeStatus?: () => void;
 }
 
@@ -74,7 +74,7 @@ export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabPro
             <MemberStatusBadge status={member.status} />
             {onChangeStatus && member.status !== 'LEFT' && (
               <Button type="button" variant="outline" size="sm" onClick={onChangeStatus}>
-                Status aendern
+                Status ändern
               </Button>
             )}
           </div>
@@ -120,7 +120,7 @@ export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabPro
         <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
           <Info className="h-4 w-4 shrink-0 mt-0.5" />
           <p>
-            Statusaenderungen und Mitgliedschaftszeitraeume werden ueber die jeweiligen Dialoge
+            Statusänderungen und Mitgliedschaftszeiträume werden über die jeweiligen Dialoge
             verwaltet.
           </p>
         </div>

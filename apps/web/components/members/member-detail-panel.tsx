@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { X, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -86,7 +86,7 @@ function DetailContent({ memberId, onClose, showFullPageLink = true }: DetailCon
       <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground p-6">
         <p className="text-sm">Mitglied nicht gefunden</p>
         <Button variant="outline" size="sm" onClick={onClose}>
-          Schliessen
+          Schließen
         </Button>
       </div>
     );
@@ -218,54 +218,4 @@ export function MemberDetailPanel({ selectedMemberId, onClose }: MemberDetailPan
 
   // Desktop: Render panel content directly (parent wraps in ResizablePanel)
   return <DetailContent memberId={selectedMemberId} onClose={onClose} showFullPageLink={true} />;
-}
-
-// ============================================================================
-// URL Sync Hook
-// ============================================================================
-
-/**
- * Hook to sync the selected member ID with the URL search param ?member=[id].
- * - On mount: reads ?member from URL and returns it
- * - On selection: updates URL without full navigation
- * - On close: removes ?member from URL
- */
-export function useMemberPanelUrl() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
-
-  // Sync from URL on mount
-  useEffect(() => {
-    const memberParam = searchParams.get('member');
-    if (memberParam) {
-      setSelectedMemberId(memberParam);
-    }
-  }, [searchParams]);
-
-  // Select a member (updates URL)
-  const selectMember = useCallback(
-    (id: string) => {
-      setSelectedMemberId(id);
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('member', id);
-      router.replace(`?${params.toString()}`, { scroll: false });
-    },
-    [router, searchParams]
-  );
-
-  // Close the panel (removes ?member from URL)
-  const closePanel = useCallback(() => {
-    setSelectedMemberId(null);
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('member');
-    const queryString = params.toString();
-    router.replace(queryString ? `?${queryString}` : '?', { scroll: false });
-  }, [router, searchParams]);
-
-  return {
-    selectedMemberId,
-    selectMember,
-    closePanel,
-  };
 }

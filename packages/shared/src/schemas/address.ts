@@ -20,7 +20,8 @@ export const AddressSchema = z.object({
   postalCode: z
     .string()
     .regex(/^\d{5}$/, 'PLZ muss genau 5 Ziffern haben')
-    .optional(),
+    .optional()
+    .or(z.literal('')),
 
   /** City name (auto-filled from PLZ via OpenPLZ API) */
   city: z.string().max(100).optional(),

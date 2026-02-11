@@ -228,7 +228,7 @@ function BasicInfoEditMode({
                 onValueChange={(val) => setValue('salutation', val, { shouldDirty: true })}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Bitte waehlen" />
+                  <SelectValue placeholder="Bitte wählen" />
                 </SelectTrigger>
                 <SelectContent>
                   {SALUTATION_OPTIONS.map((s) => (
@@ -415,7 +415,7 @@ function BasicInfoEditMode({
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent>
-                <p>Mitgliedsnummer kann nach Erstellung nicht geaendert werden</p>
+                <p>Mitgliedsnummer kann nach Erstellung nicht geändert werden</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

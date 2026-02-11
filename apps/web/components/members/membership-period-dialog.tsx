@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { CalendarIcon, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { de } from 'date-fns/locale';
+import { Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,11 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { DateInput } from '@/components/ui/date-input';
 import { useCreatePeriod, useUpdatePeriod, useClosePeriod } from '@/hooks/use-membership-periods';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 
 // ============================================================================
 // Constants
@@ -37,7 +33,7 @@ const MEMBERSHIP_TYPE_OPTIONS = [
   { value: 'ORDENTLICH', label: 'Ordentlich' },
   { value: 'PASSIV', label: 'Passiv' },
   { value: 'EHREN', label: 'Ehren' },
-  { value: 'FOERDER', label: 'Foerder' },
+  { value: 'FOERDER', label: 'Förder' },
   { value: 'JUGEND', label: 'Jugend' },
 ] as const;
 
@@ -293,31 +289,37 @@ export function MembershipPeriodDialog({
         <div className="space-y-4">
           {/* Close mode: simplified UI */}
           {mode === 'close' ? (
-            <DatePickerField
-              label="Austrittsdatum"
-              value={leaveDate}
-              onChange={setLeaveDate}
-              required
-              error={leaveDateError}
-            />
+            <div className="space-y-1.5">
+              <Label>
+                Austrittsdatum <span className="text-destructive">*</span>
+              </Label>
+              <DateInput
+                value={leaveDate}
+                onChange={(v) => setLeaveDate(v ?? '')}
+                hasError={!!leaveDateError}
+              />
+              {leaveDateError && <p className="text-xs text-destructive">{leaveDateError}</p>}
+            </div>
           ) : (
             <>
               {/* Join date */}
-              <DatePickerField
-                label="Eintrittsdatum"
-                value={joinDate}
-                onChange={setJoinDate}
-                required
-              />
+              <div className="space-y-1.5">
+                <Label>
+                  Eintrittsdatum <span className="text-destructive">*</span>
+                </Label>
+                <DateInput value={joinDate} onChange={(v) => setJoinDate(v ?? '')} />
+              </div>
 
               {/* Leave date */}
-              <DatePickerField
-                label="Austrittsdatum"
-                value={leaveDate}
-                onChange={setLeaveDate}
-                placeholder="Offen (laufende Mitgliedschaft)"
-                error={leaveDateError}
-              />
+              <div className="space-y-1.5">
+                <Label>Austrittsdatum</Label>
+                <DateInput
+                  value={leaveDate}
+                  onChange={(v) => setLeaveDate(v ?? '')}
+                  hasError={!!leaveDateError}
+                />
+                {leaveDateError && <p className="text-xs text-destructive">{leaveDateError}</p>}
+              </div>
 
               {/* Membership type */}
               <div className="space-y-1.5">
@@ -326,7 +328,7 @@ export function MembershipPeriodDialog({
                 </Label>
                 <Select value={membershipType} onValueChange={setMembershipType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Mitgliedsart waehlen" />
+                    <SelectValue placeholder="Mitgliedsart wählen" />
                   </SelectTrigger>
                   <SelectContent>
                     {MEMBERSHIP_TYPE_OPTIONS.map((opt) => (
@@ -384,72 +386,6 @@ export function MembershipPeriodDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-// ============================================================================
-// DatePickerField - reusable date picker for this dialog
-// ============================================================================
-
-interface DatePickerFieldProps {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  required?: boolean;
-  placeholder?: string;
-  error?: string | null;
-}
-
-function DatePickerField({
-  label,
-  value,
-  onChange,
-  required,
-  placeholder,
-  error,
-}: DatePickerFieldProps) {
-  return (
-    <div className="space-y-1.5">
-      <Label>
-        {label}
-        {required && <span className="text-destructive"> *</span>}
-      </Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            className={cn(
-              'w-full justify-start text-left font-normal',
-              !value && 'text-muted-foreground'
-            )}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {value
-              ? format(new Date(value + 'T00:00:00'), 'dd.MM.yyyy', { locale: de })
-              : (placeholder ?? 'Datum waehlen')}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={value ? new Date(value + 'T00:00:00') : undefined}
-            onSelect={(date) => {
-              if (date) {
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                onChange(`${year}-${month}-${day}`);
-              } else {
-                onChange('');
-              }
-            }}
-            initialFocus
-          />
-        </PopoverContent>
-      </Popover>
-      {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
   );
 }
 

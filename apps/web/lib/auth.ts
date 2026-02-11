@@ -140,7 +140,7 @@ export const auth = betterAuth({
         if (loginIpLimiter.isRateLimited(`login:ip:${ip}`)) {
           throw new APIError('TOO_MANY_REQUESTS', {
             message:
-              'Zu viele Anmeldeversuche von dieser Adresse. Bitte versuche es spaeter erneut.',
+              'Zu viele Anmeldeversuche von dieser Adresse. Bitte versuche es später erneut.',
           });
         }
       }
@@ -149,7 +149,7 @@ export const auth = betterAuth({
       if (ctx.path === '/sign-up/email') {
         if (registrationIpLimiter.isRateLimited(`register:ip:${ip}`)) {
           throw new APIError('TOO_MANY_REQUESTS', {
-            message: 'Zu viele Registrierungen. Bitte versuche es spaeter erneut.',
+            message: 'Zu viele Registrierungen. Bitte versuche es später erneut.',
           });
         }
 
@@ -161,7 +161,7 @@ export const auth = betterAuth({
           const result = zxcvbn(password, userInputs);
           if (result.score < 3) {
             throw new APIError('BAD_REQUEST', {
-              message: 'Passwort ist zu schwach. Bitte waehle ein staerkeres Passwort.',
+              message: 'Passwort ist zu schwach. Bitte wähle ein stärkeres Passwort.',
             });
           }
         }
@@ -172,12 +172,12 @@ export const auth = betterAuth({
         const email = ctx.body?.email?.toLowerCase();
         if (email && resetEmailLimiter.isRateLimited(`reset:email:${email}`)) {
           throw new APIError('TOO_MANY_REQUESTS', {
-            message: 'Zu viele Anfragen. Bitte versuche es spaeter erneut.',
+            message: 'Zu viele Anfragen. Bitte versuche es später erneut.',
           });
         }
         if (resetIpLimiter.isRateLimited(`reset:ip:${ip}`)) {
           throw new APIError('TOO_MANY_REQUESTS', {
-            message: 'Zu viele Anfragen von dieser Adresse. Bitte versuche es spaeter erneut.',
+            message: 'Zu viele Anfragen von dieser Adresse. Bitte versuche es später erneut.',
           });
         }
       }

@@ -30,7 +30,7 @@ const MEMBERSHIP_TYPE_LABELS: Record<string, string> = {
   ORDENTLICH: 'Ordentlich',
   PASSIV: 'Passiv',
   EHREN: 'Ehren',
-  FOERDER: 'Foerder',
+  FOERDER: 'Förder',
   JUGEND: 'Jugend',
 };
 
@@ -45,15 +45,15 @@ interface MemberDetailHeaderProps {
   showBackLink?: boolean;
   /** Called when "Bearbeiten" is clicked */
   onEdit?: () => void;
-  /** Called when "Status aendern" is clicked */
+  /** Called when "Status ändern" is clicked */
   onChangeStatus?: () => void;
   /** Called when "Haushalt zuordnen" is clicked */
   onAssignHousehold?: () => void;
   /** Called when "Mitgliedschaft beenden" is clicked */
   onEndMembership?: () => void;
-  /** Called when "Kuendigung erfassen" is clicked */
+  /** Called when "Kündigung erfassen" is clicked */
   onRecordCancellation?: () => void;
-  /** Called when "Loeschen" is clicked */
+  /** Called when "Löschen" is clicked */
   onDelete?: () => void;
   /** Called when "Anonymisieren" is clicked */
   onAnonymize?: () => void;
@@ -113,7 +113,7 @@ export function MemberDetailHeader({
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Zurueck zu Mitgliedern
+          Zurück zu Mitgliedern
         </Link>
       )}
 
@@ -175,7 +175,7 @@ export function MemberDetailHeader({
           </Button>
 
           <Button variant="outline" size="sm" onClick={onChangeStatus}>
-            Status aendern
+            Status ändern
           </Button>
 
           <DropdownMenu>
@@ -197,12 +197,12 @@ export function MemberDetailHeader({
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onRecordCancellation}>
                 <Calendar className="h-4 w-4" />
-                Kuendigung erfassen
+                Kündigung erfassen
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" disabled={!isLeft} onClick={onDelete}>
                 <Trash2 className="h-4 w-4" />
-                Loeschen
+                Löschen
               </DropdownMenuItem>
               <DropdownMenuItem variant="destructive" disabled={!isLeft} onClick={onAnonymize}>
                 <ShieldAlert className="h-4 w-4" />

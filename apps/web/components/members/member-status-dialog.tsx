@@ -2,9 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { CalendarIcon, Loader2, AlertTriangle, Info } from 'lucide-react';
-import { format } from 'date-fns';
-import { de } from 'date-fns/locale';
+import { Loader2, AlertTriangle, Info } from 'lucide-react';
 import { VALID_TRANSITIONS, type MemberStatus } from '@ktb/shared';
 import {
   Dialog,
@@ -18,13 +16,11 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { DateInput } from '@/components/ui/date-input';
 import { useChangeStatus } from '@/hooks/use-members';
 import { useToast } from '@/hooks/use-toast';
 import { MemberStatusBadge } from './member-status-badge';
 import type { MemberDetail } from '@/hooks/use-member-detail';
-import { cn } from '@/lib/utils';
 
 // ============================================================================
 // Constants
@@ -40,10 +36,10 @@ const STATUS_LABELS: Record<string, string> = {
 
 /** German descriptions for each transition */
 const TRANSITION_DESCRIPTIONS: Record<string, string> = {
-  ACTIVE: 'Mitglied wird als aktives Mitglied gefuehrt.',
-  INACTIVE: 'Mitglied wird voruebergehend inaktiv gesetzt.',
-  LEFT: 'Mitglied tritt aus dem Verein aus. Dies ist endgueltig.',
-  PENDING: 'Mitglied wird zurueck auf ausstehend gesetzt.',
+  ACTIVE: 'Mitglied wird als aktives Mitglied geführt.',
+  INACTIVE: 'Mitglied wird vorübergehend inaktiv gesetzt.',
+  LEFT: 'Mitglied tritt aus dem Verein aus. Dies ist endgültig.',
+  PENDING: 'Mitglied wird zurück auf ausstehend gesetzt.',
 };
 
 // ============================================================================
@@ -105,7 +101,7 @@ export function MemberStatusDialog({ member, open, onOpenChange }: MemberStatusD
         effectiveDate,
       });
 
-      toast({ title: 'Status geaendert' });
+      toast({ title: 'Status geändert' });
       handleClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ein unbekannter Fehler ist aufgetreten');
@@ -124,9 +120,9 @@ export function MemberStatusDialog({ member, open, onOpenChange }: MemberStatusD
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Status aendern</DialogTitle>
+          <DialogTitle>Status ändern</DialogTitle>
           <DialogDescription>
-            Aendere den Mitgliedsstatus und dokumentiere den Grund.
+            Ändere den Mitgliedsstatus und dokumentiere den Grund.
           </DialogDescription>
         </DialogHeader>
 
@@ -143,9 +139,7 @@ export function MemberStatusDialog({ member, open, onOpenChange }: MemberStatusD
           {validTransitions.length === 0 ? (
             <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
               <Info className="h-4 w-4 shrink-0 mt-0.5" />
-              <p>
-                Keine Statusaenderung moeglich. Der Status &quot;Ausgetreten&quot; ist endgueltig.
-              </p>
+              <p>Keine Statusänderung möglich. Der Status &quot;Ausgetreten&quot; ist endgültig.</p>
             </div>
           ) : (
             <>
@@ -191,7 +185,7 @@ export function MemberStatusDialog({ member, open, onOpenChange }: MemberStatusD
                 </Label>
                 <Textarea
                   id="status-reason"
-                  placeholder="Grund fuer die Statusaenderung..."
+                  placeholder="Grund für die Statusänderung..."
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   maxLength={500}
@@ -204,43 +198,8 @@ export function MemberStatusDialog({ member, open, onOpenChange }: MemberStatusD
 
               {/* Effective date */}
               <div className="space-y-1.5">
-                <Label>Gueltig ab (optional)</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !effectiveDate && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {effectiveDate
-                        ? format(new Date(effectiveDate + 'T00:00:00'), 'dd.MM.yyyy', {
-                            locale: de,
-                          })
-                        : 'Heute (Standard)'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={effectiveDate ? new Date(effectiveDate + 'T00:00:00') : undefined}
-                      onSelect={(date) => {
-                        if (date) {
-                          const year = date.getFullYear();
-                          const month = String(date.getMonth() + 1).padStart(2, '0');
-                          const day = String(date.getDate()).padStart(2, '0');
-                          setEffectiveDate(`${year}-${month}-${day}`);
-                        } else {
-                          setEffectiveDate(undefined);
-                        }
-                      }}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Label>Gültig ab (optional)</Label>
+                <DateInput value={effectiveDate} onChange={setEffectiveDate} />
               </div>
 
               {/* Error display */}
@@ -264,7 +223,7 @@ export function MemberStatusDialog({ member, open, onOpenChange }: MemberStatusD
               disabled={!isValid || changeStatus.isPending}
             >
               {changeStatus.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Status aendern
+              Status ändern
             </Button>
           )}
         </DialogFooter>

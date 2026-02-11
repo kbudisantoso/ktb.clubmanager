@@ -6,12 +6,19 @@ import type { MemberListItem } from '@/components/members/member-list-table';
 // Query Key Factory
 // ============================================================================
 
+export interface MemberInfiniteFilters {
+  search?: string;
+  status?: string[];
+  household?: string;
+  periodYear?: number;
+}
+
 export const memberKeys = {
   all: (slug: string) => ['members', slug] as const,
   list: (slug: string, params?: Record<string, unknown>) =>
     [...memberKeys.all(slug), 'list', params] as const,
-  infinite: (slug: string, search?: string, status?: string) =>
-    [...memberKeys.all(slug), 'infinite', search, status] as const,
+  infinite: (slug: string, filters?: MemberInfiniteFilters) =>
+    [...memberKeys.all(slug), 'infinite', filters] as const,
   detail: (slug: string, id: string) => [...memberKeys.all(slug), 'detail', id] as const,
 };
 
@@ -87,16 +94,20 @@ interface BulkChangeStatusInput {
 
 /**
  * Fetch paginated members with cursor-based infinite scroll.
- * Supports search and status filtering.
+ * Supports search, multi-status, household, and period year filtering.
  */
-export function useMembersInfinite(slug: string, search?: string, status?: string) {
+export function useMembersInfinite(slug: string, filters?: MemberInfiniteFilters) {
   return useInfiniteQuery<PaginatedMembersResponse>({
-    queryKey: memberKeys.infinite(slug, search, status),
+    queryKey: memberKeys.infinite(slug, filters),
     queryFn: async ({ pageParam }) => {
       const params = new URLSearchParams();
-      if (search) params.set('search', search);
+      if (filters?.search) params.set('search', filters.search);
       if (pageParam) params.set('cursor', pageParam as string);
-      if (status) params.set('status', status);
+      if (filters?.status && filters.status.length > 0) {
+        params.set('status', filters.status.join(','));
+      }
+      if (filters?.household) params.set('householdFilter', filters.household);
+      if (filters?.periodYear) params.set('periodYear', String(filters.periodYear));
       params.set('limit', '50');
 
       const res = await apiFetch(`/api/clubs/${slug}/members?${params.toString()}`);
@@ -194,7 +205,7 @@ export function useDeleteMember(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Fehler beim Loeschen des Mitglieds');
+        throw new Error(error.message || 'Fehler beim Löschen des Mitglieds');
       }
       return res.json();
     },
@@ -226,7 +237,7 @@ export function useChangeStatus(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Fehler beim Aendern des Status');
+        throw new Error(error.message || 'Fehler beim Ändern des Status');
       }
       return res.json();
     },
@@ -258,7 +269,7 @@ export function useBulkChangeStatus(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Fehler beim Aendern des Status');
+        throw new Error(error.message || 'Fehler beim Ändern des Status');
       }
       return res.json();
     },

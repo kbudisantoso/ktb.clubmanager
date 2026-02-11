@@ -11,14 +11,11 @@ import { ClubLayoutClient } from './_layout-client';
  */
 export default function ClubLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      <div className="app-background" />
-      <div className="relative min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1">
-          <ClubLayoutClient>{children}</ClubLayoutClient>
-        </main>
-      </div>
-    </>
+    <div className="relative min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 glass-panel rounded-none border-x-0 border-b-0">
+        <ClubLayoutClient>{children}</ClubLayoutClient>
+      </main>
+    </div>
   );
 }

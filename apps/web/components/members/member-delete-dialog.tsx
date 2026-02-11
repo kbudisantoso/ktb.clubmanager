@@ -106,7 +106,7 @@ export function MemberDeleteDialog({
     <AlertDialog open={open} onOpenChange={handleClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Mitglied loeschen</AlertDialogTitle>
+          <AlertDialogTitle>Mitglied löschen</AlertDialogTitle>
           <AlertDialogDescription>
             {displayName} ({member.memberNumber})
           </AlertDialogDescription>
@@ -124,8 +124,8 @@ export function MemberDeleteDialog({
             <div className="flex items-start gap-2 rounded-md border border-amber-500/25 bg-amber-500/10 p-3">
               <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <p className="text-sm text-amber-600 dark:text-amber-400">
-                Mitglied kann nur nach Austritt geloescht werden. Bitte aendere zuerst den Status
-                auf &quot;Ausgetreten&quot;.
+                Mitglied kann nur nach Austritt gelöscht werden. Bitte ändere zuerst den Status auf
+                &quot;Ausgetreten&quot;.
               </p>
             </div>
           ) : (
@@ -137,7 +137,7 @@ export function MemberDeleteDialog({
                   <p className="font-medium">Mitglied archivieren</p>
                   <p>
                     Das Mitglied wird archiviert und aus den Listen ausgeblendet. Die Daten bleiben
-                    erhalten und koennen wiederhergestellt werden.
+                    erhalten und können wiederhergestellt werden.
                   </p>
                 </div>
               </div>
@@ -149,7 +149,7 @@ export function MemberDeleteDialog({
                 </Label>
                 <Select value={reason} onValueChange={setReason}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Grund auswaehlen..." />
+                    <SelectValue placeholder="Grund auswählen..." />
                   </SelectTrigger>
                   <SelectContent>
                     {DELETION_REASONS.map((r) => (

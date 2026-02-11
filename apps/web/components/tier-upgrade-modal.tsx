@@ -26,9 +26,9 @@ const FEATURE_NAMES: Record<string, string> = {
 };
 
 const FEATURE_DESCRIPTIONS: Record<string, string> = {
-  sepa: 'Mit SEPA-Lastschrift kannst du Mitgliedsbeitraege automatisch einziehen.',
-  reports: 'Finanzberichte helfen dir, den Ueberblick ueber die Vereinsfinanzen zu behalten.',
-  bankImport: 'Importiere Kontoauszuege automatisch und ordne Buchungen zu.',
+  sepa: 'Mit SEPA-Lastschrift kannst du Mitgliedsbeiträge automatisch einziehen.',
+  reports: 'Finanzberichte helfen dir, den Überblick über die Vereinsfinanzen zu behalten.',
+  bankImport: 'Importiere Kontoauszüge automatisch und ordne Buchungen zu.',
 };
 
 export function TierUpgradeModal({
@@ -49,7 +49,7 @@ export function TierUpgradeModal({
           </div>
           <DialogTitle className="text-center">{featureName} freischalten</DialogTitle>
           <DialogDescription className="text-center">
-            Diese Funktion ist in deinem aktuellen Tarif nicht verfuegbar.
+            Diese Funktion ist in deinem aktuellen Tarif nicht verfügbar.
           </DialogDescription>
         </DialogHeader>
 

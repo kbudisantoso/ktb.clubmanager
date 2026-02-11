@@ -222,11 +222,11 @@ describe('MembersService', () => {
       );
     });
 
-    it('should filter by status', async () => {
+    it('should filter by single status without IN clause (backwards compat)', async () => {
       mockDb.member.findMany.mockResolvedValue([]);
       mockDb.member.count.mockResolvedValue(0);
 
-      await service.findAll('club-1', { status: 'ACTIVE' } as never);
+      await service.findAll('club-1', { status: ['ACTIVE'] } as never);
 
       expect(mockDb.member.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -235,6 +235,96 @@ describe('MembersService', () => {
           }),
         })
       );
+    });
+
+    it('should filter by multiple statuses using IN clause', async () => {
+      mockDb.member.findMany.mockResolvedValue([]);
+      mockDb.member.count.mockResolvedValue(0);
+
+      await service.findAll('club-1', { status: ['ACTIVE', 'PENDING'] } as never);
+
+      expect(mockDb.member.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: { in: ['ACTIVE', 'PENDING'] },
+          }),
+        })
+      );
+    });
+
+    it('should filter members with any household (HAS)', async () => {
+      mockDb.member.findMany.mockResolvedValue([]);
+      mockDb.member.count.mockResolvedValue(0);
+
+      await service.findAll('club-1', { householdFilter: 'HAS' } as never);
+
+      expect(mockDb.member.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            householdId: { not: null },
+          }),
+        })
+      );
+    });
+
+    it('should filter members without household (NONE)', async () => {
+      mockDb.member.findMany.mockResolvedValue([]);
+      mockDb.member.count.mockResolvedValue(0);
+
+      await service.findAll('club-1', { householdFilter: 'NONE' } as never);
+
+      expect(mockDb.member.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            householdId: null,
+          }),
+        })
+      );
+    });
+
+    it('should filter by specific household IDs', async () => {
+      mockDb.member.findMany.mockResolvedValue([]);
+      mockDb.member.count.mockResolvedValue(0);
+
+      await service.findAll('club-1', { householdFilter: 'id1,id2' } as never);
+
+      expect(mockDb.member.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            householdId: { in: ['id1', 'id2'] },
+          }),
+        })
+      );
+    });
+
+    it('should filter by period year — members with overlapping membership period', async () => {
+      mockDb.member.findMany.mockResolvedValue([]);
+      mockDb.member.count.mockResolvedValue(0);
+
+      await service.findAll('club-1', { periodYear: 2025 } as never);
+
+      expect(mockDb.member.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            membershipPeriods: {
+              some: {
+                joinDate: { lte: new Date('2025-12-31') },
+                OR: [{ leaveDate: null }, { leaveDate: { gte: new Date('2025-01-01') } }],
+              },
+            },
+          }),
+        })
+      );
+    });
+
+    it('should not add period filter when periodYear is undefined', async () => {
+      mockDb.member.findMany.mockResolvedValue([]);
+      mockDb.member.count.mockResolvedValue(0);
+
+      await service.findAll('club-1', {});
+
+      const callArgs = mockDb.member.findMany.mock.calls[0]![0] as Record<string, unknown>;
+      expect(callArgs.where).not.toHaveProperty('membershipPeriods');
     });
   });
 

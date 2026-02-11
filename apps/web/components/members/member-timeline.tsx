@@ -14,7 +14,7 @@ const MEMBERSHIP_TYPE_LABELS: Record<string, string> = {
   ORDENTLICH: 'Ordentlich',
   PASSIV: 'Passiv',
   EHREN: 'Ehren',
-  FOERDER: 'Foerder',
+  FOERDER: 'Förder',
   JUGEND: 'Jugend',
 };
 

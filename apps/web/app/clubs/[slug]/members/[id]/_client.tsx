@@ -66,7 +66,7 @@ export function MemberDetailClient({ slug, memberId }: MemberDetailClientProps) 
             onClick={() => router.push(`/clubs/${slug}/members`)}
             className="text-sm text-primary hover:underline"
           >
-            Zurueck zur Mitgliederliste
+            Zurück zur Mitgliederliste
           </button>
         </div>
       </div>

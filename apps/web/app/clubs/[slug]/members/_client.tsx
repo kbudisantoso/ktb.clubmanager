@@ -1,65 +1,93 @@
 'use client';
 
-import { Suspense, useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Plus } from 'lucide-react';
+import { Plus, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useDebounce } from '@/hooks/use-debounce';
+import { useMemberFilters } from '@/hooks/use-member-filters';
+import { useColumnVisibility } from '@/hooks/use-column-visibility';
 import { useMembersInfinite } from '@/hooks/use-members';
 import { useNumberRanges } from '@/hooks/use-number-ranges';
 import { MemberSearch } from '@/components/members/member-search';
 import { MemberEmptyState } from '@/components/members/member-empty-state';
 import { MemberListTable } from '@/components/members/member-list-table';
 import { MemberCreateSheet } from '@/components/members/member-create-sheet';
-import { MemberDetailPanel, useMemberPanelUrl } from '@/components/members/member-detail-panel';
+import { MemberDetailPanel } from '@/components/members/member-detail-panel';
 import { MemberBulkActions } from '@/components/members/member-bulk-actions';
-
-/** Status filter options */
-const STATUS_FILTERS = [
-  { value: undefined, label: 'Alle' },
-  { value: 'ACTIVE', label: 'Aktiv' },
-  { value: 'INACTIVE', label: 'Inaktiv' },
-  { value: 'PENDING', label: 'Ausstehend' },
-  { value: 'LEFT', label: 'Ausgetreten' },
-] as const;
+import { MemberFilterStatus } from '@/components/members/member-filter-status';
+import { MemberFilterHousehold } from '@/components/members/member-filter-household';
+import { MemberFilterPeriod } from '@/components/members/member-filter-period';
+import { MemberFilterChips } from '@/components/members/member-filter-chips';
+import { MemberColumnPicker } from '@/components/members/member-column-picker';
 
 /**
- * Inner content component that uses useSearchParams (via useMemberPanelUrl).
- * Must be wrapped in Suspense boundary.
+ * Client component orchestrating the member list page.
+ * All filter state lives in URL via nuqs (search, status, household, period, member panel).
+ * Column visibility is persisted per club in localStorage.
+ *
+ * Layout:
+ *   Row 1: [Search] [Column Picker] [+ Neues Mitglied]
+ *   Row 2: [Status filter] [Household filter] [Period filter] + active filter chips
+ *   On mobile, Row 2 collapses behind a "Filter" button.
  */
-function MembersClientInner() {
+export function MembersClient() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
 
-  // Search state with debounce
-  const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearch = useDebounce(searchTerm, 300);
+  // --- Filter state (URL-synced via nuqs) ---
+  const [filters, setFilters] = useMemberFilters();
 
-  // Status filter state
-  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  // Local search input with debounce before syncing to URL
+  const [searchInput, setSearchInput] = useState(filters.search);
+  const debouncedSearch = useDebounce(searchInput, 300);
 
-  // Create sheet state
+  // Sync debounced search to nuqs URL state
+  useEffect(() => {
+    if (debouncedSearch !== filters.search) {
+      setFilters({ search: debouncedSearch });
+    }
+  }, [debouncedSearch, filters.search, setFilters]);
+
+  // Sync nuqs search back to local input when URL changes externally (e.g. chip clear)
+  const filtersSearch = filters.search;
+  useEffect(() => {
+    setSearchInput((prev) => (prev !== filtersSearch ? filtersSearch : prev));
+  }, [filtersSearch]);
+
+  // --- Column visibility (localStorage per club) ---
+  const {
+    columns: columnVisibility,
+    toggleColumn,
+    resetColumns,
+    isDefault: isColumnsDefault,
+  } = useColumnVisibility(slug);
+
+  // --- UI state ---
   const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
-
-  // Selection state for bulk actions
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-  // Detail panel URL sync
-  const { selectedMemberId, selectMember, closePanel } = useMemberPanelUrl();
-
-  // Active row index for keyboard navigation
   const [activeRowIndex, setActiveRowIndex] = useState<number>(-1);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  // Data fetching
+  // --- Data fetching ---
+  const periodYear = filters.period ? Number(filters.period) : undefined;
+
   const {
     data,
     isLoading: isMembersLoading,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-  } = useMembersInfinite(slug, debouncedSearch || undefined, statusFilter);
+  } = useMembersInfinite(slug, {
+    search: debouncedSearch || undefined,
+    status: filters.status.length > 0 ? filters.status : undefined,
+    household: filters.household || undefined,
+    periodYear,
+  });
 
   const { data: numberRanges, isLoading: isNumberRangesLoading } = useNumberRanges(slug);
 
@@ -75,35 +103,50 @@ function MembersClientInner() {
     [numberRanges]
   );
 
-  // Determine empty state variant
-  const emptyStateVariant = useMemo(() => {
-    if (!isNumberRangesLoading && !hasMemberNumberRange) return 'no-number-ranges' as const;
-    if (members.length === 0 && !debouncedSearch && !statusFilter) return 'no-members' as const;
-    if (members.length === 0 && (debouncedSearch || statusFilter)) return 'no-results' as const;
-    return null;
-  }, [isNumberRangesLoading, hasMemberNumberRange, members.length, debouncedSearch, statusFilter]);
+  // --- Panel state (via nuqs member param) ---
+  const selectedMemberId = filters.member || null;
 
-  // Clear search handler for empty state
-  const handleClearSearch = useCallback(() => {
-    setSearchTerm('');
-    setStatusFilter(undefined);
-  }, []);
-
-  // Handle member row click - opens detail panel
-  const handleSelectMember = useCallback(
+  const selectMember = useCallback(
     (id: string) => {
-      selectMember(id);
+      setFilters({ member: id });
     },
-    [selectMember]
+    [setFilters]
   );
 
-  // Reset selection when search/filter changes
+  const closePanel = useCallback(() => {
+    setFilters({ member: '' });
+  }, [setFilters]);
+
+  // --- Empty state variant ---
+  const hasActiveFilters =
+    filters.status.length > 0 || filters.household !== '' || filters.period !== '';
+
+  const emptyStateVariant = useMemo(() => {
+    if (!isNumberRangesLoading && !hasMemberNumberRange) return 'no-number-ranges' as const;
+    if (members.length === 0 && !debouncedSearch && !hasActiveFilters) return 'no-members' as const;
+    if (members.length === 0 && (debouncedSearch || hasActiveFilters)) return 'no-results' as const;
+    return null;
+  }, [
+    isNumberRangesLoading,
+    hasMemberNumberRange,
+    members.length,
+    debouncedSearch,
+    hasActiveFilters,
+  ]);
+
+  // Clear all search/filters handler for empty state
+  const handleClearSearch = useCallback(() => {
+    setSearchInput('');
+    setFilters({ search: '', status: [], household: '', period: '' });
+  }, [setFilters]);
+
+  // --- Reset selection when search/filter changes ---
   useEffect(() => {
     setSelectedIds(new Set());
     setActiveRowIndex(-1);
-  }, [debouncedSearch, statusFilter]);
+  }, [debouncedSearch, filters.status, filters.household, filters.period]);
 
-  // Keyboard navigation: J/K for rows, Enter to open detail, Escape to close panel
+  // --- Keyboard navigation ---
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       // Don't capture when typing in inputs
@@ -113,7 +156,7 @@ function MembersClientInner() {
       }
 
       if (e.key === 'Escape' && selectedMemberId) {
-        // Don't close the panel when a Radix dialog is open — the dialog handles its own Escape
+        // Don't close the panel when a Radix dialog is open
         if (document.querySelector('[role="dialog"][data-state="open"]')) return;
         e.preventDefault();
         closePanel();
@@ -125,20 +168,46 @@ function MembersClientInner() {
         setActiveRowIndex((prev) => Math.max(prev - 1, 0));
       } else if (e.key === 'Enter' && activeRowIndex >= 0 && activeRowIndex < members.length) {
         e.preventDefault();
-        handleSelectMember(members[activeRowIndex].id);
+        selectMember(members[activeRowIndex].id);
       }
     }
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [activeRowIndex, members, handleSelectMember, selectedMemberId, closePanel]);
+  }, [activeRowIndex, members, selectMember, selectedMemberId, closePanel]);
 
+  // --- Computed values ---
   const isLoading = isMembersLoading || isNumberRangesLoading;
   const isPanelOpen = !!selectedMemberId;
 
-  /** The list content (header, search, table) */
+  // Count of active filters (for mobile badge)
+  const activeFilterCount =
+    (filters.status.length > 0 ? 1 : 0) +
+    (filters.household !== '' ? 1 : 0) +
+    (filters.period !== '' ? 1 : 0);
+
+  // --- Filter dropdowns (shared between desktop and mobile drawer) ---
+  const filterDropdowns = (
+    <>
+      <MemberFilterStatus
+        selected={filters.status}
+        onSelectionChange={(statuses) => setFilters({ status: statuses })}
+      />
+      <MemberFilterHousehold
+        value={filters.household}
+        onChange={(value) => setFilters({ household: value })}
+        slug={slug}
+      />
+      <MemberFilterPeriod
+        value={filters.period}
+        onChange={(value) => setFilters({ period: value })}
+      />
+    </>
+  );
+
+  /** The list content (header, search, filters, table) */
   const listContent = (
-    <div className="py-6 px-4 space-y-4 h-full overflow-auto">
+    <div className="space-y-4 h-full overflow-auto py-6 px-4">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
@@ -149,31 +218,67 @@ function MembersClientInner() {
             </p>
           )}
         </div>
-        <Button disabled={!hasMemberNumberRange} onClick={() => setIsCreateSheetOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Neues Mitglied
-        </Button>
       </div>
 
-      {/* Search and filters - only show when we have number ranges and data or are searching */}
+      {/* Row 1: Search + Column Picker + Create Button */}
       {(hasMemberNumberRange || members.length > 0) && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <MemberSearch value={searchTerm} onChange={setSearchTerm} />
+        <div className="flex items-center gap-3">
+          <MemberSearch value={searchInput} onChange={setSearchInput} className="flex-1" />
+          <MemberColumnPicker
+            columns={columnVisibility}
+            onToggle={toggleColumn}
+            onReset={resetColumns}
+            isDefault={isColumnsDefault}
+          />
+          <Button disabled={!hasMemberNumberRange} onClick={() => setIsCreateSheetOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Neues Mitglied</span>
+            <span className="sm:hidden">Neu</span>
+          </Button>
+        </div>
+      )}
 
-          {/* Status filter buttons */}
-          <div className="flex items-center gap-1 flex-wrap">
-            {STATUS_FILTERS.map((filter) => (
-              <Button
-                key={filter.label}
-                variant={statusFilter === filter.value ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setStatusFilter(filter.value)}
-                className="text-xs"
-              >
-                {filter.label}
-              </Button>
-            ))}
+      {/* Row 2: Filter dropdowns (desktop) / Filter button (mobile) + Chips */}
+      {(hasMemberNumberRange || members.length > 0) && (
+        <div className="space-y-2">
+          {/* Desktop: inline filter dropdowns */}
+          <div className="hidden sm:flex items-center gap-2">{filterDropdowns}</div>
+
+          {/* Mobile: Filter button with Sheet drawer */}
+          <div className="sm:hidden">
+            <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8">
+                  <SlidersHorizontal className="mr-1 size-3.5" />
+                  Filter
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="ml-1 rounded-sm px-1 font-normal">
+                      {activeFilterCount}
+                    </Badge>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="pb-8">
+                <SheetHeader>
+                  <SheetTitle>Filter</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col gap-3 mt-4">{filterDropdowns}</div>
+              </SheetContent>
+            </Sheet>
           </div>
+
+          {/* Active filter chips */}
+          <MemberFilterChips filters={filters} setFilters={setFilters} />
+        </div>
+      )}
+
+      {/* Empty button for pages without Row 1 (no number ranges, no members) */}
+      {!hasMemberNumberRange && members.length === 0 && !isLoading && (
+        <div className="flex justify-end">
+          <Button disabled onClick={() => setIsCreateSheetOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Neues Mitglied
+          </Button>
         </div>
       )}
 
@@ -193,7 +298,8 @@ function MembersClientInner() {
           fetchNextPage={fetchNextPage}
           selectedIds={selectedIds}
           onSelectionChange={setSelectedIds}
-          onSelectMember={handleSelectMember}
+          onSelectMember={selectMember}
+          columnVisibility={columnVisibility}
         />
       )}
 
@@ -238,39 +344,28 @@ function MembersClientInner() {
   return <div className="container mx-auto">{listContent}</div>;
 }
 
-/**
- * Client component orchestrating the member list page.
- * Handles search, status filtering, infinite scroll, detail panel, and empty states.
- * Wrapped in Suspense because useMemberPanelUrl uses useSearchParams.
- */
-export function MembersClient() {
-  return (
-    <Suspense fallback={<MembersLoadingFallback />}>
-      <MembersClientInner />
-    </Suspense>
-  );
-}
-
-/** Loading fallback for Suspense boundary */
-function MembersLoadingFallback() {
+/** Loading fallback skeleton for the member list page */
+export function MembersLoadingFallback() {
   return (
     <div className="container mx-auto py-6 space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Mitglieder</h1>
         </div>
+      </div>
+
+      {/* Row 1 skeleton: Search + Column Picker + Create */}
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-10 flex-1 max-w-sm" />
+        <Skeleton className="h-8 w-24" />
         <Skeleton className="h-10 w-36" />
       </div>
 
-      {/* Search bar skeleton */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        <Skeleton className="h-10 w-full max-w-sm" />
-        {/* Status filter skeleton */}
-        <div className="flex items-center gap-1">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-8 w-20 rounded-full" />
-          ))}
-        </div>
+      {/* Row 2 skeleton: Filter dropdowns */}
+      <div className="hidden sm:flex items-center gap-2">
+        <Skeleton className="h-8 w-20" />
+        <Skeleton className="h-8 w-24" />
+        <Skeleton className="h-8 w-24" />
       </div>
 
       {/* Table rows skeleton */}

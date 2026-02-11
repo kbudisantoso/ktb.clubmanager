@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { useOpenPlzLocalities, type Locality } from '@/hooks/use-openplz';
 import { cn } from '@/lib/utils';
 
@@ -107,7 +107,7 @@ export function AddressAutocomplete<T extends FieldValues = FieldValues>({
           <Label htmlFor="postalCode">PLZ</Label>
           <div className="relative">
             <Popover open={showLocalityPicker} onOpenChange={setShowLocalityPicker}>
-              <PopoverTrigger asChild>
+              <PopoverAnchor asChild>
                 <Input
                   id="postalCode"
                   placeholder="12345"
@@ -116,7 +116,7 @@ export function AddressAutocomplete<T extends FieldValues = FieldValues>({
                   aria-invalid={!!errors?.postalCode}
                   {...reg('postalCode')}
                 />
-              </PopoverTrigger>
+              </PopoverAnchor>
               {localities && localities.length > 1 && (
                 <PopoverContent className="w-60 p-1" align="start">
                   <div className="text-xs text-muted-foreground px-2 py-1.5">
@@ -212,7 +212,7 @@ export function AddressAutocomplete<T extends FieldValues = FieldValues>({
         <Label htmlFor="country">Land</Label>
         <Select defaultValue="DE" disabled={disabled} onValueChange={(val) => set('country', val)}>
           <SelectTrigger className={cn('w-full', errors?.country && 'border-destructive')}>
-            <SelectValue placeholder="Land waehlen" />
+            <SelectValue placeholder="Land wählen" />
           </SelectTrigger>
           <SelectContent>
             {COUNTRY_OPTIONS.map((c) => (

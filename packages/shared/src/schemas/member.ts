@@ -6,8 +6,8 @@ import {
   MembershipTypeSchema,
   HouseholdRoleSchema,
   DeletionReasonSchema,
-} from './member-status.js';
-import { AddressSchema } from './address.js';
+} from './member-status.ts';
+import { AddressSchema } from './address.ts';
 
 /**
  * Schema for creating a new member.

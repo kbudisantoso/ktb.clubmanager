@@ -22,20 +22,20 @@ describe('MemberSearch', () => {
   it('does not show clear button when value is empty', () => {
     render(<MemberSearch value="" onChange={vi.fn()} />);
 
-    expect(screen.queryByLabelText('Suche loeschen')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Suche löschen')).not.toBeInTheDocument();
   });
 
   it('shows clear button when value is not empty', () => {
     render(<MemberSearch value="Max" onChange={vi.fn()} />);
 
-    expect(screen.getByLabelText('Suche loeschen')).toBeInTheDocument();
+    expect(screen.getByLabelText('Suche löschen')).toBeInTheDocument();
   });
 
   it('clears value on X button click', () => {
     const onChange = vi.fn();
     render(<MemberSearch value="Max" onChange={onChange} />);
 
-    fireEvent.click(screen.getByLabelText('Suche loeschen'));
+    fireEvent.click(screen.getByLabelText('Suche löschen'));
 
     expect(onChange).toHaveBeenCalledWith('');
   });

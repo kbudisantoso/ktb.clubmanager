@@ -133,10 +133,10 @@ export function HouseholdAddressSyncDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            Adresse auch fuer andere Haushaltsmitglieder aktualisieren?
+            Adresse auch für andere Haushaltsmitglieder aktualisieren?
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Du hast die Adresse von {headMemberName} geaendert. Waehle die Mitglieder aus, deren
+            Du hast die Adresse von {headMemberName} geändert. Wähle die Mitglieder aus, deren
             Adresse ebenfalls aktualisiert werden soll.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -163,7 +163,7 @@ export function HouseholdAddressSyncDialog({
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleSkip}>Nur fuer {headMemberName}</AlertDialogCancel>
+          <AlertDialogCancel onClick={handleSkip}>Nur für {headMemberName}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleSync}
             disabled={checkedIds.size === 0 || syncAddresses.isPending}

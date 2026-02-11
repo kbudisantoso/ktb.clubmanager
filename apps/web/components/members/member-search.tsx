@@ -41,7 +41,7 @@ export function MemberSearch({ value, onChange, className }: MemberSearchProps) 
             inputRef.current?.focus();
           }}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Suche loeschen"
+          aria-label="Suche löschen"
         >
           <X className="h-4 w-4" />
         </button>
