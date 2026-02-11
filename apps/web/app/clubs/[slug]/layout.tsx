@@ -1,4 +1,5 @@
-import { Header } from '@/components/layout/header';
+import { AppShell } from '@/components/layout/app-shell';
+import { AppSidebar } from '@/components/layout/app-sidebar';
 import { ClubLayoutClient } from './_layout-client';
 
 /**
@@ -11,11 +12,8 @@ import { ClubLayoutClient } from './_layout-client';
  */
 export default function ClubLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 glass-panel rounded-none border-x-0 border-b-0">
-        <ClubLayoutClient>{children}</ClubLayoutClient>
-      </main>
-    </div>
+    <AppShell sidebar={<AppSidebar />}>
+      <ClubLayoutClient>{children}</ClubLayoutClient>
+    </AppShell>
   );
 }
