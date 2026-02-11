@@ -5,12 +5,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <>
       <ClubSync />
-      {/* Subtle gradient background for in-app pages */}
-      <div className="app-background" />
-
       <div className="relative min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 glass-panel rounded-none border-x-0 border-b-0">{children}</main>
       </div>
     </>
   );
