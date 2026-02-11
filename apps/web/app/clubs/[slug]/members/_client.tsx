@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { PageHeader } from '@/components/layout/page-header';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useMemberFilters } from '@/hooks/use-member-filters';
 import { useColumnVisibility } from '@/hooks/use-column-visibility';
@@ -205,21 +206,9 @@ export function MembersClient() {
     </>
   );
 
-  /** The list content (header, search, filters, table) */
+  /** The list content (search, filters, table) */
   const listContent = (
-    <div className="space-y-4 h-full overflow-auto py-6 px-4">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Mitglieder</h1>
-          {!isLoading && totalCount > 0 && (
-            <p className="text-muted-foreground text-sm">
-              {totalCount} {totalCount === 1 ? 'Mitglied' : 'Mitglieder'}
-            </p>
-          )}
-        </div>
-      </div>
-
+    <div className="space-y-4 h-full overflow-auto px-4 pb-6">
       {/* Row 1: Search + Column Picker + Create Button */}
       {(hasMemberNumberRange || members.length > 0) && (
         <div className="flex items-center gap-3">
@@ -316,71 +305,81 @@ export function MembersClient() {
     </div>
   );
 
+  const countDescription =
+    !isLoading && totalCount > 0
+      ? `${totalCount} ${totalCount === 1 ? 'Mitglied' : 'Mitglieder'}`
+      : undefined;
+
   // When panel is open on desktop, use ResizablePanelGroup
   if (isPanelOpen) {
     return (
-      <div className="h-[calc(100vh-4rem)]">
-        <ResizablePanelGroup orientation="horizontal">
-          {/* List panel */}
-          <ResizablePanel defaultSize={55} minSize={30}>
-            {listContent}
-          </ResizablePanel>
+      <div>
+        <PageHeader title="Mitglieder" description={countDescription} />
+        <div className="h-[calc(100vh-4rem)]">
+          <ResizablePanelGroup orientation="horizontal">
+            {/* List panel */}
+            <ResizablePanel defaultSize={55} minSize={30}>
+              {listContent}
+            </ResizablePanel>
 
-          {/* Resize handle */}
-          <ResizableHandle withHandle />
+            {/* Resize handle */}
+            <ResizableHandle withHandle />
 
-          {/* Detail panel */}
-          <ResizablePanel defaultSize={45} minSize={30}>
-            <div className="h-full overflow-auto border-l">
-              <MemberDetailPanel selectedMemberId={selectedMemberId} onClose={closePanel} />
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+            {/* Detail panel */}
+            <ResizablePanel defaultSize={45} minSize={30}>
+              <div className="h-full overflow-auto border-l">
+                <MemberDetailPanel selectedMemberId={selectedMemberId} onClose={closePanel} />
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
       </div>
     );
   }
 
   // No panel open - full-width list
-  return <div className="container mx-auto">{listContent}</div>;
+  return (
+    <div>
+      <PageHeader title="Mitglieder" description={countDescription} />
+      <div className="container mx-auto">{listContent}</div>
+    </div>
+  );
 }
 
 /** Loading fallback skeleton for the member list page */
 export function MembersLoadingFallback() {
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Mitglieder</h1>
+    <div>
+      <PageHeader title="Mitglieder" />
+      <div className="container mx-auto space-y-4 px-4">
+        {/* Row 1 skeleton: Search + Column Picker + Create */}
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 flex-1 max-w-sm" />
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-10 w-36" />
         </div>
-      </div>
 
-      {/* Row 1 skeleton: Search + Column Picker + Create */}
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-10 flex-1 max-w-sm" />
-        <Skeleton className="h-8 w-24" />
-        <Skeleton className="h-10 w-36" />
-      </div>
+        {/* Row 2 skeleton: Filter dropdowns */}
+        <div className="hidden sm:flex items-center gap-2">
+          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-8 w-24" />
+        </div>
 
-      {/* Row 2 skeleton: Filter dropdowns */}
-      <div className="hidden sm:flex items-center gap-2">
-        <Skeleton className="h-8 w-20" />
-        <Skeleton className="h-8 w-24" />
-        <Skeleton className="h-8 w-24" />
-      </div>
-
-      {/* Table rows skeleton */}
-      <div className="space-y-3">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="flex items-center gap-4 py-2">
-            <Skeleton className="h-4 w-4" />
-            <Skeleton className="h-7 w-7 rounded-full" />
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-4 w-16 hidden md:block" />
-            <Skeleton className="h-5 w-16 rounded-md hidden md:block" />
-            <Skeleton className="h-4 w-40 hidden xl:block" />
-            <Skeleton className="h-4 w-28 hidden xl:block" />
-          </div>
-        ))}
+        {/* Table rows skeleton */}
+        <div className="space-y-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4 py-2">
+              <Skeleton className="h-4 w-4" />
+              <Skeleton className="h-7 w-7 rounded-full" />
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-16 hidden md:block" />
+              <Skeleton className="h-5 w-16 rounded-md hidden md:block" />
+              <Skeleton className="h-4 w-40 hidden xl:block" />
+              <Skeleton className="h-4 w-28 hidden xl:block" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
