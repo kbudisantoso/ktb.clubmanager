@@ -38,9 +38,15 @@ vi.mock('@/hooks/use-club-permissions', () => ({
   }),
 }));
 
-// Mock Header component to simplify tests
-vi.mock('@/components/layout/header', () => ({
-  Header: () => <header data-testid="mock-header">Header</header>,
+// Mock AppShell and AppSidebar components
+vi.mock('@/components/layout/app-shell', () => ({
+  AppShell: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="mock-app-shell">{children}</div>
+  ),
+}));
+
+vi.mock('@/components/layout/app-sidebar', () => ({
+  AppSidebar: () => <nav data-testid="mock-sidebar">Sidebar</nav>,
 }));
 
 // Import after mocks
@@ -54,25 +60,15 @@ describe('ClubLayout', () => {
   });
 
   describe('rendering', () => {
-    it('renders header and children', () => {
+    it('renders app shell and children', () => {
       render(
         <ClubLayout>
           <div data-testid="child-content">Club Content</div>
         </ClubLayout>
       );
 
-      expect(screen.getByTestId('mock-header')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-app-shell')).toBeInTheDocument();
       expect(screen.getByTestId('child-content')).toBeInTheDocument();
-    });
-
-    it('renders main content area with glass-panel', () => {
-      const { container } = render(
-        <ClubLayout>
-          <div>Content</div>
-        </ClubLayout>
-      );
-
-      expect(container.querySelector('.glass-panel')).toBeInTheDocument();
     });
   });
 
