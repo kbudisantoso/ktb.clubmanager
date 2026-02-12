@@ -315,10 +315,10 @@ export function MembersClient() {
     return (
       <div>
         <PageHeader title="Mitglieder" description={countDescription} />
-        <div className="h-[calc(100vh-4rem)]">
+        <div className="h-[calc(100vh-4rem)] overflow-hidden">
           <ResizablePanelGroup orientation="horizontal">
             {/* List panel */}
-            <ResizablePanel defaultSize={55} minSize={30}>
+            <ResizablePanel defaultSize={60} minSize={30}>
               {listContent}
             </ResizablePanel>
 
@@ -326,8 +326,8 @@ export function MembersClient() {
             <ResizableHandle withHandle />
 
             {/* Detail panel */}
-            <ResizablePanel defaultSize={45} minSize={30}>
-              <div className="h-full overflow-auto border-l">
+            <ResizablePanel defaultSize={40} minSize={30}>
+              <div className="h-full overflow-y-auto overflow-x-hidden border-l">
                 <MemberDetailPanel selectedMemberId={selectedMemberId} onClose={closePanel} />
               </div>
             </ResizablePanel>
