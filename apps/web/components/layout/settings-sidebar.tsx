@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import {
   ArrowLeft,
@@ -12,6 +12,7 @@ import {
   LogOut,
   Moon,
   Settings,
+  ShieldCheck,
   Sun,
   User,
   Users,
@@ -65,6 +66,7 @@ import {
 export function SettingsSidebar() {
   const params = useParams();
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const activeClub = useActiveClub();
   const { data: session } = useSessionQuery();
@@ -250,6 +252,18 @@ export function SettingsSidebar() {
                     </div>
                   </div>
                 </DropdownMenuLabel>
+                {user?.isSuperAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => router.push('/admin')}
+                      className="cursor-pointer"
+                    >
+                      <ShieldCheck className="mr-2 size-4" />
+                      <span>Verwaltungszentrale</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
