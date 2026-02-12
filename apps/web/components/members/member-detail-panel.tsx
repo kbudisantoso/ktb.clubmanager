@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { X, ExternalLink } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -66,10 +65,9 @@ function useIsMobile(): boolean {
 interface DetailContentProps {
   memberId: string;
   onClose: () => void;
-  showFullPageLink?: boolean;
 }
 
-function DetailContent({ memberId, onClose, showFullPageLink = true }: DetailContentProps) {
+function DetailContent({ memberId, onClose }: DetailContentProps) {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
   const { data: member, isLoading, isError } = useMember(slug, memberId);
@@ -95,17 +93,8 @@ function DetailContent({ memberId, onClose, showFullPageLink = true }: DetailCon
   return (
     <div className="flex flex-col h-full">
       {/* Top toolbar */}
-      <div className="flex items-center justify-between p-4 border-b">
-        {showFullPageLink && (
-          <Link
-            href={`/clubs/${slug}/members/${member.id}`}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            In voller Seite öffnen
-          </Link>
-        )}
-        <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto" onClick={onClose}>
+      <div className="flex items-center justify-end p-4 border-b">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
           <X className="h-4 w-4" />
           <span className="sr-only">Panel schließen</span>
         </Button>
@@ -115,22 +104,15 @@ function DetailContent({ memberId, onClose, showFullPageLink = true }: DetailCon
       <div className="p-4 border-b">
         <MemberDetailHeader
           member={member}
-          slug={slug}
-          avatarSize="md"
           onChangeStatus={() => setStatusDialogOpen(true)}
           onDelete={() => setDeleteDialogOpen(true)}
           onAnonymize={() => setAnonymizeDialogOpen(true)}
         />
       </div>
 
-      {/* Tabbed form content */}
+      {/* Form content */}
       <ScrollArea className="flex-1">
-        <MemberForm
-          member={member}
-          slug={slug}
-          compact
-          onChangeStatus={() => setStatusDialogOpen(true)}
-        />
+        <MemberForm member={member} slug={slug} onChangeStatus={() => setStatusDialogOpen(true)} />
       </ScrollArea>
 
       {/* Status change dialog */}
@@ -167,8 +149,7 @@ function DetailContent({ memberId, onClose, showFullPageLink = true }: DetailCon
 function DetailSkeleton() {
   return (
     <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-4 w-32" />
+      <div className="flex items-center justify-end">
         <Skeleton className="h-7 w-7 rounded" />
       </div>
       <div className="flex items-start gap-3">
@@ -210,12 +191,12 @@ export function MemberDetailPanel({ selectedMemberId, onClose }: MemberDetailPan
           <SheetHeader className="sr-only">
             <SheetTitle>Mitglied Details</SheetTitle>
           </SheetHeader>
-          <DetailContent memberId={selectedMemberId} onClose={onClose} showFullPageLink={true} />
+          <DetailContent memberId={selectedMemberId} onClose={onClose} />
         </SheetContent>
       </Sheet>
     );
   }
 
   // Desktop: Render panel content directly (parent wraps in ResizablePanel)
-  return <DetailContent memberId={selectedMemberId} onClose={onClose} showFullPageLink={true} />;
+  return <DetailContent memberId={selectedMemberId} onClose={onClose} />;
 }
