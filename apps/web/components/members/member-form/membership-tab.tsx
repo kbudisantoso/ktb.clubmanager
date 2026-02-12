@@ -82,7 +82,7 @@ export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabPro
           {/* Status change info */}
           {member.statusChangedAt && (
             <p className="text-xs text-muted-foreground mt-1">
-              Letzte Aenderung: {formatDate(member.statusChangedAt)}
+              Letzte Änderung: {formatDate(member.statusChangedAt)}
               {member.statusChangeReason && ` - ${member.statusChangeReason}`}
             </p>
           )}
@@ -94,7 +94,7 @@ export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabPro
             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div className="text-sm">
               <p className="font-medium text-amber-600 dark:text-amber-400">
-                Kuendigung zum {formatDate(member.cancellationDate!)}
+                Kündigung zum {formatDate(member.cancellationDate!)}
               </p>
               {member.cancellationReceivedAt && (
                 <p className="text-xs text-muted-foreground mt-0.5">

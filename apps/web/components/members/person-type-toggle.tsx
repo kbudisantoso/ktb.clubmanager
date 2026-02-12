@@ -16,7 +16,7 @@ interface PersonTypeToggleProps {
 const OPTIONS = [
   {
     value: 'NATURAL',
-    label: 'Natuerliche Person',
+    label: 'Natürliche Person',
     icon: User,
   },
   {

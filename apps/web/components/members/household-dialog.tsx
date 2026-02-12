@@ -324,7 +324,7 @@ export function HouseholdDialog({
 
     try {
       await dissolveHousehold.mutateAsync(household.id);
-      toast({ title: 'Haushalt aufgeloest' });
+      toast({ title: 'Haushalt aufgelöst' });
       setShowDissolveConfirm(false);
       handleClose();
     } catch (err) {
@@ -451,7 +451,7 @@ export function HouseholdDialog({
                     <SelectTrigger className="h-8 text-xs">
                       <div className="flex items-center gap-1.5">
                         <UserPlus className="h-3.5 w-3.5" />
-                        <span>Mitglied hinzufuegen</span>
+                        <span>Mitglied hinzufügen</span>
                       </div>
                     </SelectTrigger>
                     <SelectContent>

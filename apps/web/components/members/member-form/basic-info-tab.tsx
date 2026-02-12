@@ -117,7 +117,7 @@ function BasicInfoReadMode({ member }: { member: MemberDetail }) {
         ) : (
           <>
             <User className="h-4 w-4" />
-            <span>Natuerliche Person</span>
+            <span>Natürliche Person</span>
           </>
         )}
       </div>
@@ -149,7 +149,7 @@ function BasicInfoReadMode({ member }: { member: MemberDetail }) {
         <ReadField label="Mitgliedsnummer" value={member.memberNumber} mono />
 
         {/* User link */}
-        {member.userId && <ReadField label="Benutzerkonto" value="Verknuepft mit Benutzer" />}
+        {member.userId && <ReadField label="Benutzerkonto" value="Verknüpft mit Benutzer" />}
       </dl>
     </div>
   );
@@ -352,7 +352,7 @@ function BasicInfoEditMode({
               <Label htmlFor="edit-position">Position</Label>
               <Input
                 id="edit-position"
-                placeholder="Geschaeftsfuehrer"
+                placeholder="Geschäftsführer"
                 disabled={disabled}
                 {...register('position')}
               />

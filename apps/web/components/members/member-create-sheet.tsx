@@ -303,7 +303,7 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
                   <Label htmlFor="position">Position</Label>
                   <Input
                     id="position"
-                    placeholder="Geschaeftsfuehrer"
+                    placeholder="Geschäftsführer"
                     disabled={isSubmitting}
                     {...register('position')}
                   />

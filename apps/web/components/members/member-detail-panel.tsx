@@ -102,12 +102,12 @@ function DetailContent({ memberId, onClose, showFullPageLink = true }: DetailCon
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            In voller Seite oeffnen
+            In voller Seite öffnen
           </Link>
         )}
         <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto" onClick={onClose}>
           <X className="h-4 w-4" />
-          <span className="sr-only">Panel schliessen</span>
+          <span className="sr-only">Panel schließen</span>
         </Button>
       </div>
 

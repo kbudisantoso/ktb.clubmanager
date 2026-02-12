@@ -205,7 +205,7 @@ export function MemberForm({ member, slug, compact = false, onChangeStatus }: Me
         }
 
         await updateMember.mutateAsync({ id: member.id, ...changed });
-        toast({ title: 'Aenderungen gespeichert' });
+        toast({ title: 'Änderungen gespeichert' });
         setEditingTab(null);
       } catch (error) {
         toast({
@@ -328,9 +328,9 @@ export function MemberForm({ member, slug, compact = false, onChangeStatus }: Me
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Ungespeicherte Aenderungen</AlertDialogTitle>
+            <AlertDialogTitle>Ungespeicherte Änderungen</AlertDialogTitle>
             <AlertDialogDescription>
-              Moechtest du die Aenderungen verwerfen? Nicht gespeicherte Daten gehen verloren.
+              Möchtest du die Änderungen verwerfen? Nicht gespeicherte Daten gehen verloren.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
