@@ -20,7 +20,7 @@ const segmentLabels: Record<string, string> = {
   notifications: 'Benachrichtigungen',
 
   // Admin
-  admin: 'Kommandozentrale',
+  admin: 'Verwaltungszentrale',
 
   // Finance / Accounting
   households: 'Haushalte',

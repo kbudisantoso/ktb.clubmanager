@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { ChevronsUpDown, LogOut, Moon, Settings, Sun, User } from 'lucide-react';
+import { ChevronsUpDown, LogOut, Moon, Settings, ShieldCheck, Sun, User } from 'lucide-react';
 
 import { useActiveClub } from '@/lib/club-store';
 import { useSessionQuery, useClearSession } from '@/hooks/use-session';
@@ -136,27 +136,6 @@ export function AppSidebar() {
               isCollapsed={isCollapsed}
             />
           ))}
-
-          {/* Settings link at bottom of navigation */}
-          {canManageSettings && (
-            <SidebarGroup className="mt-auto">
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname.startsWith(`/clubs/${slug}/settings`)}
-                    >
-                      <Link href={`/clubs/${slug}/settings`}>
-                        <Settings className="size-4" />
-                        <span>Einstellungen</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          )}
         </SidebarContent>
 
         {/* User Footer */}
@@ -204,13 +183,38 @@ export function AppSidebar() {
                       </div>
                     </div>
                   </DropdownMenuLabel>
+                  {/* Admin & Club Settings */}
+                  {(user?.isSuperAdmin || (canManageSettings && slug)) && (
+                    <>
+                      <DropdownMenuSeparator />
+                      {user?.isSuperAdmin && (
+                        <DropdownMenuItem
+                          onClick={() => router.push('/admin')}
+                          className="cursor-pointer"
+                        >
+                          <ShieldCheck className="mr-2 size-4" />
+                          <span>Verwaltungszentrale</span>
+                        </DropdownMenuItem>
+                      )}
+                      {canManageSettings && slug && (
+                        <DropdownMenuItem
+                          onClick={() => router.push(`/clubs/${slug}/settings`)}
+                          className="cursor-pointer"
+                        >
+                          <Settings className="mr-2 size-4" />
+                          <span>Vereins-Einstellungen</span>
+                        </DropdownMenuItem>
+                      )}
+                    </>
+                  )}
+                  {/* Personal */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => router.push('/settings')}
                     className="cursor-pointer"
                   >
-                    <Settings className="mr-2 size-4" />
-                    <span>Einstellungen</span>
+                    <User className="mr-2 size-4" />
+                    <span>Mein Profil</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}

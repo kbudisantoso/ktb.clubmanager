@@ -34,9 +34,9 @@ import {
 import { getAdminNavGroups } from './sidebar-nav-items';
 
 /**
- * Admin sidebar for the Kommandozentrale (Super Admin area).
+ * Admin sidebar for the Verwaltungszentrale (Super Admin area).
  * Features:
- * - Shield icon + "Kommandozentrale" header
+ * - Shield icon + "Verwaltungszentrale" header
  * - Navigation from getAdminNavGroups()
  * - "Zurück zur App" link
  * - User footer with dropdown (theme toggle, sign out)
@@ -72,7 +72,7 @@ export function AdminSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      {/* Kommandozentrale Header */}
+      {/* Verwaltungszentrale Header */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -82,7 +82,7 @@ export function AdminSidebar() {
                   <Shield className="size-4" />
                 </div>
                 <div className="flex flex-1 flex-col gap-0.5 leading-none overflow-hidden">
-                  <span className="font-semibold truncate">Kommandozentrale</span>
+                  <span className="font-semibold truncate">Verwaltungszentrale</span>
                 </div>
               </Link>
             </SidebarMenuButton>

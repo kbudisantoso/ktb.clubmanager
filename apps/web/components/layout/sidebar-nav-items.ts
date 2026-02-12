@@ -66,7 +66,7 @@ export function getClubNavGroups(slug: string): NavGroup[] {
 }
 
 /**
- * Admin (Kommandozentrale) navigation groups.
+ * Admin (Verwaltungszentrale) navigation groups.
  */
 export function getAdminNavGroups(): NavGroup[] {
   return [
