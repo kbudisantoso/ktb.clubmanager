@@ -11,7 +11,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
-  SheetFooter,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -151,7 +150,7 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent side="right" className="w-full sm:max-w-lg overflow-hidden">
         <SheetHeader>
           <SheetTitle>Neues Mitglied</SheetTitle>
           <SheetDescription>
@@ -159,336 +158,345 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6 px-4 pb-4">
-          {/* Section 1: Person Type Toggle */}
-          <div className="space-y-2">
-            <Label>Personenart</Label>
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            <PersonTypeToggle control={form.control as any} disabled={isSubmitting} />
-          </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col min-h-0">
+          {/* Scrollable fields */}
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
+            <div className="flex flex-col gap-6">
+              {/* Section 1: Person Type Toggle */}
+              <div className="space-y-2">
+                <Label>Personenart</Label>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <PersonTypeToggle control={form.control as any} disabled={isSubmitting} />
+              </div>
 
-          {/* Section 2: Name fields (NATURAL) */}
-          {personType === 'NATURAL' && (
-            <div className="space-y-3">
-              {/* Salutation + Title */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Section 2: Name fields (NATURAL) */}
+              {personType === 'NATURAL' && (
+                <div className="space-y-3">
+                  {/* Salutation + Title */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="salutation">Anrede</Label>
+                      <Select
+                        disabled={isSubmitting}
+                        onValueChange={(val) =>
+                          setValue('salutation', val as FormValues['salutation'])
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Bitte wählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SALUTATION_OPTIONS.map((s) => (
+                            <SelectItem key={s.value} value={s.value}>
+                              {s.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="title">Titel</Label>
+                      <Input
+                        id="title"
+                        placeholder="Dr., Prof."
+                        disabled={isSubmitting}
+                        {...register('title')}
+                      />
+                    </div>
+                  </div>
+
+                  {/* First + Last name */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="firstName">
+                        Vorname <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="firstName"
+                        placeholder="Max"
+                        disabled={isSubmitting}
+                        aria-invalid={!!errors.firstName}
+                        {...register('firstName')}
+                      />
+                      {errors.firstName && (
+                        <p className="text-xs text-destructive">{errors.firstName.message}</p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="lastName">
+                        Nachname <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="lastName"
+                        placeholder="Mustermann"
+                        disabled={isSubmitting}
+                        aria-invalid={!!errors.lastName}
+                        {...register('lastName')}
+                      />
+                      {errors.lastName && (
+                        <p className="text-xs text-destructive">{errors.lastName.message}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Nickname */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="nickname">Spitzname</Label>
+                    <Input
+                      id="nickname"
+                      placeholder="Clubname / Spitzname"
+                      disabled={isSubmitting}
+                      {...register('nickname')}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Section 3: Name fields (LEGAL_ENTITY) */}
+              {personType === 'LEGAL_ENTITY' && (
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="organizationName">
+                      Organisationsname <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="organizationName"
+                      placeholder="Muster GmbH"
+                      disabled={isSubmitting}
+                      aria-invalid={!!errors.organizationName}
+                      {...register('organizationName')}
+                    />
+                    {errors.organizationName && (
+                      <p className="text-xs text-destructive">{errors.organizationName.message}</p>
+                    )}
+                  </div>
+
+                  {/* Contact person fields */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contactFirstName">Kontakt Vorname</Label>
+                      <Input
+                        id="contactFirstName"
+                        placeholder="Max"
+                        disabled={isSubmitting}
+                        {...register('contactFirstName')}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contactLastName">Kontakt Nachname</Label>
+                      <Input
+                        id="contactLastName"
+                        placeholder="Mustermann"
+                        disabled={isSubmitting}
+                        {...register('contactLastName')}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="department">Abteilung</Label>
+                      <Input
+                        id="department"
+                        placeholder="Verwaltung"
+                        disabled={isSubmitting}
+                        {...register('department')}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="position">Position</Label>
+                      <Input
+                        id="position"
+                        placeholder="Geschäftsführer"
+                        disabled={isSubmitting}
+                        {...register('position')}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="vatId">USt-IdNr.</Label>
+                    <Input
+                      id="vatId"
+                      placeholder="DE123456789"
+                      disabled={isSubmitting}
+                      {...register('vatId')}
+                    />
+                  </div>
+
+                  {/* Required name fields for member record */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="firstName">
+                        Vorname <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="firstName"
+                        placeholder="Kontaktperson"
+                        disabled={isSubmitting}
+                        aria-invalid={!!errors.firstName}
+                        {...register('firstName')}
+                      />
+                      {errors.firstName && (
+                        <p className="text-xs text-destructive">{errors.firstName.message}</p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="lastName">
+                        Nachname <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="lastName"
+                        placeholder="Kontaktperson"
+                        disabled={isSubmitting}
+                        aria-invalid={!!errors.lastName}
+                        {...register('lastName')}
+                      />
+                      {errors.lastName && (
+                        <p className="text-xs text-destructive">{errors.lastName.message}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Section 4: Member Number */}
+              <div className="space-y-1.5">
+                <Label htmlFor="memberNumber">Mitgliedsnummer</Label>
+                <Input
+                  id="memberNumber"
+                  placeholder={memberNumberRange ? 'Wird automatisch vergeben' : 'MGL-001'}
+                  disabled={isSubmitting}
+                  {...register('memberNumber')}
+                />
+                {memberNumberRange && (
+                  <p className="text-xs text-muted-foreground">
+                    Wird automatisch vergeben, wenn leer gelassen.
+                  </p>
+                )}
+                {errors.memberNumber && (
+                  <p className="text-xs text-destructive">{errors.memberNumber.message}</p>
+                )}
+              </div>
+
+              {/* Section 5: Status */}
+              <div className="space-y-1.5">
+                <Label>Status</Label>
+                <Select
+                  defaultValue="PENDING"
+                  disabled={isSubmitting}
+                  onValueChange={(val) => setValue('status', val as FormValues['status'])}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Status wählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Section 6: Join Date */}
+              <div className="space-y-1.5">
+                <Label>Eintrittsdatum</Label>
+                <DateInput
+                  value={joinDate}
+                  onChange={(date) => setValue('joinDate', date, { shouldValidate: true })}
+                  disabled={isSubmitting}
+                  hasError={!!errors.joinDate}
+                />
+                {errors.joinDate?.message && (
+                  <p className="text-xs text-destructive">{errors.joinDate.message}</p>
+                )}
+              </div>
+
+              {/* Section 7: Membership Type (only shown when joinDate is set) */}
+              {joinDate && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="salutation">Anrede</Label>
+                  <Label>Mitgliedsart</Label>
                   <Select
                     disabled={isSubmitting}
-                    onValueChange={(val) => setValue('salutation', val as FormValues['salutation'])}
+                    onValueChange={(val) =>
+                      setValue('membershipType', val as FormValues['membershipType'])
+                    }
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Bitte wählen" />
+                      <SelectValue placeholder="Mitgliedsart wählen" />
                     </SelectTrigger>
                     <SelectContent>
-                      {SALUTATION_OPTIONS.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>
-                          {s.label}
+                      {MEMBERSHIP_TYPE_OPTIONS.map((m) => (
+                        <SelectItem key={m.value} value={m.value}>
+                          {m.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="title">Titel</Label>
-                  <Input
-                    id="title"
-                    placeholder="Dr., Prof."
-                    disabled={isSubmitting}
-                    {...register('title')}
-                  />
-                </div>
-              </div>
+              )}
 
-              {/* First + Last name */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="firstName">
-                    Vorname <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="firstName"
-                    placeholder="Max"
-                    disabled={isSubmitting}
-                    aria-invalid={!!errors.firstName}
-                    {...register('firstName')}
-                  />
-                  {errors.firstName && (
-                    <p className="text-xs text-destructive">{errors.firstName.message}</p>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="lastName">
-                    Nachname <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="lastName"
-                    placeholder="Mustermann"
-                    disabled={isSubmitting}
-                    aria-invalid={!!errors.lastName}
-                    {...register('lastName')}
-                  />
-                  {errors.lastName && (
-                    <p className="text-xs text-destructive">{errors.lastName.message}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Nickname */}
-              <div className="space-y-1.5">
-                <Label htmlFor="nickname">Spitzname</Label>
-                <Input
-                  id="nickname"
-                  placeholder="Clubname / Spitzname"
+              {/* Section 8: Address */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Adresse</Label>
+                <AddressAutocomplete
+                  register={register}
+                  setValue={setValue}
+                  watch={watch}
+                  errors={errors as Record<string, { message?: string }>}
                   disabled={isSubmitting}
-                  {...register('nickname')}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Section 3: Name fields (LEGAL_ENTITY) */}
-          {personType === 'LEGAL_ENTITY' && (
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="organizationName">
-                  Organisationsname <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="organizationName"
-                  placeholder="Muster GmbH"
-                  disabled={isSubmitting}
-                  aria-invalid={!!errors.organizationName}
-                  {...register('organizationName')}
-                />
-                {errors.organizationName && (
-                  <p className="text-xs text-destructive">{errors.organizationName.message}</p>
-                )}
-              </div>
-
-              {/* Contact person fields */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="contactFirstName">Kontakt Vorname</Label>
-                  <Input
-                    id="contactFirstName"
-                    placeholder="Max"
-                    disabled={isSubmitting}
-                    {...register('contactFirstName')}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="contactLastName">Kontakt Nachname</Label>
-                  <Input
-                    id="contactLastName"
-                    placeholder="Mustermann"
-                    disabled={isSubmitting}
-                    {...register('contactLastName')}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="department">Abteilung</Label>
-                  <Input
-                    id="department"
-                    placeholder="Verwaltung"
-                    disabled={isSubmitting}
-                    {...register('department')}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="position">Position</Label>
-                  <Input
-                    id="position"
-                    placeholder="Geschäftsführer"
-                    disabled={isSubmitting}
-                    {...register('position')}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="vatId">USt-IdNr.</Label>
-                <Input
-                  id="vatId"
-                  placeholder="DE123456789"
-                  disabled={isSubmitting}
-                  {...register('vatId')}
                 />
               </div>
 
-              {/* Required name fields for member record */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="firstName">
-                    Vorname <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="firstName"
-                    placeholder="Kontaktperson"
-                    disabled={isSubmitting}
-                    aria-invalid={!!errors.firstName}
-                    {...register('firstName')}
-                  />
-                  {errors.firstName && (
-                    <p className="text-xs text-destructive">{errors.firstName.message}</p>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="lastName">
-                    Nachname <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="lastName"
-                    placeholder="Kontaktperson"
-                    disabled={isSubmitting}
-                    aria-invalid={!!errors.lastName}
-                    {...register('lastName')}
-                  />
-                  {errors.lastName && (
-                    <p className="text-xs text-destructive">{errors.lastName.message}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Section 4: Member Number */}
-          <div className="space-y-1.5">
-            <Label htmlFor="memberNumber">Mitgliedsnummer</Label>
-            <Input
-              id="memberNumber"
-              placeholder={memberNumberRange ? 'Wird automatisch vergeben' : 'MGL-001'}
-              disabled={isSubmitting}
-              {...register('memberNumber')}
-            />
-            {memberNumberRange && (
-              <p className="text-xs text-muted-foreground">
-                Wird automatisch vergeben, wenn leer gelassen.
-              </p>
-            )}
-            {errors.memberNumber && (
-              <p className="text-xs text-destructive">{errors.memberNumber.message}</p>
-            )}
-          </div>
-
-          {/* Section 5: Status */}
-          <div className="space-y-1.5">
-            <Label>Status</Label>
-            <Select
-              defaultValue="PENDING"
-              disabled={isSubmitting}
-              onValueChange={(val) => setValue('status', val as FormValues['status'])}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Status wählen" />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Section 6: Join Date */}
-          <div className="space-y-1.5">
-            <Label>Eintrittsdatum</Label>
-            <DateInput
-              value={joinDate}
-              onChange={(date) => setValue('joinDate', date, { shouldValidate: true })}
-              disabled={isSubmitting}
-              hasError={!!errors.joinDate}
-            />
-            {errors.joinDate?.message && (
-              <p className="text-xs text-destructive">{errors.joinDate.message}</p>
-            )}
-          </div>
-
-          {/* Section 7: Membership Type (only shown when joinDate is set) */}
-          {joinDate && (
-            <div className="space-y-1.5">
-              <Label>Mitgliedsart</Label>
-              <Select
-                disabled={isSubmitting}
-                onValueChange={(val) =>
-                  setValue('membershipType', val as FormValues['membershipType'])
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Mitgliedsart wählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MEMBERSHIP_TYPE_OPTIONS.map((m) => (
-                    <SelectItem key={m.value} value={m.value}>
-                      {m.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Section 8: Address */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Adresse</Label>
-            <AddressAutocomplete
-              register={register}
-              setValue={setValue}
-              watch={watch}
-              errors={errors as Record<string, { message?: string }>}
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* Section 9: Contact */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Kontakt</Label>
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="email">E-Mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="max@example.de"
-                  disabled={isSubmitting}
-                  aria-invalid={!!errors.email}
-                  {...register('email')}
-                />
-                {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="phone">Telefon</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="030 123456"
-                    disabled={isSubmitting}
-                    {...register('phone')}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="mobile">Mobil</Label>
-                  <Input
-                    id="mobile"
-                    type="tel"
-                    placeholder="0170 1234567"
-                    disabled={isSubmitting}
-                    {...register('mobile')}
-                  />
+              {/* Section 9: Contact */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Kontakt</Label>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email">E-Mail</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="max@example.de"
+                      disabled={isSubmitting}
+                      aria-invalid={!!errors.email}
+                      {...register('email')}
+                    />
+                    {errors.email && (
+                      <p className="text-xs text-destructive">{errors.email.message}</p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="phone">Telefon</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="030 123456"
+                        disabled={isSubmitting}
+                        {...register('phone')}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mobile">Mobil</Label>
+                      <Input
+                        id="mobile"
+                        type="tel"
+                        placeholder="0170 1234567"
+                        disabled={isSubmitting}
+                        {...register('mobile')}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Footer buttons */}
-          <SheetFooter className="px-0">
+          {/* Fixed footer — always visible, never scrolls */}
+          <div className="shrink-0 flex items-center justify-end gap-2 border-t bg-background px-4 py-3">
             <Button
               type="button"
               variant="outline"
@@ -501,7 +509,7 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Mitglied anlegen
             </Button>
-          </SheetFooter>
+          </div>
         </form>
       </SheetContent>
     </Sheet>

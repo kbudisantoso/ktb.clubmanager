@@ -8,7 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { Separator } from '@/components/ui/separator';
 import { PageHeader } from '@/components/layout/page-header';
+import { BreadcrumbNav } from '@/components/layout/breadcrumb-nav';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useMemberFilters } from '@/hooks/use-member-filters';
 import { useColumnVisibility } from '@/hooks/use-column-visibility';
@@ -206,9 +209,24 @@ export function MembersClient() {
     </>
   );
 
+  const countDescription =
+    !isLoading && totalCount > 0
+      ? `${totalCount} ${totalCount === 1 ? 'Mitglied' : 'Mitglieder'}`
+      : undefined;
+
   /** The list content (search, filters, table) */
   const listContent = (
     <div className="space-y-4 h-full overflow-auto px-4 pb-6">
+      {/* Page title — shown inside list scroll area when panel is open */}
+      {isPanelOpen && (
+        <div className="pt-2">
+          <h1 className="font-display text-2xl font-bold tracking-tight">Mitglieder</h1>
+          {countDescription && (
+            <p className="mt-1 text-sm text-muted-foreground">{countDescription}</p>
+          )}
+        </div>
+      )}
+
       {/* Row 1: Search + Column Picker + Create Button */}
       {(hasMemberNumberRange || members.length > 0) && (
         <div className="flex items-center gap-3">
@@ -305,17 +323,19 @@ export function MembersClient() {
     </div>
   );
 
-  const countDescription =
-    !isLoading && totalCount > 0
-      ? `${totalCount} ${totalCount === 1 ? 'Mitglied' : 'Mitglieder'}`
-      : undefined;
-
   // When panel is open on desktop, use ResizablePanelGroup
   if (isPanelOpen) {
     return (
-      <div>
-        <PageHeader title="Mitglieder" description={countDescription} />
-        <div className="h-[calc(100vh-4rem)] overflow-hidden">
+      <div className="flex h-screen flex-col">
+        {/* Top bar — same as PageHeader row 1 */}
+        <div className="flex h-12 shrink-0 items-center gap-2 border-b bg-background px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="h-4" />
+          <BreadcrumbNav />
+        </div>
+
+        {/* Split panel fills remaining height */}
+        <div className="flex-1 min-h-0 overflow-hidden">
           <ResizablePanelGroup orientation="horizontal">
             {/* List panel */}
             <ResizablePanel defaultSize={60} minSize={30}>
@@ -327,7 +347,7 @@ export function MembersClient() {
 
             {/* Detail panel */}
             <ResizablePanel defaultSize={40} minSize={30}>
-              <div className="h-full overflow-y-auto overflow-x-hidden border-l">
+              <div className="h-full overflow-x-hidden border-l">
                 <MemberDetailPanel selectedMemberId={selectedMemberId} onClose={closePanel} />
               </div>
             </ResizablePanel>

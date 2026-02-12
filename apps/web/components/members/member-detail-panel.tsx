@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMember } from '@/hooks/use-member-detail';
@@ -110,10 +109,8 @@ function DetailContent({ memberId, onClose }: DetailContentProps) {
         />
       </div>
 
-      {/* Form content */}
-      <ScrollArea className="flex-1">
-        <MemberForm member={member} slug={slug} onChangeStatus={() => setStatusDialogOpen(true)} />
-      </ScrollArea>
+      {/* Form content — MemberForm manages its own scroll + fixed footer */}
+      <MemberForm member={member} slug={slug} onChangeStatus={() => setStatusDialogOpen(true)} />
 
       {/* Status change dialog */}
       <MemberStatusDialog

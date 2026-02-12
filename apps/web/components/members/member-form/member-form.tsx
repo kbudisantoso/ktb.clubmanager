@@ -138,55 +138,60 @@ export function MemberForm({ member, slug, onChangeStatus }: MemberFormProps) {
   // ============================================================================
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6 p-4 pb-6">
-      {/* Section: Stammdaten */}
-      <SectionHeader title="Stammdaten" />
-      <BasicInfoTab
-        member={member}
-        isEditing={true}
-        register={register}
-        control={control}
-        setValue={setValue}
-        watch={watch}
-        errors={errors}
-        disabled={isSubmitting}
-      />
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col min-h-0">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto p-4 pb-6">
+        <div className="flex flex-col gap-6">
+          {/* Section: Stammdaten */}
+          <SectionHeader title="Stammdaten" />
+          <BasicInfoTab
+            member={member}
+            isEditing={true}
+            register={register}
+            control={control}
+            setValue={setValue}
+            watch={watch}
+            errors={errors}
+            disabled={isSubmitting}
+          />
 
-      <Separator />
+          <Separator />
 
-      {/* Section: Adresse & Kontakt */}
-      <SectionHeader title="Adresse & Kontakt" />
-      <AddressContactTab
-        member={member}
-        isEditing={true}
-        register={register}
-        setValue={setValue}
-        watch={watch}
-        errors={errors}
-        disabled={isSubmitting}
-      />
+          {/* Section: Adresse & Kontakt */}
+          <SectionHeader title="Adresse & Kontakt" />
+          <AddressContactTab
+            member={member}
+            isEditing={true}
+            register={register}
+            setValue={setValue}
+            watch={watch}
+            errors={errors}
+            disabled={isSubmitting}
+          />
 
-      <Separator />
+          <Separator />
 
-      {/* Section: Mitgliedschaft */}
-      <SectionHeader title="Mitgliedschaft" />
-      <MembershipTab member={member} slug={slug} onChangeStatus={onChangeStatus} />
+          {/* Section: Mitgliedschaft */}
+          <SectionHeader title="Mitgliedschaft" />
+          <MembershipTab member={member} slug={slug} onChangeStatus={onChangeStatus} />
 
-      <Separator />
+          <Separator />
 
-      {/* Section: Notizen */}
-      <SectionHeader title="Notizen" />
-      <NotesTab
-        member={member}
-        isEditing={true}
-        register={register}
-        watch={watch}
-        disabled={isSubmitting}
-      />
+          {/* Section: Notizen */}
+          <SectionHeader title="Notizen" />
+          <NotesTab
+            member={member}
+            isEditing={true}
+            register={register}
+            watch={watch}
+            disabled={isSubmitting}
+          />
+        </div>
+      </div>
 
-      {/* Sticky save bar — only visible when form has unsaved changes */}
+      {/* Fixed footer — always visible when form has unsaved changes */}
       {isDirty && (
-        <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t bg-background pt-3 pb-1">
+        <div className="shrink-0 flex items-center justify-end gap-2 border-t bg-background px-4 py-3">
           <Button
             type="button"
             variant="outline"
