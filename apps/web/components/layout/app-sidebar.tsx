@@ -64,7 +64,7 @@ export function AppSidebar() {
   const canManageSettings = useCanManageSettings();
   const [showClubSwitcher, setShowClubSwitcher] = useState(false);
 
-  const slug = (params?.slug as string) ?? '';
+  const slug = (params?.slug as string) || activeClub?.slug || '';
   const navGroups = getClubNavGroups(slug);
   const clubs = clubsData?.clubs ?? [];
   const canCreateClub = clubsData?.canCreateClub ?? false;
