@@ -1,22 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { UpdateMemberSchema } from '@ktb/shared';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Separator } from '@/components/ui/separator';
 import { useUpdateMember } from '@/hooks/use-members';
 import { useToast } from '@/hooks/use-toast';
 import type { MemberDetail } from '@/hooks/use-member-detail';
@@ -24,20 +14,6 @@ import { BasicInfoTab } from './basic-info-tab';
 import { AddressContactTab } from './address-contact-tab';
 import { MembershipTab } from './membership-tab';
 import { NotesTab } from './notes-tab';
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-/** Tab definitions */
-const TABS = [
-  { value: 'stammdaten', label: 'Stammdaten' },
-  { value: 'adresse', label: 'Adresse & Kontakt' },
-  { value: 'mitgliedschaft', label: 'Mitgliedschaft' },
-  { value: 'notizen', label: 'Notizen' },
-] as const;
-
-type TabValue = (typeof TABS)[number]['value'];
 
 // ============================================================================
 // Types
@@ -51,8 +27,6 @@ interface MemberFormProps {
   member: MemberDetail;
   /** Club slug for API calls */
   slug: string;
-  /** Whether to use compact layout (panel) vs full layout (page) */
-  compact?: boolean;
   /** Called when status change button is clicked */
   onChangeStatus?: () => void;
 }
@@ -93,19 +67,12 @@ function memberToFormValues(member: MemberDetail): FormValues {
 // ============================================================================
 
 /**
- * Member form wrapper with section-level edit mode.
- * Each tab can be independently toggled between read and edit mode.
- * Dirty form protection shows a dialog when switching tabs with unsaved changes.
+ * Always-editable member form with vertical sections.
+ * All fields are editable — a sticky save bar appears when the form is dirty.
  */
-export function MemberForm({ member, slug, compact = false, onChangeStatus }: MemberFormProps) {
+export function MemberForm({ member, slug, onChangeStatus }: MemberFormProps) {
   const { toast } = useToast();
   const updateMember = useUpdateMember(slug);
-  const [editingTab, setEditingTab] = useState<TabValue | null>(null);
-  const [activeTab, setActiveTab] = useState<TabValue>('stammdaten');
-  const [dirtyDialogState, setDirtyDialogState] = useState<{
-    open: boolean;
-    targetTab: TabValue | null;
-  }>({ open: false, targetTab: null });
 
   const defaultValues = useMemo(() => memberToFormValues(member), [member]);
 
@@ -126,67 +93,16 @@ export function MemberForm({ member, slug, compact = false, onChangeStatus }: Me
 
   // Reset form when member data changes (e.g., after save or external refresh)
   useEffect(() => {
-    if (!editingTab) {
-      reset(memberToFormValues(member));
-    }
-  }, [member, editingTab, reset]);
+    reset(memberToFormValues(member));
+  }, [member, reset]);
 
   // ============================================================================
-  // Tab switching with dirty protection
+  // Submit handler — only sends changed fields
   // ============================================================================
-
-  const handleTabChange = useCallback(
-    (newTab: string) => {
-      const target = newTab as TabValue;
-
-      // If currently editing and form is dirty, show confirmation
-      if (editingTab && isDirty) {
-        setDirtyDialogState({ open: true, targetTab: target });
-        return;
-      }
-
-      // If currently editing but not dirty, just exit edit mode
-      if (editingTab) {
-        setEditingTab(null);
-        reset(defaultValues);
-      }
-
-      setActiveTab(target);
-    },
-    [editingTab, isDirty, reset, defaultValues]
-  );
-
-  const handleDiscardAndSwitch = useCallback(() => {
-    const target = dirtyDialogState.targetTab;
-    setEditingTab(null);
-    reset(defaultValues);
-    setDirtyDialogState({ open: false, targetTab: null });
-    if (target) {
-      setActiveTab(target);
-    }
-  }, [dirtyDialogState.targetTab, reset, defaultValues]);
-
-  // ============================================================================
-  // Edit mode handlers
-  // ============================================================================
-
-  const startEditing = useCallback(
-    (tab: TabValue) => {
-      reset(memberToFormValues(member));
-      setEditingTab(tab);
-    },
-    [reset, member]
-  );
-
-  const cancelEditing = useCallback(() => {
-    reset(defaultValues);
-    setEditingTab(null);
-  }, [reset, defaultValues]);
 
   const onSubmit = useCallback(
     async (data: FormValues) => {
       try {
-        // Only send changed fields
         const changed: Record<string, unknown> = {};
         for (const [key, value] of Object.entries(data)) {
           const original = defaultValues[key as keyof FormValues];
@@ -200,13 +116,11 @@ export function MemberForm({ member, slug, compact = false, onChangeStatus }: Me
         }
 
         if (Object.keys(changed).length === 0) {
-          setEditingTab(null);
           return;
         }
 
         await updateMember.mutateAsync({ id: member.id, ...changed });
         toast({ title: 'Änderungen gespeichert' });
-        setEditingTab(null);
       } catch (error) {
         toast({
           title: 'Fehler beim Speichern',
@@ -223,171 +137,79 @@ export function MemberForm({ member, slug, compact = false, onChangeStatus }: Me
   // Render
   // ============================================================================
 
-  const isEditing = (tab: TabValue) => editingTab === tab;
-
   return (
-    <>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-          {!compact && (
-            <TabsList variant="line" className="w-full justify-start mb-4">
-              {TABS.map((tab) => (
-                <TabsTrigger key={tab.value} value={tab.value}>
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          )}
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6 p-4 pb-6">
+      {/* Section: Stammdaten */}
+      <SectionHeader title="Stammdaten" />
+      <BasicInfoTab
+        member={member}
+        isEditing={true}
+        register={register}
+        control={control}
+        setValue={setValue}
+        watch={watch}
+        errors={errors}
+        disabled={isSubmitting}
+      />
 
-          {compact && (
-            <div className="px-4 pt-2 border-b">
-              <TabsList variant="line" className="w-full justify-start">
-                {TABS.map((tab) => (
-                  <TabsTrigger key={tab.value} value={tab.value} className="text-xs">
-                    {tab.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </div>
-          )}
+      <Separator />
 
-          <div className={compact ? 'p-4' : 'mt-4'}>
-            {/* Stammdaten Tab */}
-            <TabsContent value="stammdaten">
-              <TabWrapper
-                isEditing={isEditing('stammdaten')}
-                isSubmitting={isSubmitting}
-                onEdit={() => startEditing('stammdaten')}
-                onCancel={cancelEditing}
-              >
-                <BasicInfoTab
-                  member={member}
-                  isEditing={isEditing('stammdaten')}
-                  register={register}
-                  control={control}
-                  setValue={setValue}
-                  watch={watch}
-                  errors={errors}
-                  disabled={isSubmitting}
-                />
-              </TabWrapper>
-            </TabsContent>
+      {/* Section: Adresse & Kontakt */}
+      <SectionHeader title="Adresse & Kontakt" />
+      <AddressContactTab
+        member={member}
+        isEditing={true}
+        register={register}
+        setValue={setValue}
+        watch={watch}
+        errors={errors}
+        disabled={isSubmitting}
+      />
 
-            {/* Adresse & Kontakt Tab */}
-            <TabsContent value="adresse">
-              <TabWrapper
-                isEditing={isEditing('adresse')}
-                isSubmitting={isSubmitting}
-                onEdit={() => startEditing('adresse')}
-                onCancel={cancelEditing}
-              >
-                <AddressContactTab
-                  member={member}
-                  isEditing={isEditing('adresse')}
-                  register={register}
-                  setValue={setValue}
-                  watch={watch}
-                  errors={errors}
-                  disabled={isSubmitting}
-                />
-              </TabWrapper>
-            </TabsContent>
+      <Separator />
 
-            {/* Mitgliedschaft Tab */}
-            <TabsContent value="mitgliedschaft">
-              <MembershipTab member={member} slug={slug} onChangeStatus={onChangeStatus} />
-            </TabsContent>
+      {/* Section: Mitgliedschaft */}
+      <SectionHeader title="Mitgliedschaft" />
+      <MembershipTab member={member} slug={slug} onChangeStatus={onChangeStatus} />
 
-            {/* Notizen Tab */}
-            <TabsContent value="notizen">
-              <TabWrapper
-                isEditing={isEditing('notizen')}
-                isSubmitting={isSubmitting}
-                onEdit={() => startEditing('notizen')}
-                onCancel={cancelEditing}
-              >
-                <NotesTab
-                  member={member}
-                  isEditing={isEditing('notizen')}
-                  register={register}
-                  watch={watch}
-                  disabled={isSubmitting}
-                />
-              </TabWrapper>
-            </TabsContent>
-          </div>
-        </Tabs>
-      </form>
+      <Separator />
 
-      {/* Dirty form protection dialog */}
-      <AlertDialog
-        open={dirtyDialogState.open}
-        onOpenChange={(open) => {
-          if (!open) setDirtyDialogState({ open: false, targetTab: null });
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Ungespeicherte Änderungen</AlertDialogTitle>
-            <AlertDialogDescription>
-              Möchtest du die Änderungen verwerfen? Nicht gespeicherte Daten gehen verloren.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDiscardAndSwitch}>Verwerfen</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
-}
+      {/* Section: Notizen */}
+      <SectionHeader title="Notizen" />
+      <NotesTab
+        member={member}
+        isEditing={true}
+        register={register}
+        watch={watch}
+        disabled={isSubmitting}
+      />
 
-// ============================================================================
-// Tab Wrapper: Edit mode toolbar
-// ============================================================================
-
-interface TabWrapperProps {
-  isEditing: boolean;
-  isSubmitting: boolean;
-  onEdit: () => void;
-  onCancel: () => void;
-  children: React.ReactNode;
-}
-
-/**
- * Wrapper that adds "Bearbeiten" / "Speichern" / "Abbrechen" toolbar to a tab.
- */
-function TabWrapper({ isEditing, isSubmitting, onEdit, onCancel, children }: TabWrapperProps) {
-  return (
-    <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center justify-end gap-2">
-        {isEditing ? (
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onCancel}
-              disabled={isSubmitting}
-            >
-              Abbrechen
-            </Button>
-            <Button type="submit" size="sm" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Speichern
-            </Button>
-          </>
-        ) : (
-          <Button type="button" variant="outline" size="sm" onClick={onEdit}>
-            Bearbeiten
+      {/* Sticky save bar — only visible when form has unsaved changes */}
+      {isDirty && (
+        <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t bg-background pt-3 pb-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => reset(defaultValues)}
+            disabled={isSubmitting}
+          >
+            Verwerfen
           </Button>
-        )}
-      </div>
-
-      {/* Tab content */}
-      {children}
-    </div>
+          <Button type="submit" size="sm" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Speichern
+          </Button>
+        </div>
+      )}
+    </form>
   );
+}
+
+// ============================================================================
+// Section Header
+// ============================================================================
+
+function SectionHeader({ title }: { title: string }) {
+  return <h3 className="text-sm font-semibold text-muted-foreground">{title}</h3>;
 }
