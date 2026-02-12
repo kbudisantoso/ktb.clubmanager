@@ -51,7 +51,7 @@ interface MemberDetailHeaderProps {
 
 /**
  * Member detail header with avatar, name, status, and action dropdown.
- * Used in the resizable side panel and mobile sheet.
+ * Used in the member detail Sheet overlay.
  */
 export function MemberDetailHeader({
   member,
