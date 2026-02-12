@@ -23,7 +23,6 @@ import { useCanManageSettings } from '@/lib/club-permissions';
 import { authClient } from '@/lib/auth-client';
 import { getAuthBroadcast } from '@/lib/broadcast-auth';
 import { cn } from '@/lib/utils';
-import { ClubAvatar } from '@/components/club-switcher/club-avatar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -50,13 +49,14 @@ import {
 /**
  * Settings sidebar — replaces the main AppSidebar when inside settings.
  *
- * Header:
- * - Club settings: Club avatar + club name
- * - Personal settings: Settings icon + "Einstellungen"
+ * Header: Always Settings icon + "Einstellungen" (unified look).
  *
  * Navigation:
  * - "Persönlich" group: Profil, Meine Vereine, Benachrichtigungen
- * - Club group (if applicable): Allgemein, Benutzer, Einladungen, Nummernkreise
+ * - Club group (if activeClub + canManageSettings): Allgemein, Benutzer, Einladungen, Nummernkreise
+ *
+ * The club section uses activeClub from Zustand (not URL slug), so it
+ * appears in both personal and club settings contexts.
  *
  * Footer:
  * - "Zurück zur App" link (goes to club dashboard or main dashboard)
@@ -71,9 +71,8 @@ export function SettingsSidebar() {
   const clearSession = useClearSession();
   const canManageSettings = useCanManageSettings();
 
-  // Determine context: club settings vs personal settings
-  const slug = (params?.slug as string) || '';
-  const isClubSettings = !!slug;
+  // Use slug from URL if available, fall back to activeClub from store
+  const slug = (params?.slug as string) || activeClub?.slug || '';
   const clubBasePath = slug ? `/clubs/${slug}/settings` : '';
   const backHref = slug ? `/clubs/${slug}/dashboard` : '/dashboard';
 
@@ -117,29 +116,18 @@ export function SettingsSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      {/* Header — club context or generic settings */}
+      {/* Header — always Settings icon + "Einstellungen" */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href={isClubSettings ? clubBasePath : '/settings'}>
-                {isClubSettings && activeClub ? (
-                  <>
-                    <ClubAvatar club={activeClub} size="sm" className="shrink-0" />
-                    <div className="flex flex-1 flex-col gap-0.5 leading-none overflow-hidden">
-                      <span className="font-semibold truncate">{activeClub.name}</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shrink-0">
-                      <Settings className="size-4" />
-                    </div>
-                    <div className="flex flex-1 flex-col gap-0.5 leading-none overflow-hidden">
-                      <span className="font-semibold truncate">Einstellungen</span>
-                    </div>
-                  </>
-                )}
+              <Link href="/settings">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shrink-0">
+                  <Settings className="size-4" />
+                </div>
+                <div className="flex flex-1 flex-col gap-0.5 leading-none overflow-hidden">
+                  <span className="font-semibold truncate">Einstellungen</span>
+                </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
