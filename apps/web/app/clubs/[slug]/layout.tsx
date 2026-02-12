@@ -1,19 +1,19 @@
-import { AppShell } from '@/components/layout/app-shell';
-import { AppSidebar } from '@/components/layout/app-sidebar';
 import { ClubLayoutClient } from './_layout-client';
 
 /**
  * Club layout - Server component.
  *
- * Access control is handled by checkClubAccess in individual page components,
- * which properly returns 404 status codes when access is denied.
+ * This shared layout wraps all club sub-routes (main pages and settings).
+ * It handles:
+ * - Setting active club via ClubLayoutClient
+ * - Pre-fetching permissions
  *
- * Client-side effects (active club, permissions) are handled by ClubLayoutClient.
+ * The AppShell (sidebar) is provided by child route groups:
+ * - (club)/layout.tsx → AppSidebar (main club pages)
+ * - (settings)/layout.tsx → SettingsSidebar (club settings)
+ *
+ * Access control is handled by checkClubAccess in individual page components.
  */
 export default function ClubLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <AppShell sidebar={<AppSidebar />}>
-      <ClubLayoutClient>{children}</ClubLayoutClient>
-    </AppShell>
-  );
+  return <ClubLayoutClient>{children}</ClubLayoutClient>;
 }
