@@ -17,8 +17,12 @@ export class S3Service implements OnModuleInit {
   private readonly logger = new Logger(S3Service.name);
 
   constructor() {
-    const endpoint = process.env.MINIO_ENDPOINT ?? 'minio';
-    const port = parseInt(process.env.MINIO_PORT ?? '9000', 10);
+    const raw = process.env.MINIO_ENDPOINT ?? 'minio';
+    // Support "host:port" format in MINIO_ENDPOINT (e.g., "localhost:35900")
+    const [endpoint, portFromEndpoint] = raw.includes(':')
+      ? [raw.split(':')[0], parseInt(raw.split(':')[1], 10)]
+      : [raw, undefined];
+    const port = portFromEndpoint ?? parseInt(process.env.MINIO_PORT ?? '9000', 10);
 
     this.client = new Minio.Client({
       endPoint: endpoint,
