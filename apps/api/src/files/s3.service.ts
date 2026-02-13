@@ -2,36 +2,78 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as Minio from 'minio';
 
 /**
- * S3-compatible object storage service using MinIO.
+ * S3-compatible object storage service.
  *
- * Handles presigned URLs for client-side upload/download,
- * object existence checks, and deletion.
+ * Works with any S3-compatible provider: MinIO (local dev), AWS S3, Cloudflare R2.
+ * Uses the `minio` npm package as a lightweight S3-compatible client.
  *
- * Uses process.env for configuration (consistent with existing codebase pattern).
- * Default values match docker-compose.yml MinIO service.
+ * Required environment variables:
+ * - S3_ENDPOINT: Full URL (e.g., "http://minio:9000", "https://s3.eu-central-1.amazonaws.com")
+ * - S3_ACCESS_KEY_ID: Access key
+ * - S3_SECRET_ACCESS_KEY: Secret key
+ * - S3_BUCKET: Bucket name
+ *
+ * Optional environment variables:
+ * - S3_PUBLIC_ENDPOINT: Public URL for presigned URLs (browser-facing). Falls back to S3_ENDPOINT.
+ *   Needed when S3_ENDPOINT is internal (e.g., "http://minio:9000") but the browser needs
+ *   a different address (e.g., "http://localhost:35900").
+ * - S3_REGION: Region (required for AWS S3, e.g., "eu-central-1")
+ * - S3_FORCE_PATH_STYLE: Use path-style URLs (default: "true" for MinIO, set "false" for AWS/R2)
  */
 @Injectable()
 export class S3Service implements OnModuleInit {
+  /** Internal client — used for bucket ops, stat, delete (server-to-S3). */
   private client: Minio.Client;
+  /** Public client — used only for presigned URL generation (browser-to-S3). */
+  private publicClient: Minio.Client;
   private bucket: string;
   private readonly logger = new Logger(S3Service.name);
 
   constructor() {
-    const raw = process.env.MINIO_ENDPOINT ?? 'minio';
-    // Support "host:port" format in MINIO_ENDPOINT (e.g., "localhost:35900")
-    const [endpoint, portFromEndpoint] = raw.includes(':')
-      ? [raw.split(':')[0], parseInt(raw.split(':')[1], 10)]
-      : [raw, undefined];
-    const port = portFromEndpoint ?? parseInt(process.env.MINIO_PORT ?? '9000', 10);
+    const accessKey = this.requireEnv('S3_ACCESS_KEY_ID');
+    const secretKey = this.requireEnv('S3_SECRET_ACCESS_KEY');
+    const region = process.env.S3_REGION ? { region: process.env.S3_REGION } : {};
+    const pathStyle = (process.env.S3_FORCE_PATH_STYLE ?? 'true') === 'true';
+
+    const endpointUrl = this.requireEnv('S3_ENDPOINT');
+    const parsed = new URL(endpointUrl);
 
     this.client = new Minio.Client({
-      endPoint: endpoint,
-      port,
-      useSSL: process.env.MINIO_USE_SSL === 'true',
-      accessKey: process.env.MINIO_ACCESS_KEY ?? 'clubmanager',
-      secretKey: process.env.MINIO_SECRET_KEY ?? 'clubmanager',
+      endPoint: parsed.hostname,
+      port: parsed.port ? parseInt(parsed.port, 10) : parsed.protocol === 'https:' ? 443 : 80,
+      useSSL: parsed.protocol === 'https:',
+      accessKey,
+      secretKey,
+      ...region,
+      pathStyle,
     });
-    this.bucket = process.env.MINIO_BUCKET ?? 'clubmanager';
+
+    const publicUrl = process.env.S3_PUBLIC_ENDPOINT ?? endpointUrl;
+    const parsedPublic = new URL(publicUrl);
+
+    this.publicClient = new Minio.Client({
+      endPoint: parsedPublic.hostname,
+      port: parsedPublic.port
+        ? parseInt(parsedPublic.port, 10)
+        : parsedPublic.protocol === 'https:'
+          ? 443
+          : 80,
+      useSSL: parsedPublic.protocol === 'https:',
+      accessKey,
+      secretKey,
+      ...region,
+      pathStyle,
+    });
+
+    this.bucket = this.requireEnv('S3_BUCKET');
+  }
+
+  private requireEnv(name: string): string {
+    const value = process.env[name];
+    if (!value) {
+      throw new Error(`Missing required environment variable: ${name}`);
+    }
+    return value;
   }
 
   async onModuleInit() {
@@ -43,17 +85,17 @@ export class S3Service implements OnModuleInit {
       }
       this.logger.log(`S3 connected, bucket: ${this.bucket}`);
     } catch (error) {
-      this.logger.error(`Failed to initialize S3: ${error}`);
-      // Don't throw — allow app to start even if MinIO is temporarily unavailable
+      this.logger.warn(`S3 not available: ${error}`);
+      // Don't throw — allow app to start even if storage is temporarily unavailable
     }
   }
 
   async presignedPutUrl(key: string, expirySeconds = 3600): Promise<string> {
-    return this.client.presignedPutObject(this.bucket, key, expirySeconds);
+    return this.publicClient.presignedPutObject(this.bucket, key, expirySeconds);
   }
 
   async presignedGetUrl(key: string, expirySeconds = 3600): Promise<string> {
-    return this.client.presignedGetObject(this.bucket, key, expirySeconds);
+    return this.publicClient.presignedGetObject(this.bucket, key, expirySeconds);
   }
 
   async deleteObject(key: string): Promise<void> {

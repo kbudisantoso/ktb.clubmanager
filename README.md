@@ -78,7 +78,7 @@ If you prefer not to use DevContainers, set up manually:
 
 - Node.js 20+
 - pnpm 10+
-- Docker (for PostgreSQL, Redis, MinIO)
+- Docker (for PostgreSQL, Redis, S3-compatible storage)
 
 ### Installation
 
@@ -150,7 +150,7 @@ graph TB
     subgraph "Infrastructure"
         PG[(PostgreSQL 17<br/>+ pgvector)]
         RD[(Redis 7)]
-        MINIO[(MinIO)]
+        S3[(S3 Storage<br/>MinIO / AWS / R2)]
     end
 
     WEB --> API
@@ -159,7 +159,7 @@ graph TB
     API --> PRISMA
     PRISMA --> PG
     API --> RD
-    API --> MINIO
+    API --> S3
 ```
 
 The project is a **pnpm monorepo** with two applications (`web` and `api`) sharing types and validation schemas through a common package.
@@ -171,7 +171,7 @@ The project is a **pnpm monorepo** with two applications (`web` and `api`) shari
 | Frontend  | Next.js 14+, TypeScript, Tailwind, shadcn/ui | Modern React with full-stack TypeScript             |
 | Backend   | NestJS, TypeScript, Prisma                   | Type safety for financial data                      |
 | Database  | PostgreSQL 17 + pgvector                     | ACID for accounting, vectors for AI semantic search |
-| Storage   | MinIO (S3-compatible)                        | Document uploads, receipt images, profile photos    |
+| Storage   | S3-compatible (MinIO, AWS S3, Cloudflare R2) | Document uploads, receipt images, profile photos    |
 | Cache     | Redis 7                                      | Session storage, background jobs                    |
 | Auth      | NextAuth.js + OIDC                           | Passwordless OAuth login                            |
 
