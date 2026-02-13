@@ -713,7 +713,7 @@ describe('ClubsService', () => {
 
       const result = await service.update(
         'test-club',
-        { iban: null, bic: null, bankName: null },
+        { iban: null, bic: null, bankName: null } as never,
         userId,
         false
       );
