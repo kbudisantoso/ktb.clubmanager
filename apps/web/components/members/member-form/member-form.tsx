@@ -119,7 +119,7 @@ export function MemberForm({ member, slug, onChangeStatus }: MemberFormProps) {
           return;
         }
 
-        await updateMember.mutateAsync({ id: member.id, ...changed });
+        await updateMember.mutateAsync({ id: member.id, version: member.version, ...changed });
         toast({ title: 'Änderungen gespeichert' });
       } catch (error) {
         toast({

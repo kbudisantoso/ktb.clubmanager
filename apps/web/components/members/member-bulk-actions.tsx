@@ -278,6 +278,7 @@ export function MemberBulkActions({
       selectedMembers.map((member) =>
         updateMember.mutateAsync({
           id: member.id,
+          version: member.version,
           [editField]: editValue,
         })
       )

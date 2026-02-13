@@ -52,6 +52,7 @@ interface MemberListItem {
     membershipType: string;
   }[];
   notes: string | null;
+  version: number;
   createdAt: string | null;
   updatedAt: string | null;
 }

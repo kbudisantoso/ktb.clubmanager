@@ -73,6 +73,7 @@ interface CreateMemberInput {
 
 interface UpdateMemberInput extends Partial<CreateMemberInput> {
   id: string;
+  version: number;
 }
 
 interface ChangeStatusInput {
