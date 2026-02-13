@@ -210,6 +210,12 @@ export class ClubsService {
       }
     }
 
+    // Convert foundedAt string to Date, handle null (clear) and undefined (no change)
+    let foundedAtValue: Date | null | undefined = undefined;
+    if (dto.foundedAt !== undefined) {
+      foundedAtValue = dto.foundedAt ? new Date(dto.foundedAt) : null;
+    }
+
     const updated = await this.prisma.club.update({
       where: { id: club.id },
       data: {
@@ -220,6 +226,39 @@ export class ClubsService {
         avatarInitials: dto.avatarInitials,
         avatarColor: dto.avatarColor,
         tierId: dto.tierId,
+        // Stammdaten
+        shortCode: dto.shortCode,
+        foundedAt: foundedAtValue,
+        // Adresse & Kontakt
+        street: dto.street,
+        houseNumber: dto.houseNumber,
+        postalCode: dto.postalCode,
+        city: dto.city,
+        phone: dto.phone,
+        email: dto.email,
+        website: dto.website,
+        // Vereinsregister
+        isRegistered: dto.isRegistered,
+        registryCourt: dto.registryCourt,
+        registryNumber: dto.registryNumber,
+        clubPurpose: dto.clubPurpose,
+        clubSpecialForm: dto.clubSpecialForm,
+        // Steuerdaten
+        taxNumber: dto.taxNumber,
+        vatId: dto.vatId,
+        taxOffice: dto.taxOffice,
+        isNonProfit: dto.isNonProfit,
+        // Bankverbindung
+        iban: dto.iban,
+        bic: dto.bic,
+        bankName: dto.bankName,
+        accountHolder: dto.accountHolder,
+        // Betriebseinstellungen
+        fiscalYearStartMonth: dto.fiscalYearStartMonth,
+        defaultMembershipType: dto.defaultMembershipType,
+        probationPeriodDays: dto.probationPeriodDays,
+        // Logo
+        logoFileId: dto.logoFileId,
       },
       include: {
         tier: true,
@@ -443,6 +482,40 @@ export class ClubsService {
       avatarUrl: string | null;
       avatarInitials: string | null;
       avatarColor: string | null;
+      // Stammdaten
+      shortCode: string | null;
+      foundedAt: Date | null;
+      // Adresse & Kontakt
+      street: string | null;
+      houseNumber: string | null;
+      postalCode: string | null;
+      city: string | null;
+      phone: string | null;
+      email: string | null;
+      website: string | null;
+      // Vereinsregister
+      isRegistered: boolean;
+      registryCourt: string | null;
+      registryNumber: string | null;
+      clubPurpose: string | null;
+      clubSpecialForm: string | null;
+      // Steuerdaten
+      taxNumber: string | null;
+      vatId: string | null;
+      taxOffice: string | null;
+      isNonProfit: boolean;
+      // Bankverbindung
+      iban: string | null;
+      bic: string | null;
+      bankName: string | null;
+      accountHolder: string | null;
+      // Betriebseinstellungen
+      fiscalYearStartMonth: number | null;
+      defaultMembershipType: string | null;
+      probationPeriodDays: number | null;
+      // Logo
+      logoFileId: string | null;
+      // Relations
       tierId: string | null;
       tier?: { id: string; name: string } | null;
       createdAt: Date;
@@ -463,6 +536,40 @@ export class ClubsService {
       avatarUrl: club.avatarUrl ?? undefined,
       avatarInitials: club.avatarInitials ?? undefined,
       avatarColor: club.avatarColor ?? undefined,
+      // Stammdaten
+      shortCode: club.shortCode ?? undefined,
+      foundedAt: club.foundedAt ? club.foundedAt.toISOString().split('T')[0] : undefined,
+      // Adresse & Kontakt
+      street: club.street ?? undefined,
+      houseNumber: club.houseNumber ?? undefined,
+      postalCode: club.postalCode ?? undefined,
+      city: club.city ?? undefined,
+      phone: club.phone ?? undefined,
+      email: club.email ?? undefined,
+      website: club.website ?? undefined,
+      // Vereinsregister
+      isRegistered: club.isRegistered,
+      registryCourt: club.registryCourt ?? undefined,
+      registryNumber: club.registryNumber ?? undefined,
+      clubPurpose: club.clubPurpose ?? undefined,
+      clubSpecialForm: club.clubSpecialForm ?? undefined,
+      // Steuerdaten
+      taxNumber: club.taxNumber ?? undefined,
+      vatId: club.vatId ?? undefined,
+      taxOffice: club.taxOffice ?? undefined,
+      isNonProfit: club.isNonProfit,
+      // Bankverbindung
+      iban: club.iban ?? undefined,
+      bic: club.bic ?? undefined,
+      bankName: club.bankName ?? undefined,
+      accountHolder: club.accountHolder ?? undefined,
+      // Betriebseinstellungen
+      fiscalYearStartMonth: club.fiscalYearStartMonth ?? undefined,
+      defaultMembershipType: club.defaultMembershipType ?? undefined,
+      probationPeriodDays: club.probationPeriodDays ?? undefined,
+      // Logo
+      logoFileId: club.logoFileId ?? undefined,
+      // Relations & meta
       tierId: club.tierId ?? undefined,
       tier: club.tier ?? undefined,
       createdAt: club.createdAt,

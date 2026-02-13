@@ -31,6 +31,100 @@ export class ClubResponseDto {
   @ApiPropertyOptional()
   avatarColor?: string;
 
+  // --- Stammdaten ---
+
+  @ApiPropertyOptional({ description: 'Club abbreviation / short code' })
+  shortCode?: string;
+
+  @ApiPropertyOptional({ description: 'Club founding date (YYYY-MM-DD)' })
+  foundedAt?: string;
+
+  // --- Adresse & Kontakt ---
+
+  @ApiPropertyOptional({ description: 'Street name' })
+  street?: string;
+
+  @ApiPropertyOptional({ description: 'House number' })
+  houseNumber?: string;
+
+  @ApiPropertyOptional({ description: 'Postal code' })
+  postalCode?: string;
+
+  @ApiPropertyOptional({ description: 'City' })
+  city?: string;
+
+  @ApiPropertyOptional({ description: 'Phone number' })
+  phone?: string;
+
+  @ApiPropertyOptional({ description: 'Contact email' })
+  email?: string;
+
+  @ApiPropertyOptional({ description: 'Website URL' })
+  website?: string;
+
+  // --- Vereinsregister ---
+
+  @ApiProperty({ description: 'Whether the club is a registered association (e.V.)' })
+  isRegistered!: boolean;
+
+  @ApiPropertyOptional({ description: 'Registry court (Amtsgericht)' })
+  registryCourt?: string;
+
+  @ApiPropertyOptional({ description: 'Registry number (VR-Nummer)' })
+  registryNumber?: string;
+
+  @ApiPropertyOptional({ description: 'Club purpose classification' })
+  clubPurpose?: string;
+
+  @ApiPropertyOptional({ description: 'Special organizational form' })
+  clubSpecialForm?: string;
+
+  // --- Steuerdaten ---
+
+  @ApiPropertyOptional({ description: 'Tax number (Steuernummer)' })
+  taxNumber?: string;
+
+  @ApiPropertyOptional({ description: 'VAT identification number (USt-IdNr)' })
+  vatId?: string;
+
+  @ApiPropertyOptional({ description: 'Responsible tax office (Finanzamt)' })
+  taxOffice?: string;
+
+  @ApiProperty({ description: 'Non-profit status (Gemeinnuetzigkeit)' })
+  isNonProfit!: boolean;
+
+  // --- Bankverbindung ---
+
+  @ApiPropertyOptional({ description: 'IBAN' })
+  iban?: string;
+
+  @ApiPropertyOptional({ description: 'BIC / SWIFT code' })
+  bic?: string;
+
+  @ApiPropertyOptional({ description: 'Bank name' })
+  bankName?: string;
+
+  @ApiPropertyOptional({ description: 'Account holder name' })
+  accountHolder?: string;
+
+  // --- Betriebseinstellungen ---
+
+  @ApiPropertyOptional({ description: 'Fiscal year start month (1-12)' })
+  fiscalYearStartMonth?: number;
+
+  @ApiPropertyOptional({ description: 'Default membership type for new members' })
+  defaultMembershipType?: string;
+
+  @ApiPropertyOptional({ description: 'Probation period in days' })
+  probationPeriodDays?: number;
+
+  // --- Logo ---
+
+  @ApiPropertyOptional({ description: 'Logo file ID' })
+  logoFileId?: string;
+
+  // --- Relations & Meta ---
+
   @ApiPropertyOptional()
   tierId?: string;
 
