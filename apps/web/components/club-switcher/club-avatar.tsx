@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -67,12 +68,16 @@ export function ClubAvatar({
   // Generate initials from name if not provided, limit to 3 chars
   const initials = (avatarInitials || generateInitials(name)).slice(0, 3);
 
-  if (avatarUrl) {
+  // Track image load errors to fall back to initials
+  const [imgError, setImgError] = useState(false);
+
+  if (avatarUrl && !imgError) {
     return (
       <img
         src={avatarUrl}
         alt={name}
         className={cn('rounded-md object-cover', sizeClasses[size], className)}
+        onError={() => setImgError(true)}
       />
     );
   }

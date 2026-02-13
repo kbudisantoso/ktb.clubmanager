@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { useUpdateClubSettings } from '@/hooks/use-club-settings';
 import type { ClubSettingsResponse } from '@/hooks/use-club-settings';
 import { useToast } from '@/hooks/use-toast';
+import { apiFetch } from '@/lib/api';
+import { LogoUpload } from './logo-upload';
 import { BasicInfoSection } from './sections/basic-info-section';
 import { AddressContactSection } from './sections/address-contact-section';
 import { RegistrySection } from './sections/registry-section';
@@ -71,6 +73,8 @@ function clubToFormValues(club: ClubSettingsResponse): SettingsFormValues {
     probationPeriodDays: club.probationPeriodDays ?? undefined,
     // Sichtbarkeit
     visibility: club.visibility,
+    // Logo
+    logoFileId: club.logoFileId ?? undefined,
   };
 }
 
@@ -85,6 +89,7 @@ function clubToFormValues(club: ClubSettingsResponse): SettingsFormValues {
 export function ClubSettingsForm({ club, slug }: ClubSettingsFormProps) {
   const { toast } = useToast();
   const updateSettings = useUpdateClubSettings(slug);
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
 
   const defaultValues = useMemo(() => clubToFormValues(club), [club]);
 
@@ -113,6 +118,26 @@ export function ClubSettingsForm({ club, slug }: ClubSettingsFormProps) {
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty]);
+
+  // Fetch logo URL when club has a logoFileId
+  useEffect(() => {
+    if (!club.logoFileId) {
+      setLogoUrl(undefined);
+      return;
+    }
+    let cancelled = false;
+    apiFetch(`/api/clubs/${slug}/files/${club.logoFileId}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.url) setLogoUrl(data.url);
+      })
+      .catch(() => {
+        /* ignore — fallback to initials */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [club.logoFileId, slug]);
 
   // ============================================================================
   // Submit handler — only sends changed fields
@@ -162,6 +187,20 @@ export function ClubSettingsForm({ club, slug }: ClubSettingsFormProps) {
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto pb-6">
         <div className="space-y-6">
+          {/* Logo upload */}
+          <div className="flex justify-center pt-2">
+            <LogoUpload
+              currentLogoUrl={logoUrl}
+              avatarInitials={club.avatarInitials ?? undefined}
+              avatarColor={club.avatarColor ?? undefined}
+              slug={slug}
+              onLogoUploaded={(fileId) => {
+                form.setValue('logoFileId', fileId, { shouldDirty: true });
+              }}
+              disabled={isSubmitting}
+            />
+          </div>
+
           <BasicInfoSection form={form} disabled={isSubmitting} />
           <AddressContactSection form={form} disabled={isSubmitting} />
           <RegistrySection form={form} disabled={isSubmitting} />
