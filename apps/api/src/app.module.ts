@@ -11,6 +11,7 @@ import { ClubsModule } from './clubs/clubs.module';
 import { NumberRangesModule } from './number-ranges/number-ranges.module';
 import { MembersModule } from './members/members.module';
 import { MeModule } from './me/me.module';
+import { FilesModule } from './files/files.module';
 import { CommonModule } from './common/common.module';
 import { SessionAuthGuard } from './auth/guards/session-auth.guard.js';
 import { SuperAdminGuard } from './common/guards/super-admin.guard.js';
@@ -34,6 +35,7 @@ import { PermissionGuard } from './common/guards/permission.guard.js';
     ClubsModule,
     NumberRangesModule,
     MembersModule,
+    FilesModule,
     HealthModule,
   ],
   providers: [
