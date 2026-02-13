@@ -1,8 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -39,19 +49,25 @@ interface MemberDetailPanelProps {
 interface DetailContentProps {
   memberId: string;
   onClose: () => void;
+  /** Guarded close that checks for unsaved changes before closing */
+  onGuardedClose: () => void;
   onNavigatePrev?: () => void;
   onNavigateNext?: () => void;
   hasPrev?: boolean;
   hasNext?: boolean;
+  /** Ref to communicate form dirty state to the parent Sheet */
+  formDirtyRef: React.MutableRefObject<boolean>;
 }
 
 function DetailContent({
   memberId,
   onClose,
+  onGuardedClose,
   onNavigatePrev,
   onNavigateNext,
   hasPrev,
   hasNext,
+  formDirtyRef,
 }: DetailContentProps) {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
@@ -59,6 +75,13 @@ function DetailContent({
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [anonymizeDialogOpen, setAnonymizeDialogOpen] = useState(false);
+
+  const handleDirtyChange = useCallback(
+    (dirty: boolean) => {
+      formDirtyRef.current = dirty;
+    },
+    [formDirtyRef]
+  );
 
   if (isLoading) {
     return <DetailSkeleton />;
@@ -101,7 +124,7 @@ function DetailContent({
             <span className="sr-only">Nächstes Mitglied</span>
           </Button>
         </div>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onGuardedClose}>
           <X className="h-4 w-4" />
           <span className="sr-only">Schließen</span>
         </Button>
@@ -118,7 +141,12 @@ function DetailContent({
       </div>
 
       {/* Form content — MemberForm manages its own scroll + fixed footer */}
-      <MemberForm member={member} slug={slug} onChangeStatus={() => setStatusDialogOpen(true)} />
+      <MemberForm
+        member={member}
+        slug={slug}
+        onChangeStatus={() => setStatusDialogOpen(true)}
+        onDirtyChange={handleDirtyChange}
+      />
 
       {/* Status change dialog */}
       <MemberStatusDialog
@@ -192,23 +220,61 @@ export function MemberDetailPanel({
   hasPrev,
   hasNext,
 }: MemberDetailPanelProps) {
+  const formDirtyRef = useRef(false);
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
+
+  const guardedClose = useCallback(() => {
+    if (formDirtyRef.current) {
+      setDiscardDialogOpen(true);
+    } else {
+      onClose();
+    }
+  }, [onClose]);
+
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) guardedClose();
+    },
+    [guardedClose]
+  );
+
   return (
-    <Sheet open={!!selectedMemberId} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="w-full sm:max-w-lg p-0" showCloseButton={false}>
-        <SheetHeader className="sr-only">
-          <SheetTitle>Mitglied Details</SheetTitle>
-        </SheetHeader>
-        {selectedMemberId && (
-          <DetailContent
-            memberId={selectedMemberId}
-            onClose={onClose}
-            onNavigatePrev={onNavigatePrev}
-            onNavigateNext={onNavigateNext}
-            hasPrev={hasPrev}
-            hasNext={hasNext}
-          />
-        )}
-      </SheetContent>
-    </Sheet>
+    <>
+      <Sheet open={!!selectedMemberId} onOpenChange={handleOpenChange}>
+        <SheetContent side="right" className="w-full sm:max-w-lg p-0" showCloseButton={false}>
+          <SheetHeader className="sr-only">
+            <SheetTitle>Mitglied Details</SheetTitle>
+          </SheetHeader>
+          {selectedMemberId && (
+            <DetailContent
+              memberId={selectedMemberId}
+              onClose={onClose}
+              onGuardedClose={guardedClose}
+              onNavigatePrev={onNavigatePrev}
+              onNavigateNext={onNavigateNext}
+              hasPrev={hasPrev}
+              hasNext={hasNext}
+              formDirtyRef={formDirtyRef}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Unsaved changes confirmation (for overlay click / Escape) */}
+      <AlertDialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ungespeicherte Änderungen</AlertDialogTitle>
+            <AlertDialogDescription>
+              Es gibt ungespeicherte Änderungen. Möchtest du sie verwerfen?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Weiter bearbeiten</AlertDialogCancel>
+            <AlertDialogAction onClick={onClose}>Verwerfen</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

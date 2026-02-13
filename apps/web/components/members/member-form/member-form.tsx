@@ -29,6 +29,8 @@ interface MemberFormProps {
   slug: string;
   /** Called when status change button is clicked */
   onChangeStatus?: () => void;
+  /** Called when the form dirty state changes */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 // ============================================================================
@@ -38,26 +40,29 @@ interface MemberFormProps {
 function memberToFormValues(member: MemberDetail): FormValues {
   return {
     personType: member.personType as FormValues['personType'],
+    // Enum/select fields keep undefined so placeholder renders correctly
     salutation: (member.salutation as FormValues['salutation']) ?? undefined,
-    title: member.title ?? undefined,
-    firstName: member.firstName ?? undefined,
-    lastName: member.lastName ?? undefined,
-    nickname: member.nickname ?? undefined,
-    organizationName: member.organizationName ?? undefined,
-    contactFirstName: member.contactFirstName ?? undefined,
-    contactLastName: member.contactLastName ?? undefined,
-    department: member.department ?? undefined,
-    position: member.position ?? undefined,
-    vatId: member.vatId ?? undefined,
-    email: member.email ?? undefined,
-    phone: member.phone ?? undefined,
-    mobile: member.mobile ?? undefined,
-    notes: member.notes ?? undefined,
-    street: member.street ?? undefined,
-    houseNumber: member.houseNumber ?? undefined,
-    addressExtra: member.addressExtra ?? undefined,
-    postalCode: member.postalCode ?? undefined,
-    city: member.city ?? undefined,
+    // Text input fields use '' — HTML inputs coerce undefined to '',
+    // which would make isDirty true after reset() if defaults were undefined.
+    title: member.title ?? '',
+    firstName: member.firstName ?? '',
+    lastName: member.lastName ?? '',
+    nickname: member.nickname ?? '',
+    organizationName: member.organizationName ?? '',
+    contactFirstName: member.contactFirstName ?? '',
+    contactLastName: member.contactLastName ?? '',
+    department: member.department ?? '',
+    position: member.position ?? '',
+    vatId: member.vatId ?? '',
+    email: member.email ?? '',
+    phone: member.phone ?? '',
+    mobile: member.mobile ?? '',
+    notes: member.notes ?? '',
+    street: member.street ?? '',
+    houseNumber: member.houseNumber ?? '',
+    addressExtra: member.addressExtra ?? '',
+    postalCode: member.postalCode ?? '',
+    city: member.city ?? '',
     country: member.country ?? 'DE',
   };
 }
@@ -70,7 +75,7 @@ function memberToFormValues(member: MemberDetail): FormValues {
  * Always-editable member form with vertical sections.
  * All fields are editable — a sticky save bar appears when the form is dirty.
  */
-export function MemberForm({ member, slug, onChangeStatus }: MemberFormProps) {
+export function MemberForm({ member, slug, onChangeStatus, onDirtyChange }: MemberFormProps) {
   const { toast } = useToast();
   const updateMember = useUpdateMember(slug);
 
@@ -96,6 +101,11 @@ export function MemberForm({ member, slug, onChangeStatus }: MemberFormProps) {
     reset(memberToFormValues(member));
   }, [member, reset]);
 
+  // Notify parent of dirty state changes
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
   // ============================================================================
   // Submit handler — only sends changed fields
   // ============================================================================
@@ -120,6 +130,7 @@ export function MemberForm({ member, slug, onChangeStatus }: MemberFormProps) {
         }
 
         await updateMember.mutateAsync({ id: member.id, version: member.version, ...changed });
+        reset(data);
         toast({ title: 'Änderungen gespeichert' });
       } catch (error) {
         toast({
@@ -130,7 +141,7 @@ export function MemberForm({ member, slug, onChangeStatus }: MemberFormProps) {
         });
       }
     },
-    [defaultValues, member.id, updateMember, toast]
+    [defaultValues, member.id, member.version, reset, updateMember, toast]
   );
 
   // ============================================================================
@@ -196,7 +207,7 @@ export function MemberForm({ member, slug, onChangeStatus }: MemberFormProps) {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => reset(defaultValues)}
+            onClick={() => reset()}
             disabled={isSubmitting}
           >
             Verwerfen
