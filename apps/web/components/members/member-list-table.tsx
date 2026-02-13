@@ -52,6 +52,7 @@ interface MemberListItem {
     membershipType: string;
   }[];
   notes: string | null;
+  version: number;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -267,7 +268,7 @@ export function MemberListTable({
                 className="cursor-pointer"
                 role="button"
                 tabIndex={0}
-                aria-label={`Mitglied ${displayName} oeffnen`}
+                aria-label={`Mitglied ${displayName} öffnen`}
                 onClick={() => onSelectMember(member.id)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {

@@ -153,7 +153,7 @@ export function MembershipPeriodDialog({
 
       // Check overlap: two intervals overlap if start1 <= end2 AND start2 <= end1
       if (thisStart <= otherEnd && otherStart <= thisEnd) {
-        return 'Zeitraum ueberschneidet sich mit einer bestehenden Mitgliedschaft';
+        return 'Zeitraum überschneidet sich mit einer bestehenden Mitgliedschaft';
       }
     }
 
@@ -198,7 +198,7 @@ export function MembershipPeriodDialog({
           membershipType,
           notes: notes.trim() || undefined,
         });
-        toast({ title: 'Mitgliedschaft hinzugefuegt' });
+        toast({ title: 'Mitgliedschaft hinzugefügt' });
       } else if (mode === 'edit' && period) {
         await updatePeriod.mutateAsync({
           periodId: period.id,
@@ -244,7 +244,7 @@ export function MembershipPeriodDialog({
   const dialogTitle = useMemo(() => {
     switch (mode) {
       case 'create':
-        return 'Mitgliedschaft hinzufuegen';
+        return 'Mitgliedschaft hinzufügen';
       case 'edit':
         return 'Mitgliedschaft bearbeiten';
       case 'close':
@@ -266,7 +266,7 @@ export function MembershipPeriodDialog({
   const submitLabel = useMemo(() => {
     switch (mode) {
       case 'create':
-        return 'Mitgliedschaft hinzufuegen';
+        return 'Mitgliedschaft hinzufügen';
       case 'edit':
         return 'Speichern';
       case 'close':

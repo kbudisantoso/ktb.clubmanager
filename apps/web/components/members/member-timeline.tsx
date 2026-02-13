@@ -76,7 +76,7 @@ export function MemberTimeline({
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-muted-foreground">Mitgliedschaftszeitraeume</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">Mitgliedschaftszeiträume</h3>
           {onCreatePeriod && (
             <Button type="button" variant="outline" size="sm" onClick={onCreatePeriod}>
               Neue Mitgliedschaft
@@ -84,7 +84,7 @@ export function MemberTimeline({
           )}
         </div>
         <p className="text-sm text-muted-foreground/50 py-4 text-center">
-          Keine Mitgliedschaftszeitraeume vorhanden
+          Keine Mitgliedschaftszeiträume vorhanden
         </p>
       </div>
     );
@@ -93,7 +93,7 @@ export function MemberTimeline({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-muted-foreground">Mitgliedschaftszeitraeume</h3>
+        <h3 className="text-sm font-medium text-muted-foreground">Mitgliedschaftszeiträume</h3>
         {onCreatePeriod && (
           <Button type="button" variant="outline" size="sm" onClick={onCreatePeriod}>
             Neue Mitgliedschaft

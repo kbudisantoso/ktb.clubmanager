@@ -14,7 +14,7 @@ import type { MemberDetail } from '@/hooks/use-member-detail';
 /** Country code to German label mapping */
 const COUNTRY_LABELS: Record<string, string> = {
   DE: 'Deutschland',
-  AT: 'Oesterreich',
+  AT: 'Österreich',
   CH: 'Schweiz',
   LU: 'Luxemburg',
 };

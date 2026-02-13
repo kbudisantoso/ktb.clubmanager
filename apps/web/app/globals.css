@@ -1,8 +1,9 @@
 @import 'tailwindcss';
-@plugin "@tailwindcss/typography";
+@import 'tw-animate-css';
+@plugin '@tailwindcss/typography';
 
 /* Enable dark mode via class (for next-themes) */
-@variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark *));
 
 :root {
   /* Brand Colors (OKLCH format per Tailwind v4) */
@@ -21,13 +22,13 @@
   --card-foreground: oklch(0.15 0.02 265);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0.02 265);
-  --primary: var(--brand-cobalt);
-  --primary-foreground: oklch(0.98 0.01 265);
-  --secondary: oklch(0.88 0.02 265);
-  --secondary-foreground: var(--brand-cobalt);
+  --primary: var(--brand-cyan);
+  --primary-foreground: oklch(0.15 0.02 265);
+  --secondary: oklch(0.95 0.02 130);
+  --secondary-foreground: oklch(0.25 0.08 130);
   --muted: oklch(0.97 0.01 265);
   --muted-foreground: oklch(0.55 0.02 265);
-  --accent: var(--brand-cyan);
+  --accent: oklch(0.95 0.01 265);
   --accent-foreground: oklch(0.15 0.02 265);
   --destructive: var(--brand-racing-red); /* Racing Red for critical actions */
   --destructive-foreground: oklch(0.98 0.01 265);
@@ -49,6 +50,17 @@
   --avatar-6: oklch(0.7 0.14 200); /* Cyan */
   --avatar-7: oklch(0.65 0.18 55); /* Orange */
   --avatar-8: oklch(0.55 0.22 27); /* Red */
+
+  /* Sidebar tokens (shadcn sidebar component) */
+  --sidebar-background: oklch(0.98 0.005 265);
+  --sidebar-foreground: oklch(0.25 0.02 265);
+  --sidebar-primary: var(--brand-cyan);
+  --sidebar-primary-foreground: oklch(0.15 0.02 265);
+  --sidebar-accent: oklch(0.95 0.01 265);
+  --sidebar-accent-foreground: oklch(0.25 0.02 265);
+  --sidebar-border: oklch(0.92 0.01 265);
+  --sidebar-ring: var(--brand-cyan);
+  --sidebar: var(--sidebar-background);
 }
 
 .dark {
@@ -58,14 +70,14 @@
   --card-foreground: oklch(0.98 0.01 265);
   --popover: oklch(0.18 0.01 265);
   --popover-foreground: oklch(0.98 0.01 265);
-  --primary: var(--brand-alice); /* Alice Blue for primary in dark mode */
-  --primary-foreground: oklch(0.15 0.02 265); /* Dark text on light Alice Blue */
-  --secondary: oklch(0.32 0.02 265);
-  --secondary-foreground: oklch(0.98 0.01 265);
+  --primary: var(--brand-cyan);
+  --primary-foreground: oklch(0.15 0.02 265);
+  --secondary: oklch(0.22 0.02 130);
+  --secondary-foreground: oklch(0.85 0.06 130);
   --muted: oklch(0.22 0.02 265);
   --muted-foreground: oklch(0.65 0.02 265);
-  --accent: var(--brand-cyan); /* Cyan stays as accent (same as light) */
-  --accent-foreground: oklch(0.15 0.02 265); /* Dark text on Cyan */
+  --accent: oklch(0.2 0.02 265);
+  --accent-foreground: oklch(0.9 0.01 265);
   --destructive: oklch(0.65 0.22 27); /* Lighter red for dark bg contrast */
   --destructive-foreground: oklch(0.98 0.01 265);
   --success: var(--brand-green);
@@ -85,6 +97,17 @@
   --avatar-6: oklch(0.75 0.12 200);
   --avatar-7: oklch(0.72 0.16 55);
   --avatar-8: oklch(0.65 0.2 27);
+
+  /* Sidebar tokens (dark mode) */
+  --sidebar-background: oklch(0.13 0.01 265);
+  --sidebar-foreground: oklch(0.9 0.01 265);
+  --sidebar-primary: var(--brand-cyan);
+  --sidebar-primary-foreground: oklch(0.15 0.02 265);
+  --sidebar-accent: oklch(0.2 0.02 265);
+  --sidebar-accent-foreground: oklch(0.9 0.01 265);
+  --sidebar-border: oklch(0.25 0.02 265);
+  --sidebar-ring: var(--brand-cyan);
+  --sidebar: var(--sidebar-background);
 }
 
 @theme inline {
@@ -111,12 +134,21 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-sidebar-background: var(--sidebar-background);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 6px);
   --font-display: var(--font-display);
   --font-body: var(--font-body);
+  --color-sidebar: var(--sidebar);
 }
 
 /* Base styles */
@@ -132,187 +164,14 @@ body {
   font-feature-settings: 'tnum' 1;
 }
 
-/* Gradient border for focused inputs */
+/* Simple ring for focused inputs */
 input[data-slot='input']:focus-visible {
-  border-color: transparent;
-  background:
-    linear-gradient(var(--background), var(--background)) padding-box,
-    linear-gradient(135deg, var(--brand-cobalt), var(--brand-cyan)) border-box;
-  border: 1px solid transparent;
-}
-
-.dark input[data-slot='input']:focus-visible {
-  background:
-    linear-gradient(var(--card), var(--card)) padding-box,
-    linear-gradient(135deg, var(--brand-cyan), var(--brand-green)) border-box;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px oklch(from var(--ring) l c h / 0.2);
 }
 
 /* ============================================
-   GLASSMORPHISM DESIGN SYSTEM
-   Based on brand-manifest.md "Glass & Flow"
-   ============================================ */
-
-/* App background - image with gradient overlay (used across all pages) */
-.app-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-color: var(--background);
-  background-image: url('/bg-light.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.app-bg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    135deg,
-    oklch(0.25 0.12 265 / 0.7),
-    /* Cobalt with transparency */ oklch(0.78 0.13 195 / 0.3) /* Cyan with transparency */
-  );
-}
-
-/* Dark mode: aurora waves background */
-.dark .app-bg {
-  background-image: url('/bg-dark.png');
-}
-
-.dark .app-bg::before {
-  background: linear-gradient(
-    135deg,
-    oklch(0.15 0.01 60 / 0.85),
-    /* Onyx with transparency */ oklch(0.78 0.13 195 / 0.2) /* Cyan hint */
-  );
-}
-
-/* Glass Panel - Primary container style */
-.glass-panel {
-  background: oklch(1 0 0 / 0.7);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  border: 1px solid oklch(0 0 0 / 0.1);
-  box-shadow:
-    0 4px 6px -1px oklch(0 0 0 / 0.08),
-    0 2px 4px -2px oklch(0 0 0 / 0.06);
-}
-
-.dark .glass-panel {
-  background: oklch(0.15 0.01 265 / 0.4);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  border: 1px solid oklch(1 0 0 / 0.1);
-  box-shadow:
-    0 4px 6px -1px oklch(0 0 0 / 0.2),
-    0 2px 4px -2px oklch(0 0 0 / 0.15);
-}
-
-/* Glass Card - For content cards within glass panels */
-.glass-card {
-  background: oklch(1 0 0 / 0.7);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  border: 1px solid oklch(0 0 0 / 0.05);
-}
-
-.dark .glass-card {
-  background: oklch(0.22 0.02 265 / 0.5);
-  border: 1px solid oklch(1 0 0 / 0.05);
-}
-
-/* Glass Input - For form inputs on glass backgrounds */
-.glass-input {
-  background: oklch(1 0 0 / 0.7);
-  border: 1px solid oklch(0 0 0 / 0.1);
-  transition: all 0.2s ease;
-}
-
-.glass-input:focus {
-  background: oklch(1 0 0 / 0.9);
-  border-color: var(--brand-cyan);
-  box-shadow: 0 0 0 3px oklch(0.78 0.13 195 / 0.2);
-}
-
-.dark .glass-input {
-  background: oklch(0.15 0.01 60 / 0.6);
-  border: 1px solid oklch(1 0 0 / 0.1);
-}
-
-/* Glass Menu - For dropdowns and popovers */
-.glass-menu {
-  background: oklch(1 0 0 / 0.4);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  border: 1px solid oklch(0 0 0 / 0.1);
-}
-
-.dark .glass-menu {
-  background: oklch(0.15 0.01 265 / 0.5);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  border: 1px solid oklch(1 0 0 / 0.1);
-}
-
-.dark .glass-input:focus {
-  background: oklch(0.15 0.01 60 / 0.8);
-  border-color: var(--brand-cyan);
-  box-shadow: 0 0 0 3px oklch(0.78 0.13 195 / 0.25);
-}
-
-/* Gradient Text - For headings */
-.gradient-text {
-  background: linear-gradient(135deg, var(--brand-cobalt), var(--brand-cyan));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.dark .gradient-text {
-  background: linear-gradient(135deg, var(--brand-cyan), var(--brand-green));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Gradient Border - For special elements */
-.gradient-border {
-  position: relative;
-  background: var(--background);
-  border-radius: var(--radius);
-}
-
-.gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: calc(var(--radius) + 1px);
-  background: linear-gradient(135deg, var(--brand-cobalt), var(--brand-cyan));
-  z-index: -1;
-}
-
-.dark .gradient-border::before {
-  background: linear-gradient(135deg, var(--brand-cyan), var(--brand-green));
-}
-
-/* Subtle glow effect for primary buttons */
-.glow-primary {
-  box-shadow:
-    0 0 20px -5px var(--brand-cyan),
-    0 4px 6px -1px oklch(0 0 0 / 0.1);
-  transition: box-shadow 0.2s ease;
-}
-
-.glow-primary:hover {
-  box-shadow:
-    0 0 30px -5px var(--brand-cyan),
-    0 10px 15px -3px oklch(0 0 0 / 0.1);
-}
-
-/* ============================================
-   IN-APP DESIGN SYSTEM
-   Consistent styling for authenticated pages
+   Utility Styles
    ============================================ */
 
 /* Page Header - consistent page title styling */
@@ -332,85 +191,6 @@ input[data-slot='input']:focus-visible {
   margin-top: 0.5rem;
 }
 
-/* App Card - glass-style card for in-app content */
-.app-card {
-  background: oklch(1 0 0 / 0.7);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  border: 1px solid oklch(0 0 0 / 0.1);
-  border-radius: 0.75rem;
-  box-shadow:
-    0 1px 3px 0 oklch(0 0 0 / 0.08),
-    0 1px 2px -1px oklch(0 0 0 / 0.08);
-  transition:
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.app-card:hover {
-  box-shadow:
-    0 4px 6px -1px oklch(0 0 0 / 0.1),
-    0 2px 4px -2px oklch(0 0 0 / 0.08);
-}
-
-.dark .app-card {
-  background: oklch(0.15 0.01 265 / 0.4);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  border-color: oklch(1 0 0 / 0.1);
-  box-shadow:
-    0 1px 3px 0 oklch(0 0 0 / 0.2),
-    0 1px 2px -1px oklch(0 0 0 / 0.15);
-}
-
-.dark .app-card:hover {
-  box-shadow:
-    0 4px 6px -1px oklch(0 0 0 / 0.25),
-    0 2px 4px -2px oklch(0 0 0 / 0.2);
-  border-color: oklch(1 0 0 / 0.12);
-}
-
-/* App Card Interactive - for clickable cards */
-.app-card-interactive {
-  cursor: pointer;
-}
-
-.app-card-interactive:hover {
-  border-color: var(--brand-cyan);
-}
-
-.dark .app-card-interactive:hover {
-  border-color: var(--brand-cyan);
-}
-
-/* Stat Card - for dashboard statistics */
-.stat-card {
-  padding: 1.5rem;
-}
-
-.stat-card .stat-value {
-  font-size: 2rem;
-  font-weight: 700;
-  line-height: 1;
-  background: linear-gradient(135deg, var(--brand-cobalt), var(--brand-cyan));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.dark .stat-card .stat-value {
-  background: linear-gradient(135deg, var(--brand-cyan), var(--brand-green));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.stat-card .stat-label {
-  font-size: 0.875rem;
-  color: var(--muted-foreground);
-  margin-top: 0.5rem;
-}
-
 /* Empty State - for pages with no content */
 .empty-state {
   text-align: center;
@@ -422,7 +202,7 @@ input[data-slot='input']:focus-visible {
   height: 4rem;
   margin: 0 auto 1.5rem;
   border-radius: 9999px;
-  background: linear-gradient(135deg, oklch(0.78 0.13 195 / 0.2), oklch(0.82 0.18 130 / 0.2));
+  background: oklch(0.78 0.13 195 / 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -430,7 +210,7 @@ input[data-slot='input']:focus-visible {
 }
 
 .dark .empty-state .empty-icon {
-  background: linear-gradient(135deg, oklch(0.78 0.13 195 / 0.15), oklch(0.82 0.18 130 / 0.15));
+  background: oklch(0.78 0.13 195 / 0.1);
 }
 
 .empty-state h2 {
@@ -445,63 +225,8 @@ input[data-slot='input']:focus-visible {
   margin-inline: auto;
 }
 
-/* Section divider with gradient */
-.section-divider {
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--border) 20%,
-    var(--border) 80%,
-    transparent 100%
-  );
-  margin: 2rem 0;
-}
-
-/* Quick action button */
-.quick-action {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  background: oklch(1 0 0 / 0.25);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  transition: all 0.2s ease;
-  cursor: pointer;
-  border: 1px solid oklch(0 0 0 / 0.08);
-}
-
-.quick-action:hover {
-  background: oklch(1 0 0 / 0.4);
-  border-color: var(--brand-cyan);
-}
-
-.dark .quick-action {
-  background: oklch(0.18 0.02 265 / 0.35);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  border-color: oklch(1 0 0 / 0.08);
-}
-
-.dark .quick-action:hover {
-  background: oklch(0.18 0.02 265 / 0.5);
-  border-color: var(--brand-cyan);
-}
-
-.quick-action .quick-action-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--brand-cobalt), var(--brand-cyan));
-  color: white;
-}
-
-.dark .quick-action .quick-action-icon {
-  background: linear-gradient(135deg, var(--brand-cyan), var(--brand-green));
-  color: var(--brand-onyx);
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
 }

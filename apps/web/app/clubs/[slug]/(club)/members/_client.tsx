@@ -6,8 +6,8 @@ import { Plus, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { PageHeader } from '@/components/layout/page-header';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useMemberFilters } from '@/hooks/use-member-filters';
 import { useColumnVisibility } from '@/hooks/use-column-visibility';
@@ -27,13 +27,9 @@ import { MemberColumnPicker } from '@/components/members/member-column-picker';
 
 /**
  * Client component orchestrating the member list page.
- * All filter state lives in URL via nuqs (search, status, household, period, member panel).
+ * All filter state lives in URL via nuqs (search, status, household, period, member).
  * Column visibility is persisted per club in localStorage.
- *
- * Layout:
- *   Row 1: [Search] [Column Picker] [+ Neues Mitglied]
- *   Row 2: [Status filter] [Household filter] [Period filter] + active filter chips
- *   On mobile, Row 2 collapses behind a "Filter" button.
+ * Member detail opens as a Sheet overlay (both mobile and desktop).
  */
 export function MembersClient() {
   const params = useParams<{ slug: string }>();
@@ -117,6 +113,24 @@ export function MembersClient() {
     setFilters({ member: '' });
   }, [setFilters]);
 
+  // --- Member navigation (prev/next in detail sheet) ---
+  const currentMemberIndex = useMemo(
+    () => (selectedMemberId ? members.findIndex((m) => m.id === selectedMemberId) : -1),
+    [selectedMemberId, members]
+  );
+
+  const navigatePrev = useCallback(() => {
+    if (currentMemberIndex > 0) selectMember(members[currentMemberIndex - 1].id);
+  }, [currentMemberIndex, members, selectMember]);
+
+  const navigateNext = useCallback(() => {
+    if (currentMemberIndex >= 0 && currentMemberIndex < members.length - 1)
+      selectMember(members[currentMemberIndex + 1].id);
+  }, [currentMemberIndex, members, selectMember]);
+
+  const hasPrev = currentMemberIndex > 0;
+  const hasNext = currentMemberIndex >= 0 && currentMemberIndex < members.length - 1;
+
   // --- Empty state variant ---
   const hasActiveFilters =
     filters.status.length > 0 || filters.household !== '' || filters.period !== '';
@@ -155,18 +169,20 @@ export function MembersClient() {
         return;
       }
 
-      if (e.key === 'Escape' && selectedMemberId) {
-        // Don't close the panel when a Radix dialog is open
-        if (document.querySelector('[role="dialog"][data-state="open"]')) return;
+      if (e.key === 'j' || e.key === 'ArrowDown') {
         e.preventDefault();
-        closePanel();
-      } else if (e.key === 'j' || e.key === 'ArrowDown') {
-        e.preventDefault();
-        setActiveRowIndex((prev) => Math.min(prev + 1, members.length - 1));
+        if (selectedMemberId) navigateNext();
+        else setActiveRowIndex((prev) => Math.min(prev + 1, members.length - 1));
       } else if (e.key === 'k' || e.key === 'ArrowUp') {
         e.preventDefault();
-        setActiveRowIndex((prev) => Math.max(prev - 1, 0));
-      } else if (e.key === 'Enter' && activeRowIndex >= 0 && activeRowIndex < members.length) {
+        if (selectedMemberId) navigatePrev();
+        else setActiveRowIndex((prev) => Math.max(prev - 1, 0));
+      } else if (
+        e.key === 'Enter' &&
+        !selectedMemberId &&
+        activeRowIndex >= 0 &&
+        activeRowIndex < members.length
+      ) {
         e.preventDefault();
         selectMember(members[activeRowIndex].id);
       }
@@ -174,11 +190,10 @@ export function MembersClient() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [activeRowIndex, members, selectMember, selectedMemberId, closePanel]);
+  }, [activeRowIndex, members, selectMember, selectedMemberId, navigatePrev, navigateNext]);
 
   // --- Computed values ---
   const isLoading = isMembersLoading || isNumberRangesLoading;
-  const isPanelOpen = !!selectedMemberId;
 
   // Count of active filters (for mobile badge)
   const activeFilterCount =
@@ -205,21 +220,14 @@ export function MembersClient() {
     </>
   );
 
-  /** The list content (header, search, filters, table) */
-  const listContent = (
-    <div className="space-y-4 h-full overflow-auto py-6 px-4">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Mitglieder</h1>
-          {!isLoading && totalCount > 0 && (
-            <p className="text-muted-foreground text-sm">
-              {totalCount} {totalCount === 1 ? 'Mitglied' : 'Mitglieder'}
-            </p>
-          )}
-        </div>
-      </div>
+  const countDescription =
+    !isLoading && totalCount > 0
+      ? `${totalCount} ${totalCount === 1 ? 'Mitglied' : 'Mitglieder'}`
+      : undefined;
 
+  /** The list content (search, filters, table) */
+  const listContent = (
+    <div className="space-y-4 px-4 pb-6">
       {/* Row 1: Search + Column Picker + Create Button */}
       {(hasMemberNumberRange || members.length > 0) && (
         <div className="flex items-center gap-3">
@@ -303,9 +311,6 @@ export function MembersClient() {
         />
       )}
 
-      {/* Quick-create member sheet */}
-      <MemberCreateSheet slug={slug} open={isCreateSheetOpen} onOpenChange={setIsCreateSheetOpen} />
-
       {/* Floating bulk actions bar */}
       <MemberBulkActions
         selectedIds={selectedIds}
@@ -316,71 +321,59 @@ export function MembersClient() {
     </div>
   );
 
-  // When panel is open on desktop, use ResizablePanelGroup
-  if (isPanelOpen) {
-    return (
-      <div className="h-[calc(100vh-4rem)]">
-        <ResizablePanelGroup orientation="horizontal">
-          {/* List panel */}
-          <ResizablePanel defaultSize={55} minSize={30}>
-            {listContent}
-          </ResizablePanel>
+  return (
+    <div>
+      <PageHeader title="Mitglieder" description={countDescription} />
+      <div className="container mx-auto">{listContent}</div>
 
-          {/* Resize handle */}
-          <ResizableHandle withHandle />
-
-          {/* Detail panel */}
-          <ResizablePanel defaultSize={45} minSize={30}>
-            <div className="h-full overflow-auto border-l">
-              <MemberDetailPanel selectedMemberId={selectedMemberId} onClose={closePanel} />
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
-    );
-  }
-
-  // No panel open - full-width list
-  return <div className="container mx-auto">{listContent}</div>;
+      {/* Overlays */}
+      <MemberCreateSheet slug={slug} open={isCreateSheetOpen} onOpenChange={setIsCreateSheetOpen} />
+      <MemberDetailPanel
+        selectedMemberId={selectedMemberId}
+        onClose={closePanel}
+        onNavigatePrev={navigatePrev}
+        onNavigateNext={navigateNext}
+        hasPrev={hasPrev}
+        hasNext={hasNext}
+      />
+    </div>
+  );
 }
 
 /** Loading fallback skeleton for the member list page */
 export function MembersLoadingFallback() {
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Mitglieder</h1>
+    <div>
+      <PageHeader title="Mitglieder" />
+      <div className="container mx-auto space-y-4 px-4">
+        {/* Row 1 skeleton: Search + Column Picker + Create */}
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 flex-1 max-w-sm" />
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-10 w-36" />
         </div>
-      </div>
 
-      {/* Row 1 skeleton: Search + Column Picker + Create */}
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-10 flex-1 max-w-sm" />
-        <Skeleton className="h-8 w-24" />
-        <Skeleton className="h-10 w-36" />
-      </div>
+        {/* Row 2 skeleton: Filter dropdowns */}
+        <div className="hidden sm:flex items-center gap-2">
+          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-8 w-24" />
+        </div>
 
-      {/* Row 2 skeleton: Filter dropdowns */}
-      <div className="hidden sm:flex items-center gap-2">
-        <Skeleton className="h-8 w-20" />
-        <Skeleton className="h-8 w-24" />
-        <Skeleton className="h-8 w-24" />
-      </div>
-
-      {/* Table rows skeleton */}
-      <div className="space-y-3">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="flex items-center gap-4 py-2">
-            <Skeleton className="h-4 w-4" />
-            <Skeleton className="h-7 w-7 rounded-full" />
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-4 w-16 hidden md:block" />
-            <Skeleton className="h-5 w-16 rounded-md hidden md:block" />
-            <Skeleton className="h-4 w-40 hidden xl:block" />
-            <Skeleton className="h-4 w-28 hidden xl:block" />
-          </div>
-        ))}
+        {/* Table rows skeleton */}
+        <div className="space-y-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4 py-2">
+              <Skeleton className="h-4 w-4" />
+              <Skeleton className="h-7 w-7 rounded-full" />
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-16 hidden md:block" />
+              <Skeleton className="h-5 w-16 rounded-md hidden md:block" />
+              <Skeleton className="h-4 w-40 hidden xl:block" />
+              <Skeleton className="h-4 w-28 hidden xl:block" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

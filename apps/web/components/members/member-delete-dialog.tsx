@@ -33,7 +33,7 @@ import type { MemberDetail } from '@/hooks/use-member-detail';
 const DELETION_REASONS = [
   { value: 'AUSTRITT', label: 'Ordentlicher Austritt' },
   { value: 'AUSSCHLUSS', label: 'Vereinsausschluss' },
-  { value: 'DATENSCHUTZ', label: 'DSGVO-Loeschantrag' },
+  { value: 'DATENSCHUTZ', label: 'DSGVO-Löschantrag' },
   { value: 'SONSTIGES', label: 'Sonstiges' },
 ] as const;
 

@@ -9,7 +9,7 @@ interface PublicPageLayoutProps {
 
 /**
  * Layout for public pages (Impressum, Datenschutz, etc.)
- * Matches the app's glassmorphism design but styled as a public website.
+ * Clean design with solid backgrounds.
  * Shows UserMenu when logged in, "Anmelden" link when not.
  */
 export function PublicPageLayout({ children }: PublicPageLayoutProps) {
@@ -17,7 +17,7 @@ export function PublicPageLayout({ children }: PublicPageLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full bg-transparent backdrop-blur-sm">
+      <header className="sticky top-0 z-50 w-full bg-background border-b">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
           <Link href="/" className="flex items-center">
             <Image
@@ -43,7 +43,7 @@ export function PublicPageLayout({ children }: PublicPageLayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 container mx-auto max-w-3xl py-8 px-4">
-        <div className="glass-panel rounded-2xl p-8 sm:p-10">{children}</div>
+        <div className="bg-card border rounded-2xl p-8 sm:p-10">{children}</div>
       </main>
 
       {/* Footer */}

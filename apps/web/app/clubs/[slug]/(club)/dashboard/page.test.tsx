@@ -19,6 +19,25 @@ vi.mock('@/lib/club-permissions', () => ({
   useCanManageSettings: () => mockCanManageSettings,
 }));
 
+// Mock PageHeader (uses SidebarProvider context)
+vi.mock('@/components/layout/page-header', () => ({
+  PageHeader: ({
+    title,
+    description,
+    actions,
+  }: {
+    title: string;
+    description?: string;
+    actions?: React.ReactNode;
+  }) => (
+    <div data-testid="page-header">
+      <h1>{title}</h1>
+      {description && <p>{description}</p>}
+      {actions}
+    </div>
+  ),
+}));
+
 // Mock use-clubs hooks for AccessRequestsCard
 vi.mock('@/hooks/use-clubs', () => ({
   useClubAccessRequestsQuery: () => ({

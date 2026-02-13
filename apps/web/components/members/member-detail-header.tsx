@@ -1,11 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
-import Link from 'next/link';
 import {
-  ArrowLeft,
-  Edit,
   MoreHorizontal,
+  RefreshCw,
   Users,
   UserX,
   Calendar,
@@ -37,14 +35,6 @@ const MEMBERSHIP_TYPE_LABELS: Record<string, string> = {
 interface MemberDetailHeaderProps {
   /** Full member data */
   member: MemberDetail;
-  /** Club slug for link generation */
-  slug: string;
-  /** Avatar size variant: md for panel, lg for full page */
-  avatarSize?: 'md' | 'lg';
-  /** Whether to show back navigation link */
-  showBackLink?: boolean;
-  /** Called when "Bearbeiten" is clicked */
-  onEdit?: () => void;
   /** Called when "Status ändern" is clicked */
   onChangeStatus?: () => void;
   /** Called when "Haushalt zuordnen" is clicked */
@@ -60,15 +50,11 @@ interface MemberDetailHeaderProps {
 }
 
 /**
- * Member detail header with avatar, name, status, and action buttons.
- * Used in both the resizable side panel and the full-page detail view.
+ * Member detail header with avatar, name, status, and action dropdown.
+ * Used in the member detail Sheet overlay.
  */
 export function MemberDetailHeader({
   member,
-  slug,
-  avatarSize = 'md',
-  showBackLink = false,
-  onEdit,
   onChangeStatus,
   onAssignHousehold,
   onEndMembership,
@@ -105,112 +91,94 @@ export function MemberDetailHeader({
   const contactInfo = [member.email, member.phone || member.mobile].filter(Boolean);
 
   return (
-    <div className="space-y-3">
-      {/* Back link for full-page view */}
-      {showBackLink && (
-        <Link
-          href={`/clubs/${slug}/members`}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Zurück zu Mitgliedern
-        </Link>
-      )}
+    <div className="flex items-start justify-between gap-4">
+      {/* Left: Avatar + info */}
+      <div className="flex items-start gap-3 min-w-0">
+        <MemberAvatar
+          memberId={member.id}
+          firstName={member.firstName}
+          lastName={member.lastName}
+          organizationName={member.organizationName}
+          personType={member.personType}
+          size="md"
+        />
 
-      <div className="flex items-start justify-between gap-4">
-        {/* Left: Avatar + info */}
-        <div className="flex items-start gap-3 min-w-0">
-          <MemberAvatar
-            memberId={member.id}
-            firstName={member.firstName}
-            lastName={member.lastName}
-            organizationName={member.organizationName}
-            personType={member.personType}
-            size={avatarSize}
-          />
+        <div className="min-w-0 space-y-1">
+          {/* Name */}
+          <h2 className="text-lg font-semibold truncate">{displayName}</h2>
 
-          <div className="min-w-0 space-y-1">
-            {/* Name */}
-            <h2 className="text-lg font-semibold truncate">{displayName}</h2>
-
-            {/* Status + Member number */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <MemberStatusBadge status={member.status} />
-              <span className="text-sm text-muted-foreground font-mono">{member.memberNumber}</span>
-              {member.household && (
-                <HouseholdBadge
-                  name={member.household.name}
-                  householdId={member.household.id}
-                  members={member.household.members}
-                  onClick={onAssignHousehold}
-                />
-              )}
-            </div>
-
-            {/* Membership type + Entry date */}
-            <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-              {membershipType && <span>{membershipType}</span>}
-              {entryDate && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  Eintritt: {entryDate}
-                </span>
-              )}
-            </div>
-
-            {/* Contact info */}
-            {contactInfo.length > 0 && (
-              <div className="text-sm text-muted-foreground truncate">
-                {contactInfo.join(' | ')}
-              </div>
+          {/* Status + Member number */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <MemberStatusBadge status={member.status} />
+            <span className="text-sm text-muted-foreground font-mono">{member.memberNumber}</span>
+            {member.household && (
+              <HouseholdBadge
+                name={member.household.name}
+                householdId={member.household.id}
+                members={member.household.members}
+                onClick={onAssignHousehold}
+              />
             )}
           </div>
+
+          {/* Membership type + Entry date */}
+          <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+            {membershipType && <span>{membershipType}</span>}
+            {entryDate && (
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                Eintritt: {entryDate}
+              </span>
+            )}
+          </div>
+
+          {/* Contact info */}
+          {contactInfo.length > 0 && (
+            <div className="text-sm text-muted-foreground truncate">{contactInfo.join(' | ')}</div>
+          )}
         </div>
+      </div>
 
-        {/* Right: Action buttons */}
-        <div className="flex items-center gap-2 shrink-0">
-          <Button variant="outline" size="sm" onClick={onEdit}>
-            <Edit className="h-4 w-4 mr-1.5" />
-            <span className="hidden sm:inline">Bearbeiten</span>
-          </Button>
-
-          <Button variant="outline" size="sm" onClick={onChangeStatus}>
-            Status ändern
-          </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="h-8 w-8">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Mehr Aktionen</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onAssignHousehold}>
-                <Users className="h-4 w-4" />
-                {member.household ? 'Haushalt bearbeiten' : 'Haushalt zuordnen'}
+      {/* Right: Action dropdown */}
+      <div className="shrink-0">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Mehr Aktionen</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {member.status !== 'LEFT' && (
+              <DropdownMenuItem onClick={onChangeStatus}>
+                <RefreshCw className="h-4 w-4" />
+                Status ändern
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onEndMembership}>
-                <UserX className="h-4 w-4" />
-                Mitgliedschaft beenden
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onRecordCancellation}>
-                <Calendar className="h-4 w-4" />
-                Kündigung erfassen
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" disabled={!isLeft} onClick={onDelete}>
-                <Trash2 className="h-4 w-4" />
-                Löschen
-              </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" disabled={!isLeft} onClick={onAnonymize}>
-                <ShieldAlert className="h-4 w-4" />
-                Anonymisieren
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+            )}
+            <DropdownMenuItem onClick={onAssignHousehold}>
+              <Users className="h-4 w-4" />
+              {member.household ? 'Haushalt bearbeiten' : 'Haushalt zuordnen'}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onEndMembership}>
+              <UserX className="h-4 w-4" />
+              Mitgliedschaft beenden
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onRecordCancellation}>
+              <Calendar className="h-4 w-4" />
+              Kündigung erfassen
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" disabled={!isLeft} onClick={onDelete}>
+              <Trash2 className="h-4 w-4" />
+              Löschen
+            </DropdownMenuItem>
+            <DropdownMenuItem variant="destructive" disabled={!isLeft} onClick={onAnonymize}>
+              <ShieldAlert className="h-4 w-4" />
+              Anonymisieren
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

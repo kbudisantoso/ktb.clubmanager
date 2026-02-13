@@ -68,6 +68,7 @@ interface MemberDetail {
   deletedAt: string | null;
   deletedBy: string | null;
   deletionReason: string | null;
+  version: number;
   createdAt: string | null;
   updatedAt: string | null;
 }
