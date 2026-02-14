@@ -21,8 +21,9 @@ export class MemberSchedulerService {
   /**
    * Daily cron job: Auto-transition members with expired cancellation dates to LEFT.
    *
-   * Finds all ACTIVE/INACTIVE members where cancellationDate <= today
-   * and transitions them to LEFT status.
+   * Finds all cancellable members (ACTIVE, PROBATION, DORMANT, SUSPENDED)
+   * where cancellationDate <= today and transitions them to LEFT status.
+   * Creates MemberStatusTransition audit trail for each auto-transition.
    */
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleCancellationTransitions() {
@@ -33,7 +34,7 @@ export class MemberSchedulerService {
 
     const members = await this.prisma.member.findMany({
       where: {
-        status: { in: ['ACTIVE', 'INACTIVE'] },
+        status: { in: ['ACTIVE', 'PROBATION', 'DORMANT', 'SUSPENDED'] },
         cancellationDate: { lte: today },
         deletedAt: null,
       },
@@ -53,14 +54,30 @@ export class MemberSchedulerService {
 
     for (const member of members) {
       try {
+        const systemUserId = this.systemUserService.getSystemUserId();
+
         await this.prisma.$transaction(async (tx) => {
+          // Create audit trail record
+          await tx.memberStatusTransition.create({
+            data: {
+              memberId: member.id,
+              clubId: member.clubId,
+              fromStatus: member.status,
+              toStatus: 'LEFT',
+              reason: 'Automatischer Austritt nach Ablauf der Kuendigungsfrist',
+              leftCategory: 'VOLUNTARY',
+              effectiveDate: member.cancellationDate!,
+              actorId: systemUserId,
+            },
+          });
+
           // Update status to LEFT
           await tx.member.update({
             where: { id: member.id },
             data: {
               status: 'LEFT',
               statusChangedAt: new Date(),
-              statusChangedBy: this.systemUserService.getSystemUserId(),
+              statusChangedBy: systemUserId,
               statusChangeReason: 'Automatischer Austritt nach Ablauf der Kuendigungsfrist',
             },
           });

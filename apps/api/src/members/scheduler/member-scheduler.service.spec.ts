@@ -11,6 +11,9 @@ const mockTx = {
   membershipPeriod: {
     update: vi.fn(),
   },
+  memberStatusTransition: {
+    create: vi.fn(),
+  },
 };
 
 const mockPrisma = {
@@ -20,6 +23,9 @@ const mockPrisma = {
   },
   membershipPeriod: {
     update: vi.fn(),
+  },
+  memberStatusTransition: {
+    create: vi.fn(),
   },
   $transaction: vi.fn(async (fn: (tx: typeof mockTx) => Promise<void>) => fn(mockTx)),
 } as unknown as PrismaService;
@@ -61,6 +67,7 @@ describe('MemberSchedulerService', () => {
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([member]);
       mockTx.member.update.mockResolvedValue({});
       mockTx.membershipPeriod.update.mockResolvedValue({});
+      mockTx.memberStatusTransition.create.mockResolvedValue({});
 
       await service.handleCancellationTransitions();
 
@@ -80,6 +87,7 @@ describe('MemberSchedulerService', () => {
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([member]);
       mockTx.member.update.mockResolvedValue({});
       mockTx.membershipPeriod.update.mockResolvedValue({});
+      mockTx.memberStatusTransition.create.mockResolvedValue({});
 
       await service.handleCancellationTransitions();
 
@@ -87,6 +95,81 @@ describe('MemberSchedulerService', () => {
         expect.objectContaining({
           where: { id: 'period-1' },
           data: { leaveDate: member.cancellationDate },
+        })
+      );
+    });
+
+    it('should create MemberStatusTransition audit record', async () => {
+      const member = makeMemberWithPeriod();
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([member]);
+      mockTx.member.update.mockResolvedValue({});
+      mockTx.membershipPeriod.update.mockResolvedValue({});
+      mockTx.memberStatusTransition.create.mockResolvedValue({});
+
+      await service.handleCancellationTransitions();
+
+      expect(mockTx.memberStatusTransition.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            memberId: 'member-1',
+            clubId: 'club-1',
+            fromStatus: 'ACTIVE',
+            toStatus: 'LEFT',
+            leftCategory: 'VOLUNTARY',
+            actorId: SYSTEM_USER_ID,
+          }),
+        })
+      );
+    });
+
+    it('should query all cancellable statuses', async () => {
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+      await service.handleCancellationTransitions();
+
+      expect(mockPrisma.member.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: { in: ['ACTIVE', 'PROBATION', 'DORMANT', 'SUSPENDED'] },
+          }),
+        })
+      );
+    });
+
+    it('should transition DORMANT members with expired cancellation', async () => {
+      const member = makeMemberWithPeriod({ status: 'DORMANT' });
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([member]);
+      mockTx.member.update.mockResolvedValue({});
+      mockTx.membershipPeriod.update.mockResolvedValue({});
+      mockTx.memberStatusTransition.create.mockResolvedValue({});
+
+      await service.handleCancellationTransitions();
+
+      expect(mockTx.memberStatusTransition.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            fromStatus: 'DORMANT',
+            toStatus: 'LEFT',
+          }),
+        })
+      );
+    });
+
+    it('should transition SUSPENDED members with expired cancellation', async () => {
+      const member = makeMemberWithPeriod({ status: 'SUSPENDED' });
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([member]);
+      mockTx.member.update.mockResolvedValue({});
+      mockTx.membershipPeriod.update.mockResolvedValue({});
+      mockTx.memberStatusTransition.create.mockResolvedValue({});
+
+      await service.handleCancellationTransitions();
+
+      expect(mockTx.memberStatusTransition.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            fromStatus: 'SUSPENDED',
+            toStatus: 'LEFT',
+          }),
         })
       );
     });
@@ -104,6 +187,7 @@ describe('MemberSchedulerService', () => {
         .mockImplementationOnce(async (fn: (tx: typeof mockTx) => Promise<void>) => fn(mockTx));
       mockTx.member.update.mockResolvedValue({});
       mockTx.membershipPeriod.update.mockResolvedValue({});
+      mockTx.memberStatusTransition.create.mockResolvedValue({});
 
       // Should not throw, continues processing
       await expect(service.handleCancellationTransitions()).resolves.toBeUndefined();
