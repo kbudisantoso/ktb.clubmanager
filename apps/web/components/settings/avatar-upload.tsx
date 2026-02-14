@@ -13,8 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useFileUpload } from '@/hooks/use-file-upload';
-import { apiFetch } from '@/lib/api';
+import { useAvatarUpload, useRemoveAvatar } from '@/hooks/use-profile';
 import { getCroppedImg } from '@/lib/crop-image';
 
 // ============================================================================
@@ -28,54 +27,41 @@ const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 // Types
 // ============================================================================
 
-interface LogoUploadProps {
-  currentLogoUrl?: string;
-  avatarInitials?: string;
-  avatarColor?: string;
-  slug: string;
-  onLogoUploaded: (fileId: string) => void;
-  onLogoRemoved?: () => void;
-  onColorChanged?: (color: string) => void;
+interface AvatarUploadProps {
+  currentImageUrl?: string;
+  userName?: string;
+  onAvatarUploaded: () => void;
   disabled?: boolean;
 }
 
 // ============================================================================
-// Avatar color map (mirrors club-avatar.tsx)
+// Helpers
 // ============================================================================
 
-const AVATAR_COLORS: Record<string, string> = {
-  blue: 'bg-blue-500',
-  green: 'bg-green-500',
-  red: 'bg-red-500',
-  yellow: 'bg-yellow-500',
-  purple: 'bg-purple-500',
-  pink: 'bg-pink-500',
-  indigo: 'bg-indigo-500',
-  cyan: 'bg-cyan-500',
-  orange: 'bg-orange-500',
-  gray: 'bg-gray-500',
-  brown: 'bg-amber-800',
-};
+function getInitials(name?: string): string {
+  if (!name) return '?';
+  const words = name.split(' ').filter(Boolean);
+  if (words.length >= 2) {
+    return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+  }
+  return words[0]?.[0]?.toUpperCase() || '?';
+}
 
 // ============================================================================
 // Component
 // ============================================================================
 
 /**
- * Logo upload component with in-browser cropping.
+ * Avatar upload component with in-browser cropping.
  *
  * Flow: click avatar -> file picker -> crop dialog (round preview) -> upload via presigned URL
  */
-export function LogoUpload({
-  currentLogoUrl,
-  avatarInitials,
-  avatarColor = 'blue',
-  slug,
-  onLogoUploaded,
-  onLogoRemoved,
-  onColorChanged,
+export function AvatarUpload({
+  currentImageUrl,
+  userName,
+  onAvatarUploaded,
   disabled,
-}: LogoUploadProps) {
+}: AvatarUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showCropDialog, setShowCropDialog] = useState(false);
@@ -83,7 +69,7 @@ export function LogoUpload({
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | undefined>(currentLogoUrl);
+  const [previewUrl, setPreviewUrl] = useState<string | undefined>(currentImageUrl);
   const [imgError, setImgError] = useState(false);
 
   const {
@@ -91,82 +77,69 @@ export function LogoUpload({
     progress,
     upload,
     reset: resetUpload,
-  } = useFileUpload({
-    slug,
-    purpose: 'club-logo',
-    onSuccess: (fileId, fileUrl) => {
-      onLogoUploaded(fileId);
-      setPreviewUrl(fileUrl);
+  } = useAvatarUpload({
+    onSuccess: () => {
+      onAvatarUploaded();
+      // Force avatar reload by bumping preview URL
+      setPreviewUrl(currentImageUrl ? `${currentImageUrl}?v=${Date.now()}` : undefined);
       setImgError(false);
       closeCropDialog();
     },
-    onError: () => {
-      // Error is shown in dialog via upload state
-    },
   });
 
+  const removeAvatar = useRemoveAvatar();
+
   const isUploading = status === 'creating' || status === 'uploading' || status === 'confirming';
-  const [isRemoving, setIsRemoving] = useState(false);
 
   // --------------------------------------------------------------------------
-  // Remove logo
+  // Remove avatar
   // --------------------------------------------------------------------------
 
   const handleRemove = useCallback(async () => {
-    setIsRemoving(true);
     try {
-      const res = await apiFetch(`/api/clubs/${slug}/files/logo`, { method: 'DELETE' });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: 'Fehler beim Entfernen' }));
-        throw new Error(err.message);
-      }
+      await removeAvatar.mutateAsync();
       setPreviewUrl(undefined);
       setImgError(false);
-      onLogoRemoved?.();
+      onAvatarUploaded();
     } catch {
-      // Silently fail — logo will still be visible
-    } finally {
-      setIsRemoving(false);
+      // Error handled by useRemoveAvatar hook (toast)
     }
-  }, [slug, onLogoRemoved]);
+  }, [removeAvatar, onAvatarUploaded]);
 
   // --------------------------------------------------------------------------
   // File selection
   // --------------------------------------------------------------------------
 
-  const handleFileSelect = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      // Reset input so same file can be re-selected
-      e.target.value = '';
+    // Reset input so same file can be re-selected
+    e.target.value = '';
 
-      // Client-side validation
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        setValidationError('Nur PNG, JPG und WebP Dateien sind erlaubt.');
-        return;
-      }
-      if (file.size > MAX_FILE_SIZE) {
-        setValidationError('Die Datei darf maximal 5 MB groß sein.');
-        return;
-      }
+    // Client-side validation
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setValidationError('Nur PNG, JPG und WebP Dateien sind erlaubt.');
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setValidationError('Die Datei darf maximal 5 MB groß sein.');
+      return;
+    }
 
-      setValidationError(null);
+    setValidationError(null);
 
-      // Read file as data URL for crop preview
-      const reader = new FileReader();
-      reader.onload = () => {
-        setSelectedImage(reader.result as string);
-        setShowCropDialog(true);
-        setCrop({ x: 0, y: 0 });
-        setZoom(1);
-        setCroppedAreaPixels(null);
-      };
-      reader.readAsDataURL(file);
-    },
-    [setSelectedImage, setShowCropDialog]
-  );
+    // Read file as data URL for crop preview
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setShowCropDialog(true);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setCroppedAreaPixels(null);
+    };
+    reader.readAsDataURL(file);
+  }, []);
 
   // --------------------------------------------------------------------------
   // Crop complete callback
@@ -185,11 +158,10 @@ export function LogoUpload({
 
     try {
       const croppedBlob = await getCroppedImg(selectedImage, croppedAreaPixels);
-      // Create a new blob with correct type since canvas.toBlob may lose it
-      const pngBlob = new Blob([croppedBlob], { type: 'image/png' });
-      await upload(pngBlob, 'club-logo.png');
+      const jpegBlob = new Blob([croppedBlob], { type: 'image/jpeg' });
+      await upload(jpegBlob, 'avatar.jpg');
     } catch {
-      // Error handled by useFileUpload hook
+      // Error handled by useAvatarUpload hook
     }
   }, [selectedImage, croppedAreaPixels, upload]);
 
@@ -205,16 +177,16 @@ export function LogoUpload({
   }, [resetUpload]);
 
   // --------------------------------------------------------------------------
-  // Sync preview when the parent provides a new logo URL (e.g. after refetch)
+  // Sync preview when the parent provides a new URL
   // --------------------------------------------------------------------------
 
   useEffect(() => {
-    setPreviewUrl(currentLogoUrl);
+    setPreviewUrl(currentImageUrl);
     setImgError(false);
-  }, [currentLogoUrl]);
+  }, [currentImageUrl]);
 
-  const bgColor = AVATAR_COLORS[avatarColor] || AVATAR_COLORS.blue;
   const showImage = previewUrl && !imgError;
+  const initials = getInitials(userName);
 
   return (
     <>
@@ -225,66 +197,48 @@ export function LogoUpload({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled || isUploading}
-            className="group relative size-28 overflow-hidden rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label="Vereinslogo hochladen"
+            className="group relative size-24 overflow-hidden rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Profilbild hochladen"
           >
             {showImage ? (
               <img
                 src={previewUrl}
-                alt="Vereinslogo"
+                alt="Profilbild"
                 className="size-full rounded-full object-cover"
                 onError={() => setImgError(true)}
               />
             ) : (
-              <div
-                className={`flex size-full items-center justify-center rounded-full text-2xl font-medium text-white ${bgColor}`}
-              >
-                {avatarInitials ?? ''}
+              <div className="flex size-full items-center justify-center rounded-full bg-muted text-xl font-medium text-muted-foreground">
+                {initials}
               </div>
             )}
             {/* Camera overlay */}
             <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 transition-colors group-hover:bg-black/40">
-              <Camera className="size-6 text-white opacity-0 transition-opacity group-hover:opacity-100" />
+              <Camera className="size-5 text-white opacity-0 transition-opacity group-hover:opacity-100" />
             </div>
           </button>
 
-          {/* Remove button — shown when a logo is displayed */}
-          {showImage && onLogoRemoved && !disabled && !isUploading && (
+          {/* Remove button */}
+          {showImage && !disabled && !isUploading && (
             <button
               type="button"
               onClick={handleRemove}
-              disabled={isRemoving}
+              disabled={removeAvatar.isPending}
               className="absolute right-0 top-0 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm transition-opacity hover:opacity-80 disabled:opacity-50"
-              aria-label="Logo entfernen"
+              aria-label="Profilbild entfernen"
             >
-              {isRemoving ? <Loader2 className="size-3 animate-spin" /> : <X className="size-3" />}
+              {removeAvatar.isPending ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <X className="size-3" />
+              )}
             </button>
           )}
         </div>
 
         <span className="text-xs text-muted-foreground">
-          {showImage ? 'Logo ändern' : 'Logo hochladen'}
+          {showImage ? 'Profilbild ändern' : 'Profilbild hochladen'}
         </span>
-
-        {/* Color swatches — only when no logo is shown */}
-        {!showImage && onColorChanged && (
-          <div className="flex flex-wrap justify-center gap-1.5">
-            {Object.entries(AVATAR_COLORS).map(([name, bgClass]) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => onColorChanged(name)}
-                disabled={disabled}
-                className={`size-6 rounded-full transition-all ${bgClass} ${
-                  avatarColor === name
-                    ? 'ring-2 ring-primary ring-offset-2'
-                    : 'hover:ring-2 hover:ring-muted-foreground/30 hover:ring-offset-1'
-                } disabled:cursor-not-allowed disabled:opacity-50`}
-                aria-label={`Farbe ${name}`}
-              />
-            ))}
-          </div>
-        )}
 
         {/* Validation error */}
         {validationError && <p className="text-xs text-destructive">{validationError}</p>}
@@ -307,7 +261,7 @@ export function LogoUpload({
       >
         <DialogContent className="sm:max-w-md" showCloseButton={!isUploading}>
           <DialogHeader>
-            <DialogTitle>Logo zuschneiden</DialogTitle>
+            <DialogTitle>Profilbild zuschneiden</DialogTitle>
             <DialogDescription>
               Verschieben und zoomen Sie das Bild, um den gewünschten Ausschnitt zu wählen.
             </DialogDescription>
