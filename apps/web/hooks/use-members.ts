@@ -81,6 +81,7 @@ interface ChangeStatusInput {
   newStatus: string;
   reason: string;
   effectiveDate?: string;
+  leftCategory?: string;
 }
 
 interface BulkChangeStatusInput {
@@ -226,7 +227,13 @@ export function useChangeStatus(slug: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, newStatus, reason, effectiveDate }: ChangeStatusInput) => {
+    mutationFn: async ({
+      id,
+      newStatus,
+      reason,
+      effectiveDate,
+      leftCategory,
+    }: ChangeStatusInput) => {
       const res = await apiFetch(`/api/clubs/${slug}/members/${id}/change-status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -234,6 +241,7 @@ export function useChangeStatus(slug: string) {
           newStatus,
           reason,
           ...(effectiveDate && { effectiveDate }),
+          ...(leftCategory && { leftCategory }),
         }),
       });
       if (!res.ok) {

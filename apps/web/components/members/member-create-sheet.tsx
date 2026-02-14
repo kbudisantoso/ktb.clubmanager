@@ -45,8 +45,10 @@ const SALUTATION_OPTIONS = [
 /** German labels for member status */
 const STATUS_OPTIONS = [
   { value: 'PENDING', label: 'Ausstehend' },
+  { value: 'PROBATION', label: 'Probezeit' },
   { value: 'ACTIVE', label: 'Aktiv' },
-  { value: 'INACTIVE', label: 'Inaktiv' },
+  { value: 'DORMANT', label: 'Ruhend' },
+  { value: 'SUSPENDED', label: 'Gesperrt' },
   { value: 'LEFT', label: 'Ausgetreten' },
 ] as const;
 

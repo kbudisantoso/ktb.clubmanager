@@ -9,7 +9,9 @@ import type { MemberFilters, SetMemberFilters, MemberStatus } from '@/hooks/use-
 /** German labels for member status values */
 const STATUS_LABELS: Record<MemberStatus, string> = {
   ACTIVE: 'Aktiv',
-  INACTIVE: 'Inaktiv',
+  PROBATION: 'Probezeit',
+  DORMANT: 'Ruhend',
+  SUSPENDED: 'Gesperrt',
   PENDING: 'Ausstehend',
   LEFT: 'Ausgetreten',
 };

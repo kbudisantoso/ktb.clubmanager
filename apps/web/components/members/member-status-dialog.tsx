@@ -29,7 +29,9 @@ import type { MemberDetail } from '@/hooks/use-member-detail';
 /** German labels for each member status */
 const STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Aktiv',
-  INACTIVE: 'Inaktiv',
+  PROBATION: 'Probezeit',
+  DORMANT: 'Ruhend',
+  SUSPENDED: 'Gesperrt',
   PENDING: 'Ausstehend',
   LEFT: 'Ausgetreten',
 };
@@ -37,10 +39,20 @@ const STATUS_LABELS: Record<string, string> = {
 /** German descriptions for each transition */
 const TRANSITION_DESCRIPTIONS: Record<string, string> = {
   ACTIVE: 'Mitglied wird als aktives Mitglied geführt.',
-  INACTIVE: 'Mitglied wird vorübergehend inaktiv gesetzt.',
+  PROBATION: 'Mitglied befindet sich in der Probezeit.',
+  DORMANT: 'Mitgliedschaft ruht vorübergehend.',
+  SUSPENDED: 'Mitglied wird wegen Verstoß gesperrt.',
   LEFT: 'Mitglied tritt aus dem Verein aus. Dies ist endgültig.',
   PENDING: 'Mitglied wird zurück auf ausstehend gesetzt.',
 };
+
+/** German labels for left categories */
+const LEFT_CATEGORY_OPTIONS = [
+  { value: 'VOLUNTARY', label: 'Freiwilliger Austritt' },
+  { value: 'EXCLUSION', label: 'Ausschluss' },
+  { value: 'DEATH', label: 'Tod' },
+  { value: 'OTHER', label: 'Sonstiges' },
+] as const;
 
 // ============================================================================
 // Types
@@ -73,6 +85,7 @@ export function MemberStatusDialog({ member, open, onOpenChange }: MemberStatusD
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [effectiveDate, setEffectiveDate] = useState<string | undefined>(undefined);
+  const [leftCategory, setLeftCategory] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Compute valid transitions from current status
@@ -86,7 +99,11 @@ export function MemberStatusDialog({ member, open, onOpenChange }: MemberStatusD
     [member.membershipPeriods]
   );
 
-  const isValid = selectedStatus && reason.trim().length >= 1 && reason.trim().length <= 500;
+  const isValid =
+    selectedStatus &&
+    reason.trim().length >= 1 &&
+    reason.trim().length <= 500 &&
+    (selectedStatus !== 'LEFT' || leftCategory !== null);
 
   const handleSubmit = async () => {
     if (!selectedStatus || !reason.trim()) return;
@@ -99,6 +116,7 @@ export function MemberStatusDialog({ member, open, onOpenChange }: MemberStatusD
         newStatus: selectedStatus,
         reason: reason.trim(),
         effectiveDate,
+        ...(selectedStatus === 'LEFT' && leftCategory ? { leftCategory } : {}),
       });
 
       toast({ title: 'Status geändert' });
@@ -112,6 +130,7 @@ export function MemberStatusDialog({ member, open, onOpenChange }: MemberStatusD
     setSelectedStatus(null);
     setReason('');
     setEffectiveDate(undefined);
+    setLeftCategory(null);
     setError(null);
     onOpenChange(false);
   };
@@ -175,6 +194,32 @@ export function MemberStatusDialog({ member, open, onOpenChange }: MemberStatusD
                   <p className="text-sm text-amber-600 dark:text-amber-400">
                     Die aktive Mitgliedschaft wird automatisch beendet.
                   </p>
+                </div>
+              )}
+
+              {/* Left category selector - only when transitioning to LEFT */}
+              {selectedStatus === 'LEFT' && (
+                <div className="space-y-2">
+                  <Label>
+                    Austrittsgrund <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup
+                    value={leftCategory ?? ''}
+                    onValueChange={setLeftCategory}
+                    className="space-y-1.5"
+                  >
+                    {LEFT_CATEGORY_OPTIONS.map((option) => (
+                      <div key={option.value} className="flex items-center gap-2">
+                        <RadioGroupItem value={option.value} id={`left-category-${option.value}`} />
+                        <label
+                          htmlFor={`left-category-${option.value}`}
+                          className="text-sm cursor-pointer"
+                        >
+                          {option.label}
+                        </label>
+                      </div>
+                    ))}
+                  </RadioGroup>
                 </div>
               )}
 

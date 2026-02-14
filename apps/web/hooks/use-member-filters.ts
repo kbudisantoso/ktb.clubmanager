@@ -4,7 +4,14 @@ import { useQueryStates, parseAsString, parseAsArrayOf, parseAsStringLiteral } f
  * Member status values matching the shared MemberStatus type.
  * Defined as a const array for nuqs parseAsStringLiteral.
  */
-export const MEMBER_STATUSES = ['ACTIVE', 'INACTIVE', 'PENDING', 'LEFT'] as const;
+export const MEMBER_STATUSES = [
+  'ACTIVE',
+  'PROBATION',
+  'DORMANT',
+  'SUSPENDED',
+  'PENDING',
+  'LEFT',
+] as const;
 export type MemberStatus = (typeof MEMBER_STATUSES)[number];
 
 /**
