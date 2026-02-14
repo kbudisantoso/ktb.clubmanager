@@ -303,7 +303,7 @@ export function NumberRangesSettingsClient() {
                     <TableHead className="text-center">Länge</TableHead>
                     <TableHead className="text-center">Jährlich zurücksetzen</TableHead>
                     <TableHead className="text-right">Aktueller Wert</TableHead>
-                    <TableHead>Naechste Nummer</TableHead>
+                    <TableHead>Nächste Nummer</TableHead>
                     <TableHead className="w-25"></TableHead>
                   </TableRow>
                 </TableHeader>

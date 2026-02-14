@@ -14,7 +14,7 @@ interface VisibilitySectionProps {
 const VISIBILITY_OPTIONS = [
   {
     value: 'PUBLIC',
-    label: 'Oeffentlich',
+    label: 'Öffentlich',
     description: 'Sichtbar in der Vereinssuche',
   },
   {

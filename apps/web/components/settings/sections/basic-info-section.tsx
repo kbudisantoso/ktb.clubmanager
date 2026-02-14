@@ -13,7 +13,7 @@ interface BasicInfoSectionProps {
 }
 
 /**
- * Stammdaten section: Name, Vereinskuerzel, Gruendungsdatum, Beschreibung.
+ * Stammdaten section: Name, Vereinskürzel, Gründungsdatum, Beschreibung.
  */
 export function BasicInfoSection({ form, disabled }: BasicInfoSectionProps) {
   const {
@@ -25,7 +25,7 @@ export function BasicInfoSection({ form, disabled }: BasicInfoSectionProps) {
     <Card>
       <CardHeader>
         <CardTitle>Stammdaten</CardTitle>
-        <CardDescription>Grundinformationen ueber den Verein</CardDescription>
+        <CardDescription>Grundinformationen über den Verein</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Name (full width, required) */}
@@ -45,10 +45,10 @@ export function BasicInfoSection({ form, disabled }: BasicInfoSectionProps) {
           )}
         </div>
 
-        {/* Vereinskuerzel + Gruendungsdatum (2-col) */}
+        {/* Vereinskürzel + Gründungsdatum (2-col) */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="settings-shortCode">Vereinskuerzel</Label>
+            <Label htmlFor="settings-shortCode">Vereinskürzel</Label>
             <Input
               id="settings-shortCode"
               placeholder="MSV"
@@ -58,7 +58,7 @@ export function BasicInfoSection({ form, disabled }: BasicInfoSectionProps) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="settings-foundedAt">Gruendungsdatum</Label>
+            <Label htmlFor="settings-foundedAt">Gründungsdatum</Label>
             <Input
               id="settings-foundedAt"
               type="date"

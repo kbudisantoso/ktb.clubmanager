@@ -13,7 +13,7 @@ interface TaxSectionProps {
 }
 
 /**
- * Steuerdaten section: Steuernummer, USt-IdNr, Finanzamt, Gemeinnuetzigkeit toggle.
+ * Steuerdaten section: Steuernummer, USt-IdNr, Finanzamt, Gemeinnützigkeit toggle.
  */
 export function TaxSection({ form, disabled }: TaxSectionProps) {
   const { register, control } = form;
@@ -49,7 +49,7 @@ export function TaxSection({ form, disabled }: TaxSectionProps) {
 
         {/* Finanzamt (full width) */}
         <div className="space-y-1.5">
-          <Label htmlFor="settings-taxOffice">Zustaendiges Finanzamt</Label>
+          <Label htmlFor="settings-taxOffice">Zuständiges Finanzamt</Label>
           <Input
             id="settings-taxOffice"
             placeholder="Finanzamt Musterstadt"
@@ -58,7 +58,7 @@ export function TaxSection({ form, disabled }: TaxSectionProps) {
           />
         </div>
 
-        {/* Gemeinnuetzigkeit Switch */}
+        {/* Gemeinnützigkeit Switch */}
         <Controller
           name="isNonProfit"
           control={control}
@@ -70,7 +70,7 @@ export function TaxSection({ form, disabled }: TaxSectionProps) {
                 onCheckedChange={field.onChange}
                 disabled={disabled}
               />
-              <Label htmlFor="settings-isNonProfit">Gemeinnuetzigkeit anerkannt</Label>
+              <Label htmlFor="settings-isNonProfit">Gemeinnützigkeit anerkannt</Label>
             </div>
           )}
         />

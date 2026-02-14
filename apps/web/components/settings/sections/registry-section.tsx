@@ -20,8 +20,8 @@ const CLUB_PURPOSE_OPTIONS = [
 
 const CLUB_SPECIAL_FORM_OPTIONS = [
   { value: 'KEINE', label: 'Keine' },
-  { value: 'TRAEGERVEREIN', label: 'Traegerverein' },
-  { value: 'FOERDERVEREIN', label: 'Foerderverein' },
+  { value: 'TRAEGERVEREIN', label: 'Trägerverein' },
+  { value: 'FOERDERVEREIN', label: 'Förderverein' },
   { value: 'DACHVERBAND', label: 'Dachverband / Verband' },
 ] as const;
 

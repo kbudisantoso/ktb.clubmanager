@@ -158,7 +158,7 @@ export function LogoUpload({
         return;
       }
       if (file.size > MAX_FILE_SIZE) {
-        setValidationError('Die Datei darf maximal 5 MB gross sein.');
+        setValidationError('Die Datei darf maximal 5 MB groß sein.');
         return;
       }
 
@@ -257,7 +257,7 @@ export function LogoUpload({
           </div>
         </button>
 
-        <span className="text-xs text-muted-foreground">Logo aendern</span>
+        <span className="text-xs text-muted-foreground">Logo ändern</span>
 
         {/* Validation error */}
         {validationError && <p className="text-xs text-destructive">{validationError}</p>}
@@ -282,7 +282,7 @@ export function LogoUpload({
           <DialogHeader>
             <DialogTitle>Logo zuschneiden</DialogTitle>
             <DialogDescription>
-              Verschieben und zoomen Sie das Bild, um den gewuenschten Ausschnitt zu waehlen.
+              Verschieben und zoomen Sie das Bild, um den gewünschten Ausschnitt zu wählen.
             </DialogDescription>
           </DialogHeader>
 
@@ -330,7 +330,7 @@ export function LogoUpload({
               <p className="text-center text-xs text-muted-foreground">
                 {status === 'creating' && 'Wird vorbereitet...'}
                 {status === 'uploading' && 'Wird hochgeladen...'}
-                {status === 'confirming' && 'Wird bestaetigt...'}
+                {status === 'confirming' && 'Wird bestätigt...'}
               </p>
             </div>
           )}

@@ -12,7 +12,7 @@ interface AddressContactSectionProps {
 }
 
 /**
- * Adresse & Kontakt section: Strasse, PLZ, Ort, Telefon, E-Mail, Website.
+ * Adresse & Kontakt section: Straße, PLZ, Ort, Telefon, E-Mail, Website.
  */
 export function AddressContactSection({ form, disabled }: AddressContactSectionProps) {
   const {
@@ -27,13 +27,13 @@ export function AddressContactSection({ form, disabled }: AddressContactSectionP
         <CardDescription>Anschrift und Kontaktdaten des Vereins</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Strasse + Hausnummer */}
+        {/* Straße + Hausnummer */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="settings-street">Strasse</Label>
+            <Label htmlFor="settings-street">Straße</Label>
             <Input
               id="settings-street"
-              placeholder="Musterstrasse"
+              placeholder="Musterstraße"
               disabled={disabled}
               {...register('street')}
             />

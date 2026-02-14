@@ -21,7 +21,7 @@ interface OperationalSectionProps {
 const MONTH_OPTIONS = [
   { value: '1', label: 'Januar' },
   { value: '2', label: 'Februar' },
-  { value: '3', label: 'Maerz' },
+  { value: '3', label: 'März' },
   { value: '4', label: 'April' },
   { value: '5', label: 'Mai' },
   { value: '6', label: 'Juni' },
@@ -37,12 +37,12 @@ const MEMBERSHIP_TYPE_OPTIONS = [
   { value: 'ORDENTLICH', label: 'Ordentliches Mitglied' },
   { value: 'PASSIV', label: 'Passives Mitglied' },
   { value: 'EHREN', label: 'Ehrenmitglied' },
-  { value: 'FOERDER', label: 'Foerdermitglied' },
+  { value: 'FOERDER', label: 'Fördermitglied' },
   { value: 'JUGEND', label: 'Jugendmitglied' },
 ] as const;
 
 /**
- * Betriebseinstellungen section: Geschaeftsjahrbeginn, Standard-Mitgliedschaftstyp, Probezeitraum.
+ * Betriebseinstellungen section: Geschäftsjahrbeginn, Standard-Mitgliedschaftstyp, Probezeitraum.
  */
 export function OperationalSection({ form, disabled }: OperationalSectionProps) {
   const {
@@ -58,9 +58,9 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
         <CardDescription>Standardwerte und Konfiguration</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Geschaeftsjahrbeginn */}
+        {/* Geschäftsjahrbeginn */}
         <div className="space-y-1.5">
-          <Label htmlFor="settings-fiscalYearStartMonth">Geschaeftsjahrbeginn</Label>
+          <Label htmlFor="settings-fiscalYearStartMonth">Geschäftsjahrbeginn</Label>
           <Controller
             name="fiscalYearStartMonth"
             control={control}
@@ -71,7 +71,7 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
                 disabled={disabled}
               >
                 <SelectTrigger id="settings-fiscalYearStartMonth" className="w-full">
-                  <SelectValue placeholder="Monat waehlen" />
+                  <SelectValue placeholder="Monat wählen" />
                 </SelectTrigger>
                 <SelectContent>
                   {MONTH_OPTIONS.map((month) => (
@@ -98,7 +98,7 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
                 disabled={disabled}
               >
                 <SelectTrigger id="settings-defaultMembershipType" className="w-full">
-                  <SelectValue placeholder="Typ waehlen" />
+                  <SelectValue placeholder="Typ wählen" />
                 </SelectTrigger>
                 <SelectContent>
                   {MEMBERSHIP_TYPE_OPTIONS.map((type) => (

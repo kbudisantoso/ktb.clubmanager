@@ -27,7 +27,7 @@ export function BankSection({ form, disabled }: BankSectionProps) {
     <Card>
       <CardHeader>
         <CardTitle>Bankverbindung</CardTitle>
-        <CardDescription>Bankkonto fuer den Zahlungsverkehr</CardDescription>
+        <CardDescription>Bankkonto für den Zahlungsverkehr</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* IBAN + BIC (2-col) */}
