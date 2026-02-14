@@ -12,6 +12,7 @@ export interface SessionUser {
   email: string;
   name: string | null;
   image: string | null;
+  sessionId: string;
 }
 
 /**
@@ -71,6 +72,7 @@ export class SessionAuthGuard implements CanActivate {
       email: session.user.email,
       name: session.user.name,
       image: session.user.image,
+      sessionId: session.id,
     };
 
     (request as Request & { user: SessionUser }).user = user;

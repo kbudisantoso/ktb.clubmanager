@@ -763,6 +763,9 @@ model User {
   /// Whether this is the system user (for automated actions like scheduler)
   isSystemUser Boolean @default(false)
 
+  /// Locale preference for future i18n support
+  locale String? @default("de")
+
   /// Terms & Conditions acceptance timestamp
   termsAcceptedAt DateTime?
 

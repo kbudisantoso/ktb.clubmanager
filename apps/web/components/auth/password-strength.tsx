@@ -9,13 +9,7 @@ interface PasswordStrengthProps {
 }
 
 const strengthLabels = ['Sehr schwach', 'Schwach', 'Mäßig', 'Stark', 'Sehr stark'];
-const strengthColors = [
-  'hsl(var(--destructive))',
-  '#f97316',
-  '#eab308',
-  '#84cc16',
-  'hsl(var(--success))',
-];
+const strengthColors = ['var(--destructive)', '#f97316', '#eab308', '#84cc16', 'var(--success)'];
 
 export function PasswordStrength({ password, userInputs = [] }: PasswordStrengthProps) {
   const [result, setResult] = useState({

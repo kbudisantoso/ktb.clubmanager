@@ -1,9 +1,9 @@
 'use client';
 
 import { useSessionQuery } from '@/hooks/use-session';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ProfileForm } from '@/components/settings/profile-form';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function ProfilePage() {
   const { data: session, isLoading } = useSessionQuery();
@@ -12,18 +12,6 @@ export default function ProfilePage() {
     return <ProfileSkeleton />;
   }
 
-  const user = session.user;
-  // Use first letter of first word + first letter of last word
-  const initials = user.name
-    ? (() => {
-        const words = user.name.split(' ').filter(Boolean);
-        if (words.length >= 2) {
-          return (words[0][0] + words[words.length - 1][0]).toUpperCase();
-        }
-        return words[0]?.[0]?.toUpperCase() || null;
-      })()
-    : user.email?.charAt(0).toUpperCase();
-
   return (
     <div className="space-y-6">
       <Card>
@@ -31,17 +19,8 @@ export default function ProfilePage() {
           <CardTitle>Profil</CardTitle>
           <CardDescription>Deine persönlichen Informationen</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={user.image || undefined} />
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
-            <div>
-              <div className="font-medium text-lg">{user.name || 'Kein Name'}</div>
-              <div className="text-muted-foreground">{user.email}</div>
-            </div>
-          </div>
+        <CardContent>
+          <ProfileForm />
         </CardContent>
       </Card>
     </div>
@@ -54,15 +33,22 @@ function ProfileSkeleton() {
       <Card>
         <CardHeader>
           <Skeleton className="h-6 w-16" />
-          <Skeleton className="h-4 w-48 mt-1" />
+          <Skeleton className="mt-1 h-4 w-48" />
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-16 w-16 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-4 w-48" />
-            </div>
+          {/* Avatar skeleton */}
+          <div className="flex justify-center">
+            <Skeleton className="size-24 rounded-full" />
+          </div>
+          {/* Name input skeleton */}
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-9 w-full" />
+          </div>
+          {/* Email input skeleton */}
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-9 w-full" />
           </div>
         </CardContent>
       </Card>
