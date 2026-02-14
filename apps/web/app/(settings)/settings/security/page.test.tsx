@@ -25,6 +25,21 @@ vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
+// Mock session hook (used by PasswordCard for userInputs context)
+vi.mock('@/hooks/use-session', () => ({
+  useSessionQuery: () => ({
+    data: { user: { email: 'test@test.de', name: 'Test User' } },
+    isLoading: false,
+  }),
+  useClearSession: () => vi.fn(),
+}));
+
+// Mock password validation (used by PasswordCard on submit)
+vi.mock('@/lib/password-validation', () => ({
+  validatePassword: vi.fn().mockResolvedValue({ valid: true, errors: [], strength: 4 }),
+  checkPasswordStrength: vi.fn().mockReturnValue({ score: 3, suggestions: [] }),
+}));
+
 // Session hook mocks
 let mockSessions: SessionInfo[] = [];
 let mockSessionsLoading = false;
@@ -318,8 +333,8 @@ describe('SecurityClient', () => {
 
       await user.click(screen.getByRole('button', { name: /konto loeschen/i }));
 
-      // Dialog should show confirmation input
-      expect(screen.getByPlaceholderText('LOESCHEN')).toBeInTheDocument();
+      // Dialog should show confirmation input with user email as placeholder
+      expect(screen.getByPlaceholderText('test@test.de')).toBeInTheDocument();
     });
   });
 });

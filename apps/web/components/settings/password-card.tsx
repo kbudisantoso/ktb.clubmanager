@@ -8,6 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useConnectedAccounts, useChangePassword } from '@/hooks/use-security';
+import { useSessionQuery } from '@/hooks/use-session';
+import { PasswordStrength } from '@/components/auth/password-strength';
+import { validatePassword } from '@/lib/password-validation';
 
 // ============================================================================
 // Main component
@@ -15,17 +18,21 @@ import { useConnectedAccounts, useChangePassword } from '@/hooks/use-security';
 
 export function PasswordCard() {
   const { data: accounts, isLoading: accountsLoading } = useConnectedAccounts();
+  const { data: session } = useSessionQuery();
   const changePassword = useChangePassword();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [revokeOtherSessions, setRevokeOtherSessions] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const hasCredential = accounts?.some((a) => a.providerId === 'credential') ?? false;
 
+  // Context words for zxcvbn to penalize (same pattern as register form)
+  const userInputs = [session?.user?.email, session?.user?.name].filter(Boolean) as string[];
+
   // Validation
-  const newPasswordTooShort = newPassword.length > 0 && newPassword.length < 8;
   const passwordsMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
   const canSubmit =
     currentPassword.length > 0 &&
@@ -37,6 +44,15 @@ export function PasswordCard() {
     e.preventDefault();
     if (!canSubmit) return;
 
+    setValidationError(null);
+
+    // Validate password strength (async, includes HaveIBeenPwned check)
+    const validation = await validatePassword(newPassword, userInputs);
+    if (!validation.valid) {
+      setValidationError(validation.errors[0]);
+      return;
+    }
+
     await changePassword.mutateAsync(
       { currentPassword, newPassword, revokeOtherSessions },
       {
@@ -45,6 +61,7 @@ export function PasswordCard() {
           setNewPassword('');
           setConfirmPassword('');
           setRevokeOtherSessions(false);
+          setValidationError(null);
         },
       }
     );
@@ -87,12 +104,13 @@ export function PasswordCard() {
                 id="new-password"
                 type="password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  setValidationError(null);
+                }}
                 autoComplete="new-password"
               />
-              {newPasswordTooShort && (
-                <p className="text-xs text-destructive">Mindestens 8 Zeichen erforderlich</p>
-              )}
+              <PasswordStrength password={newPassword} userInputs={userInputs} />
             </div>
 
             <div className="space-y-2">
@@ -108,6 +126,8 @@ export function PasswordCard() {
                 <p className="text-xs text-destructive">Passwoerter stimmen nicht ueberein</p>
               )}
             </div>
+
+            {validationError && <p className="text-sm text-destructive">{validationError}</p>}
 
             <div className="flex items-center gap-2">
               <Checkbox
