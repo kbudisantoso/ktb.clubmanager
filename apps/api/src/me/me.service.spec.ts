@@ -325,10 +325,10 @@ describe('MeService', () => {
       const result = await service.getSessions('user-1', 'session-current');
 
       expect(result).toHaveLength(2);
-      expect(result[0].isCurrent).toBe(true);
-      expect(result[1].isCurrent).toBe(false);
-      expect(result[0].createdAt).toEqual(expect.any(String));
-      expect(result[0].expiresAt).toEqual(expect.any(String));
+      expect(result[0]!.isCurrent).toBe(true);
+      expect(result[1]!.isCurrent).toBe(false);
+      expect(result[0]!.createdAt).toEqual(expect.any(String));
+      expect(result[0]!.expiresAt).toEqual(expect.any(String));
     });
 
     it('should only return non-expired sessions (query filter)', async () => {
