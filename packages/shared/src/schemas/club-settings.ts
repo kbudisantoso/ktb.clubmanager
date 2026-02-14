@@ -35,8 +35,9 @@ export type ClubVisibility = z.infer<typeof ClubVisibilitySchema>;
 export const UpdateClubSettingsSchema = z.object({
   // Stammdaten
   name: z.string().min(2).max(100).optional(),
-  shortCode: z.string().max(10).optional().nullable(),
-  foundedAt: z.string().date().optional().nullable(),
+  legalName: z.string().max(255).optional().nullable(),
+  shortCode: z.string().min(2).max(4).or(z.literal('')).optional().nullable(),
+  foundedAt: z.string().date().or(z.literal('')).optional().nullable(),
   description: z.string().max(2000).optional().nullable(),
 
   // Adresse & Kontakt
@@ -45,8 +46,8 @@ export const UpdateClubSettingsSchema = z.object({
   postalCode: z.string().max(10).optional().nullable(),
   city: z.string().max(100).optional().nullable(),
   phone: z.string().max(30).optional().nullable(),
-  email: z.string().email().max(255).optional().nullable(),
-  website: z.string().url().max(500).optional().nullable(),
+  email: z.string().email().max(255).or(z.literal('')).optional().nullable(),
+  website: z.string().url().max(500).or(z.literal('')).optional().nullable(),
 
   // Vereinsregister
   isRegistered: z.boolean().optional(),
@@ -70,7 +71,10 @@ export const UpdateClubSettingsSchema = z.object({
   // Betriebseinstellungen
   fiscalYearStartMonth: z.number().int().min(1).max(12).optional().nullable(),
   defaultMembershipType: MembershipTypeSchema.optional().nullable(),
-  probationPeriodDays: z.number().int().min(0).max(365).optional().nullable(),
+  probationPeriodDays: z
+    .union([z.nan().transform(() => null), z.number().int().min(0).max(365)])
+    .optional()
+    .nullable(),
 
   // Sichtbarkeit
   visibility: ClubVisibilitySchema.optional(),

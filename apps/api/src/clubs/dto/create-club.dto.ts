@@ -114,13 +114,15 @@ export class CreateClubDto {
   // --- Stammdaten (Basic Data) ---
 
   @ApiPropertyOptional({
-    description: 'Club abbreviation / short code',
+    description: 'Club abbreviation / short code (2–4 characters, used for avatar)',
     example: 'TSV',
-    maxLength: 10,
+    minLength: 2,
+    maxLength: 4,
   })
   @IsString()
   @IsOptional()
-  @MaxLength(10)
+  @MinLength(2)
+  @MaxLength(4)
   shortCode?: string;
 
   @ApiPropertyOptional({

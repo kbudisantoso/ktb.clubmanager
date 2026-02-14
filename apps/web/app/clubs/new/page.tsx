@@ -23,6 +23,8 @@ export default function NewClubPage() {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [slugEdited, setSlugEdited] = useState(false);
+  const [shortCode, setShortCode] = useState('');
+  const [shortCodeEdited, setShortCodeEdited] = useState(false);
   const [description, setDescription] = useState('');
   const [visibility, setVisibility] = useState<'PRIVATE' | 'PUBLIC'>('PRIVATE');
 
@@ -35,7 +37,7 @@ export default function NewClubPage() {
   // Create club mutation
   const createClub = useCreateClubMutation();
 
-  // Auto-generate slug from name
+  // Auto-generate slug and shortCode from name
   function handleNameChange(newName: string) {
     setName(newName);
 
@@ -52,6 +54,27 @@ export default function NewClubPage() {
         .slice(0, 50);
       setSlug(generated);
     }
+
+    if (!shortCodeEdited && newName.trim().length >= 2) {
+      setShortCode(generateInitials(newName));
+    }
+  }
+
+  function handleShortCodeChange(value: string) {
+    setShortCodeEdited(true);
+    setShortCode(value.toUpperCase());
+  }
+
+  function generateInitials(n: string): string {
+    const words = n.split(/\s+/).filter(Boolean);
+    if (words.length >= 2) {
+      return words
+        .slice(0, 3)
+        .map((w) => w[0])
+        .join('')
+        .toUpperCase();
+    }
+    return n.slice(0, 2).toUpperCase();
   }
 
   function handleSlugChange(newSlug: string) {
@@ -66,6 +89,7 @@ export default function NewClubPage() {
       const club = await createClub.mutateAsync({
         name,
         slug: slug || undefined, // Let server generate if empty
+        shortCode: shortCode || undefined,
         description: description || undefined,
         visibility,
       });
@@ -154,6 +178,19 @@ export default function NewClubPage() {
                   {!isSlugPending && slugAvailable === false && 'Bereits vergeben'}
                 </p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="shortCode">Vereinskürzel</Label>
+              <Input
+                id="shortCode"
+                value={shortCode}
+                onChange={(e) => handleShortCodeChange(e.target.value)}
+                placeholder={name.trim().length >= 2 ? generateInitials(name) : 'z.B. TSV'}
+                minLength={2}
+                maxLength={4}
+              />
+              <p className="text-xs text-muted-foreground">2–4 Zeichen, wird im Avatar angezeigt</p>
             </div>
 
             <div className="space-y-2">

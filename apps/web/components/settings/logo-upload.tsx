@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import { Camera, Loader2 } from 'lucide-react';
@@ -129,8 +129,10 @@ export function LogoUpload({
   } = useFileUpload({
     slug,
     purpose: 'club-logo',
-    onSuccess: (fileId) => {
+    onSuccess: (fileId, fileUrl) => {
       onLogoUploaded(fileId);
+      setPreviewUrl(fileUrl);
+      setImgError(false);
       closeCropDialog();
     },
     onError: () => {
@@ -215,13 +217,13 @@ export function LogoUpload({
   }, [resetUpload]);
 
   // --------------------------------------------------------------------------
-  // Update preview when currentLogoUrl changes
+  // Sync preview when the parent provides a new logo URL (e.g. after refetch)
   // --------------------------------------------------------------------------
 
-  // Sync external logo URL
-  if (currentLogoUrl !== previewUrl && !imgError) {
+  useEffect(() => {
     setPreviewUrl(currentLogoUrl);
-  }
+    setImgError(false);
+  }, [currentLogoUrl]);
 
   const bgColor = AVATAR_COLORS[avatarColor] || AVATAR_COLORS.blue;
   const showImage = previewUrl && !imgError;
@@ -234,7 +236,7 @@ export function LogoUpload({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || isUploading}
-          className="group relative size-20 overflow-hidden rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="group relative size-28 overflow-hidden rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Vereinslogo hochladen"
         >
           {showImage ? (
@@ -246,7 +248,7 @@ export function LogoUpload({
             />
           ) : (
             <div
-              className={`flex size-full items-center justify-center rounded-full text-lg font-medium text-white ${bgColor}`}
+              className={`flex size-full items-center justify-center rounded-full text-2xl font-medium text-white ${bgColor}`}
             >
               {avatarInitials ?? ''}
             </div>

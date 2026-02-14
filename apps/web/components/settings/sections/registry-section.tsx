@@ -40,7 +40,7 @@ export function RegistrySection({ form, disabled }: RegistrySectionProps) {
   const isRegistered = watch('isRegistered');
 
   return (
-    <Card>
+    <Card id="section-registry">
       <CardHeader>
         <CardTitle>Vereinsregister</CardTitle>
         <CardDescription>Registerdaten und Rechtsform</CardDescription>

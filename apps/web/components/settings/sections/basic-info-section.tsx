@@ -9,20 +9,21 @@ import type { SettingsFormValues } from '../club-settings-form';
 
 interface BasicInfoSectionProps {
   form: UseFormReturn<SettingsFormValues>;
+  slug: string;
   disabled?: boolean;
 }
 
 /**
- * Stammdaten section: Name, Vereinskürzel, Gründungsdatum, Beschreibung.
+ * Stammdaten section: Name, offizieller Name, Vereinskürzel, URL-Pfad, Gründungsdatum, Beschreibung.
  */
-export function BasicInfoSection({ form, disabled }: BasicInfoSectionProps) {
+export function BasicInfoSection({ form, slug, disabled }: BasicInfoSectionProps) {
   const {
     register,
     formState: { errors },
   } = form;
 
   return (
-    <Card>
+    <Card id="section-basic-info">
       <CardHeader>
         <CardTitle>Stammdaten</CardTitle>
         <CardDescription>Grundinformationen über den Verein</CardDescription>
@@ -45,17 +46,41 @@ export function BasicInfoSection({ form, disabled }: BasicInfoSectionProps) {
           )}
         </div>
 
-        {/* Vereinskürzel + Gründungsdatum (2-col) */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* Offizieller Name (full width) */}
+        <div className="space-y-1.5">
+          <Label htmlFor="settings-legalName">Offizieller Name</Label>
+          <Input
+            id="settings-legalName"
+            placeholder="z.B. Sportverein Musterstadt 1920 e.V."
+            maxLength={255}
+            disabled={disabled}
+            {...register('legalName')}
+          />
+          <p className="text-xs text-muted-foreground">
+            Vollständiger Name laut Vereinsregister (falls abweichend)
+          </p>
+        </div>
+
+        {/* Vereinskürzel + URL-Pfad + Gründungsdatum (3-col) */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="settings-shortCode">Vereinskürzel</Label>
             <Input
               id="settings-shortCode"
               placeholder="MSV"
-              maxLength={10}
+              minLength={2}
+              maxLength={4}
               disabled={disabled}
               {...register('shortCode')}
             />
+            <p className="text-xs text-muted-foreground">2–4 Zeichen, wird im Avatar angezeigt</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label>URL-Pfad</Label>
+            <div className="flex h-9 items-center gap-1 rounded-md border bg-muted px-3 text-sm text-muted-foreground">
+              <span>/clubs/</span>
+              <span className="font-mono">{slug}</span>
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="settings-foundedAt">Gründungsdatum</Label>

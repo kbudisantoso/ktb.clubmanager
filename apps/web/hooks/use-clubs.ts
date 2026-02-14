@@ -25,6 +25,7 @@ interface ClubApiResponse {
   name: string;
   slug: string;
   roles: string[];
+  shortCode?: string;
   avatarUrl?: string;
   avatarInitials?: string;
   avatarColor?: string;
@@ -57,6 +58,7 @@ async function fetchMyClubs(): Promise<MyClubsResult> {
       name: club.name,
       slug: club.slug,
       roles: club.roles,
+      shortCode: club.shortCode,
       avatarUrl: club.avatarUrl,
       avatarInitials: club.avatarInitials,
       avatarColor: club.avatarColor,
@@ -144,6 +146,7 @@ export function useCreateClubMutation() {
     mutationFn: async (data: {
       name: string;
       slug?: string;
+      shortCode?: string;
       description?: string;
       visibility: 'PRIVATE' | 'PUBLIC';
     }) => {

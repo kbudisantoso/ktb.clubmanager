@@ -24,7 +24,7 @@ export function BankSection({ form, disabled }: BankSectionProps) {
   } = form;
 
   return (
-    <Card>
+    <Card id="section-bank">
       <CardHeader>
         <CardTitle>Bankverbindung</CardTitle>
         <CardDescription>Bankkonto für den Zahlungsverkehr</CardDescription>

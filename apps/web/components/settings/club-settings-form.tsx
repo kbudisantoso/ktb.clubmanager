@@ -8,9 +8,11 @@ import { UpdateClubSettingsSchema } from '@ktb/shared';
 import { Button } from '@/components/ui/button';
 import { useUpdateClubSettings } from '@/hooks/use-club-settings';
 import type { ClubSettingsResponse } from '@/hooks/use-club-settings';
+import { useSettingsCompleteness } from '@/hooks/use-settings-completeness';
 import { useToast } from '@/hooks/use-toast';
 import { apiFetch } from '@/lib/api';
 import { LogoUpload } from './logo-upload';
+import { SettingsCompletenessCard } from './settings-completeness-card';
 import { BasicInfoSection } from './sections/basic-info-section';
 import { AddressContactSection } from './sections/address-contact-section';
 import { RegistrySection } from './sections/registry-section';
@@ -39,6 +41,7 @@ function clubToFormValues(club: ClubSettingsResponse): SettingsFormValues {
   return {
     // Stammdaten
     name: club.name,
+    legalName: club.legalName ?? '',
     shortCode: club.shortCode ?? '',
     foundedAt: club.foundedAt ?? '',
     description: club.description ?? '',
@@ -55,7 +58,7 @@ function clubToFormValues(club: ClubSettingsResponse): SettingsFormValues {
     registryCourt: club.registryCourt ?? '',
     registryNumber: club.registryNumber ?? '',
     clubPurpose: (club.clubPurpose as SettingsFormValues['clubPurpose']) ?? undefined,
-    clubSpecialForm: (club.clubSpecialForm as SettingsFormValues['clubSpecialForm']) ?? undefined,
+    clubSpecialForm: (club.clubSpecialForm as SettingsFormValues['clubSpecialForm']) ?? 'KEINE',
     // Steuerdaten
     taxNumber: club.taxNumber ?? '',
     vatId: club.vatId ?? '',
@@ -103,6 +106,8 @@ export function ClubSettingsForm({ club, slug }: ClubSettingsFormProps) {
     reset,
     formState: { isDirty, isSubmitting },
   } = form;
+
+  const completeness = useSettingsCompleteness(form);
 
   // Reset form when club data changes (e.g., after save or external refresh)
   useEffect(() => {
@@ -187,21 +192,25 @@ export function ClubSettingsForm({ club, slug }: ClubSettingsFormProps) {
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto pb-6">
         <div className="space-y-6">
-          {/* Logo upload */}
-          <div className="flex justify-center pt-2">
-            <LogoUpload
-              currentLogoUrl={logoUrl}
-              avatarInitials={club.avatarInitials ?? undefined}
-              avatarColor={club.avatarColor ?? undefined}
-              slug={slug}
-              onLogoUploaded={(fileId) => {
-                form.setValue('logoFileId', fileId, { shouldDirty: true });
-              }}
-              disabled={isSubmitting}
-            />
+          {/* Logo + Completeness */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="flex items-center justify-center">
+              <LogoUpload
+                currentLogoUrl={logoUrl}
+                avatarInitials={club.avatarInitials ?? undefined}
+                avatarColor={club.avatarColor ?? undefined}
+                slug={slug}
+                onLogoUploaded={(fileId) => {
+                  // Backend sets club.logoFileId during confirm — just sync form state
+                  form.resetField('logoFileId', { defaultValue: fileId });
+                }}
+                disabled={isSubmitting}
+              />
+            </div>
+            <SettingsCompletenessCard completeness={completeness} />
           </div>
 
-          <BasicInfoSection form={form} disabled={isSubmitting} />
+          <BasicInfoSection form={form} slug={slug} disabled={isSubmitting} />
           <AddressContactSection form={form} disabled={isSubmitting} />
           <RegistrySection form={form} disabled={isSubmitting} />
           <TaxSection form={form} disabled={isSubmitting} />

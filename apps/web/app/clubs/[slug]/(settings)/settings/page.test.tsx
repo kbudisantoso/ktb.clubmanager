@@ -82,13 +82,13 @@ describe('SettingsContent', () => {
 
       render(<SettingsContent />, { wrapper: createWrapper() });
 
-      // Verify all 7 section cards render
-      expect(screen.getByText('Stammdaten')).toBeInTheDocument();
-      expect(screen.getByText('Adresse & Kontakt')).toBeInTheDocument();
-      expect(screen.getByText('Vereinsregister')).toBeInTheDocument();
-      expect(screen.getByText('Steuerdaten')).toBeInTheDocument();
-      expect(screen.getByText('Bankverbindung')).toBeInTheDocument();
-      expect(screen.getByText('Betriebseinstellungen')).toBeInTheDocument();
+      // Verify all 7 section cards render (some labels also appear in completeness checklist)
+      expect(screen.getAllByText('Stammdaten').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Adresse & Kontakt').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Vereinsregister').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Steuerdaten').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Bankverbindung').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Vereinsvorgaben').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('Sichtbarkeit')).toBeInTheDocument();
     });
 

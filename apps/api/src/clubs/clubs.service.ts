@@ -83,6 +83,7 @@ export class ClubsService {
         name: dto.name,
         slug,
         legalName: dto.legalName,
+        shortCode: dto.shortCode,
         description: dto.description,
         visibility,
         inviteCode,

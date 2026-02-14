@@ -13,6 +13,7 @@ export interface ClubSettingsResponse {
   description?: string | null;
   visibility: 'PUBLIC' | 'PRIVATE';
   // Stammdaten
+  legalName?: string | null;
   shortCode?: string | null;
   foundedAt?: string | null;
   // Adresse & Kontakt

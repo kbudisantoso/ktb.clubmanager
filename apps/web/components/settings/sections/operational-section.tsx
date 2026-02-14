@@ -52,10 +52,10 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
   } = form;
 
   return (
-    <Card>
+    <Card id="section-defaults">
       <CardHeader>
-        <CardTitle>Betriebseinstellungen</CardTitle>
-        <CardDescription>Standardwerte und Konfiguration</CardDescription>
+        <CardTitle>Vereinsvorgaben</CardTitle>
+        <CardDescription>Standardwerte für Mitgliedschaften und Geschäftsjahr</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Geschäftsjahrbeginn */}
@@ -122,7 +122,13 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
             max={365}
             placeholder="0"
             disabled={disabled}
-            {...register('probationPeriodDays', { valueAsNumber: true })}
+            {...register('probationPeriodDays', {
+              setValueAs: (v: string | number | undefined | null) => {
+                if (v === '' || v === undefined || v === null) return undefined;
+                const n = Number(v);
+                return Number.isNaN(n) ? undefined : n;
+              },
+            })}
           />
           {errors.probationPeriodDays?.message && (
             <p className="text-xs text-destructive">{String(errors.probationPeriodDays.message)}</p>

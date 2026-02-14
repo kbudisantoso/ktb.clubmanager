@@ -19,7 +19,7 @@ export function TaxSection({ form, disabled }: TaxSectionProps) {
   const { register, control } = form;
 
   return (
-    <Card>
+    <Card id="section-tax">
       <CardHeader>
         <CardTitle>Steuerdaten</CardTitle>
         <CardDescription>Steuerliche Angaben des Vereins</CardDescription>

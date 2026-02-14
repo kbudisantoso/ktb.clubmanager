@@ -21,6 +21,7 @@ const AVATAR_COLORS: Record<string, string> = {
 
 interface ClubData {
   name: string;
+  shortCode?: string;
   avatarUrl?: string;
   avatarInitials?: string;
   avatarColor?: string;
@@ -44,7 +45,7 @@ interface ClubAvatarProps {
 export function ClubAvatar({
   club,
   avatarUrl: directAvatarUrl,
-  avatarInitials: directAvatarInitials,
+  avatarInitials: _directAvatarInitials,
   avatarColor: directAvatarColor = 'blue',
   name: directName,
   size = 'md',
@@ -52,7 +53,7 @@ export function ClubAvatar({
 }: ClubAvatarProps) {
   // Use club prop values if provided, otherwise fall back to direct props
   const avatarUrl = club?.avatarUrl ?? directAvatarUrl;
-  const avatarInitials = club?.avatarInitials ?? directAvatarInitials;
+  const shortCode = club?.shortCode;
   const avatarColor = club?.avatarColor ?? directAvatarColor;
   const name = club?.name ?? directName ?? '';
 
@@ -65,8 +66,8 @@ export function ClubAvatar({
 
   const bgColor = AVATAR_COLORS[avatarColor] || AVATAR_COLORS.blue;
 
-  // Generate initials from name if not provided, limit to 3 chars
-  const initials = (avatarInitials || generateInitials(name)).slice(0, 3);
+  // Priority: shortCode > auto-generated from name (always fresh, no staleness)
+  const initials = (shortCode || generateInitials(name)).slice(0, 3);
 
   // Track image load errors to fall back to initials
   const [imgError, setImgError] = useState(false);
