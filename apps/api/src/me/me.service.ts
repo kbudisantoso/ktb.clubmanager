@@ -368,6 +368,12 @@ export class MeService {
         },
       });
 
+      // Unlink member records (membership lifecycle is independent)
+      await tx.member.updateMany({
+        where: { userId },
+        data: { userId: null },
+      });
+
       // Delete all sessions
       await tx.session.deleteMany({ where: { userId } });
 

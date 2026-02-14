@@ -61,10 +61,14 @@ export function DangerZoneCard() {
           <CardDescription>Dein Benutzerkonto unwiderruflich loeschen</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Dein Benutzerkonto wird anonymisiert und alle persoenlichen Daten werden geloescht.
-            Deine Mitgliedschaften in Vereinen bleiben als anonyme Eintraege erhalten.
-          </p>
+          <div className="text-sm text-muted-foreground space-y-1">
+            <p>Deine persoenlichen Daten werden unwiderruflich geloescht.</p>
+            <p>Deine Mitgliedschaften in Vereinen bleiben davon unberuehrt.</p>
+            <p>
+              Die Verknuepfung zwischen deinem Benutzerkonto und deinen Vereinsmitgliedschaften wird
+              aufgehoben.
+            </p>
+          </div>
           <Button
             variant="destructive"
             onClick={handleDeleteClick}
@@ -86,7 +90,7 @@ export function DangerZoneCard() {
             <AlertDialogDescription>
               {isBlocked
                 ? 'Du bist der einzige Verantwortliche folgender Vereine. Bitte uebertrage zuerst die Verantwortlichkeit.'
-                : 'Diese Aktion kann nicht rueckgaengig gemacht werden. Alle deine persoenlichen Daten werden unwiderruflich anonymisiert.'}
+                : 'Diese Aktion kann nicht rueckgaengig gemacht werden. Deine persoenlichen Daten werden unwiderruflich geloescht. Deine Vereinsmitgliedschaften bleiben davon unberuehrt.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
 

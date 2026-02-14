@@ -25,6 +25,9 @@ const mockPrisma = {
     delete: vi.fn(),
     deleteMany: vi.fn(),
   },
+  member: {
+    updateMany: vi.fn(),
+  },
   clubUser: {
     findMany: vi.fn(),
     count: vi.fn(),
@@ -457,10 +460,11 @@ describe('MeService', () => {
       );
     }
 
-    it('should anonymize user, delete sessions, and soft-delete files', async () => {
+    it('should anonymize user, unlink members, delete sessions, and soft-delete files', async () => {
       // checkAccountDeletion returns canDelete: true
       mockPrisma.clubUser.findMany.mockResolvedValue([]);
       mockPrisma.user.update.mockResolvedValue({});
+      mockPrisma.member.updateMany.mockResolvedValue({ count: 1 });
       mockPrisma.session.deleteMany.mockResolvedValue({ count: 2 });
       mockPrisma.userFile.findMany.mockResolvedValue([{ fileId: 'file-1' }, { fileId: 'file-2' }]);
       mockPrisma.file.updateMany.mockResolvedValue({ count: 2 });
@@ -482,6 +486,12 @@ describe('MeService', () => {
           }),
         })
       );
+
+      // Verify member records unlinked (independent lifecycle)
+      expect(mockPrisma.member.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1' },
+        data: { userId: null },
+      });
 
       // Verify sessions deleted
       expect(mockPrisma.session.deleteMany).toHaveBeenCalledWith({
@@ -520,6 +530,7 @@ describe('MeService', () => {
     it('should handle account with no files gracefully', async () => {
       mockPrisma.clubUser.findMany.mockResolvedValue([]);
       mockPrisma.user.update.mockResolvedValue({});
+      mockPrisma.member.updateMany.mockResolvedValue({ count: 0 });
       mockPrisma.session.deleteMany.mockResolvedValue({ count: 0 });
       mockPrisma.userFile.findMany.mockResolvedValue([]);
       setupInteractiveTransaction();
