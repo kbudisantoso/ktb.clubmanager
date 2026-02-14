@@ -90,10 +90,11 @@ model Club {
   // --- Betriebseinstellungen (Operational Settings) ---
   /// Geschaeftsjahresbeginn / Fiscal year start month (1-12)
   fiscalYearStartMonth  Int?
-  /// Standard-Mitgliedsart / Default membership type for new members
-  defaultMembershipType MembershipType?
+  /// Standard-Mitgliedsart / Default membership type for new members (FK to MembershipType entity)
+  defaultMembershipTypeId String?
+  defaultMembershipType   MembershipType? @relation("ClubDefaultMembershipType", fields: [defaultMembershipTypeId], references: [id])
   /// Probezeit in Tagen / Probation period in days
-  probationPeriodDays   Int?
+  probationPeriodDays     Int?
 
   // --- Logo ---
   /// Referenz zur Logo-Datei / Reference to the logo file
@@ -113,13 +114,14 @@ model Club {
   updatedAt DateTime @updatedAt
 
   // Relations
-  clubUsers      ClubUser[]
-  accessRequests AccessRequest[]
-  members        Member[]
-  households     Household[]
-  numberRanges   NumberRange[]
-  ledgerAccounts LedgerAccount[]
-  clubFiles      ClubFile[]
+  clubUsers       ClubUser[]
+  accessRequests  AccessRequest[]
+  members         Member[]
+  households      Household[]
+  numberRanges    NumberRange[]
+  ledgerAccounts  LedgerAccount[]
+  clubFiles       ClubFile[]
+  membershipTypes MembershipType[]
 
   @@map("clubs")
 }
@@ -401,14 +403,30 @@ model AuditLog {
 
 /// Status of a club member
 enum MemberStatus {
-  /// Currently active member with full privileges
-  ACTIVE
-  /// Temporarily inactive (e.g., sabbatical, Ruhende Mitgliedschaft)
-  INACTIVE
   /// Application pending approval
   PENDING
+  /// In probation period (Probezeit)
+  PROBATION
+  /// Currently active member with full privileges
+  ACTIVE
+  /// Dormant/resting membership (Ruhende Mitgliedschaft)
+  DORMANT
+  /// Suspended by board decision (Suspendiert)
+  SUSPENDED
   /// Left the club (historical record, terminal state)
   LEFT
+}
+
+/// Category for why a member left the club
+enum LeftCategory {
+  /// Voluntary departure (freiwilliger Austritt)
+  VOLUNTARY
+  /// Exclusion by board decision (Ausschluss)
+  EXCLUSION
+  /// Death of the member (Todesfall)
+  DEATH
+  /// Other reason (Sonstiges)
+  OTHER
 }
 
 /// Type of person (natural person vs. legal entity like company/organization)
@@ -429,18 +447,48 @@ enum Salutation {
   DIVERS
 }
 
-/// Type of membership within a period
-enum MembershipType {
-  /// Ordentliches Mitglied (full member with voting rights)
-  ORDENTLICH
-  /// Passives Mitglied (no active participation, reduced duties)
-  PASSIV
-  /// Ehrenmitglied (honorary member, typically fee-exempt)
-  EHREN
-  /// Foerdermitglied (supporting member, financial support only)
-  FOERDER
-  /// Jugendmitglied (youth member, age-based)
-  JUGEND
+/// Club-scoped membership type entity (replaces the former MembershipType enum).
+/// Each club defines its own membership types with configurable rights/settings.
+model MembershipType {
+  /// Unique identifier (CUID format)
+  id                  String   @id @default(cuid())
+  /// Reference to the parent club (tenant)
+  clubId              String
+  /// The club this membership type belongs to
+  club                Club     @relation(fields: [clubId], references: [id])
+
+  /// Display name (e.g., "Ordentliches Mitglied")
+  name                String
+  /// Short code (e.g., "ORDENTLICH") - unique per club
+  code                String
+  /// Optional longer description
+  description         String?
+
+  /// Whether this is the default type for new members
+  isDefault           Boolean  @default(false)
+  /// Display order in lists
+  sortOrder           Int      @default(0)
+  /// Whether this type is currently available for selection
+  isActive            Boolean  @default(true)
+
+  /// Whether members of this type have voting rights (Stimmrecht)
+  vote                Boolean  @default(true)
+  /// Whether members can attend general assembly (Versammlungsteilnahme)
+  assemblyAttendance  Boolean  @default(true)
+  /// Whether members are eligible for board positions (Wahlfaehigkeit)
+  eligibleForOffice   Boolean  @default(true)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  /// Membership periods using this type
+  membershipPeriods   MembershipPeriod[]
+  /// Clubs using this as default membership type
+  clubDefaults        Club[]   @relation("ClubDefaultMembershipType")
+
+  @@unique([clubId, code])
+  @@index([clubId])
+  @@map("membership_types")
 }
 
 /// Role of a member within a household
@@ -584,7 +632,9 @@ model Member {
 
   // Relations
   /// Membership periods (supports re-entry with multiple periods)
-  membershipPeriods MembershipPeriod[]
+  membershipPeriods  MembershipPeriod[]
+  /// Status transition history
+  statusTransitions  MemberStatusTransition[]
 
   @@unique([clubId, memberNumber])
   @@index([clubId])
@@ -636,19 +686,52 @@ model MembershipPeriod {
   member   Member @relation(fields: [memberId], references: [id])
 
   /// Date when this membership period started (date-only, inclusive)
-  joinDate       DateTime       @db.Date
+  joinDate           DateTime        @db.Date
   /// Date when this membership period ended (date-only, inclusive, null = current)
-  leaveDate      DateTime?      @db.Date
-  /// Type of membership during this period
-  membershipType MembershipType
+  leaveDate          DateTime?       @db.Date
+  /// FK to MembershipType entity (replaces former enum column)
+  membershipTypeId   String?
+  membershipType     MembershipType? @relation(fields: [membershipTypeId], references: [id])
   /// Optional notes about this period
-  notes          String?
+  notes              String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([memberId])
   @@map("membership_periods")
+}
+
+/// Records each status transition for a member (audit trail).
+/// Every status change creates a new row for traceability.
+model MemberStatusTransition {
+  /// Unique identifier (CUID format)
+  id            String        @id @default(cuid())
+  /// Reference to the member
+  memberId      String
+  /// The member this transition belongs to
+  member        Member        @relation(fields: [memberId], references: [id])
+  /// Club context for efficient querying
+  clubId        String
+  /// Previous status before this transition
+  fromStatus    MemberStatus
+  /// New status after this transition
+  toStatus      MemberStatus
+  /// Reason for the status change (visible in timeline)
+  reason        String
+  /// Category for LEFT transitions (voluntary, exclusion, death, other)
+  leftCategory  LeftCategory?
+  /// Date when this transition takes effect (date-only)
+  effectiveDate DateTime      @db.Date
+  /// User ID who performed this transition
+  actorId       String
+  /// When this transition record was created
+  createdAt     DateTime      @default(now())
+
+  @@index([memberId])
+  @@index([clubId])
+  @@index([clubId, createdAt])
+  @@map("member_status_transitions")
 }
 
 /// Reusable number range infrastructure for sequential number generation.
