@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { MembershipTypeSchema } from './member-status.ts';
 
 /**
  * Zweckbestimmung / Purpose classification of the club.
@@ -70,7 +69,7 @@ export const UpdateClubSettingsSchema = z.object({
 
   // Betriebseinstellungen
   fiscalYearStartMonth: z.number().int().min(1).max(12).optional().nullable(),
-  defaultMembershipType: MembershipTypeSchema.optional().nullable(),
+  defaultMembershipTypeId: z.string().optional().nullable(),
   probationPeriodDays: z
     .union([z.nan().transform(() => null), z.number().int().min(0).max(365)])
     .optional()

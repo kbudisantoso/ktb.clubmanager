@@ -3,7 +3,7 @@ export {
   PersonTypeDto,
   SalutationDto,
   MemberStatusDto,
-  MembershipTypeDto,
+  LeftCategoryDto,
 } from './create-member.dto.js';
 export { UpdateMemberDto } from './update-member.dto.js';
 export {

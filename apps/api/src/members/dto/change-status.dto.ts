@@ -10,7 +10,7 @@ import {
   MaxLength,
   Matches,
 } from 'class-validator';
-import { MemberStatusDto } from './create-member.dto.js';
+import { MemberStatusDto, LeftCategoryDto } from './create-member.dto.js';
 
 export class ChangeStatusDto {
   @ApiProperty({
@@ -41,6 +41,14 @@ export class ChangeStatusDto {
     message: 'Datum muss im Format YYYY-MM-DD sein',
   })
   effectiveDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Category for LEFT transitions (required when newStatus is LEFT)',
+    enum: LeftCategoryDto,
+  })
+  @IsEnum(LeftCategoryDto)
+  @IsOptional()
+  leftCategory?: LeftCategoryDto;
 }
 
 export class SetCancellationDto {

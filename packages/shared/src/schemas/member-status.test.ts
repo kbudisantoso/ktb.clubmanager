@@ -3,20 +3,26 @@ import {
   MemberStatusSchema,
   DEFAULT_MEMBER_STATUS,
   VALID_TRANSITIONS,
+  LeftCategorySchema,
   PersonTypeSchema,
   SalutationSchema,
-  MembershipTypeSchema,
   HouseholdRoleSchema,
   DeletionReasonSchema,
   type MemberStatus,
 } from './member-status';
 
 describe('MemberStatusSchema', () => {
-  it('should validate valid status values', () => {
-    expect(MemberStatusSchema.parse('ACTIVE')).toBe('ACTIVE');
-    expect(MemberStatusSchema.parse('INACTIVE')).toBe('INACTIVE');
+  it('should validate all 6 status values', () => {
     expect(MemberStatusSchema.parse('PENDING')).toBe('PENDING');
+    expect(MemberStatusSchema.parse('PROBATION')).toBe('PROBATION');
+    expect(MemberStatusSchema.parse('ACTIVE')).toBe('ACTIVE');
+    expect(MemberStatusSchema.parse('DORMANT')).toBe('DORMANT');
+    expect(MemberStatusSchema.parse('SUSPENDED')).toBe('SUSPENDED');
     expect(MemberStatusSchema.parse('LEFT')).toBe('LEFT');
+  });
+
+  it('should reject old INACTIVE status', () => {
+    expect(() => MemberStatusSchema.parse('INACTIVE')).toThrow();
   });
 
   it('should reject invalid status values', () => {
@@ -47,20 +53,41 @@ describe('MemberStatusSchema', () => {
 });
 
 describe('VALID_TRANSITIONS', () => {
-  it('should allow PENDING -> ACTIVE and LEFT', () => {
-    expect(VALID_TRANSITIONS.PENDING).toEqual(['ACTIVE', 'LEFT']);
+  it('should allow PENDING -> PROBATION, ACTIVE, LEFT', () => {
+    expect(VALID_TRANSITIONS.PENDING).toEqual(['PROBATION', 'ACTIVE', 'LEFT']);
   });
 
-  it('should allow ACTIVE -> INACTIVE and LEFT', () => {
-    expect(VALID_TRANSITIONS.ACTIVE).toEqual(['INACTIVE', 'LEFT']);
+  it('should allow PROBATION -> ACTIVE, LEFT', () => {
+    expect(VALID_TRANSITIONS.PROBATION).toEqual(['ACTIVE', 'LEFT']);
   });
 
-  it('should allow INACTIVE -> ACTIVE and LEFT', () => {
-    expect(VALID_TRANSITIONS.INACTIVE).toEqual(['ACTIVE', 'LEFT']);
+  it('should allow ACTIVE -> DORMANT, SUSPENDED, LEFT', () => {
+    expect(VALID_TRANSITIONS.ACTIVE).toEqual(['DORMANT', 'SUSPENDED', 'LEFT']);
+  });
+
+  it('should allow DORMANT -> ACTIVE, LEFT', () => {
+    expect(VALID_TRANSITIONS.DORMANT).toEqual(['ACTIVE', 'LEFT']);
+  });
+
+  it('should allow SUSPENDED -> ACTIVE, DORMANT, LEFT', () => {
+    expect(VALID_TRANSITIONS.SUSPENDED).toEqual(['ACTIVE', 'DORMANT', 'LEFT']);
   });
 
   it('should make LEFT terminal (no transitions)', () => {
     expect(VALID_TRANSITIONS.LEFT).toEqual([]);
+  });
+});
+
+describe('LeftCategorySchema', () => {
+  it('should validate all left categories', () => {
+    const categories = ['VOLUNTARY', 'EXCLUSION', 'DEATH', 'OTHER'];
+    for (const c of categories) {
+      expect(LeftCategorySchema.parse(c)).toBe(c);
+    }
+  });
+
+  it('should reject invalid values', () => {
+    expect(() => LeftCategorySchema.parse('UNKNOWN')).toThrow();
   });
 });
 
@@ -80,15 +107,6 @@ describe('SalutationSchema', () => {
     expect(SalutationSchema.parse('HERR')).toBe('HERR');
     expect(SalutationSchema.parse('FRAU')).toBe('FRAU');
     expect(SalutationSchema.parse('DIVERS')).toBe('DIVERS');
-  });
-});
-
-describe('MembershipTypeSchema', () => {
-  it('should validate all membership types', () => {
-    const types = ['ORDENTLICH', 'PASSIV', 'EHREN', 'FOERDER', 'JUGEND'];
-    for (const t of types) {
-      expect(MembershipTypeSchema.parse(t)).toBe(t);
-    }
   });
 });
 

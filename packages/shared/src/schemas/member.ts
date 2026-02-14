@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import {
   MemberStatusSchema,
+  LeftCategorySchema,
   PersonTypeSchema,
   SalutationSchema,
-  MembershipTypeSchema,
   HouseholdRoleSchema,
   DeletionReasonSchema,
 } from './member-status.ts';
@@ -73,8 +73,8 @@ export const CreateMemberSchema = z
     /** Join/entry date as ISO date string YYYY-MM-DD (NOT z.coerce.date()) */
     joinDate: z.string().date('Ungueltiges Datum (YYYY-MM-DD erwartet)').optional(),
 
-    /** Membership type for initial membership period */
-    membershipType: MembershipTypeSchema.optional(),
+    /** Membership type ID (FK to MembershipType entity) for initial membership period */
+    membershipTypeId: z.string().optional(),
   })
   .merge(AddressSchema)
   .refine(
@@ -115,7 +115,7 @@ export const UpdateMemberSchema = z
     // Note: status removed from UpdateMemberSchema — status changes go through
     // dedicated ChangeStatusSchema endpoint (see C-3 consistency requirement)
     joinDate: z.string().date().optional(),
-    membershipType: MembershipTypeSchema.optional(),
+    membershipTypeId: z.string().optional(),
   })
   .merge(AddressSchema.partial());
 
@@ -157,7 +157,7 @@ export const MemberResponseSchema = z.object({
   memberNumber: z.string(),
   status: MemberStatusSchema,
   joinDate: z.string().nullable().optional(),
-  membershipType: MembershipTypeSchema.nullable().optional(),
+  membershipTypeId: z.string().nullable().optional(),
 
   statusChangedAt: z.string().nullable().optional(),
   statusChangedBy: z.string().nullable().optional(),
@@ -222,6 +222,27 @@ export const ChangeStatusSchema = z.object({
 
   /** Effective date of the status change (ISO date string YYYY-MM-DD) */
   effectiveDate: z.string().date().optional(),
+
+  /** Category for LEFT transitions (required when newStatus is LEFT) */
+  leftCategory: LeftCategorySchema.optional(),
 });
 
 export type ChangeStatus = z.infer<typeof ChangeStatusSchema>;
+
+/**
+ * Response schema for a single status transition record.
+ */
+export const MemberStatusTransitionResponseSchema = z.object({
+  id: z.string(),
+  memberId: z.string(),
+  clubId: z.string(),
+  fromStatus: MemberStatusSchema,
+  toStatus: MemberStatusSchema,
+  reason: z.string(),
+  leftCategory: LeftCategorySchema.nullable().optional(),
+  effectiveDate: z.string(),
+  actorId: z.string(),
+  createdAt: z.string(),
+});
+
+export type MemberStatusTransitionResponse = z.infer<typeof MemberStatusTransitionResponseSchema>;

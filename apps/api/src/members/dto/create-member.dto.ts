@@ -22,17 +22,18 @@ export enum SalutationDto {
 
 export enum MemberStatusDto {
   PENDING = 'PENDING',
+  PROBATION = 'PROBATION',
   ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
+  DORMANT = 'DORMANT',
+  SUSPENDED = 'SUSPENDED',
   LEFT = 'LEFT',
 }
 
-export enum MembershipTypeDto {
-  ORDENTLICH = 'ORDENTLICH',
-  PASSIV = 'PASSIV',
-  EHREN = 'EHREN',
-  FOERDER = 'FOERDER',
-  JUGEND = 'JUGEND',
+export enum LeftCategoryDto {
+  VOLUNTARY = 'VOLUNTARY',
+  EXCLUSION = 'EXCLUSION',
+  DEATH = 'DEATH',
+  OTHER = 'OTHER',
 }
 
 export class CreateMemberDto {
@@ -235,10 +236,10 @@ export class CreateMemberDto {
   joinDate?: string;
 
   @ApiPropertyOptional({
-    description: 'Membership type for initial period',
-    enum: MembershipTypeDto,
+    description: 'Membership type ID (FK to MembershipType entity) for initial period',
+    example: 'clxyz...',
   })
-  @IsEnum(MembershipTypeDto)
+  @IsString()
   @IsOptional()
-  membershipType?: MembershipTypeDto;
+  membershipTypeId?: string;
 }

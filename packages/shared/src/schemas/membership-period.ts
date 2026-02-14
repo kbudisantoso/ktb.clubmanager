@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { MembershipTypeSchema } from './member-status.ts';
 
 /**
  * Schema for creating a new membership period.
@@ -15,8 +14,8 @@ export const CreateMembershipPeriodSchema = z
     /** End date of the membership period (null = current/ongoing) */
     leaveDate: z.string().date('Ungueltiges Austrittsdatum (YYYY-MM-DD erwartet)').optional(),
 
-    /** Membership type for this period */
-    membershipType: MembershipTypeSchema,
+    /** Membership type ID (FK to MembershipType entity) */
+    membershipTypeId: z.string().optional(),
 
     /** Optional notes about this period */
     notes: z.string().max(1000).optional(),
@@ -48,8 +47,8 @@ export const UpdateMembershipPeriodSchema = z
     /** Updated leave date */
     leaveDate: z.string().date().optional(),
 
-    /** Updated membership type */
-    membershipType: MembershipTypeSchema.optional(),
+    /** Updated membership type ID (FK to MembershipType entity) */
+    membershipTypeId: z.string().optional(),
 
     /** Updated notes */
     notes: z.string().max(1000).optional(),
@@ -80,7 +79,8 @@ export const MembershipPeriodResponseSchema = z.object({
   joinDate: z.string().nullable(),
   /** End date of the membership period (null = current/ongoing) */
   leaveDate: z.string().nullable(),
-  membershipType: MembershipTypeSchema,
+  /** FK to MembershipType entity */
+  membershipTypeId: z.string().nullable().optional(),
   notes: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),

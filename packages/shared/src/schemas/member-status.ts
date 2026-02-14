@@ -2,9 +2,16 @@ import { z } from 'zod';
 
 /**
  * Member status enum - tracks lifecycle of club membership.
- * Used across API and frontend for consistent status handling.
+ * 6-state machine: PENDING -> PROBATION -> ACTIVE -> DORMANT/SUSPENDED/LEFT
  */
-export const MemberStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'PENDING', 'LEFT']);
+export const MemberStatusSchema = z.enum([
+  'PENDING',
+  'PROBATION',
+  'ACTIVE',
+  'DORMANT',
+  'SUSPENDED',
+  'LEFT',
+]);
 
 /**
  * TypeScript type inferred from Zod schema.
@@ -20,13 +27,30 @@ export const DEFAULT_MEMBER_STATUS: MemberStatus = 'PENDING';
 /**
  * Valid status transitions for the member lifecycle state machine.
  * LEFT is terminal - no transitions out of LEFT.
+ *
+ * State machine:
+ *   PENDING    -> PROBATION, ACTIVE, LEFT
+ *   PROBATION  -> ACTIVE, LEFT
+ *   ACTIVE     -> DORMANT, SUSPENDED, LEFT
+ *   DORMANT    -> ACTIVE, LEFT
+ *   SUSPENDED  -> ACTIVE, DORMANT, LEFT
+ *   LEFT       -> (terminal)
  */
 export const VALID_TRANSITIONS: Record<MemberStatus, readonly MemberStatus[]> = {
-  PENDING: ['ACTIVE', 'LEFT'],
-  ACTIVE: ['INACTIVE', 'LEFT'],
-  INACTIVE: ['ACTIVE', 'LEFT'],
+  PENDING: ['PROBATION', 'ACTIVE', 'LEFT'],
+  PROBATION: ['ACTIVE', 'LEFT'],
+  ACTIVE: ['DORMANT', 'SUSPENDED', 'LEFT'],
+  DORMANT: ['ACTIVE', 'LEFT'],
+  SUSPENDED: ['ACTIVE', 'DORMANT', 'LEFT'],
   LEFT: [],
 } as const;
+
+/**
+ * Category for why a member left the club.
+ * Required when transitioning to LEFT status.
+ */
+export const LeftCategorySchema = z.enum(['VOLUNTARY', 'EXCLUSION', 'DEATH', 'OTHER']);
+export type LeftCategory = z.infer<typeof LeftCategorySchema>;
 
 /**
  * Person type - distinguishes natural persons from legal entities (e.g., companies, associations).
@@ -39,12 +63,6 @@ export type PersonType = z.infer<typeof PersonTypeSchema>;
  */
 export const SalutationSchema = z.enum(['HERR', 'FRAU', 'DIVERS']);
 export type Salutation = z.infer<typeof SalutationSchema>;
-
-/**
- * Membership type - defines the kind of membership (on MembershipPeriod, not Member).
- */
-export const MembershipTypeSchema = z.enum(['ORDENTLICH', 'PASSIV', 'EHREN', 'FOERDER', 'JUGEND']);
-export type MembershipType = z.infer<typeof MembershipTypeSchema>;
 
 /**
  * Household role - role of a member within a household group.

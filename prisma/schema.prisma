@@ -583,7 +583,7 @@ model Member {
   notes  String?
 
   // --- Status lifecycle ---
-  /// Current membership status (PENDING -> ACTIVE -> INACTIVE/LEFT)
+  /// Current membership status (PENDING -> PROBATION -> ACTIVE -> DORMANT/SUSPENDED/LEFT)
   status             MemberStatus @default(PENDING)
   /// When the status was last changed
   statusChangedAt    DateTime?
