@@ -487,7 +487,7 @@ export default function DashboardPage() {
             >
               <CardContent className="flex items-center gap-4 p-4">
                 <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary font-bold">
-                  {club.avatarInitials || club.name.slice(0, 2).toUpperCase()}
+                  {club.shortCode || club.name.slice(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1">
                   <div className="font-medium">{club.name}</div>

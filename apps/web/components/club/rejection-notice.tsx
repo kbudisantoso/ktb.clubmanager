@@ -76,7 +76,7 @@ export function RejectionNotice({ request, onRetry }: RejectionNoticeProps) {
                 color: '#fff',
               }}
             >
-              {request.club.avatarInitials || request.club.name.slice(0, 2).toUpperCase()}
+              {request.club.name.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">

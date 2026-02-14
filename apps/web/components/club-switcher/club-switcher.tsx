@@ -132,8 +132,7 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
             <div className="flex items-center gap-2">
               <ClubAvatar
                 name={activeClub.name}
-                avatarUrl={activeClub.avatarUrl}
-                avatarInitials={activeClub.avatarInitials}
+                logoUrl={activeClub.logoUrl}
                 avatarColor={activeClub.avatarColor}
                 size="sm"
               />
@@ -176,8 +175,7 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
             >
               <ClubAvatar
                 name={club.name}
-                avatarUrl={club.avatarUrl}
-                avatarInitials={club.avatarInitials}
+                logoUrl={club.logoUrl}
                 avatarColor={club.avatarColor}
                 size="md"
               />

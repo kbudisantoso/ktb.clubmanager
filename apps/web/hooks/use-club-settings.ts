@@ -47,8 +47,6 @@ export interface ClubSettingsResponse {
   // Logo
   logoFileId?: string | null;
   // Meta
-  avatarUrl?: string | null;
-  avatarInitials?: string | null;
   avatarColor?: string | null;
   inviteCode?: string | null;
   userCount: number;

@@ -30,7 +30,7 @@ export function PageHeader({ title, description, breadcrumbs, actions }: PageHea
       </div>
 
       {/* Title section */}
-      <div className="flex items-center justify-between px-4 pb-4 pt-2 sm:px-6">
+      <div className="flex items-start justify-between px-4 pb-4 pt-2 sm:px-6">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight">{title}</h1>
           {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}

@@ -26,9 +26,8 @@ export interface ClubContext {
   /** User's roles in this club — in-memory only, NOT persisted to localStorage (SEC-031) */
   roles?: string[];
   shortCode?: string;
-  avatarUrl?: string;
-  avatarInitials?: string;
   avatarColor?: string;
+  logoUrl?: string;
 }
 
 interface ClubState {

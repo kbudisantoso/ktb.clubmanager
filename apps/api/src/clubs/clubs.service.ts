@@ -74,9 +74,6 @@ export class ClubsService {
     // Generate invite code for private clubs
     const inviteCode = visibility === 'PRIVATE' ? generateInviteCode() : null;
 
-    // Generate default avatar initials from name
-    const avatarInitials = dto.avatarInitials || this.generateInitials(dto.name);
-
     // Create club and assign creator as OWNER
     const club = await this.prisma.club.create({
       data: {
@@ -87,7 +84,6 @@ export class ClubsService {
         description: dto.description,
         visibility,
         inviteCode,
-        avatarInitials,
         avatarColor: dto.avatarColor || 'blue',
         tierId,
         clubUsers: {
@@ -224,7 +220,6 @@ export class ClubsService {
         legalName: dto.legalName,
         description: dto.description,
         visibility: dto.visibility,
-        avatarInitials: dto.avatarInitials,
         avatarColor: dto.avatarColor,
         tierId: dto.tierId,
         // Stammdaten
@@ -437,9 +432,8 @@ export class ClubsService {
         name: true,
         slug: true,
         description: true,
-        avatarUrl: true,
-        avatarInitials: true,
         avatarColor: true,
+        logoFileId: true,
         _count: {
           select: { members: true },
         },
@@ -448,27 +442,6 @@ export class ClubsService {
     });
 
     return clubs;
-  }
-
-  // Helper methods
-
-  private generateInitials(name: string): string {
-    // Extract initials from name (up to 3 chars)
-    const words = name.split(/\s+/).filter(Boolean);
-    if (words.length >= 3) {
-      return words
-        .slice(0, 3)
-        .map((w) => w[0])
-        .join('')
-        .toUpperCase();
-    }
-    if (words.length === 2) {
-      return words
-        .map((w) => w[0])
-        .join('')
-        .toUpperCase();
-    }
-    return name.slice(0, 3).toUpperCase();
   }
 
   private formatClubResponse(
@@ -480,8 +453,6 @@ export class ClubsService {
       description: string | null;
       visibility: string;
       inviteCode: string | null;
-      avatarUrl: string | null;
-      avatarInitials: string | null;
       avatarColor: string | null;
       // Stammdaten
       shortCode: string | null;
@@ -534,8 +505,6 @@ export class ClubsService {
       description: club.description ?? undefined,
       visibility: club.visibility as 'PUBLIC' | 'PRIVATE',
       inviteCode: club.inviteCode ? formatInviteCode(club.inviteCode) : undefined,
-      avatarUrl: club.avatarUrl ?? undefined,
-      avatarInitials: club.avatarInitials ?? undefined,
       avatarColor: club.avatarColor ?? undefined,
       // Stammdaten
       shortCode: club.shortCode ?? undefined,

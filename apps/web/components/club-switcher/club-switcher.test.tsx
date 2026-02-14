@@ -76,7 +76,6 @@ describe('ClubSwitcher', () => {
         name: 'TSV Musterstadt',
         slug: 'tsv-musterstadt',
         roles: ['OWNER'],
-        avatarInitials: 'TM',
         avatarColor: 'blue',
       }),
     ];
@@ -110,7 +109,6 @@ describe('ClubSwitcher', () => {
         name: 'TSV Musterstadt',
         slug: 'tsv-musterstadt',
         roles: ['OWNER'],
-        avatarInitials: 'TM',
         avatarColor: 'blue',
       }),
       createTestClub({
@@ -118,7 +116,6 @@ describe('ClubSwitcher', () => {
         name: 'FC Beispiel',
         slug: 'fc-beispiel',
         roles: ['ADMIN'],
-        avatarInitials: 'FB',
         avatarColor: 'green',
       }),
       createTestClub({
@@ -126,7 +123,6 @@ describe('ClubSwitcher', () => {
         name: 'SV Test',
         slug: 'sv-test',
         roles: ['MEMBER'],
-        avatarInitials: 'ST',
         avatarColor: 'red',
       }),
     ];

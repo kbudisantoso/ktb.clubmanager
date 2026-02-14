@@ -30,12 +30,8 @@ model Club {
   /// 8-char code for joining (XXXX-XXXX format stored without dash)
   inviteCode String?        @unique
 
-  /// Avatar: either image URL or initials + color
-  avatarUrl      String?
-  /// 1-3 characters for avatar display
-  avatarInitials String?
-  /// Preset color name for avatar
-  avatarColor    String?
+  /// Preset color name for avatar fallback (blue, green, red, etc.)
+  avatarColor String?
 
   // --- Stammdaten (Basic Data) ---
   /// Vereinskuerzel / Club abbreviation (e.g., "WCD")

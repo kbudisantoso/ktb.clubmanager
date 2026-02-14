@@ -26,9 +26,8 @@ interface ClubApiResponse {
   slug: string;
   roles: string[];
   shortCode?: string;
-  avatarUrl?: string;
-  avatarInitials?: string;
   avatarColor?: string;
+  logoFileId?: string;
 }
 
 interface MyClubsApiResponse {
@@ -59,9 +58,8 @@ async function fetchMyClubs(): Promise<MyClubsResult> {
       slug: club.slug,
       roles: club.roles,
       shortCode: club.shortCode,
-      avatarUrl: club.avatarUrl,
-      avatarInitials: club.avatarInitials,
       avatarColor: club.avatarColor,
+      logoUrl: club.logoFileId ? `/api/clubs/${club.slug}/files/logo` : undefined,
     })),
     canCreateClub: data.meta.canCreateClub,
   };
@@ -194,8 +192,8 @@ export interface AccessRequest {
     id: string;
     name: string;
     slug: string;
-    avatarInitials?: string;
     avatarColor?: string;
+    logoFileId?: string;
   };
 }
 

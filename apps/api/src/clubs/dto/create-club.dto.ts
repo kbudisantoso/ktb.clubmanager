@@ -94,16 +94,6 @@ export class CreateClubDto {
   tierId?: string;
 
   @ApiPropertyOptional({
-    description: 'Avatar initials (1-3 chars)',
-    example: 'TSV',
-  })
-  @IsString()
-  @IsOptional()
-  @MinLength(1)
-  @MaxLength(3)
-  avatarInitials?: string;
-
-  @ApiPropertyOptional({
     description: 'Avatar color from preset palette',
     example: 'blue',
   })

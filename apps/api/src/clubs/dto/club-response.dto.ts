@@ -22,13 +22,7 @@ export class ClubResponseDto {
   @ApiPropertyOptional({ description: 'Formatted invite code (XXXX-XXXX)' })
   inviteCode?: string;
 
-  @ApiPropertyOptional()
-  avatarUrl?: string;
-
-  @ApiPropertyOptional()
-  avatarInitials?: string;
-
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Avatar color preset name' })
   avatarColor?: string;
 
   // --- Stammdaten ---

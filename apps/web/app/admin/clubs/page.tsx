@@ -22,8 +22,8 @@ interface Club {
   name: string;
   slug: string;
   visibility: 'PUBLIC' | 'PRIVATE';
-  avatarInitials?: string;
   avatarColor?: string;
+  logoFileId?: string;
   tier?: { name: string };
   userCount?: number;
   memberCount?: number;
@@ -116,12 +116,7 @@ export default function AdminClubsPage() {
                 <TableRow key={club.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <ClubAvatar
-                        name={club.name}
-                        avatarInitials={club.avatarInitials}
-                        avatarColor={club.avatarColor}
-                        size="sm"
-                      />
+                      <ClubAvatar name={club.name} avatarColor={club.avatarColor} size="sm" />
                       <span className="font-medium">{club.name}</span>
                     </div>
                   </TableCell>

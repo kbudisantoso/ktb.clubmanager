@@ -180,7 +180,7 @@ export default function MyClubsPage() {
                   {/* Avatar */}
                   <ClubAvatar
                     name={club.name}
-                    avatarInitials={club.avatarInitials}
+                    logoUrl={club.logoUrl}
                     avatarColor={club.avatarColor}
                     size="md"
                   />

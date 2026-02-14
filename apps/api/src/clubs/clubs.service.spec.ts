@@ -56,8 +56,7 @@ describe('ClubsService', () => {
           description: null,
           visibility: 'PRIVATE',
           inviteCode: 'ABCD1234',
-          avatarUrl: null,
-          avatarInitials: 'TC',
+
           avatarColor: 'blue',
           tierId: 'tier-1',
           tier: { id: 'tier-1', name: 'Basic' },
@@ -99,8 +98,7 @@ describe('ClubsService', () => {
           description: null,
           visibility: 'PRIVATE',
           inviteCode: 'ABCD1234',
-          avatarUrl: null,
-          avatarInitials: 'TC',
+
           avatarColor: 'blue',
           tierId: 'tier-1',
           tier: { id: 'tier-1', name: 'Basic' },
@@ -134,8 +132,7 @@ describe('ClubsService', () => {
           description: null,
           visibility: 'PRIVATE',
           inviteCode: 'ABCD1234',
-          avatarUrl: null,
-          avatarInitials: 'TC',
+
           avatarColor: 'blue',
           tierId: null,
           tier: null,
@@ -174,8 +171,7 @@ describe('ClubsService', () => {
           description: null,
           visibility: 'PRIVATE',
           inviteCode: 'ABCD1234',
-          avatarUrl: null,
-          avatarInitials: 'TC',
+
           avatarColor: 'blue',
           tierId: 'tier-1',
           tier: { id: 'tier-1', name: 'Basic' },
@@ -204,8 +200,7 @@ describe('ClubsService', () => {
           description: null,
           visibility: 'PRIVATE',
           inviteCode: 'ABCD1234',
-          avatarUrl: null,
-          avatarInitials: 'TC',
+
           avatarColor: 'blue',
           tierId: null,
           tier: null,
@@ -241,8 +236,7 @@ describe('ClubsService', () => {
           description: null,
           visibility: 'PRIVATE',
           inviteCode: 'ABCD1234',
-          avatarUrl: null,
-          avatarInitials: 'TC',
+
           avatarColor: 'blue',
           tierId: null,
           tier: null,
@@ -257,40 +251,6 @@ describe('ClubsService', () => {
           expect.objectContaining({
             data: expect.objectContaining({
               slug: 'test-club-1',
-            }),
-          })
-        );
-      });
-
-      it('should generate initials from club name', async () => {
-        mockAppSettings.isSelfServiceEnabled.mockResolvedValue(true);
-        mockAppSettings.getDefaultTierId.mockResolvedValue(null);
-        mockAppSettings.getDefaultVisibility.mockResolvedValue('PRIVATE');
-        mockPrisma.club.findUnique.mockResolvedValue(null);
-        mockPrisma.club.create.mockResolvedValue({
-          id: 'club-1',
-          name: 'Turnverein Schwarz Weiss 1908',
-          slug: 'turnverein-schwarz-weiss-1908',
-          legalName: null,
-          description: null,
-          visibility: 'PRIVATE',
-          inviteCode: 'ABCD1234',
-          avatarUrl: null,
-          avatarInitials: 'TSW',
-          avatarColor: 'blue',
-          tierId: null,
-          tier: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          _count: { clubUsers: 1, members: 0 },
-        });
-
-        await service.create({ name: 'Turnverein Schwarz Weiss 1908' }, userId, false);
-
-        expect(mockPrisma.club.create).toHaveBeenCalledWith(
-          expect.objectContaining({
-            data: expect.objectContaining({
-              avatarInitials: 'TSW',
             }),
           })
         );
@@ -340,8 +300,7 @@ describe('ClubsService', () => {
             description: null,
             visibility: 'PRIVATE',
             inviteCode: 'ABCD1234',
-            avatarUrl: null,
-            avatarInitials: 'CO',
+
             avatarColor: 'blue',
             tierId: null,
             tier: null,
@@ -361,8 +320,7 @@ describe('ClubsService', () => {
             description: null,
             visibility: 'PUBLIC',
             inviteCode: null,
-            avatarUrl: null,
-            avatarInitials: 'CT',
+
             avatarColor: 'green',
             tierId: null,
             tier: null,
@@ -480,8 +438,7 @@ describe('ClubsService', () => {
         description: null,
         visibility: 'PRIVATE',
         inviteCode: 'ABCD1234',
-        avatarUrl: null,
-        avatarInitials: 'UN',
+
         avatarColor: 'blue',
         tierId: null,
         tier: null,
@@ -512,8 +469,7 @@ describe('ClubsService', () => {
         description: null,
         visibility: 'PRIVATE',
         inviteCode: 'ABCD1234',
-        avatarUrl: null,
-        avatarInitials: 'UN',
+
         avatarColor: 'blue',
         tierId: null,
         tier: null,
@@ -540,8 +496,7 @@ describe('ClubsService', () => {
         description: null,
         visibility: 'PRIVATE',
         inviteCode: 'ABCD1234',
-        avatarUrl: null,
-        avatarInitials: 'UN',
+
         avatarColor: 'blue',
         tierId: null,
         tier: null,
@@ -593,8 +548,7 @@ describe('ClubsService', () => {
         description: null,
         visibility: 'PRIVATE',
         inviteCode: 'ABCD1234',
-        avatarUrl: null,
-        avatarInitials: 'TC',
+
         avatarColor: 'blue',
         tierId: null,
         tier: null,
@@ -675,8 +629,7 @@ describe('ClubsService', () => {
         description: null,
         visibility: 'PRIVATE',
         inviteCode: 'ABCD1234',
-        avatarUrl: null,
-        avatarInitials: 'TC',
+
         avatarColor: 'blue',
         tierId: null,
         tier: null,
@@ -749,8 +702,7 @@ describe('ClubsService', () => {
         description: null,
         visibility: 'PRIVATE',
         inviteCode: 'ABCD1234',
-        avatarUrl: null,
-        avatarInitials: 'TC',
+
         avatarColor: 'blue',
         tierId: null,
         tier: null,
@@ -810,8 +762,7 @@ describe('ClubsService', () => {
         description: null,
         visibility: 'PRIVATE',
         inviteCode: 'ABCD1234',
-        avatarUrl: null,
-        avatarInitials: 'TC',
+
         avatarColor: 'blue',
         tierId: null,
         tier: null,
