@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
-import { Camera, Loader2 } from 'lucide-react';
+import { Camera, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useFileUpload } from '@/hooks/use-file-upload';
+import { apiFetch } from '@/lib/api';
 
 // ============================================================================
 // Constants
@@ -32,6 +33,8 @@ interface LogoUploadProps {
   avatarColor?: string;
   slug: string;
   onLogoUploaded: (fileId: string) => void;
+  onLogoRemoved?: () => void;
+  onColorChanged?: (color: string) => void;
   disabled?: boolean;
 }
 
@@ -92,6 +95,7 @@ const AVATAR_COLORS: Record<string, string> = {
   cyan: 'bg-cyan-500',
   orange: 'bg-orange-500',
   gray: 'bg-gray-500',
+  brown: 'bg-amber-800',
 };
 
 // ============================================================================
@@ -109,6 +113,8 @@ export function LogoUpload({
   avatarColor = 'blue',
   slug,
   onLogoUploaded,
+  onLogoRemoved,
+  onColorChanged,
   disabled,
 }: LogoUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -141,6 +147,29 @@ export function LogoUpload({
   });
 
   const isUploading = status === 'creating' || status === 'uploading' || status === 'confirming';
+  const [isRemoving, setIsRemoving] = useState(false);
+
+  // --------------------------------------------------------------------------
+  // Remove logo
+  // --------------------------------------------------------------------------
+
+  const handleRemove = useCallback(async () => {
+    setIsRemoving(true);
+    try {
+      const res = await apiFetch(`/api/clubs/${slug}/files/logo`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: 'Fehler beim Entfernen' }));
+        throw new Error(err.message);
+      }
+      setPreviewUrl(undefined);
+      setImgError(false);
+      onLogoRemoved?.();
+    } catch {
+      // Silently fail — logo will still be visible
+    } finally {
+      setIsRemoving(false);
+    }
+  }, [slug, onLogoRemoved]);
 
   // --------------------------------------------------------------------------
   // File selection
@@ -232,34 +261,71 @@ export function LogoUpload({
     <>
       {/* Clickable avatar with camera overlay */}
       <div className="flex flex-col items-center gap-2">
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={disabled || isUploading}
-          className="group relative size-28 overflow-hidden rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label="Vereinslogo hochladen"
-        >
-          {showImage ? (
-            <img
-              src={previewUrl}
-              alt="Vereinslogo"
-              className="size-full rounded-full object-cover"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <div
-              className={`flex size-full items-center justify-center rounded-full text-2xl font-medium text-white ${bgColor}`}
-            >
-              {avatarInitials ?? ''}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled || isUploading}
+            className="group relative size-28 overflow-hidden rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Vereinslogo hochladen"
+          >
+            {showImage ? (
+              <img
+                src={previewUrl}
+                alt="Vereinslogo"
+                className="size-full rounded-full object-cover"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <div
+                className={`flex size-full items-center justify-center rounded-full text-2xl font-medium text-white ${bgColor}`}
+              >
+                {avatarInitials ?? ''}
+              </div>
+            )}
+            {/* Camera overlay */}
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 transition-colors group-hover:bg-black/40">
+              <Camera className="size-6 text-white opacity-0 transition-opacity group-hover:opacity-100" />
             </div>
-          )}
-          {/* Camera overlay */}
-          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 transition-colors group-hover:bg-black/40">
-            <Camera className="size-6 text-white opacity-0 transition-opacity group-hover:opacity-100" />
-          </div>
-        </button>
+          </button>
 
-        <span className="text-xs text-muted-foreground">Logo ändern</span>
+          {/* Remove button — shown when a logo is displayed */}
+          {showImage && onLogoRemoved && !disabled && !isUploading && (
+            <button
+              type="button"
+              onClick={handleRemove}
+              disabled={isRemoving}
+              className="absolute right-0 top-0 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm transition-opacity hover:opacity-80 disabled:opacity-50"
+              aria-label="Logo entfernen"
+            >
+              {isRemoving ? <Loader2 className="size-3 animate-spin" /> : <X className="size-3" />}
+            </button>
+          )}
+        </div>
+
+        <span className="text-xs text-muted-foreground">
+          {showImage ? 'Logo ändern' : 'Logo hochladen'}
+        </span>
+
+        {/* Color swatches — only when no logo is shown */}
+        {!showImage && onColorChanged && (
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {Object.entries(AVATAR_COLORS).map(([name, bgClass]) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => onColorChanged(name)}
+                disabled={disabled}
+                className={`size-6 rounded-full transition-all ${bgClass} ${
+                  avatarColor === name
+                    ? 'ring-2 ring-primary ring-offset-2'
+                    : 'hover:ring-2 hover:ring-muted-foreground/30 hover:ring-offset-1'
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+                aria-label={`Farbe ${name}`}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Validation error */}
         {validationError && <p className="text-xs text-destructive">{validationError}</p>}

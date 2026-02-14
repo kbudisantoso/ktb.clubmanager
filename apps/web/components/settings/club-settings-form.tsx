@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { useUpdateClubSettings } from '@/hooks/use-club-settings';
 import type { ClubSettingsResponse } from '@/hooks/use-club-settings';
 import { useSettingsCompleteness } from '@/hooks/use-settings-completeness';
+import { useInvalidateClubs } from '@/hooks/use-clubs';
 import { useToast } from '@/hooks/use-toast';
-import { apiFetch } from '@/lib/api';
 import { LogoUpload } from './logo-upload';
 import { SettingsCompletenessCard } from './settings-completeness-card';
 import { BasicInfoSection } from './sections/basic-info-section';
@@ -76,9 +76,26 @@ function clubToFormValues(club: ClubSettingsResponse): SettingsFormValues {
     probationPeriodDays: club.probationPeriodDays ?? undefined,
     // Sichtbarkeit
     visibility: club.visibility,
-    // Logo
+    // Logo & Avatar
     logoFileId: club.logoFileId ?? undefined,
+    avatarColor: (club.avatarColor as SettingsFormValues['avatarColor']) ?? undefined,
   };
+}
+
+// ============================================================================
+// Helper: Derive initials from name (mirrors club-avatar.tsx logic)
+// ============================================================================
+
+function deriveInitials(name: string): string {
+  const words = name.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    return words
+      .slice(0, 3)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
 }
 
 // ============================================================================
@@ -92,7 +109,12 @@ function clubToFormValues(club: ClubSettingsResponse): SettingsFormValues {
 export function ClubSettingsForm({ club, slug }: ClubSettingsFormProps) {
   const { toast } = useToast();
   const updateSettings = useUpdateClubSettings(slug);
-  const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
+  const invalidateClubs = useInvalidateClubs();
+
+  // Cache-buster counter — incremented after each logo upload to force <img> reload.
+  // Uses a ref-backed state so the redirect URL changes on upload without dirtying the form.
+  const cacheBusterRef = useRef(0);
+  const [cacheBuster, setCacheBuster] = useState(0);
 
   const defaultValues = useMemo(() => clubToFormValues(club), [club]);
 
@@ -124,25 +146,18 @@ export function ClubSettingsForm({ club, slug }: ClubSettingsFormProps) {
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty]);
 
-  // Fetch logo URL when club has a logoFileId
-  useEffect(() => {
-    if (!club.logoFileId) {
-      setLogoUrl(undefined);
-      return;
-    }
-    let cancelled = false;
-    apiFetch(`/api/clubs/${slug}/files/${club.logoFileId}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!cancelled && data?.url) setLogoUrl(data.url);
-      })
-      .catch(() => {
-        /* ignore — fallback to initials */
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [club.logoFileId, slug]);
+  // Stable redirect URL for the logo — browser follows 302 to short-lived presigned URL.
+  // Cache-buster forces reload after a new logo is uploaded (see ADR-0016).
+  const logoUrl =
+    club.logoFileId || cacheBuster > 0
+      ? `/api/clubs/${slug}/files/logo${cacheBuster ? `?v=${cacheBuster}` : ''}`
+      : undefined;
+
+  // Derive avatar initials from current form values (not stale server data)
+  const watchedShortCode = form.watch('shortCode');
+  const watchedName = form.watch('name');
+  const watchedAvatarColor = form.watch('avatarColor');
+  const avatarInitials = (watchedShortCode || deriveInitials(watchedName || club.name)).slice(0, 3);
 
   // ============================================================================
   // Submit handler — only sends changed fields
@@ -197,12 +212,29 @@ export function ClubSettingsForm({ club, slug }: ClubSettingsFormProps) {
             <div className="flex items-center justify-center">
               <LogoUpload
                 currentLogoUrl={logoUrl}
-                avatarInitials={club.avatarInitials ?? undefined}
-                avatarColor={club.avatarColor ?? undefined}
+                avatarInitials={avatarInitials}
+                avatarColor={watchedAvatarColor ?? club.avatarColor ?? undefined}
                 slug={slug}
                 onLogoUploaded={(fileId) => {
                   // Backend sets club.logoFileId during confirm — just sync form state
                   form.resetField('logoFileId', { defaultValue: fileId });
+                  // Bump cache-buster so redirect URL forces <img> reload
+                  cacheBusterRef.current += 1;
+                  setCacheBuster(cacheBusterRef.current);
+                  // Invalidate clubs query so sidebar/breadcrumbs pick up the new logo
+                  invalidateClubs();
+                }}
+                onLogoRemoved={() => {
+                  // Backend cleared club.logoFileId — sync form state
+                  form.resetField('logoFileId', { defaultValue: undefined });
+                  setCacheBuster(0);
+                  // Invalidate clubs query so sidebar/breadcrumbs reflect logo removal
+                  invalidateClubs();
+                }}
+                onColorChanged={(color) => {
+                  form.setValue('avatarColor', color as SettingsFormValues['avatarColor'], {
+                    shouldDirty: true,
+                  });
                 }}
                 disabled={isSubmitting}
               />

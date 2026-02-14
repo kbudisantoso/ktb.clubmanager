@@ -81,6 +81,23 @@ export const UpdateClubSettingsSchema = z.object({
 
   // Logo (file reference)
   logoFileId: z.string().optional().nullable(),
+
+  // Avatar
+  avatarColor: z
+    .enum([
+      'blue',
+      'green',
+      'red',
+      'yellow',
+      'purple',
+      'pink',
+      'indigo',
+      'cyan',
+      'orange',
+      'gray',
+      'brown',
+    ])
+    .optional(),
 });
 
 export type UpdateClubSettings = z.infer<typeof UpdateClubSettingsSchema>;
