@@ -9,3 +9,4 @@ export * from './membership-period.ts';
 export * from './number-range.ts';
 export * from './club-settings.ts';
 export * from './file.ts';
+export * from './user-profile.ts';
