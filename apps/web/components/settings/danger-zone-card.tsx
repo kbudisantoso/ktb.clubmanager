@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Loader2, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, Loader2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -18,28 +18,31 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccountDeletionCheck, useDeleteAccount } from '@/hooks/use-security';
+import { useSessionQuery } from '@/hooks/use-session';
 
 // ============================================================================
 // Main component
 // ============================================================================
 
 export function DangerZoneCard() {
+  const { data: session } = useSessionQuery();
   const deletionCheck = useAccountDeletionCheck();
   const deleteAccount = useDeleteAccount();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [confirmInput, setConfirmInput] = useState('');
 
-  const confirmationMatch = confirmInput === 'LOESCHEN';
+  const userEmail = session?.user.email ?? '';
+  const confirmationMatch = confirmInput === userEmail;
+  const hasError = deletionCheck.isError;
+  const isChecking = deletionCheck.isFetching;
   const isBlocked = deletionCheck.data && !deletionCheck.data.canDelete;
+  const canDelete = deletionCheck.data?.canDelete === true;
   const blockedClubs = deletionCheck.data?.blockedClubs ?? [];
 
   const handleDeleteClick = async () => {
-    // Fetch deletion check first
-    const result = await deletionCheck.refetch();
-    if (result.data) {
-      setDialogOpen(true);
-    }
+    await deletionCheck.refetch();
+    setDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -82,63 +85,103 @@ export function DangerZoneCard() {
 
       <AlertDialog open={dialogOpen} onOpenChange={handleClose}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-destructive" />
-              {isBlocked ? 'Konto kann nicht geloescht werden' : 'Konto wirklich loeschen?'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {isBlocked
-                ? 'Du bist der einzige Verantwortliche folgender Vereine. Bitte uebertrage zuerst die Verantwortlichkeit.'
-                : 'Diese Aktion kann nicht rueckgaengig gemacht werden. Deine persoenlichen Daten werden unwiderruflich geloescht. Deine Vereinsmitgliedschaften bleiben davon unberuehrt.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          {isBlocked ? (
-            <div className="space-y-2">
-              {blockedClubs.map((club) => (
-                <div key={club.id} className="flex items-center justify-between py-1">
-                  <span className="text-sm font-medium">{club.name}</span>
-                  <Button variant="link" size="sm" asChild>
-                    <Link href={`/clubs/${club.slug}/settings/users`}>Benutzer verwalten</Link>
-                  </Button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="delete-confirm">
-                  Gib <code className="font-mono font-bold">LOESCHEN</code> ein, um die Loeschung zu
-                  bestaetigen:
-                </Label>
-                <Input
-                  id="delete-confirm"
-                  value={confirmInput}
-                  onChange={(e) => setConfirmInput(e.target.value)}
-                  placeholder="LOESCHEN"
-                  className="font-mono"
-                  autoFocus
-                />
+          {isChecking ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Pruefe Voraussetzungen...
+                </AlertDialogTitle>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={handleClose}>Abbrechen</AlertDialogCancel>
+              </AlertDialogFooter>
+            </>
+          ) : hasError ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  Pruefung fehlgeschlagen
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Die Voraussetzungen fuer die Kontoloeschung konnten nicht geprueft werden. Bitte
+                  versuche es spaeter erneut.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={handleClose}>Schliessen</AlertDialogCancel>
+              </AlertDialogFooter>
+            </>
+          ) : isBlocked ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <ShieldAlert className="h-5 w-5 text-destructive" />
+                  Konto kann nicht geloescht werden
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Du bist der einzige Verantwortliche folgender Vereine. Bitte uebertrage zuerst die
+                  Verantwortlichkeit.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-2">
+                {blockedClubs.map((club) => (
+                  <div key={club.id} className="flex items-center justify-between py-1">
+                    <span className="text-sm font-medium">{club.name}</span>
+                    <Button variant="link" size="sm" asChild>
+                      <Link href={`/clubs/${club.slug}/settings/users`}>Benutzer verwalten</Link>
+                    </Button>
+                  </div>
+                ))}
               </div>
-            </div>
-          )}
-
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleClose}>
-              {isBlocked ? 'Schliessen' : 'Abbrechen'}
-            </AlertDialogCancel>
-            {!isBlocked && (
-              <AlertDialogAction
-                onClick={handleConfirmDelete}
-                disabled={!confirmationMatch || deleteAccount.isPending}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                {deleteAccount.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Konto loeschen
-              </AlertDialogAction>
-            )}
-          </AlertDialogFooter>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={handleClose}>Schliessen</AlertDialogCancel>
+              </AlertDialogFooter>
+            </>
+          ) : canDelete ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <ShieldAlert className="h-5 w-5 text-destructive" />
+                  Konto wirklich loeschen?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Diese Aktion kann nicht rueckgaengig gemacht werden. Deine persoenlichen Daten
+                  werden unwiderruflich geloescht. Deine Vereinsmitgliedschaften bleiben davon
+                  unberuehrt.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="delete-confirm">
+                    Gib deine E-Mail-Adresse{' '}
+                    <code className="font-mono font-bold">{userEmail}</code> ein, um die Loeschung
+                    zu bestaetigen:
+                  </Label>
+                  <Input
+                    id="delete-confirm"
+                    type="email"
+                    value={confirmInput}
+                    onChange={(e) => setConfirmInput(e.target.value)}
+                    placeholder={userEmail}
+                    autoFocus
+                  />
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={handleClose}>Abbrechen</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleConfirmDelete}
+                  disabled={!confirmationMatch || deleteAccount.isPending}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deleteAccount.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Konto loeschen
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          ) : null}
         </AlertDialogContent>
       </AlertDialog>
     </>
