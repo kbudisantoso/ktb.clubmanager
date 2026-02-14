@@ -60,15 +60,15 @@ export function DangerZoneCard() {
     <>
       <Card className="border-destructive">
         <CardHeader>
-          <CardTitle>Konto loeschen</CardTitle>
-          <CardDescription>Dein Benutzerkonto unwiderruflich loeschen</CardDescription>
+          <CardTitle>Konto löschen</CardTitle>
+          <CardDescription>Dein Benutzerkonto unwiderruflich löschen</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-sm text-muted-foreground space-y-1">
-            <p>Deine persoenlichen Daten werden unwiderruflich geloescht.</p>
-            <p>Deine Mitgliedschaften in Vereinen bleiben davon unberuehrt.</p>
+            <p>Deine persönlichen Daten werden unwiderruflich gelöscht.</p>
+            <p>Deine Mitgliedschaften in Vereinen bleiben davon unberührt.</p>
             <p>
-              Die Verknuepfung zwischen deinem Benutzerkonto und deinen Vereinsmitgliedschaften wird
+              Die Verknüpfung zwischen deinem Benutzerkonto und deinen Vereinsmitgliedschaften wird
               aufgehoben.
             </p>
           </div>
@@ -78,7 +78,7 @@ export function DangerZoneCard() {
             disabled={deletionCheck.isFetching}
           >
             {deletionCheck.isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Konto loeschen
+            Konto löschen
           </Button>
         </CardContent>
       </Card>
@@ -90,7 +90,7 @@ export function DangerZoneCard() {
               <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Pruefe Voraussetzungen...
+                  Prüfe Voraussetzungen...
                 </AlertDialogTitle>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -102,15 +102,15 @@ export function DangerZoneCard() {
               <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2">
                   <AlertTriangle className="h-5 w-5 text-destructive" />
-                  Pruefung fehlgeschlagen
+                  Prüfung fehlgeschlagen
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  Die Voraussetzungen fuer die Kontoloeschung konnten nicht geprueft werden. Bitte
-                  versuche es spaeter erneut.
+                  Die Voraussetzungen für die Kontolöschung konnten nicht geprüft werden. Bitte
+                  versuche es später erneut.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel onClick={handleClose}>Schliessen</AlertDialogCancel>
+                <AlertDialogCancel onClick={handleClose}>Schließen</AlertDialogCancel>
               </AlertDialogFooter>
             </>
           ) : isBlocked ? (
@@ -118,10 +118,10 @@ export function DangerZoneCard() {
               <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2">
                   <ShieldAlert className="h-5 w-5 text-destructive" />
-                  Konto kann nicht geloescht werden
+                  Konto kann nicht gelöscht werden
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  Du bist der einzige Verantwortliche folgender Vereine. Bitte uebertrage zuerst die
+                  Du bist der einzige Verantwortliche folgender Vereine. Bitte übertrage zuerst die
                   Verantwortlichkeit.
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -136,7 +136,7 @@ export function DangerZoneCard() {
                 ))}
               </div>
               <AlertDialogFooter>
-                <AlertDialogCancel onClick={handleClose}>Schliessen</AlertDialogCancel>
+                <AlertDialogCancel onClick={handleClose}>Schließen</AlertDialogCancel>
               </AlertDialogFooter>
             </>
           ) : canDelete ? (
@@ -144,20 +144,19 @@ export function DangerZoneCard() {
               <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2">
                   <ShieldAlert className="h-5 w-5 text-destructive" />
-                  Konto wirklich loeschen?
+                  Konto wirklich löschen?
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  Diese Aktion kann nicht rueckgaengig gemacht werden. Deine persoenlichen Daten
-                  werden unwiderruflich geloescht. Deine Vereinsmitgliedschaften bleiben davon
-                  unberuehrt.
+                  Diese Aktion kann nicht rückgängig gemacht werden. Deine persönlichen Daten werden
+                  unwiderruflich gelöscht. Deine Vereinsmitgliedschaften bleiben davon unberührt.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="delete-confirm">
                     Gib deine E-Mail-Adresse{' '}
-                    <code className="font-mono font-bold">{userEmail}</code> ein, um die Loeschung
-                    zu bestaetigen:
+                    <code className="font-mono font-bold">{userEmail}</code> ein, um die Löschung zu
+                    bestätigen:
                   </Label>
                   <Input
                     id="delete-confirm"
@@ -177,7 +176,7 @@ export function DangerZoneCard() {
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
                   {deleteAccount.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Konto loeschen
+                  Konto löschen
                 </AlertDialogAction>
               </AlertDialogFooter>
             </>

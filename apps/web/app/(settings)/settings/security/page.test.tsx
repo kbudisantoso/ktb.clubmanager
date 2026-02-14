@@ -147,9 +147,9 @@ describe('SecurityClient', () => {
     render(<SecurityClient />);
 
     expect(screen.getByText('Aktive Sitzungen')).toBeInTheDocument();
-    expect(screen.getByText('Verknuepfte Konten')).toBeInTheDocument();
+    expect(screen.getByText('Verknüpfte Konten')).toBeInTheDocument();
     expect(screen.getByText('Passwort')).toBeInTheDocument();
-    expect(screen.getAllByText('Konto loeschen').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Konto löschen').length).toBeGreaterThan(0);
   });
 
   // --------------------------------------------------------------------------
@@ -252,7 +252,7 @@ describe('SecurityClient', () => {
 
       expect(screen.getByLabelText('Aktuelles Passwort')).toBeInTheDocument();
       expect(screen.getByLabelText('Neues Passwort')).toBeInTheDocument();
-      expect(screen.getByLabelText('Neues Passwort bestaetigen')).toBeInTheDocument();
+      expect(screen.getByLabelText('Neues Passwort bestätigen')).toBeInTheDocument();
     });
 
     it('shows info message when no credential auth', () => {
@@ -261,7 +261,7 @@ describe('SecurityClient', () => {
       render(<SecurityClient />);
 
       expect(
-        screen.getByText(/ueber einen externen Dienst angemeldet.*Passwort ist nicht erforderlich/)
+        screen.getByText(/über einen externen Dienst angemeldet.*Passwort ist nicht erforderlich/)
       ).toBeInTheDocument();
     });
 
@@ -273,9 +273,9 @@ describe('SecurityClient', () => {
 
       await user.type(screen.getByLabelText('Aktuelles Passwort'), 'oldPassword1');
       await user.type(screen.getByLabelText('Neues Passwort'), 'newPassword1');
-      await user.type(screen.getByLabelText('Neues Passwort bestaetigen'), 'newPassword1');
+      await user.type(screen.getByLabelText('Neues Passwort bestätigen'), 'newPassword1');
 
-      await user.click(screen.getByRole('button', { name: /passwort aendern/i }));
+      await user.click(screen.getByRole('button', { name: /passwort ändern/i }));
 
       expect(mockChangePasswordMutateAsync).toHaveBeenCalledWith(
         {
@@ -296,7 +296,7 @@ describe('SecurityClient', () => {
     it('shows delete button', () => {
       render(<SecurityClient />);
 
-      expect(screen.getByRole('button', { name: /konto loeschen/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /konto löschen/i })).toBeInTheDocument();
     });
 
     it('shows blocked clubs dialog when sole owner', async () => {
@@ -310,7 +310,7 @@ describe('SecurityClient', () => {
 
       render(<SecurityClient />);
 
-      await user.click(screen.getByRole('button', { name: /konto loeschen/i }));
+      await user.click(screen.getByRole('button', { name: /konto löschen/i }));
 
       // Wait for the dialog to appear — need to re-render with updated data
       // The refetch resolves but the component also needs the data via the hook
@@ -331,7 +331,7 @@ describe('SecurityClient', () => {
 
       render(<SecurityClient />);
 
-      await user.click(screen.getByRole('button', { name: /konto loeschen/i }));
+      await user.click(screen.getByRole('button', { name: /konto löschen/i }));
 
       // Dialog should show confirmation input with user email as placeholder
       expect(screen.getByPlaceholderText('test@test.de')).toBeInTheDocument();

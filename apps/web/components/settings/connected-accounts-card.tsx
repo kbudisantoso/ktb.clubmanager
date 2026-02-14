@@ -102,8 +102,8 @@ export function ConnectedAccountsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Verknuepfte Konten</CardTitle>
-        <CardDescription>Anmeldungen ueber externe Dienste</CardDescription>
+        <CardTitle>Verknüpfte Konten</CardTitle>
+        <CardDescription>Anmeldungen über externe Dienste</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -125,7 +125,7 @@ export function ConnectedAccountsCard() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Keine verknuepften Konten</p>
+          <p className="text-sm text-muted-foreground">Keine verknüpften Konten</p>
         )}
       </CardContent>
     </Card>

@@ -29,7 +29,7 @@ function isMobileDevice(userAgent: string | null): boolean {
 }
 
 function parseBrowserAndOs(userAgent: string | null): string {
-  if (!userAgent) return 'Unbekanntes Geraet';
+  if (!userAgent) return 'Unbekanntes Gerät';
 
   let browser = 'Unbekannter Browser';
   if (userAgent.includes('Firefox')) browser = 'Firefox';
@@ -124,7 +124,7 @@ export function SessionsCard() {
     <Card>
       <CardHeader>
         <CardTitle>Aktive Sitzungen</CardTitle>
-        <CardDescription>Geraete, auf denen du angemeldet bist</CardDescription>
+        <CardDescription>Geräte, auf denen du angemeldet bist</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (

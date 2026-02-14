@@ -75,15 +75,14 @@ export function PasswordCard() {
         <CardTitle>Passwort</CardTitle>
         <CardDescription>
           {hasCredential
-            ? 'Aendere dein Passwort'
-            : 'Du hast dich ueber einen externen Dienst angemeldet'}
+            ? 'Ändere dein Passwort'
+            : 'Du hast dich über einen externen Dienst angemeldet'}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {!hasCredential ? (
           <p className="text-sm text-muted-foreground">
-            Du hast dich ueber einen externen Dienst angemeldet. Ein Passwort ist nicht
-            erforderlich.
+            Du hast dich über einen externen Dienst angemeldet. Ein Passwort ist nicht erforderlich.
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -114,7 +113,7 @@ export function PasswordCard() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">Neues Passwort bestaetigen</Label>
+              <Label htmlFor="confirm-password">Neues Passwort bestätigen</Label>
               <Input
                 id="confirm-password"
                 type="password"
@@ -123,7 +122,7 @@ export function PasswordCard() {
                 autoComplete="new-password"
               />
               {passwordsMismatch && (
-                <p className="text-xs text-destructive">Passwoerter stimmen nicht ueberein</p>
+                <p className="text-xs text-destructive">Passwörter stimmen nicht überein</p>
               )}
             </div>
 
@@ -142,7 +141,7 @@ export function PasswordCard() {
 
             <Button type="submit" disabled={!canSubmit}>
               {changePassword.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Passwort aendern
+              Passwort ändern
             </Button>
           </form>
         )}
