@@ -162,6 +162,10 @@ export class MembersService {
         membershipPeriods: {
           orderBy: { joinDate: 'desc' },
         },
+        statusTransitions: {
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+        },
       },
     });
 
@@ -231,12 +235,12 @@ export class MembersService {
       statusChangedBy: userId,
     };
 
-    // Auto-create first membership period if joinDate and membershipType provided
-    if (dto.joinDate && dto.membershipType) {
+    // Auto-create first membership period if joinDate and membershipTypeId provided
+    if (dto.joinDate && dto.membershipTypeId) {
       (createData as Record<string, unknown>).membershipPeriods = {
         create: {
           joinDate: new Date(dto.joinDate),
-          membershipType: dto.membershipType,
+          membershipTypeId: dto.membershipTypeId,
         },
       };
     }
@@ -535,10 +539,23 @@ export class MembersService {
       id: p.id,
       joinDate: toDateString(p.joinDate),
       leaveDate: toDateString(p.leaveDate),
-      membershipType: p.membershipType,
+      membershipTypeId: p.membershipTypeId ?? null,
       notes: p.notes ?? null,
       createdAt: toISOStringOrNull(p.createdAt),
       updatedAt: toISOStringOrNull(p.updatedAt),
+    }));
+
+    // Format status transitions (if included)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const transitions = member.statusTransitions?.map((t: any) => ({
+      id: t.id,
+      fromStatus: t.fromStatus,
+      toStatus: t.toStatus,
+      reason: t.reason,
+      leftCategory: t.leftCategory,
+      effectiveDate: toDateString(t.effectiveDate),
+      actorId: t.actorId,
+      createdAt: toISOStringOrNull(t.createdAt),
     }));
 
     return {
@@ -581,6 +598,7 @@ export class MembersService {
       householdRole: member.householdRole ?? null,
       household: member.household ?? null,
       membershipPeriods: periods ?? [],
+      statusTransitions: transitions ?? undefined,
       deletedAt: toISOStringOrNull(member.deletedAt),
       deletedBy: member.deletedBy ?? null,
       deletionReason: member.deletionReason ?? null,

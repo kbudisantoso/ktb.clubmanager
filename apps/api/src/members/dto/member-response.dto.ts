@@ -18,8 +18,8 @@ export class MembershipPeriodSummaryDto {
   @ApiPropertyOptional({ description: 'Leave date (YYYY-MM-DD), null if current' })
   leaveDate?: string | null;
 
-  @ApiProperty()
-  membershipType!: string;
+  @ApiPropertyOptional()
+  membershipTypeId?: string | null;
 
   @ApiPropertyOptional()
   notes?: string | null;

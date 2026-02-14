@@ -78,7 +78,7 @@ export class MembershipPeriodsService {
         memberId,
         joinDate: new Date(dto.joinDate),
         leaveDate: dto.leaveDate ? new Date(dto.leaveDate) : null,
-        membershipType: dto.membershipType,
+        membershipTypeId: dto.membershipTypeId,
         notes: dto.notes,
       },
     });
@@ -123,7 +123,7 @@ export class MembershipPeriodsService {
     const updateData: Record<string, unknown> = {};
     if (dto.joinDate !== undefined) updateData.joinDate = new Date(dto.joinDate);
     if (dto.leaveDate !== undefined) updateData.leaveDate = new Date(dto.leaveDate);
-    if (dto.membershipType !== undefined) updateData.membershipType = dto.membershipType;
+    if (dto.membershipTypeId !== undefined) updateData.membershipTypeId = dto.membershipTypeId;
     if (dto.notes !== undefined) updateData.notes = dto.notes;
 
     const updated = await db.membershipPeriod.update({
@@ -226,7 +226,7 @@ export class MembershipPeriodsService {
       memberId: period.memberId,
       joinDate: toDateString(period.joinDate),
       leaveDate: toDateString(period.leaveDate),
-      membershipType: period.membershipType,
+      membershipTypeId: period.membershipTypeId ?? null,
       notes: period.notes ?? null,
       createdAt: period.createdAt?.toISOString() ?? null,
       updatedAt: period.updatedAt?.toISOString() ?? null,

@@ -126,7 +126,7 @@ describe('MembersService', () => {
               id: 'period-1',
               joinDate: new Date('2025-01-01'),
               leaveDate: null,
-              membershipType: 'FULL',
+              membershipTypeId: 'type-1',
               notes: null,
               createdAt: new Date(),
               updatedAt: new Date(),
@@ -141,7 +141,7 @@ describe('MembersService', () => {
           firstName: 'Max',
           lastName: 'Mustermann',
           joinDate: '2025-01-01',
-          membershipType: 'FULL',
+          membershipTypeId: 'type-1',
         } as never,
         'user-1'
       );

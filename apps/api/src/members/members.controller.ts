@@ -61,6 +61,16 @@ export class MembersController {
     return this.membersService.findOne(ctx.clubId, id);
   }
 
+  @Get(':id/status-history')
+  @RequirePermission(Permission.MEMBER_READ)
+  @ApiOperation({ summary: 'Get member status transition history' })
+  @ApiParam({ name: 'id', description: 'Member ID' })
+  @ApiResponse({ status: 200, description: 'Status transition history' })
+  @ApiResponse({ status: 404, description: 'Member not found' })
+  async getStatusHistory(@GetClubContext() ctx: ClubContext, @Param('id') id: string) {
+    return this.memberStatusService.getStatusHistory(ctx.clubId, id);
+  }
+
   @Post()
   @RequirePermission(Permission.MEMBER_CREATE)
   @ApiOperation({ summary: 'Create a new member' })
@@ -163,7 +173,8 @@ export class MembersController {
       dto.newStatus,
       dto.reason,
       userId,
-      dto.effectiveDate
+      dto.effectiveDate,
+      dto.leftCategory
     );
   }
 
@@ -172,7 +183,7 @@ export class MembersController {
   @ApiOperation({ summary: 'Set cancellation date for a member' })
   @ApiParam({ name: 'id', description: 'Member ID' })
   @ApiResponse({ status: 200, description: 'Cancellation set' })
-  @ApiResponse({ status: 400, description: 'Member not active/inactive' })
+  @ApiResponse({ status: 400, description: 'Member not in cancellable status' })
   @ApiResponse({ status: 404, description: 'Member not found' })
   async setCancellation(
     @GetClubContext() ctx: ClubContext,
@@ -185,7 +196,8 @@ export class MembersController {
       id,
       dto.cancellationDate,
       dto.cancellationReceivedAt,
-      userId
+      userId,
+      dto.reason
     );
   }
 
@@ -203,7 +215,8 @@ export class MembersController {
       dto.memberIds,
       dto.newStatus,
       dto.reason,
-      userId
+      userId,
+      dto.leftCategory
     );
   }
 }

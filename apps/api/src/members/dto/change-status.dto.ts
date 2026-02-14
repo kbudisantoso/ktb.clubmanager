@@ -71,6 +71,17 @@ export class SetCancellationDto {
     message: 'Datum muss im Format YYYY-MM-DD sein',
   })
   cancellationReceivedAt!: string;
+
+  @ApiProperty({
+    description: 'Reason for the cancellation',
+    example: 'Kuendigung per Brief',
+    minLength: 1,
+    maxLength: 500,
+  })
+  @IsString()
+  @MinLength(1, { message: 'Begruendung ist erforderlich' })
+  @MaxLength(500, { message: 'Begruendung darf maximal 500 Zeichen lang sein' })
+  reason!: string;
 }
 
 export class BulkChangeStatusDto {
@@ -100,4 +111,12 @@ export class BulkChangeStatusDto {
   @MinLength(1, { message: 'Begruendung ist erforderlich' })
   @MaxLength(500, { message: 'Begruendung darf maximal 500 Zeichen lang sein' })
   reason!: string;
+
+  @ApiPropertyOptional({
+    description: 'Category for LEFT transitions (required when newStatus is LEFT)',
+    enum: LeftCategoryDto,
+  })
+  @IsEnum(LeftCategoryDto)
+  @IsOptional()
+  leftCategory?: LeftCategoryDto;
 }
