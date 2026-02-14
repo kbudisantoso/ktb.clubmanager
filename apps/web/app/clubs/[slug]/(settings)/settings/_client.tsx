@@ -1,25 +1,34 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useParams } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+import { useClubSettings } from '@/hooks/use-club-settings';
+import { ClubSettingsForm } from '@/components/settings/club-settings-form';
 
 /**
  * Client component for club settings page content.
- * Separated from async server component for testability.
+ * Fetches club settings and renders the always-editable form.
  */
 export function SettingsContent() {
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Allgemein</CardTitle>
-          <CardDescription>Grundlegende Einstellungen für deinen Verein</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Vereinseinstellungen werden in Phase 9 (Roles & Permissions) vollständig implementiert.
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
+  const { data: club, isLoading, error } = useClubSettings(slug);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error || !club) {
+    return (
+      <div className="py-12 text-center text-muted-foreground">
+        Einstellungen konnten nicht geladen werden.
+      </div>
+    );
+  }
+
+  return <ClubSettingsForm club={club} slug={slug} />;
 }

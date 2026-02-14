@@ -19,6 +19,7 @@ vi.mock('@/hooks/use-clubs', () => ({
     data: { clubs: mockClubs },
     isLoading: false,
   }),
+  useSyncClubsToStore: vi.fn(),
 }));
 
 // Mock club store

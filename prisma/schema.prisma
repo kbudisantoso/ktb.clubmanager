@@ -30,12 +30,75 @@ model Club {
   /// 8-char code for joining (XXXX-XXXX format stored without dash)
   inviteCode String?        @unique
 
-  /// Avatar: either image URL or initials + color
-  avatarUrl      String?
-  /// 1-3 characters for avatar display
-  avatarInitials String?
-  /// Preset color name for avatar
-  avatarColor    String?
+  /// Preset color name for avatar fallback (blue, green, red, etc.)
+  avatarColor String?
+
+  // --- Stammdaten (Basic Data) ---
+  /// Vereinskuerzel / Club abbreviation (e.g., "WCD")
+  shortCode String?
+  /// Gruendungsdatum / Date the club was founded
+  foundedAt DateTime? @db.Date
+
+  // --- Adresse & Kontakt (Address & Contact) ---
+  /// Strasse / Street name
+  street      String?
+  /// Hausnummer / House number
+  houseNumber String?
+  /// Postleitzahl / Postal code
+  postalCode  String?
+  /// Ort / City
+  city        String?
+  /// Telefonnummer / Phone number
+  phone       String?
+  /// E-Mail-Adresse / Contact email
+  email       String?
+  /// Webseite / Website URL
+  website     String?
+
+  // --- Vereinsregister (Club Registry) ---
+  /// Eingetragener Verein (e.V.) / Is a registered association
+  isRegistered    Boolean          @default(false)
+  /// Amtsgericht / Registry court
+  registryCourt   String?
+  /// VR-Nummer / Registry number
+  registryNumber  String?
+  /// Zweckbestimmung / Club purpose
+  clubPurpose     ClubPurpose?
+  /// Sonderform / Special organizational form
+  clubSpecialForm ClubSpecialForm?
+
+  // --- Steuerdaten (Tax Data) ---
+  /// Steuernummer / Tax number
+  taxNumber   String?
+  /// USt-IdNr / VAT identification number
+  vatId       String?
+  /// Zustaendiges Finanzamt / Responsible tax office
+  taxOffice   String?
+  /// Gemeinnuetzigkeit / Non-profit status
+  isNonProfit Boolean @default(false)
+
+  // --- Bankverbindung (Bank Details) ---
+  /// IBAN
+  iban          String?
+  /// BIC / SWIFT code
+  bic           String?
+  /// Kreditinstitut / Bank name (derived from IBAN, stored for display)
+  bankName      String?
+  /// Kontoinhaber / Account holder name
+  accountHolder String?
+
+  // --- Betriebseinstellungen (Operational Settings) ---
+  /// Geschaeftsjahresbeginn / Fiscal year start month (1-12)
+  fiscalYearStartMonth  Int?
+  /// Standard-Mitgliedsart / Default membership type for new members
+  defaultMembershipType MembershipType?
+  /// Probezeit in Tagen / Probation period in days
+  probationPeriodDays   Int?
+
+  // --- Logo ---
+  /// Referenz zur Logo-Datei / Reference to the logo file
+  logoFileId String? @unique
+  logoFile   File?   @relation(fields: [logoFileId], references: [id])
 
   /// Tier for feature limits (optional)
   tierId String?
@@ -56,6 +119,7 @@ model Club {
   households     Household[]
   numberRanges   NumberRange[]
   ledgerAccounts LedgerAccount[]
+  clubFiles      ClubFile[]
 
   @@map("clubs")
 }
@@ -66,6 +130,26 @@ enum ClubVisibility {
   PUBLIC
   /// Hidden, requires invite code to find
   PRIVATE
+}
+
+/// Zweckbestimmung / Purpose classification of the club
+enum ClubPurpose {
+  /// Idealverein (non-commercial association)
+  IDEALVEREIN
+  /// Wirtschaftlicher Verein (commercial association)
+  WIRTSCHAFTLICH
+}
+
+/// Sonderform / Special organizational form of the club
+enum ClubSpecialForm {
+  /// Keine Sonderform / No special form
+  KEINE
+  /// Traegerverein / Sponsoring association
+  TRAEGERVEREIN
+  /// Foerderverein / Support association
+  FOERDERVEREIN
+  /// Dachverband / Umbrella organization
+  DACHVERBAND
 }
 
 // =============================================================================
@@ -696,6 +780,9 @@ model User {
   clubUsers      ClubUser[]
   accessRequests AccessRequest[]
 
+  /// File management relations
+  userFiles UserFile[]
+
   @@map("auth_users")
 }
 
@@ -779,4 +866,103 @@ model Verification {
   updatedAt DateTime @updatedAt
 
   @@map("auth_verifications")
+}
+
+// =============================================================================
+// File Management Models
+// =============================================================================
+// Generic file management for club logos, documents, receipts, etc.
+// S3-compatible storage with presigned URLs.
+
+/// Status of a file in the storage system
+enum FileStatus {
+  /// Upload initiated but not yet confirmed
+  PENDING_UPLOAD
+  /// File successfully uploaded and available
+  UPLOADED
+  /// File marked as deleted (soft delete)
+  DELETED
+  /// File missing from storage (integrity issue)
+  MISSING
+}
+
+/// A file stored in S3-compatible object storage.
+/// Tracks metadata, upload status, and ownership.
+model File {
+  /// Unique identifier (CUID format)
+  id          String     @id @default(cuid())
+  /// Original filename as uploaded by the user
+  filename    String
+  /// MIME content type (e.g., "image/png", "application/pdf")
+  contentType String
+  /// File size in bytes
+  size        Int
+  /// S3 ETag for integrity verification
+  etag        String?
+  /// SHA-256 checksum for content verification
+  checksum    String?
+  /// Current status of the file
+  status      FileStatus @default(PENDING_UPLOAD)
+  /// Full S3 object key for storage (e.g., "clubs/{id}/logo.png")
+  s3Key       String
+
+  /// User who initiated the upload
+  uploadedById String
+  /// When the upload was confirmed complete
+  uploadedAt   DateTime?
+
+  /// Soft deletion timestamp (CONV-006)
+  deletedAt DateTime?
+  /// User ID who performed the soft deletion
+  deletedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  clubFiles ClubFile[]
+  userFiles UserFile[]
+  /// Club using this file as logo (1:1 via Club.logoFileId)
+  clubLogo  Club?
+
+  @@index([status])
+  @@map("files")
+}
+
+/// Junction table linking files to clubs (many-to-many).
+/// Used for club documents, receipts, attachments.
+model ClubFile {
+  /// Unique identifier (CUID format)
+  id     String @id @default(cuid())
+  /// The club that owns this file
+  clubId String
+  /// The file record
+  fileId String
+  club   Club   @relation(fields: [clubId], references: [id])
+  file   File   @relation(fields: [fileId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([clubId, fileId])
+  @@index([clubId])
+  @@map("club_files")
+}
+
+/// Junction table linking files to users (many-to-many).
+/// Used for user avatars, personal documents.
+model UserFile {
+  /// Unique identifier (CUID format)
+  id     String @id @default(cuid())
+  /// The user that owns this file
+  userId String
+  /// The file record
+  fileId String
+  user   User   @relation(fields: [userId], references: [id])
+  file   File   @relation(fields: [fileId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, fileId])
+  @@index([userId])
+  @@map("user_files")
 }

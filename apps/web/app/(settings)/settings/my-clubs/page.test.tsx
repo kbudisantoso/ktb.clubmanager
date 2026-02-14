@@ -38,7 +38,6 @@ let mockClubs: Array<{
   name: string;
   slug: string;
   roles: string[];
-  avatarInitials?: string;
   avatarColor?: string;
 }> = [];
 let mockCanCreateClub = true;

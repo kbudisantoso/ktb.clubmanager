@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, usePathname } from 'next/navigation';
-import { ChevronsUpDown } from 'lucide-react';
+import { Building2, ChevronsUpDown } from 'lucide-react';
 
 import { useActiveClub } from '@/lib/club-store';
 import { useMyClubsQuery } from '@/hooks/use-clubs';
@@ -47,11 +47,12 @@ export function AppSidebar() {
   const [showClubSwitcher, setShowClubSwitcher] = useState(false);
 
   const slug = (params?.slug as string) || activeClub?.slug || '';
-  const navGroups = getClubNavGroups(slug);
   const clubs = clubsData?.clubs ?? [];
   const canCreateClub = clubsData?.canCreateClub ?? false;
+  const hasClub = clubs.length > 0 && slug !== '';
   const hasMultipleClubs = clubs.length >= 2;
   const isCollapsed = sidebarState === 'collapsed';
+  const navGroups = hasClub ? getClubNavGroups(slug) : [];
 
   return (
     <>
@@ -60,7 +61,20 @@ export function AppSidebar() {
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
-              {hasMultipleClubs ? (
+              {!hasClub ? (
+                <SidebarMenuButton size="lg" asChild>
+                  <Link href="/dashboard">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+                      <Building2 className="size-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex flex-1 flex-col gap-0.5 leading-none overflow-hidden">
+                      <span className="font-semibold truncate text-muted-foreground">
+                        Kein Verein
+                      </span>
+                    </div>
+                  </Link>
+                </SidebarMenuButton>
+              ) : hasMultipleClubs ? (
                 <SidebarMenuButton
                   size="lg"
                   onClick={() => setShowClubSwitcher(true)}
@@ -88,7 +102,7 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarHeader>
 
-        {/* Navigation Content */}
+        {/* Navigation Content — only shown when a club is active */}
         <SidebarContent>
           {navGroups.map((group, groupIndex) => (
             <NavGroupSection

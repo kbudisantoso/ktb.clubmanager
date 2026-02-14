@@ -17,7 +17,7 @@ export default async function ClubRolesSettingsPage({ params }: RolesPageProps) 
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Rollenverwaltung wird in Phase 9 (Roles & Permissions) implementiert.
+            Die Rollenverwaltung wird in einer späteren Version implementiert.
           </p>
         </CardContent>
       </Card>

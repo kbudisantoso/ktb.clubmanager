@@ -7,3 +7,5 @@ export * from './member.ts';
 export * from './household.ts';
 export * from './membership-period.ts';
 export * from './number-range.ts';
+export * from './club-settings.ts';
+export * from './file.ts';

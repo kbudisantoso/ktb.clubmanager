@@ -124,6 +124,7 @@ describe('NewClubPage', () => {
         expect(mockCreateMutateAsync).toHaveBeenCalledWith({
           name: 'Test Club',
           slug: 'test-club',
+          shortCode: 'TC',
           description: undefined,
           visibility: 'PRIVATE',
         });

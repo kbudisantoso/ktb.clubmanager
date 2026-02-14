@@ -56,8 +56,7 @@ describe('ClubsService', () => {
           description: null,
           visibility: 'PRIVATE',
           inviteCode: 'ABCD1234',
-          avatarUrl: null,
-          avatarInitials: 'TC',
+
           avatarColor: 'blue',
           tierId: 'tier-1',
           tier: { id: 'tier-1', name: 'Basic' },
@@ -99,8 +98,7 @@ describe('ClubsService', () => {
           description: null,
           visibility: 'PRIVATE',
           inviteCode: 'ABCD1234',
-          avatarUrl: null,
-          avatarInitials: 'TC',
+
           avatarColor: 'blue',
           tierId: 'tier-1',
           tier: { id: 'tier-1', name: 'Basic' },
@@ -134,8 +132,7 @@ describe('ClubsService', () => {
           description: null,
           visibility: 'PRIVATE',
           inviteCode: 'ABCD1234',
-          avatarUrl: null,
-          avatarInitials: 'TC',
+
           avatarColor: 'blue',
           tierId: null,
           tier: null,
@@ -174,8 +171,7 @@ describe('ClubsService', () => {
           description: null,
           visibility: 'PRIVATE',
           inviteCode: 'ABCD1234',
-          avatarUrl: null,
-          avatarInitials: 'TC',
+
           avatarColor: 'blue',
           tierId: 'tier-1',
           tier: { id: 'tier-1', name: 'Basic' },
@@ -204,8 +200,7 @@ describe('ClubsService', () => {
           description: null,
           visibility: 'PRIVATE',
           inviteCode: 'ABCD1234',
-          avatarUrl: null,
-          avatarInitials: 'TC',
+
           avatarColor: 'blue',
           tierId: null,
           tier: null,
@@ -241,8 +236,7 @@ describe('ClubsService', () => {
           description: null,
           visibility: 'PRIVATE',
           inviteCode: 'ABCD1234',
-          avatarUrl: null,
-          avatarInitials: 'TC',
+
           avatarColor: 'blue',
           tierId: null,
           tier: null,
@@ -257,40 +251,6 @@ describe('ClubsService', () => {
           expect.objectContaining({
             data: expect.objectContaining({
               slug: 'test-club-1',
-            }),
-          })
-        );
-      });
-
-      it('should generate initials from club name', async () => {
-        mockAppSettings.isSelfServiceEnabled.mockResolvedValue(true);
-        mockAppSettings.getDefaultTierId.mockResolvedValue(null);
-        mockAppSettings.getDefaultVisibility.mockResolvedValue('PRIVATE');
-        mockPrisma.club.findUnique.mockResolvedValue(null);
-        mockPrisma.club.create.mockResolvedValue({
-          id: 'club-1',
-          name: 'Turnverein Schwarz Weiss 1908',
-          slug: 'turnverein-schwarz-weiss-1908',
-          legalName: null,
-          description: null,
-          visibility: 'PRIVATE',
-          inviteCode: 'ABCD1234',
-          avatarUrl: null,
-          avatarInitials: 'TSW',
-          avatarColor: 'blue',
-          tierId: null,
-          tier: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          _count: { clubUsers: 1, members: 0 },
-        });
-
-        await service.create({ name: 'Turnverein Schwarz Weiss 1908' }, userId, false);
-
-        expect(mockPrisma.club.create).toHaveBeenCalledWith(
-          expect.objectContaining({
-            data: expect.objectContaining({
-              avatarInitials: 'TSW',
             }),
           })
         );
@@ -340,8 +300,7 @@ describe('ClubsService', () => {
             description: null,
             visibility: 'PRIVATE',
             inviteCode: 'ABCD1234',
-            avatarUrl: null,
-            avatarInitials: 'CO',
+
             avatarColor: 'blue',
             tierId: null,
             tier: null,
@@ -361,8 +320,7 @@ describe('ClubsService', () => {
             description: null,
             visibility: 'PUBLIC',
             inviteCode: null,
-            avatarUrl: null,
-            avatarInitials: 'CT',
+
             avatarColor: 'green',
             tierId: null,
             tier: null,
@@ -480,8 +438,7 @@ describe('ClubsService', () => {
         description: null,
         visibility: 'PRIVATE',
         inviteCode: 'ABCD1234',
-        avatarUrl: null,
-        avatarInitials: 'UN',
+
         avatarColor: 'blue',
         tierId: null,
         tier: null,
@@ -512,8 +469,7 @@ describe('ClubsService', () => {
         description: null,
         visibility: 'PRIVATE',
         inviteCode: 'ABCD1234',
-        avatarUrl: null,
-        avatarInitials: 'UN',
+
         avatarColor: 'blue',
         tierId: null,
         tier: null,
@@ -540,8 +496,7 @@ describe('ClubsService', () => {
         description: null,
         visibility: 'PRIVATE',
         inviteCode: 'ABCD1234',
-        avatarUrl: null,
-        avatarInitials: 'UN',
+
         avatarColor: 'blue',
         tierId: null,
         tier: null,
@@ -574,6 +529,293 @@ describe('ClubsService', () => {
       await expect(service.update('nonexistent', updateDto, userId, false)).rejects.toThrow(
         NotFoundException
       );
+    });
+
+    it('should persist new settings fields (shortCode, iban, etc.)', async () => {
+      mockPrisma.club.findFirst.mockResolvedValue({
+        id: 'club-1',
+        slug: 'test-club',
+      });
+      mockPrisma.clubUser.findFirst.mockResolvedValue({
+        roles: ['OWNER'],
+        status: 'ACTIVE',
+      });
+      mockPrisma.club.update.mockResolvedValue({
+        id: 'club-1',
+        name: 'Test Club',
+        slug: 'test-club',
+        legalName: null,
+        description: null,
+        visibility: 'PRIVATE',
+        inviteCode: 'ABCD1234',
+
+        avatarColor: 'blue',
+        tierId: null,
+        tier: null,
+        shortCode: 'TC',
+        foundedAt: null,
+        street: null,
+        houseNumber: null,
+        postalCode: null,
+        city: null,
+        phone: null,
+        email: null,
+        website: null,
+        isRegistered: true,
+        registryCourt: 'AG Berlin',
+        registryNumber: 'VR 12345',
+        clubPurpose: null,
+        clubSpecialForm: null,
+        taxNumber: null,
+        vatId: null,
+        taxOffice: null,
+        isNonProfit: true,
+        iban: 'DE89370400440532013000',
+        bic: 'COBADEFFXXX',
+        bankName: 'Commerzbank',
+        accountHolder: 'Test Club e.V.',
+        fiscalYearStartMonth: null,
+        defaultMembershipType: null,
+        probationPeriodDays: null,
+        logoFileId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        _count: { clubUsers: 1, members: 0 },
+      });
+
+      const settingsDto = {
+        shortCode: 'TC',
+        isRegistered: true,
+        registryCourt: 'AG Berlin',
+        registryNumber: 'VR 12345',
+        isNonProfit: true,
+        iban: 'DE89370400440532013000',
+        bic: 'COBADEFFXXX',
+        bankName: 'Commerzbank',
+        accountHolder: 'Test Club e.V.',
+      };
+
+      const result = await service.update('test-club', settingsDto, userId, false);
+
+      expect(result.shortCode).toBe('TC');
+      expect(result.isRegistered).toBe(true);
+      expect(result.iban).toBe('DE89370400440532013000');
+      expect(result.bankName).toBe('Commerzbank');
+      expect(mockPrisma.club.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            shortCode: 'TC',
+            isRegistered: true,
+            iban: 'DE89370400440532013000',
+          }),
+        })
+      );
+    });
+
+    it('should handle nullable fields — setting to null clears value', async () => {
+      mockPrisma.club.findFirst.mockResolvedValue({
+        id: 'club-1',
+        slug: 'test-club',
+      });
+      mockPrisma.clubUser.findFirst.mockResolvedValue({
+        roles: ['OWNER'],
+        status: 'ACTIVE',
+      });
+      mockPrisma.club.update.mockResolvedValue({
+        id: 'club-1',
+        name: 'Test Club',
+        slug: 'test-club',
+        legalName: null,
+        description: null,
+        visibility: 'PRIVATE',
+        inviteCode: 'ABCD1234',
+
+        avatarColor: 'blue',
+        tierId: null,
+        tier: null,
+        shortCode: null,
+        foundedAt: null,
+        street: null,
+        houseNumber: null,
+        postalCode: null,
+        city: null,
+        phone: null,
+        email: null,
+        website: null,
+        isRegistered: false,
+        registryCourt: null,
+        registryNumber: null,
+        clubPurpose: null,
+        clubSpecialForm: null,
+        taxNumber: null,
+        vatId: null,
+        taxOffice: null,
+        isNonProfit: false,
+        iban: null,
+        bic: null,
+        bankName: null,
+        accountHolder: null,
+        fiscalYearStartMonth: null,
+        defaultMembershipType: null,
+        probationPeriodDays: null,
+        logoFileId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        _count: { clubUsers: 1, members: 0 },
+      });
+
+      const result = await service.update(
+        'test-club',
+        { iban: null, bic: null, bankName: null } as never,
+        userId,
+        false
+      );
+
+      expect(result.iban).toBeUndefined();
+      expect(result.bic).toBeUndefined();
+      expect(result.bankName).toBeUndefined();
+      expect(mockPrisma.club.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            iban: null,
+            bic: null,
+            bankName: null,
+          }),
+        })
+      );
+    });
+
+    it('should convert foundedAt string to Date for storage', async () => {
+      mockPrisma.club.findFirst.mockResolvedValue({
+        id: 'club-1',
+        slug: 'test-club',
+      });
+      mockPrisma.clubUser.findFirst.mockResolvedValue({
+        roles: ['OWNER'],
+        status: 'ACTIVE',
+      });
+      mockPrisma.club.update.mockResolvedValue({
+        id: 'club-1',
+        name: 'Test Club',
+        slug: 'test-club',
+        legalName: null,
+        description: null,
+        visibility: 'PRIVATE',
+        inviteCode: 'ABCD1234',
+
+        avatarColor: 'blue',
+        tierId: null,
+        tier: null,
+        shortCode: null,
+        foundedAt: new Date('1908-05-15'),
+        street: null,
+        houseNumber: null,
+        postalCode: null,
+        city: null,
+        phone: null,
+        email: null,
+        website: null,
+        isRegistered: false,
+        registryCourt: null,
+        registryNumber: null,
+        clubPurpose: null,
+        clubSpecialForm: null,
+        taxNumber: null,
+        vatId: null,
+        taxOffice: null,
+        isNonProfit: false,
+        iban: null,
+        bic: null,
+        bankName: null,
+        accountHolder: null,
+        fiscalYearStartMonth: null,
+        defaultMembershipType: null,
+        probationPeriodDays: null,
+        logoFileId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        _count: { clubUsers: 1, members: 0 },
+      });
+
+      const result = await service.update('test-club', { foundedAt: '1908-05-15' }, userId, false);
+
+      expect(result.foundedAt).toBe('1908-05-15');
+      expect(mockPrisma.club.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            foundedAt: expect.any(Date),
+          }),
+        })
+      );
+    });
+
+    it('should include all settings fields in formatted response', async () => {
+      mockPrisma.club.findFirst.mockResolvedValue({
+        id: 'club-1',
+        slug: 'test-club',
+      });
+      mockPrisma.club.update.mockResolvedValue({
+        id: 'club-1',
+        name: 'Test Club',
+        slug: 'test-club',
+        legalName: null,
+        description: null,
+        visibility: 'PRIVATE',
+        inviteCode: 'ABCD1234',
+
+        avatarColor: 'blue',
+        tierId: null,
+        tier: null,
+        shortCode: 'TC',
+        foundedAt: new Date('1908-05-15'),
+        street: 'Musterstr.',
+        houseNumber: '1',
+        postalCode: '12345',
+        city: 'Berlin',
+        phone: '+49301234567',
+        email: 'info@test-club.de',
+        website: 'https://test-club.de',
+        isRegistered: true,
+        registryCourt: 'AG Berlin',
+        registryNumber: 'VR 12345',
+        clubPurpose: 'SPORTS',
+        clubSpecialForm: null,
+        taxNumber: '27/620/12345',
+        vatId: null,
+        taxOffice: 'Finanzamt Berlin',
+        isNonProfit: true,
+        iban: 'DE89370400440532013000',
+        bic: 'COBADEFFXXX',
+        bankName: 'Commerzbank',
+        accountHolder: 'Test Club e.V.',
+        fiscalYearStartMonth: 1,
+        defaultMembershipType: 'FULL',
+        probationPeriodDays: 90,
+        logoFileId: 'file-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        _count: { clubUsers: 1, members: 0 },
+      });
+
+      const result = await service.update('test-club', { name: 'Test Club' }, userId, true);
+
+      // Verify all settings fields present
+      expect(result.shortCode).toBe('TC');
+      expect(result.foundedAt).toBe('1908-05-15');
+      expect(result.street).toBe('Musterstr.');
+      expect(result.city).toBe('Berlin');
+      expect(result.isRegistered).toBe(true);
+      expect(result.registryCourt).toBe('AG Berlin');
+      expect(result.taxNumber).toBe('27/620/12345');
+      expect(result.isNonProfit).toBe(true);
+      expect(result.iban).toBe('DE89370400440532013000');
+      expect(result.fiscalYearStartMonth).toBe(1);
+      expect(result.defaultMembershipType).toBe('FULL');
+      expect(result.probationPeriodDays).toBe(90);
+      expect(result.logoFileId).toBe('file-1');
+      // Null fields converted to undefined
+      expect(result.clubSpecialForm).toBeUndefined();
+      expect(result.vatId).toBeUndefined();
     });
   });
 

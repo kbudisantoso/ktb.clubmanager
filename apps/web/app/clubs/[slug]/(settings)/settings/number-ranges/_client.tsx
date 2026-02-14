@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { useActiveClub } from '@/lib/club-store';
 import { useHasPermission } from '@/lib/permission-hooks';
 import { AccessDenied } from '@/components/access-denied';
 import {
@@ -96,9 +95,7 @@ const DEFAULT_FORM_STATE: NumberRangeFormState = {
 
 export function NumberRangesSettingsClient() {
   const params = useParams<{ slug: string }>();
-  const activeClub = useActiveClub();
   const hasPermission = useHasPermission('club:settings');
-  const [permissionChecked, setPermissionChecked] = useState(false);
   const { toast } = useToast();
 
   // CRUD hooks
@@ -120,13 +117,6 @@ export function NumberRangesSettingsClient() {
     () => new Set((numberRanges ?? []).map((r) => r.entityType)),
     [numberRanges]
   );
-
-  // Wait for hydration before checking permission
-  useEffect(() => {
-    if (activeClub) {
-      setPermissionChecked(true);
-    }
-  }, [activeClub]);
 
   // Live preview
   const preview = useMemo(
@@ -228,16 +218,7 @@ export function NumberRangesSettingsClient() {
     }
   }
 
-  // Show loading while checking permissions
-  if (!permissionChecked) {
-    return (
-      <div className="flex justify-center items-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
-
-  // Show access denied if no permission
+  // Show access denied if no permission (server already validated club access)
   if (!hasPermission) {
     return (
       <AccessDenied
@@ -322,7 +303,7 @@ export function NumberRangesSettingsClient() {
                     <TableHead className="text-center">Länge</TableHead>
                     <TableHead className="text-center">Jährlich zurücksetzen</TableHead>
                     <TableHead className="text-right">Aktueller Wert</TableHead>
-                    <TableHead>Naechste Nummer</TableHead>
+                    <TableHead>Nächste Nummer</TableHead>
                     <TableHead className="w-25"></TableHead>
                   </TableRow>
                 </TableHeader>

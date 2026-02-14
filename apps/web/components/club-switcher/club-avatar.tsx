@@ -1,11 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
  * Preset colors for club avatars.
  */
-const AVATAR_COLORS: Record<string, string> = {
+export const AVATAR_COLORS: Record<string, string> = {
   blue: 'bg-blue-500',
   green: 'bg-green-500',
   red: 'bg-red-500',
@@ -16,12 +17,13 @@ const AVATAR_COLORS: Record<string, string> = {
   cyan: 'bg-cyan-500',
   orange: 'bg-orange-500',
   gray: 'bg-gray-500',
+  brown: 'bg-amber-800',
 };
 
 interface ClubData {
   name: string;
-  avatarUrl?: string;
-  avatarInitials?: string;
+  shortCode?: string;
+  logoUrl?: string;
   avatarColor?: string;
 }
 
@@ -29,8 +31,7 @@ interface ClubAvatarProps {
   /** Club object with avatar data */
   club?: ClubData;
   /** Direct props (used if club is not provided) */
-  avatarUrl?: string;
-  avatarInitials?: string;
+  logoUrl?: string;
   avatarColor?: string;
   name?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg';
@@ -38,20 +39,19 @@ interface ClubAvatarProps {
 }
 
 /**
- * Club avatar component showing either an image or initials with color.
+ * Club avatar component showing either a logo image or initials with color.
  */
 export function ClubAvatar({
   club,
-  avatarUrl: directAvatarUrl,
-  avatarInitials: directAvatarInitials,
+  logoUrl: directLogoUrl,
   avatarColor: directAvatarColor = 'blue',
   name: directName,
   size = 'md',
   className,
 }: ClubAvatarProps) {
   // Use club prop values if provided, otherwise fall back to direct props
-  const avatarUrl = club?.avatarUrl ?? directAvatarUrl;
-  const avatarInitials = club?.avatarInitials ?? directAvatarInitials;
+  const logoUrl = club?.logoUrl ?? directLogoUrl;
+  const shortCode = club?.shortCode;
   const avatarColor = club?.avatarColor ?? directAvatarColor;
   const name = club?.name ?? directName ?? '';
 
@@ -64,15 +64,19 @@ export function ClubAvatar({
 
   const bgColor = AVATAR_COLORS[avatarColor] || AVATAR_COLORS.blue;
 
-  // Generate initials from name if not provided, limit to 3 chars
-  const initials = (avatarInitials || generateInitials(name)).slice(0, 3);
+  // Priority: shortCode > auto-generated from name (always fresh, no staleness)
+  const initials = (shortCode || generateInitials(name)).slice(0, 3);
 
-  if (avatarUrl) {
+  // Track image load errors to fall back to initials
+  const [imgError, setImgError] = useState(false);
+
+  if (logoUrl && !imgError) {
     return (
       <img
-        src={avatarUrl}
+        src={logoUrl}
         alt={name}
         className={cn('rounded-md object-cover', sizeClasses[size], className)}
+        onError={() => setImgError(true)}
       />
     );
   }

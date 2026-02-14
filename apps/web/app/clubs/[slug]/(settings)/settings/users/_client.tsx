@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
-import { useActiveClub } from '@/lib/club-store';
 import { useHasPermission } from '@/lib/permission-hooks';
 import { useClubPermissions } from '@/lib/club-permissions';
 import { AccessDenied } from '@/components/access-denied';
@@ -25,20 +24,11 @@ interface ClubUser {
 export function UsersSettingsClient() {
   const params = useParams<{ slug: string }>();
   const { data: session } = useSession();
-  const activeClub = useActiveClub();
   const { roles: currentUserRoles } = useClubPermissions();
   const hasPermission = useHasPermission('users:read');
   const [users, setUsers] = useState<ClubUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [permissionChecked, setPermissionChecked] = useState(false);
-
-  // Wait for hydration before checking permission
-  useEffect(() => {
-    if (activeClub) {
-      setPermissionChecked(true);
-    }
-  }, [activeClub]);
 
   const fetchUsers = useCallback(async () => {
     if (!params.slug) return;
@@ -48,7 +38,6 @@ export function UsersSettingsClient() {
       const response = await fetch(`/api/clubs/${params.slug}/users`);
       if (!response.ok) {
         if (response.status === 403) {
-          // Permission denied at API level - will be caught by permission check
           throw new Error('Keine Berechtigung');
         }
         throw new Error('Fehler beim Laden der Benutzer');
@@ -64,22 +53,12 @@ export function UsersSettingsClient() {
   }, [params.slug]);
 
   useEffect(() => {
-    // Only fetch if we have permission
-    if (permissionChecked && hasPermission) {
+    if (hasPermission) {
       fetchUsers();
-    } else if (permissionChecked) {
+    } else {
       setLoading(false);
     }
-  }, [fetchUsers, permissionChecked, hasPermission]);
-
-  // Show loading while checking permissions
-  if (!permissionChecked) {
-    return (
-      <div className="flex justify-center items-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
+  }, [fetchUsers, hasPermission]);
 
   // Show access denied if no permission
   if (!hasPermission) {

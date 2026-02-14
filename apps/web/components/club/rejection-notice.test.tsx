@@ -26,7 +26,6 @@ function createMockRequest(overrides?: Partial<AccessRequest>): AccessRequest {
       id: 'club-1',
       name: 'TSV Test',
       slug: 'tsv-test',
-      avatarInitials: 'TT',
       avatarColor: '#6366f1',
     },
     ...overrides,
@@ -52,10 +51,11 @@ describe('RejectionNotice', () => {
       expect(screen.getByText(/15\.01\.2024/)).toBeInTheDocument();
     });
 
-    it('displays club avatar initials', () => {
+    it('displays club avatar initials derived from name', () => {
       render(<RejectionNotice request={createMockRequest()} />);
 
-      expect(screen.getByText('TT')).toBeInTheDocument();
+      // Initials derived from club name "TSV Test" → "TS"
+      expect(screen.getByText('TS')).toBeInTheDocument();
     });
   });
 

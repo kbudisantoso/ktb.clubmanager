@@ -17,7 +17,7 @@ export default async function ClubInvitesSettingsPage({ params }: InvitesPagePro
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Einladungsverwaltung wird in einer späteren Phase implementiert.
+            Die Einladungsverwaltung wird in einer späteren Version implementiert.
           </p>
         </CardContent>
       </Card>
