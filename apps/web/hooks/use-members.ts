@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
 import type { MemberListItem } from '@/components/members/member-list-table';
 
@@ -20,6 +20,8 @@ export const memberKeys = {
   infinite: (slug: string, filters?: MemberInfiniteFilters) =>
     [...memberKeys.all(slug), 'infinite', filters] as const,
   detail: (slug: string, id: string) => [...memberKeys.all(slug), 'detail', id] as const,
+  statusHistory: (slug: string, memberId: string) =>
+    [...memberKeys.all(slug), 'status-history', memberId] as const,
 };
 
 // ============================================================================
@@ -121,6 +123,41 @@ export function useMembersInfinite(slug: string, filters?: MemberInfiniteFilters
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     staleTime: 30_000, // 30 seconds
+  });
+}
+
+/**
+ * Status history entry from the status-history endpoint.
+ */
+export interface StatusHistoryEntry {
+  id: string;
+  memberId: string;
+  clubId: string;
+  fromStatus: string;
+  toStatus: string;
+  reason: string;
+  leftCategory: string | null;
+  effectiveDate: string;
+  actorId: string;
+  createdAt: string;
+}
+
+/**
+ * Fetch status transition history for a single member.
+ * Returns chronological list of all status changes.
+ */
+export function useMemberStatusHistory(slug: string, memberId: string | undefined) {
+  return useQuery<StatusHistoryEntry[]>({
+    queryKey: memberKeys.statusHistory(slug, memberId ?? ''),
+    queryFn: async () => {
+      const res = await apiFetch(`/api/clubs/${slug}/members/${memberId}/status-history`);
+      if (!res.ok) {
+        throw new Error('Fehler beim Laden der Statushistorie');
+      }
+      return res.json();
+    },
+    enabled: !!memberId,
+    staleTime: 60_000, // 1 minute
   });
 }
 
