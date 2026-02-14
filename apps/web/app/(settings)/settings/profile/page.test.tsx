@@ -6,6 +6,7 @@ const mockUseSessionQuery = vi.fn();
 vi.mock('@/hooks/use-session', () => ({
   useSessionQuery: () => mockUseSessionQuery(),
   useInvalidateSession: () => vi.fn(),
+  useForceRefreshSession: () => vi.fn(),
 }));
 
 // Mock ProfileForm to isolate page-level tests

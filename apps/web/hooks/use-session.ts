@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { authClient } from '@/lib/auth-client';
 
 /**
@@ -30,10 +31,15 @@ export const sessionKeys = {
 };
 
 /**
- * Fetch session from Better Auth and enrich with user data from API
+ * Fetch session from Better Auth and enrich with user data from API.
+ *
+ * @param options.disableCookieCache - Bypass Better Auth's 5-min cookie cache
+ *        and fetch fresh session data from the server. Use after profile mutations.
  */
-async function fetchSession(): Promise<Session | null> {
-  const result = await authClient.getSession();
+async function fetchSession(options?: { disableCookieCache?: boolean }): Promise<Session | null> {
+  const result = await authClient.getSession(
+    options?.disableCookieCache ? { query: { disableCookieCache: true } } : undefined
+  );
   if (result.error || !result.data) {
     return null;
   }
@@ -68,7 +74,7 @@ async function fetchSession(): Promise<Session | null> {
 export function useSessionQuery() {
   return useQuery({
     queryKey: sessionKeys.current(),
-    queryFn: fetchSession,
+    queryFn: () => fetchSession(),
     staleTime: 5 * 60 * 1000, // 5 Minuten - Session ändert sich selten
     gcTime: 10 * 60 * 1000, // 10 Minuten im Cache
     retry: false, // Nicht bei Auth-Fehlern wiederholen
@@ -82,6 +88,22 @@ export function useSessionQuery() {
 export function useInvalidateSession() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ queryKey: sessionKeys.all });
+}
+
+/**
+ * Hook to force-refresh session, bypassing Better Auth's cookie cache.
+ *
+ * Use after profile mutations (name change, avatar upload/delete) where the
+ * NestJS backend updates user data but the BA cookie cache still serves stale values.
+ * Regular `invalidateSession` only invalidates React Query — this also bypasses
+ * the 5-minute cookie cache.
+ */
+export function useForceRefreshSession() {
+  const queryClient = useQueryClient();
+  return useCallback(async () => {
+    const freshSession = await fetchSession({ disableCookieCache: true });
+    queryClient.setQueryData(sessionKeys.current(), freshSession);
+  }, [queryClient]);
 }
 
 /**

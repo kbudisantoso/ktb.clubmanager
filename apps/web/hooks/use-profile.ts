@@ -2,7 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
-import { useInvalidateSession } from '@/hooks/use-session';
+import { useForceRefreshSession } from '@/hooks/use-session';
 import { usePresignedUpload } from '@/hooks/use-presigned-upload';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,7 +23,7 @@ export const profileKeys = {
  * Invalidates session cache on success so header/sidebar reflect changes.
  */
 export function useUpdateProfile() {
-  const invalidateSession = useInvalidateSession();
+  const forceRefreshSession = useForceRefreshSession();
   const { toast } = useToast();
 
   return useMutation({
@@ -42,7 +42,7 @@ export function useUpdateProfile() {
       return res.json();
     },
     onSuccess: () => {
-      invalidateSession();
+      forceRefreshSession();
     },
     onError: (error: Error) => {
       toast({
@@ -68,14 +68,14 @@ interface AvatarUploadOptions {
  * Invalidates session cache on success so the avatar is reflected everywhere.
  */
 export function useAvatarUpload({ onSuccess, onError }: AvatarUploadOptions = {}) {
-  const invalidateSession = useInvalidateSession();
+  const forceRefreshSession = useForceRefreshSession();
 
   return usePresignedUpload({
     createUrl: '/api/me/avatar',
     confirmUrl: (fileId) => `/api/me/avatar/${fileId}/confirm`,
     purpose: 'user-avatar',
     onSuccess: (fileId, fileUrl) => {
-      invalidateSession();
+      forceRefreshSession();
       onSuccess?.(fileId, fileUrl);
     },
     onError,
@@ -91,7 +91,7 @@ export function useAvatarUpload({ onSuccess, onError }: AvatarUploadOptions = {}
  * Invalidates session cache on success (user.image becomes null -> initials fallback).
  */
 export function useRemoveAvatar() {
-  const invalidateSession = useInvalidateSession();
+  const forceRefreshSession = useForceRefreshSession();
   const { toast } = useToast();
 
   return useMutation({
@@ -108,7 +108,7 @@ export function useRemoveAvatar() {
       return res.json();
     },
     onSuccess: () => {
-      invalidateSession();
+      forceRefreshSession();
     },
     onError: (error: Error) => {
       toast({

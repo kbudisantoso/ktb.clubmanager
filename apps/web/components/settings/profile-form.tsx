@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -8,7 +8,7 @@ import { UpdateProfileSchema } from '@ktb/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useSessionQuery, useInvalidateSession } from '@/hooks/use-session';
+import { useSessionQuery, useForceRefreshSession } from '@/hooks/use-session';
 import { useUpdateProfile } from '@/hooks/use-profile';
 import { useToast } from '@/hooks/use-toast';
 import { AvatarUpload } from './avatar-upload';
@@ -32,7 +32,8 @@ export function ProfileForm() {
   const { data: session } = useSessionQuery();
   const { toast } = useToast();
   const updateProfile = useUpdateProfile();
-  const invalidateSession = useInvalidateSession();
+  const forceRefreshSession = useForceRefreshSession();
+  const [cacheBuster, setCacheBuster] = useState(0);
 
   const user = session?.user;
 
@@ -89,8 +90,10 @@ export function ProfileForm() {
     [updateProfile, reset, toast]
   );
 
-  // Avatar URL: permanent redirect endpoint
-  const avatarUrl = user?.image ? `${API_URL}/api/me/avatar?v=${Date.now()}` : undefined;
+  // Avatar URL: permanent redirect endpoint with stable cache-buster
+  const avatarUrl = user?.image
+    ? `${API_URL}/api/me/avatar${cacheBuster ? `?v=${cacheBuster}` : ''}`
+    : undefined;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col min-h-0">
@@ -101,7 +104,8 @@ export function ProfileForm() {
             currentImageUrl={avatarUrl}
             userName={user?.name || undefined}
             onAvatarUploaded={() => {
-              invalidateSession();
+              setCacheBuster(Date.now());
+              forceRefreshSession();
             }}
             disabled={isSubmitting}
           />
