@@ -31,14 +31,6 @@ export enum ClubSpecialForm {
   DACHVERBAND = 'DACHVERBAND',
 }
 
-export enum MembershipType {
-  ORDENTLICH = 'ORDENTLICH',
-  PASSIV = 'PASSIV',
-  EHREN = 'EHREN',
-  FOERDER = 'FOERDER',
-  JUGEND = 'JUGEND',
-}
-
 export class CreateClubDto {
   @ApiProperty({
     description: 'Club display name',
@@ -279,12 +271,11 @@ export class CreateClubDto {
   fiscalYearStartMonth?: number;
 
   @ApiPropertyOptional({
-    description: 'Default membership type for new members',
-    enum: MembershipType,
+    description: 'Default membership type ID (FK to MembershipType entity)',
   })
-  @IsEnum(MembershipType)
+  @IsString()
   @IsOptional()
-  defaultMembershipType?: MembershipType;
+  defaultMembershipTypeId?: string;
 
   @ApiPropertyOptional({
     description: 'Probation period in days for new members',

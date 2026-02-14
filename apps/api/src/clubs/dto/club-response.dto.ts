@@ -106,8 +106,8 @@ export class ClubResponseDto {
   @ApiPropertyOptional({ description: 'Fiscal year start month (1-12)' })
   fiscalYearStartMonth?: number;
 
-  @ApiPropertyOptional({ description: 'Default membership type for new members' })
-  defaultMembershipType?: string;
+  @ApiPropertyOptional({ description: 'Default membership type ID (FK to MembershipType entity)' })
+  defaultMembershipTypeId?: string;
 
   @ApiPropertyOptional({ description: 'Probation period in days' })
   probationPeriodDays?: number;

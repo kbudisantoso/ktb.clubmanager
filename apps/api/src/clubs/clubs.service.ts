@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AppSettingsService } from '../settings/app-settings.service.js';
+import { MembershipTypesService } from '../membership-types/membership-types.service.js';
 import { CreateClubDto } from './dto/create-club.dto.js';
 import { UpdateClubDto } from './dto/update-club.dto.js';
 import { generateSlug, validateSlug, formatInviteCode, generateInviteCode } from '@ktb/shared';
@@ -14,7 +15,8 @@ import { generateSlug, validateSlug, formatInviteCode, generateInviteCode } from
 export class ClubsService {
   constructor(
     private prisma: PrismaService,
-    private appSettings: AppSettingsService
+    private appSettings: AppSettingsService,
+    private membershipTypes: MembershipTypesService
   ) {}
 
   /**
@@ -101,6 +103,9 @@ export class ClubsService {
         },
       },
     });
+
+    // Seed default membership types for the new club
+    await this.membershipTypes.seedDefaults(club.id);
 
     return this.formatClubResponse(club, ['OWNER']);
   }
@@ -251,7 +256,7 @@ export class ClubsService {
         accountHolder: dto.accountHolder,
         // Betriebseinstellungen
         fiscalYearStartMonth: dto.fiscalYearStartMonth,
-        defaultMembershipType: dto.defaultMembershipType,
+        defaultMembershipTypeId: dto.defaultMembershipTypeId,
         probationPeriodDays: dto.probationPeriodDays,
         // Logo
         logoFileId: dto.logoFileId,
@@ -483,7 +488,7 @@ export class ClubsService {
       accountHolder: string | null;
       // Betriebseinstellungen
       fiscalYearStartMonth: number | null;
-      defaultMembershipType: string | null;
+      defaultMembershipTypeId: string | null;
       probationPeriodDays: number | null;
       // Logo
       logoFileId: string | null;
@@ -535,7 +540,7 @@ export class ClubsService {
       accountHolder: club.accountHolder ?? undefined,
       // Betriebseinstellungen
       fiscalYearStartMonth: club.fiscalYearStartMonth ?? undefined,
-      defaultMembershipType: club.defaultMembershipType ?? undefined,
+      defaultMembershipTypeId: club.defaultMembershipTypeId ?? undefined,
       probationPeriodDays: club.probationPeriodDays ?? undefined,
       // Logo
       logoFileId: club.logoFileId ?? undefined,
