@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { S3Service } from './s3.service.js';
 import type { CreateFileDto } from './dto/create-file.dto.js';
 import { ALLOWED_CONTENT_TYPES, MAX_SIZES } from './dto/create-file.dto.js';
+import { getPresignedExpiry } from './file-defaults.js';
 
 /**
  * File management service handling presigned URL upload flow.
@@ -76,8 +77,9 @@ export class FilesService {
       }),
     ]);
 
-    // Get presigned PUT URL for client-side upload
-    const uploadUrl = await this.s3Service.presignedPutUrl(s3Key);
+    // Get presigned PUT URL for client-side upload (purpose-aware expiry)
+    const { upload: uploadExpiry } = getPresignedExpiry(dto.purpose);
+    const uploadUrl = await this.s3Service.presignedPutUrl(s3Key, uploadExpiry);
 
     return {
       id: updatedFile.id,
@@ -93,10 +95,15 @@ export class FilesService {
   /**
    * Confirm that a file has been successfully uploaded to S3.
    *
+   * When `purpose` is provided, performs purpose-specific side effects:
+   * - `club-logo`: Sets `club.logoFileId` and soft-deletes the previous logo.
+   *
    * @param fileId - The file ID to confirm
    * @param clubId - The club ID for ownership verification
+   * @param purpose - Optional file purpose for side effects
+   * @param userId - User performing the action (for audit trail)
    */
-  async confirmUpload(fileId: string, clubId: string) {
+  async confirmUpload(fileId: string, clubId: string, purpose?: string, userId?: string) {
     // Verify file exists and belongs to club via ClubFile junction
     const clubFile = await this.prisma.clubFile.findFirst({
       where: { fileId, clubId },
@@ -124,17 +131,45 @@ export class FilesService {
       );
     }
 
-    // Update status to UPLOADED
-    const updated = await this.prisma.file.update({
-      where: { id: fileId },
-      data: {
-        status: 'UPLOADED',
-        uploadedAt: new Date(),
-      },
+    // Confirm file and handle purpose-specific actions in a transaction
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const confirmedFile = await tx.file.update({
+        where: { id: fileId },
+        data: { status: 'UPLOADED', uploadedAt: new Date() },
+      });
+
+      if (purpose === 'club-logo') {
+        const club = await tx.club.findUnique({
+          where: { id: clubId },
+          select: { logoFileId: true },
+        });
+
+        // Soft-delete the old logo if it exists and is different
+        if (club?.logoFileId && club.logoFileId !== fileId) {
+          await tx.file.update({
+            where: { id: club.logoFileId },
+            data: {
+              status: 'DELETED',
+              deletedAt: new Date(),
+              deletedBy: userId ?? 'system',
+            },
+          });
+          this.logger.log(`Old logo ${club.logoFileId} soft-deleted, replaced by ${fileId}`);
+        }
+
+        // Set the new logo on the club
+        await tx.club.update({
+          where: { id: clubId },
+          data: { logoFileId: fileId },
+        });
+      }
+
+      return confirmedFile;
     });
 
-    // Return with presigned GET URL
-    const url = await this.s3Service.presignedGetUrl(updated.s3Key);
+    // Return with presigned GET URL (purpose-aware expiry)
+    const { download: downloadExpiry } = getPresignedExpiry(purpose);
+    const url = await this.s3Service.presignedGetUrl(updated.s3Key, downloadExpiry);
 
     return {
       id: updated.id,
@@ -166,10 +201,11 @@ export class FilesService {
 
     const file = clubFile.file;
 
-    // Only provide download URL for uploaded files
+    // Only provide download URL for uploaded files (default expiry — no purpose context)
     let url: string | null = null;
     if (file.status === 'UPLOADED') {
-      url = await this.s3Service.presignedGetUrl(file.s3Key);
+      const { download: downloadExpiry } = getPresignedExpiry();
+      url = await this.s3Service.presignedGetUrl(file.s3Key, downloadExpiry);
     }
 
     return {
@@ -182,6 +218,93 @@ export class FilesService {
       uploadedAt: file.uploadedAt?.toISOString() ?? null,
       createdAt: file.createdAt.toISOString(),
     };
+  }
+
+  /**
+   * Get presigned download URL for the club's logo (for 302 redirect).
+   *
+   * @returns Presigned GET URL
+   * @throws NotFoundException if club has no logo or logo file is missing/deleted
+   */
+  async getLogoRedirectUrl(clubId: string): Promise<string> {
+    const club = await this.prisma.club.findUnique({
+      where: { id: clubId },
+      select: { logoFileId: true },
+    });
+
+    if (!club?.logoFileId) {
+      throw new NotFoundException('Kein Logo vorhanden');
+    }
+
+    const file = await this.prisma.file.findFirst({
+      where: { id: club.logoFileId, deletedAt: null, status: 'UPLOADED' },
+      select: { s3Key: true },
+    });
+
+    if (!file) {
+      throw new NotFoundException('Logo-Datei nicht gefunden');
+    }
+
+    const { download } = getPresignedExpiry('club-logo');
+    return this.s3Service.presignedGetUrl(file.s3Key, download);
+  }
+
+  /**
+   * Remove the club's logo: clears `club.logoFileId` and soft-deletes the file.
+   *
+   * @throws NotFoundException if club has no logo
+   */
+  async removeClubLogo(clubId: string, userId: string): Promise<void> {
+    const club = await this.prisma.club.findUnique({
+      where: { id: clubId },
+      select: { logoFileId: true },
+    });
+
+    if (!club?.logoFileId) {
+      throw new NotFoundException('Kein Logo vorhanden');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.club.update({
+        where: { id: clubId },
+        data: { logoFileId: null },
+      });
+
+      await tx.file.update({
+        where: { id: club.logoFileId! },
+        data: {
+          status: 'DELETED',
+          deletedAt: new Date(),
+          deletedBy: userId,
+        },
+      });
+    });
+
+    this.logger.log(`Club ${clubId} logo ${club.logoFileId} removed by user ${userId}`);
+  }
+
+  /**
+   * Get presigned download URL for any club file (for 302 redirect).
+   *
+   * @returns Presigned GET URL
+   * @throws NotFoundException if file not found or deleted
+   */
+  async getFileDownloadUrl(fileId: string, clubId: string): Promise<string> {
+    const clubFile = await this.prisma.clubFile.findFirst({
+      where: { fileId, clubId },
+      include: { file: true },
+    });
+
+    if (!clubFile?.file || clubFile.file.deletedAt) {
+      throw new NotFoundException('Datei nicht gefunden');
+    }
+
+    if (clubFile.file.status !== 'UPLOADED') {
+      throw new NotFoundException('Datei ist noch nicht verfuegbar');
+    }
+
+    const { download } = getPresignedExpiry();
+    return this.s3Service.presignedGetUrl(clubFile.file.s3Key, download);
   }
 
   /**

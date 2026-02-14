@@ -1,9 +1,22 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional, IsIn } from 'class-validator';
+import { FILE_PURPOSES, type FilePurpose } from './create-file.dto.js';
+
 /**
- * Confirm upload DTO — no body required.
+ * Confirm upload DTO.
  * The fileId comes from the URL parameter.
- * S3 verification happens server-side via statObject.
  *
- * This file exists as a placeholder for future extensions
- * (e.g., client-provided checksum for integrity verification).
+ * When `purpose` is provided, the confirm step performs
+ * purpose-specific side effects (e.g., setting club.logoFileId).
  */
-export class ConfirmUploadDto {}
+export class ConfirmUploadDto {
+  @ApiPropertyOptional({
+    example: 'club-logo',
+    enum: FILE_PURPOSES,
+    description: 'File purpose — triggers purpose-specific actions (e.g., sets club logo)',
+  })
+  @IsString()
+  @IsOptional()
+  @IsIn(FILE_PURPOSES)
+  purpose?: FilePurpose;
+}

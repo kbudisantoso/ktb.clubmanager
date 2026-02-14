@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Delete, Param, Body, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Body,
+  HttpCode,
+  Header,
+  Redirect,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import {
   RequireClubContext,
@@ -10,6 +20,7 @@ import { Permission } from '../common/permissions/permissions.enum.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { FilesService } from './files.service.js';
 import { CreateFileDto } from './dto/create-file.dto.js';
+import { ConfirmUploadDto } from './dto/confirm-upload.dto.js';
 import { FileResponseDto } from './dto/file-response.dto.js';
 
 /**
@@ -49,8 +60,47 @@ export class FilesController {
   @ApiResponse({ status: 200, description: 'Upload confirmed', type: FileResponseDto })
   @ApiResponse({ status: 400, description: 'File not found in S3 or wrong status' })
   @ApiResponse({ status: 404, description: 'File not found' })
-  async confirm(@GetClubContext() ctx: ClubContext, @Param('fileId') fileId: string) {
-    return this.filesService.confirmUpload(fileId, ctx.clubId);
+  async confirm(
+    @GetClubContext() ctx: ClubContext,
+    @Param('fileId') fileId: string,
+    @Body() dto: ConfirmUploadDto,
+    @CurrentUser('id') userId: string
+  ) {
+    return this.filesService.confirmUpload(fileId, ctx.clubId, dto.purpose, userId);
+  }
+
+  @Get('logo')
+  @Redirect('', 302)
+  @Header('Cache-Control', 'private, no-store')
+  @ApiOperation({ summary: '302 redirect to club logo presigned URL' })
+  @ApiResponse({ status: 302, description: 'Redirects to presigned S3 URL' })
+  @ApiResponse({ status: 404, description: 'No logo set or file not found' })
+  async logo(@GetClubContext() ctx: ClubContext) {
+    const url = await this.filesService.getLogoRedirectUrl(ctx.clubId);
+    return { url };
+  }
+
+  @Delete('logo')
+  @HttpCode(200)
+  @RequirePermission(Permission.CLUB_SETTINGS)
+  @ApiOperation({ summary: 'Remove club logo (clears logoFileId, soft-deletes file)' })
+  @ApiResponse({ status: 200, description: 'Logo removed' })
+  @ApiResponse({ status: 404, description: 'No logo set' })
+  async removeLogo(@GetClubContext() ctx: ClubContext, @CurrentUser('id') userId: string) {
+    await this.filesService.removeClubLogo(ctx.clubId, userId);
+    return { message: 'Logo entfernt' };
+  }
+
+  @Get(':fileId/download')
+  @Redirect('', 302)
+  @Header('Cache-Control', 'private, no-store')
+  @ApiOperation({ summary: '302 redirect to file presigned download URL' })
+  @ApiParam({ name: 'fileId', description: 'File ID' })
+  @ApiResponse({ status: 302, description: 'Redirects to presigned S3 URL' })
+  @ApiResponse({ status: 404, description: 'File not found' })
+  async download(@GetClubContext() ctx: ClubContext, @Param('fileId') fileId: string) {
+    const url = await this.filesService.getFileDownloadUrl(fileId, ctx.clubId);
+    return { url };
   }
 
   @Get(':fileId')

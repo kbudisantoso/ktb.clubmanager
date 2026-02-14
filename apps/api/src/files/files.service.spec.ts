@@ -17,6 +17,11 @@ const mockPrisma = {
     create: vi.fn(),
     findFirst: vi.fn(),
   },
+  club: {
+    findUnique: vi.fn(),
+    update: vi.fn(),
+  },
+  // Supports both batch ($transaction([...])) and interactive ($transaction(fn)) calls
   $transaction: vi.fn(),
 };
 
@@ -121,6 +126,13 @@ describe('FilesService', () => {
     const fileId = 'file-1';
     const clubId = 'club-1';
 
+    /** Set up $transaction to execute the interactive callback with mockPrisma as tx */
+    function setupInteractiveTransaction() {
+      mockPrisma.$transaction.mockImplementation(
+        (fn: (tx: typeof mockPrisma) => Promise<unknown>) => fn(mockPrisma)
+      );
+    }
+
     it('should transition to UPLOADED when S3 file exists', async () => {
       const file = makeFile();
       mockPrisma.clubFile.findFirst.mockResolvedValue({ file, clubId });
@@ -131,6 +143,7 @@ describe('FilesService', () => {
       });
       mockPrisma.file.update.mockResolvedValue(uploadedFile);
       mockS3.presignedGetUrl.mockResolvedValue('https://s3.example.com/get?token=xyz');
+      setupInteractiveTransaction();
 
       const result = await service.confirmUpload(fileId, clubId);
 
@@ -139,6 +152,64 @@ describe('FilesService', () => {
       expect(mockPrisma.file.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ status: 'UPLOADED' }),
+        })
+      );
+    });
+
+    it('should set club.logoFileId when purpose is club-logo', async () => {
+      const file = makeFile();
+      mockPrisma.clubFile.findFirst.mockResolvedValue({ file, clubId });
+      mockS3.statObject.mockResolvedValue({ size: 50000 });
+      const uploadedFile = makeFile({
+        status: 'UPLOADED',
+        uploadedAt: new Date('2026-01-15T10:00:00Z'),
+      });
+      mockPrisma.file.update.mockResolvedValue(uploadedFile);
+      mockPrisma.club.findUnique.mockResolvedValue({ logoFileId: null });
+      mockPrisma.club.update.mockResolvedValue({});
+      mockS3.presignedGetUrl.mockResolvedValue('https://s3.example.com/get?token=xyz');
+      setupInteractiveTransaction();
+
+      await service.confirmUpload(fileId, clubId, 'club-logo', 'user-1');
+
+      expect(mockPrisma.club.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: clubId },
+          data: { logoFileId: fileId },
+        })
+      );
+    });
+
+    it('should soft-delete old logo when replacing with new one', async () => {
+      const file = makeFile();
+      mockPrisma.clubFile.findFirst.mockResolvedValue({ file, clubId });
+      mockS3.statObject.mockResolvedValue({ size: 50000 });
+      const uploadedFile = makeFile({
+        status: 'UPLOADED',
+        uploadedAt: new Date('2026-01-15T10:00:00Z'),
+      });
+      mockPrisma.file.update.mockResolvedValue(uploadedFile);
+      mockPrisma.club.findUnique.mockResolvedValue({ logoFileId: 'old-logo-file' });
+      mockPrisma.club.update.mockResolvedValue({});
+      mockS3.presignedGetUrl.mockResolvedValue('https://s3.example.com/get?token=xyz');
+      setupInteractiveTransaction();
+
+      await service.confirmUpload(fileId, clubId, 'club-logo', 'user-1');
+
+      // Old logo soft-deleted
+      expect(mockPrisma.file.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'old-logo-file' },
+          data: expect.objectContaining({
+            status: 'DELETED',
+            deletedBy: 'user-1',
+          }),
+        })
+      );
+      // New logo set
+      expect(mockPrisma.club.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { logoFileId: fileId },
         })
       );
     });
@@ -205,6 +276,112 @@ describe('FilesService', () => {
       mockPrisma.clubFile.findFirst.mockResolvedValue(null);
 
       await expect(service.deleteFile(fileId, clubId, userId)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('removeClubLogo()', () => {
+    const clubId = 'club-1';
+    const userId = 'user-1';
+
+    /** Set up $transaction to execute the interactive callback with mockPrisma as tx */
+    function setupInteractiveTransaction() {
+      mockPrisma.$transaction.mockImplementation(
+        (fn: (tx: typeof mockPrisma) => Promise<unknown>) => fn(mockPrisma)
+      );
+    }
+
+    it('should clear logoFileId and soft-delete the file', async () => {
+      mockPrisma.club.findUnique.mockResolvedValue({ logoFileId: 'file-1' });
+      mockPrisma.club.update.mockResolvedValue({});
+      mockPrisma.file.update.mockResolvedValue({});
+      setupInteractiveTransaction();
+
+      await service.removeClubLogo(clubId, userId);
+
+      expect(mockPrisma.club.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: clubId },
+          data: { logoFileId: null },
+        })
+      );
+      expect(mockPrisma.file.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'file-1' },
+          data: expect.objectContaining({
+            status: 'DELETED',
+            deletedBy: userId,
+          }),
+        })
+      );
+    });
+
+    it('should throw when club has no logo', async () => {
+      mockPrisma.club.findUnique.mockResolvedValue({ logoFileId: null });
+
+      await expect(service.removeClubLogo(clubId, userId)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getLogoRedirectUrl()', () => {
+    const clubId = 'club-1';
+
+    it('should return presigned URL for club logo', async () => {
+      mockPrisma.club.findUnique.mockResolvedValue({ logoFileId: 'file-1' });
+      mockPrisma.file.findFirst.mockResolvedValue({ s3Key: 'clubs/club-1/file-1' });
+      mockS3.presignedGetUrl.mockResolvedValue('https://s3.example.com/get?token=logo');
+
+      const url = await service.getLogoRedirectUrl(clubId);
+
+      expect(url).toBe('https://s3.example.com/get?token=logo');
+      expect(mockS3.presignedGetUrl).toHaveBeenCalledWith('clubs/club-1/file-1', 60);
+    });
+
+    it('should throw when club has no logoFileId', async () => {
+      mockPrisma.club.findUnique.mockResolvedValue({ logoFileId: null });
+
+      await expect(service.getLogoRedirectUrl(clubId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw when logo file is deleted', async () => {
+      mockPrisma.club.findUnique.mockResolvedValue({ logoFileId: 'file-1' });
+      mockPrisma.file.findFirst.mockResolvedValue(null);
+
+      await expect(service.getLogoRedirectUrl(clubId)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getFileDownloadUrl()', () => {
+    const fileId = 'file-1';
+    const clubId = 'club-1';
+
+    it('should return presigned URL for uploaded file', async () => {
+      const file = makeFile({ status: 'UPLOADED' });
+      mockPrisma.clubFile.findFirst.mockResolvedValue({ file, clubId });
+      mockS3.presignedGetUrl.mockResolvedValue('https://s3.example.com/get?token=dl');
+
+      const url = await service.getFileDownloadUrl(fileId, clubId);
+
+      expect(url).toBe('https://s3.example.com/get?token=dl');
+    });
+
+    it('should throw when file is not UPLOADED', async () => {
+      const file = makeFile({ status: 'PENDING_UPLOAD' });
+      mockPrisma.clubFile.findFirst.mockResolvedValue({ file, clubId });
+
+      await expect(service.getFileDownloadUrl(fileId, clubId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw when file is deleted', async () => {
+      const file = makeFile({ deletedAt: new Date() });
+      mockPrisma.clubFile.findFirst.mockResolvedValue({ file, clubId });
+
+      await expect(service.getFileDownloadUrl(fileId, clubId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw when file not found', async () => {
+      mockPrisma.clubFile.findFirst.mockResolvedValue(null);
+
+      await expect(service.getFileDownloadUrl(fileId, clubId)).rejects.toThrow(NotFoundException);
     });
   });
 

@@ -80,11 +80,13 @@ export function useFileUpload({ slug, purpose, onSuccess, onError }: UploadOptio
           throw new Error('Fehler beim Hochladen der Datei');
         }
 
-        // Stage 3: Confirm upload
+        // Stage 3: Confirm upload (pass purpose for server-side side effects)
         setState((s) => ({ ...s, status: 'confirming', progress: 80 }));
 
         const confirmRes = await apiFetch(`/api/clubs/${slug}/files/${fileId}/confirm`, {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ purpose }),
         });
 
         if (!confirmRes.ok) {
