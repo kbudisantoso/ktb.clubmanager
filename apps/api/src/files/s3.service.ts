@@ -17,7 +17,7 @@ import * as Minio from 'minio';
  * - S3_PUBLIC_ENDPOINT: Public URL for presigned URLs (browser-facing). Falls back to S3_ENDPOINT.
  *   Needed when S3_ENDPOINT is internal (e.g., "http://minio:9000") but the browser needs
  *   a different address (e.g., "http://localhost:35900").
- * - S3_REGION: Region (required for AWS S3, e.g., "eu-central-1")
+ * - S3_REGION: Region (default: "eu-central-1")
  * - S3_FORCE_PATH_STYLE: Use path-style URLs (default: "true" for MinIO, set "false" for AWS/R2)
  */
 @Injectable()
@@ -32,7 +32,9 @@ export class S3Service implements OnModuleInit {
   constructor() {
     const accessKey = this.requireEnv('S3_ACCESS_KEY_ID');
     const secretKey = this.requireEnv('S3_SECRET_ACCESS_KEY');
-    const region = process.env.S3_REGION ? { region: process.env.S3_REGION } : {};
+    // Region must be set explicitly to prevent minio-js from making network calls
+    // for region discovery during presigned URL generation.
+    const region = process.env.S3_REGION || 'eu-central-1';
     const pathStyle = (process.env.S3_FORCE_PATH_STYLE ?? 'true') === 'true';
 
     const endpointUrl = this.requireEnv('S3_ENDPOINT');
@@ -44,7 +46,7 @@ export class S3Service implements OnModuleInit {
       useSSL: parsed.protocol === 'https:',
       accessKey,
       secretKey,
-      ...region,
+      region,
       pathStyle,
     });
 
@@ -61,7 +63,7 @@ export class S3Service implements OnModuleInit {
       useSSL: parsedPublic.protocol === 'https:',
       accessKey,
       secretKey,
-      ...region,
+      region,
       pathStyle,
     });
 
