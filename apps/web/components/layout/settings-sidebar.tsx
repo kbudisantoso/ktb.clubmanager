@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams, usePathname } from 'next/navigation';
-import { ArrowLeft, Bell, Building2, Hash, Key, Settings, User, Users } from 'lucide-react';
+import { ArrowLeft, Bell, Building2, Hash, Key, Settings, Shield, User, Users } from 'lucide-react';
 
 import { useActiveClub } from '@/lib/club-store';
 import { useCanManageSettings } from '@/lib/club-permissions';
@@ -51,6 +51,7 @@ export function SettingsSidebar() {
   // Personal settings nav items
   const personalItems = [
     { href: '/settings/profile', title: 'Profil', icon: User },
+    { href: '/settings/security', title: 'Sicherheit', icon: Shield },
     { href: '/settings/my-clubs', title: 'Meine Vereine', icon: Building2 },
     { href: '/settings/notifications', title: 'Benachrichtigungen', icon: Bell },
   ];

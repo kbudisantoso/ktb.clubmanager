@@ -5,6 +5,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockUseSessionQuery = vi.fn();
 vi.mock('@/hooks/use-session', () => ({
   useSessionQuery: () => mockUseSessionQuery(),
+  useInvalidateSession: () => vi.fn(),
+}));
+
+// Mock ProfileForm to isolate page-level tests
+vi.mock('@/components/settings/profile-form', () => ({
+  ProfileForm: () => <div data-testid="profile-form">ProfileForm</div>,
 }));
 
 // Import after mocks
@@ -16,7 +22,7 @@ describe('ProfilePage', () => {
   });
 
   describe('sunshine path', () => {
-    it('renders user profile information', () => {
+    it('renders profile card with title and description', () => {
       mockUseSessionQuery.mockReturnValue({
         data: {
           user: { id: '1', name: 'Max Mustermann', email: 'max@example.de' },
@@ -28,11 +34,9 @@ describe('ProfilePage', () => {
 
       expect(screen.getByText('Profil')).toBeInTheDocument();
       expect(screen.getByText('Deine persönlichen Informationen')).toBeInTheDocument();
-      expect(screen.getByText('Max Mustermann')).toBeInTheDocument();
-      expect(screen.getByText('max@example.de')).toBeInTheDocument();
     });
 
-    it('displays user initials in avatar', () => {
+    it('renders ProfileForm when session loaded', () => {
       mockUseSessionQuery.mockReturnValue({
         data: {
           user: { id: '1', name: 'Max Mustermann', email: 'max@example.de' },
@@ -42,27 +46,12 @@ describe('ProfilePage', () => {
 
       render(<ProfilePage />);
 
-      // Avatar fallback should show initials "MM"
-      expect(screen.getByText('MM')).toBeInTheDocument();
-    });
-
-    it('displays first letter of email when no name', () => {
-      mockUseSessionQuery.mockReturnValue({
-        data: {
-          user: { id: '1', name: '', email: 'max@example.de' },
-        },
-        isLoading: false,
-      });
-
-      render(<ProfilePage />);
-
-      expect(screen.getByText('M')).toBeInTheDocument();
-      expect(screen.getByText('Kein Name')).toBeInTheDocument();
+      expect(screen.getByTestId('profile-form')).toBeInTheDocument();
     });
   });
 
   describe('edge cases', () => {
-    it('shows loading state when session is loading', () => {
+    it('shows skeleton when loading', () => {
       mockUseSessionQuery.mockReturnValue({
         data: null,
         isLoading: true,
@@ -70,22 +59,20 @@ describe('ProfilePage', () => {
 
       render(<ProfilePage />);
 
-      // Skeleton should be visible (check for role or class)
+      // Skeleton should be visible (card wrapper exists but no ProfileForm)
       expect(document.querySelector('[data-slot="card"]')).toBeInTheDocument();
+      expect(screen.queryByTestId('profile-form')).not.toBeInTheDocument();
     });
 
-    it('handles user with single name', () => {
+    it('shows skeleton when session has no user', () => {
       mockUseSessionQuery.mockReturnValue({
-        data: {
-          user: { id: '1', name: 'Max', email: 'max@example.de' },
-        },
+        data: { user: null },
         isLoading: false,
       });
 
       render(<ProfilePage />);
 
-      expect(screen.getByText('M')).toBeInTheDocument();
-      expect(screen.getByText('Max')).toBeInTheDocument();
+      expect(screen.queryByTestId('profile-form')).not.toBeInTheDocument();
     });
   });
 });
