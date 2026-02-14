@@ -75,6 +75,7 @@ describe('SessionAuthGuard', () => {
         email: 'test@example.de',
         name: 'Test User',
         image: null,
+        sessionId: 'session-123',
       });
     });
 
@@ -105,6 +106,7 @@ describe('SessionAuthGuard', () => {
 
       expect(result).toBe(true);
       expect((requestObj['user'] as SessionUser).image).toBe('https://example.com/avatar.jpg');
+      expect((requestObj['user'] as SessionUser).sessionId).toBe('session-123');
     });
 
     it('allows access to public routes without token', async () => {
@@ -180,6 +182,7 @@ describe('SessionAuthGuard', () => {
       expect(result).toBe(true);
       expect((requestObj['user'] as SessionUser).name).toBeNull();
       expect((requestObj['user'] as SessionUser).image).toBeNull();
+      expect((requestObj['user'] as SessionUser).sessionId).toBe('session-123');
     });
   });
 
