@@ -35,10 +35,10 @@ describe('MemberStatusBadge', () => {
     expect(badge.className).toContain('text-destructive');
   });
 
-  it('renders "Ausstehend" with accent styling for PENDING', () => {
+  it('renders "Mitgliedschaft beantragt" with accent styling for PENDING', () => {
     render(<MemberStatusBadge status="PENDING" />);
 
-    const badge = screen.getByText('Ausstehend');
+    const badge = screen.getByText('Mitgliedschaft beantragt');
     expect(badge).toBeInTheDocument();
     expect(badge.className).toContain('text-accent-foreground');
   });

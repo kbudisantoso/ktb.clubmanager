@@ -24,7 +24,7 @@ const STATUS_CONFIG: Record<MemberStatus, { label: string; className: string }> 
     className: 'bg-destructive/15 text-destructive border-destructive/25',
   },
   PENDING: {
-    label: 'Ausstehend',
+    label: 'Mitgliedschaft beantragt',
     className: 'bg-accent/15 text-accent-foreground border-accent/25',
   },
   LEFT: {

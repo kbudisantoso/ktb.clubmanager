@@ -65,7 +65,7 @@ const STATUS_LABELS: Record<string, string> = {
   PROBATION: 'Probezeit',
   DORMANT: 'Ruhend',
   SUSPENDED: 'Gesperrt',
-  PENDING: 'Ausstehend',
+  PENDING: 'Mitgliedschaft beantragt',
   LEFT: 'Ausgetreten',
 };
 

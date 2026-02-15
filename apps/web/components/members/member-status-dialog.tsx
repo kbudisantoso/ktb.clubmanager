@@ -32,7 +32,7 @@ const STATUS_LABELS: Record<string, string> = {
   PROBATION: 'Probezeit',
   DORMANT: 'Ruhend',
   SUSPENDED: 'Gesperrt',
-  PENDING: 'Ausstehend',
+  PENDING: 'Mitgliedschaft beantragt',
   LEFT: 'Ausgetreten',
 };
 
@@ -43,7 +43,7 @@ const TRANSITION_DESCRIPTIONS: Record<string, string> = {
   DORMANT: 'Mitgliedschaft ruht vorübergehend.',
   SUSPENDED: 'Mitglied wird wegen Verstoß gesperrt.',
   LEFT: 'Mitglied tritt aus dem Verein aus. Dies ist endgültig.',
-  PENDING: 'Mitglied wird zurück auf ausstehend gesetzt.',
+  PENDING: 'Mitglied wird zurück auf beantragt gesetzt.',
 };
 
 /** German labels for left categories */
