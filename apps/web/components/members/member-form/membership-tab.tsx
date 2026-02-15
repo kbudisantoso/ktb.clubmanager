@@ -1,18 +1,29 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { AlertTriangle, Info } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { MemberStatusBadge } from '@/components/members/member-status-badge';
-import { MemberTimeline } from '@/components/members/member-timeline';
-import { MemberStatusTimeline } from '@/components/members/member-status-timeline';
+import { MemberUnifiedTimeline } from '@/components/members/member-unified-timeline';
+import type { TimelinePeriod } from '@/components/members/member-unified-timeline';
 import { MembershipPeriodDialog } from '@/components/members/membership-period-dialog';
-import type { TimelinePeriod } from '@/components/members/member-timeline';
 import type { DialogMode } from '@/components/members/membership-period-dialog';
 import { useMemberPeriods } from '@/hooks/use-membership-periods';
 import { useMembershipTypes } from '@/hooks/use-membership-types';
-import { useMemberStatusHistory } from '@/hooks/use-members';
+import { useMemberStatusHistory, useChangeStatus } from '@/hooks/use-members';
+import { useToast } from '@/hooks/use-toast';
+import { formatDate } from '@/lib/format-date';
 import type { MemberDetail } from '@/hooks/use-member-detail';
 
 // ============================================================================
@@ -33,14 +44,16 @@ interface MembershipTabProps {
 // ============================================================================
 
 /**
- * Mitgliedschaft tab: Shows current member status, cancellation info, and
- * membership periods timeline with full CRUD.
+ * Mitgliedschaft tab: Shows inline status summary, cancellation info,
+ * and a unified timeline merging membership periods + status transitions.
  *
- * Status changes and period CRUD go through their own dialogs (not inline edit).
+ * Includes R2 workflow: after creating a period for a PENDING member,
+ * prompts to activate the member.
  */
 export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabProps) {
   const params = useParams<{ slug: string }>();
   const clubSlug = params.slug;
+  const { toast } = useToast();
   const hasCancellation = !!member.cancellationDate;
 
   // Fetch periods via hook (includes real-time updates)
@@ -56,10 +69,30 @@ export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabPro
     member.id
   );
 
+  // Change status mutation (for R2 activation workflow)
+  const changeStatus = useChangeStatus(slug);
+
   // Period dialog state
   const [periodDialogOpen, setPeriodDialogOpen] = useState(false);
   const [periodDialogMode, setPeriodDialogMode] = useState<DialogMode>('create');
   const [selectedPeriod, setSelectedPeriod] = useState<TimelinePeriod | null>(null);
+
+  // R2: Activation prompt state
+  const [activationPromptOpen, setActivationPromptOpen] = useState(false);
+
+  // Derive active membership type name for the top section
+  const activeTypeName = useMemo(() => {
+    const activePeriod = displayPeriods.find((p) => !p.leaveDate);
+    if (!activePeriod?.membershipTypeId || !membershipTypes) return null;
+    const type = membershipTypes.find((t) => t.id === activePeriod.membershipTypeId);
+    return type?.name ?? null;
+  }, [displayPeriods, membershipTypes]);
+
+  // Derive entry date from active period
+  const activeJoinDate = useMemo(() => {
+    const activePeriod = displayPeriods.find((p) => !p.leaveDate);
+    return activePeriod?.joinDate ?? null;
+  }, [displayPeriods]);
 
   const handleCreatePeriod = useCallback(() => {
     setSelectedPeriod(null);
@@ -79,27 +112,51 @@ export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabPro
     setPeriodDialogOpen(true);
   }, []);
 
+  // R2: After period dialog succeeds, check if we should prompt activation
+  const handlePeriodSuccess = useCallback(
+    (mode: DialogMode) => {
+      if (mode === 'create' && member.status === 'PENDING') {
+        setActivationPromptOpen(true);
+      }
+    },
+    [member.status]
+  );
+
+  // R2: Handle activation confirm
+  const handleActivateMember = useCallback(async () => {
+    try {
+      await changeStatus.mutateAsync({
+        id: member.id,
+        newStatus: 'ACTIVE',
+        reason: 'Mitgliedschaft zugewiesen',
+      });
+      toast({ title: 'Status auf Aktiv gesetzt' });
+    } catch {
+      toast({
+        title: 'Fehler beim Aktivieren',
+        description: 'Der Status konnte nicht geaendert werden.',
+        variant: 'destructive',
+      });
+    }
+    setActivationPromptOpen(false);
+  }, [changeStatus, member.id, toast]);
+
   return (
     <>
       <div className="space-y-6">
-        {/* Current status */}
-        <div>
-          <h3 className="text-sm font-medium text-muted-foreground mb-2">Aktueller Status</h3>
-          <div className="flex items-center gap-3">
-            <MemberStatusBadge status={member.status} />
-            {onChangeStatus && member.status !== 'LEFT' && (
-              <Button type="button" variant="outline" size="sm" onClick={onChangeStatus}>
-                Status ändern
-              </Button>
-            )}
-          </div>
-
-          {/* Status change info */}
-          {member.statusChangedAt && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Letzte Änderung: {formatDate(member.statusChangedAt)}
-              {member.statusChangeReason && ` - ${member.statusChangeReason}`}
-            </p>
+        {/* R4: Inline status summary */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <MemberStatusBadge status={member.status} />
+          {activeTypeName && (
+            <span className="text-sm text-muted-foreground">{activeTypeName}</span>
+          )}
+          {activeJoinDate && (
+            <span className="text-sm text-muted-foreground">seit {formatDate(activeJoinDate)}</span>
+          )}
+          {onChangeStatus && member.status !== 'LEFT' && (
+            <Button type="button" variant="outline" size="sm" onClick={onChangeStatus}>
+              Status aendern
+            </Button>
           )}
         </div>
 
@@ -109,7 +166,7 @@ export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabPro
             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div className="text-sm">
               <p className="font-medium text-amber-600 dark:text-amber-400">
-                Kündigung zum {formatDate(member.cancellationDate!)}
+                Kuendigung zum {formatDate(member.cancellationDate!)}
               </p>
               {member.cancellationReceivedAt && (
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -120,32 +177,17 @@ export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabPro
           </div>
         )}
 
-        {/* Separator */}
-        <div className="border-t" />
-
-        {/* Membership timeline */}
-        <MemberTimeline
+        {/* R1: Unified timeline */}
+        <MemberUnifiedTimeline
           periods={displayPeriods}
+          statusHistory={statusHistory}
+          statusHistoryLoading={statusHistoryLoading}
           membershipTypes={membershipTypes}
+          memberStatus={member.status}
           onCreatePeriod={handleCreatePeriod}
           onEditPeriod={handleEditPeriod}
           onClosePeriod={handleClosePeriod}
         />
-
-        {/* Separator */}
-        <div className="border-t" />
-
-        {/* Status history timeline */}
-        <MemberStatusTimeline entries={statusHistory} isLoading={statusHistoryLoading} />
-
-        {/* Info about editing */}
-        <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
-          <Info className="h-4 w-4 shrink-0 mt-0.5" />
-          <p>
-            Statusänderungen und Mitgliedschaftszeiträume werden über die jeweiligen Dialoge
-            verwaltet.
-          </p>
-        </div>
       </div>
 
       {/* Period CRUD dialog */}
@@ -157,20 +199,28 @@ export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabPro
         mode={periodDialogMode}
         period={selectedPeriod}
         existingPeriods={displayPeriods}
+        onSuccess={handlePeriodSuccess}
       />
+
+      {/* R2: Activation prompt */}
+      <AlertDialog open={activationPromptOpen} onOpenChange={setActivationPromptOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mitglied aktivieren?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Die Mitgliedschaft wurde zugewiesen. Soll der Status auf &quot;Aktiv&quot; gesetzt
+              werden?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Nein, Status beibehalten</AlertDialogCancel>
+            <AlertDialogAction onClick={handleActivateMember} disabled={changeStatus.isPending}>
+              {changeStatus.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Ja, aktivieren
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
-}
-
-// ============================================================================
-// Helpers
-// ============================================================================
-
-/**
- * Format an ISO date string to German DD.MM.YYYY format.
- */
-function formatDate(isoDate: string): string {
-  const [year, month, day] = isoDate.split('T')[0].split('-');
-  if (!year || !month || !day) return isoDate;
-  return `${day}.${month}.${year}`;
 }

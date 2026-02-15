@@ -56,6 +56,8 @@ interface MembershipPeriodDialogProps {
   period?: PeriodData | null;
   /** Existing periods for overlap validation */
   existingPeriods?: PeriodData[];
+  /** Called after successful mutation with the dialog mode */
+  onSuccess?: (mode: DialogMode) => void;
 }
 
 // ============================================================================
@@ -79,6 +81,7 @@ export function MembershipPeriodDialog({
   mode,
   period,
   existingPeriods = [],
+  onSuccess,
 }: MembershipPeriodDialogProps) {
   const params = useParams<{ slug: string }>();
   const clubSlug = params.slug;
@@ -223,6 +226,7 @@ export function MembershipPeriodDialog({
       }
 
       handleClose();
+      onSuccess?.(mode);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ein unbekannter Fehler ist aufgetreten');
     }
@@ -239,6 +243,7 @@ export function MembershipPeriodDialog({
     closePeriod,
     toast,
     handleClose,
+    onSuccess,
   ]);
 
   const isPending = createPeriod.isPending || updatePeriod.isPending || closePeriod.isPending;
