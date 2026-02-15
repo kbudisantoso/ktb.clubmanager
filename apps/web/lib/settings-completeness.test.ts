@@ -31,7 +31,7 @@ function emptyValues(): SettingsFormValues {
     bankName: '',
     accountHolder: '',
     fiscalYearStartMonth: undefined,
-    defaultMembershipType: undefined,
+    defaultMembershipTypeId: undefined,
     probationPeriodDays: undefined,
     visibility: 'PRIVATE',
     logoFileId: undefined,
@@ -56,7 +56,7 @@ function completeValues(): SettingsFormValues {
     iban: 'DE89370400440532013000',
     accountHolder: 'Sportverein e.V.',
     fiscalYearStartMonth: 1,
-    defaultMembershipType: 'ORDENTLICH',
+    defaultMembershipTypeId: 'ORDENTLICH',
   };
 }
 
@@ -258,7 +258,7 @@ describe('computeSettingsCompleteness', () => {
       const values = {
         ...emptyValues(),
         fiscalYearStartMonth: 1,
-        defaultMembershipType: 'ORDENTLICH' as const,
+        defaultMembershipTypeId: 'ORDENTLICH' as const,
       };
       const section = computeSettingsCompleteness(values).sections[5];
       expect(section.complete).toBe(true);

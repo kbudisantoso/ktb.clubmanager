@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import {
   MoreHorizontal,
   RefreshCw,
@@ -11,6 +12,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,19 +20,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useMembershipTypes } from '@/hooks/use-membership-types';
 import { MemberAvatar } from './member-avatar';
 import { MemberStatusBadge } from './member-status-badge';
 import { HouseholdBadge } from './household-badge';
 import type { MemberDetail } from '@/hooks/use-member-detail';
-
-/** Membership type German labels */
-const MEMBERSHIP_TYPE_LABELS: Record<string, string> = {
-  ORDENTLICH: 'Ordentlich',
-  PASSIV: 'Passiv',
-  EHREN: 'Ehren',
-  FOERDER: 'Förder',
-  JUGEND: 'Jugend',
-};
 
 interface MemberDetailHeaderProps {
   /** Full member data */
@@ -62,6 +56,10 @@ export function MemberDetailHeader({
   onDelete,
   onAnonymize,
 }: MemberDetailHeaderProps) {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
+  const { data: membershipTypes } = useMembershipTypes(slug);
+
   const displayName = useMemo(() => {
     if (member.personType === 'LEGAL_ENTITY' && member.organizationName) {
       return member.organizationName;
@@ -83,11 +81,14 @@ export function MemberDetailHeader({
   }, [member.membershipPeriods]);
 
   const entryDate = activePeriod?.joinDate ? formatDate(activePeriod.joinDate) : null;
-  const membershipType = activePeriod?.membershipType
-    ? (MEMBERSHIP_TYPE_LABELS[activePeriod.membershipType] ?? activePeriod.membershipType)
-    : null;
+  const membershipTypeName = useMemo(() => {
+    if (!activePeriod?.membershipTypeId || !membershipTypes) return null;
+    const found = membershipTypes.find((t) => t.id === activePeriod.membershipTypeId);
+    return found?.name ?? null;
+  }, [activePeriod?.membershipTypeId, membershipTypes]);
 
   const isLeft = member.status === 'LEFT';
+  const hasCancellation = !!member.cancellationDate && member.status !== 'LEFT';
   const contactInfo = [member.email, member.phone || member.mobile].filter(Boolean);
 
   return (
@@ -107,9 +108,14 @@ export function MemberDetailHeader({
           {/* Name */}
           <h2 className="text-lg font-semibold truncate">{displayName}</h2>
 
-          {/* Status + Member number */}
+          {/* Status + Member number + Cancellation badge */}
           <div className="flex items-center gap-2 flex-wrap">
             <MemberStatusBadge status={member.status} />
+            {hasCancellation && (
+              <Badge variant="outline" className="border-warning/25 text-warning-foreground">
+                Gekuendigt zum {formatDate(member.cancellationDate!)}
+              </Badge>
+            )}
             <span className="text-sm text-muted-foreground font-mono">{member.memberNumber}</span>
             {member.household && (
               <HouseholdBadge
@@ -123,7 +129,7 @@ export function MemberDetailHeader({
 
           {/* Membership type + Entry date */}
           <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-            {membershipType && <span>{membershipType}</span>}
+            {membershipTypeName && <span>{membershipTypeName}</span>}
             {entryDate && (
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
@@ -163,11 +169,15 @@ export function MemberDetailHeader({
               <UserX className="h-4 w-4" />
               Mitgliedschaft beenden
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onRecordCancellation}>
-              <Calendar className="h-4 w-4" />
-              Kündigung erfassen
-            </DropdownMenuItem>
+            {['ACTIVE', 'PROBATION', 'DORMANT', 'SUSPENDED'].includes(member.status) && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onRecordCancellation}>
+                  <Calendar className="h-4 w-4" />
+                  Kuendigung erfassen
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" disabled={!isLeft} onClick={onDelete}>
               <Trash2 className="h-4 w-4" />

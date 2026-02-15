@@ -13,18 +13,10 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ColumnKey } from '@/hooks/use-column-visibility';
+import type { MembershipType } from '@/hooks/use-membership-types';
 import { MemberStatusBadge } from './member-status-badge';
 import { MemberAvatar } from './member-avatar';
 import { HouseholdBadge } from './household-badge';
-
-/** Membership type German labels */
-const MEMBERSHIP_TYPE_LABELS: Record<string, string> = {
-  ORDENTLICH: 'Ordentlich',
-  PASSIV: 'Passiv',
-  EHREN: 'Ehren',
-  FOERDER: 'Förder',
-  JUGEND: 'Jugend',
-};
 
 /** Member data as returned from the API */
 interface MemberListItem {
@@ -49,7 +41,7 @@ interface MemberListItem {
     id: string;
     joinDate: string | null;
     leaveDate: string | null;
-    membershipType: string;
+    membershipTypeId?: string | null;
   }[];
   notes: string | null;
   version: number;
@@ -76,6 +68,8 @@ interface MemberListTableProps {
   onSelectMember: (id: string) => void;
   /** Column visibility state from useColumnVisibility hook */
   columnVisibility?: Record<ColumnKey, boolean>;
+  /** Available membership types for label resolution */
+  membershipTypes?: MembershipType[];
 }
 
 /**
@@ -104,6 +98,7 @@ export function MemberListTable({
   onSelectionChange,
   onSelectMember,
   columnVisibility,
+  membershipTypes,
 }: MemberListTableProps) {
   const lastShiftClickIndex = useRef<number | null>(null);
 
@@ -354,9 +349,9 @@ export function MemberListTable({
 
                 {/* Beitragsart */}
                 <TableCell className={colClass('membershipType')}>
-                  {activePeriod
-                    ? (MEMBERSHIP_TYPE_LABELS[activePeriod.membershipType] ??
-                      activePeriod.membershipType)
+                  {activePeriod?.membershipTypeId
+                    ? (membershipTypes?.find((t) => t.id === activePeriod.membershipTypeId)?.name ??
+                      '-')
                     : '-'}
                 </TableCell>
 

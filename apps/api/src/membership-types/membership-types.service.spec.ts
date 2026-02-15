@@ -324,7 +324,7 @@ describe('MembershipTypesService', () => {
 
       expect(mockPrisma.membershipType.createMany).toHaveBeenCalledTimes(1);
       const call = (mockPrisma.membershipType.createMany as ReturnType<typeof vi.fn>).mock
-        .calls[0][0];
+        .calls[0]![0];
       expect(call.data).toHaveLength(5);
     });
 
@@ -336,7 +336,7 @@ describe('MembershipTypesService', () => {
       await service.seedDefaults(CLUB_ID);
 
       const call = (mockPrisma.membershipType.createMany as ReturnType<typeof vi.fn>).mock
-        .calls[0][0];
+        .calls[0]![0];
       const ordentlich = call.data.find((d: { code: string }) => d.code === 'ORDENTLICH');
       expect(ordentlich).toBeDefined();
       expect(ordentlich.isDefault).toBe(true);
@@ -356,7 +356,7 @@ describe('MembershipTypesService', () => {
       await service.seedDefaults(CLUB_ID);
 
       const call = (mockPrisma.membershipType.createMany as ReturnType<typeof vi.fn>).mock
-        .calls[0][0];
+        .calls[0]![0];
       const codes = call.data.map((d: { code: string }) => d.code);
       expect(codes).toContain('ORDENTLICH');
       expect(codes).toContain('PASSIV');
@@ -373,7 +373,7 @@ describe('MembershipTypesService', () => {
       await service.seedDefaults(CLUB_ID);
 
       const call = (mockPrisma.membershipType.createMany as ReturnType<typeof vi.fn>).mock
-        .calls[0][0];
+        .calls[0]![0];
       for (const item of call.data) {
         expect(item.clubId).toBe(CLUB_ID);
       }

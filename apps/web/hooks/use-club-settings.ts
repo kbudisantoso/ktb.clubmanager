@@ -42,7 +42,7 @@ export interface ClubSettingsResponse {
   accountHolder?: string | null;
   // Betriebseinstellungen
   fiscalYearStartMonth?: number | null;
-  defaultMembershipType?: string | null;
+  defaultMembershipTypeId?: string | null;
   probationPeriodDays?: number | null;
   // Logo
   logoFileId?: string | null;

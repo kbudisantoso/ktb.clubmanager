@@ -25,6 +25,7 @@ import {
 import { DateInput } from '@/components/ui/date-input';
 import { useCreateMember } from '@/hooks/use-members';
 import { useNumberRanges } from '@/hooks/use-number-ranges';
+import { useMembershipTypes } from '@/hooks/use-membership-types';
 import { useToast } from '@/hooks/use-toast';
 import { PersonTypeToggle } from './person-type-toggle';
 import { AddressAutocomplete } from './address-autocomplete';
@@ -52,15 +53,6 @@ const STATUS_OPTIONS = [
   { value: 'LEFT', label: 'Ausgetreten' },
 ] as const;
 
-/** German labels for membership type */
-const MEMBERSHIP_TYPE_OPTIONS = [
-  { value: 'ORDENTLICH', label: 'Ordentlich' },
-  { value: 'PASSIV', label: 'Passiv' },
-  { value: 'EHREN', label: 'Ehren' },
-  { value: 'FOERDER', label: 'Förder' },
-  { value: 'JUGEND', label: 'Jugend' },
-] as const;
-
 interface MemberCreateSheetProps {
   /** Club slug for API calls */
   slug: string;
@@ -79,12 +71,24 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
   const { toast } = useToast();
   const createMember = useCreateMember(slug);
   const { data: numberRanges } = useNumberRanges(slug);
+  const { data: membershipTypes } = useMembershipTypes(slug);
 
   // Check if auto-generation is available
   const memberNumberRange = useMemo(
     () => (numberRanges ?? []).find((r) => r.entityType === 'MEMBER'),
     [numberRanges]
   );
+
+  // Only show active membership types, pre-select default
+  const activeTypes = useMemo(() => {
+    if (!membershipTypes) return [];
+    return membershipTypes.filter((t) => t.isActive);
+  }, [membershipTypes]);
+
+  const defaultTypeId = useMemo(() => {
+    const defaultType = activeTypes.find((t) => t.isDefault);
+    return defaultType?.id ?? activeTypes[0]?.id ?? undefined;
+  }, [activeTypes]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(CreateMemberSchema),
@@ -417,22 +421,21 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
               </div>
 
               {/* Section 7: Membership Type (only shown when joinDate is set) */}
-              {joinDate && (
+              {joinDate && activeTypes.length > 0 && (
                 <div className="space-y-1.5">
                   <Label>Mitgliedsart</Label>
                   <Select
+                    defaultValue={defaultTypeId}
                     disabled={isSubmitting}
-                    onValueChange={(val) =>
-                      setValue('membershipType', val as FormValues['membershipType'])
-                    }
+                    onValueChange={(val) => setValue('membershipTypeId', val)}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Mitgliedsart wählen" />
+                      <SelectValue placeholder="Mitgliedsart waehlen" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MEMBERSHIP_TYPE_OPTIONS.map((m) => (
-                        <SelectItem key={m.value} value={m.value}>
-                          {m.label}
+                      {activeTypes.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

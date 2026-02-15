@@ -1,14 +1,18 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useParams } from 'next/navigation';
 import { AlertTriangle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MemberStatusBadge } from '@/components/members/member-status-badge';
 import { MemberTimeline } from '@/components/members/member-timeline';
+import { MemberStatusTimeline } from '@/components/members/member-status-timeline';
 import { MembershipPeriodDialog } from '@/components/members/membership-period-dialog';
 import type { TimelinePeriod } from '@/components/members/member-timeline';
 import type { DialogMode } from '@/components/members/membership-period-dialog';
 import { useMemberPeriods } from '@/hooks/use-membership-periods';
+import { useMembershipTypes } from '@/hooks/use-membership-types';
+import { useMemberStatusHistory } from '@/hooks/use-members';
 import type { MemberDetail } from '@/hooks/use-member-detail';
 
 // ============================================================================
@@ -35,11 +39,22 @@ interface MembershipTabProps {
  * Status changes and period CRUD go through their own dialogs (not inline edit).
  */
 export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabProps) {
+  const params = useParams<{ slug: string }>();
+  const clubSlug = params.slug;
   const hasCancellation = !!member.cancellationDate;
 
   // Fetch periods via hook (includes real-time updates)
   const { data: periods } = useMemberPeriods(slug, member.id);
   const displayPeriods = periods ?? member.membershipPeriods ?? [];
+
+  // Fetch membership types for label resolution
+  const { data: membershipTypes } = useMembershipTypes(clubSlug);
+
+  // Fetch status history for the timeline
+  const { data: statusHistory, isLoading: statusHistoryLoading } = useMemberStatusHistory(
+    slug,
+    member.id
+  );
 
   // Period dialog state
   const [periodDialogOpen, setPeriodDialogOpen] = useState(false);
@@ -111,10 +126,17 @@ export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabPro
         {/* Membership timeline */}
         <MemberTimeline
           periods={displayPeriods}
+          membershipTypes={membershipTypes}
           onCreatePeriod={handleCreatePeriod}
           onEditPeriod={handleEditPeriod}
           onClosePeriod={handleClosePeriod}
         />
+
+        {/* Separator */}
+        <div className="border-t" />
+
+        {/* Status history timeline */}
+        <MemberStatusTimeline entries={statusHistory} isLoading={statusHistoryLoading} />
 
         {/* Info about editing */}
         <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">

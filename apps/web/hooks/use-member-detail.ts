@@ -60,7 +60,7 @@ interface MemberDetail {
     id: string;
     joinDate: string | null;
     leaveDate: string | null;
-    membershipType: string;
+    membershipTypeId: string | null;
     notes: string | null;
     createdAt: string | null;
     updatedAt: string | null;

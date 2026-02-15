@@ -22,7 +22,7 @@ export type MembershipPeriod = MembershipPeriodResponse;
 // API-specific input types (shapes differ from shared schemas: include URL params like periodId)
 interface CreatePeriodInput {
   joinDate: string;
-  membershipType: string;
+  membershipTypeId?: string;
   notes?: string;
 }
 
@@ -30,7 +30,7 @@ interface UpdatePeriodInput {
   periodId: string;
   joinDate?: string;
   leaveDate?: string;
-  membershipType?: string;
+  membershipTypeId?: string;
   notes?: string;
 }
 

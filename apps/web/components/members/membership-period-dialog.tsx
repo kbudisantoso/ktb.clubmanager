@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -22,20 +23,8 @@ import {
 } from '@/components/ui/select';
 import { DateInput } from '@/components/ui/date-input';
 import { useCreatePeriod, useUpdatePeriod, useClosePeriod } from '@/hooks/use-membership-periods';
+import { useMembershipTypes } from '@/hooks/use-membership-types';
 import { useToast } from '@/hooks/use-toast';
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-/** Membership type options with German labels */
-const MEMBERSHIP_TYPE_OPTIONS = [
-  { value: 'ORDENTLICH', label: 'Ordentlich' },
-  { value: 'PASSIV', label: 'Passiv' },
-  { value: 'EHREN', label: 'Ehren' },
-  { value: 'FOERDER', label: 'Förder' },
-  { value: 'JUGEND', label: 'Jugend' },
-] as const;
 
 // ============================================================================
 // Types
@@ -48,7 +37,7 @@ interface PeriodData {
   id: string;
   joinDate: string | null;
   leaveDate: string | null;
-  membershipType: string;
+  membershipTypeId?: string | null;
   notes: string | null;
 }
 
@@ -91,10 +80,27 @@ export function MembershipPeriodDialog({
   period,
   existingPeriods = [],
 }: MembershipPeriodDialogProps) {
+  const params = useParams<{ slug: string }>();
+  const clubSlug = params.slug;
   const { toast } = useToast();
   const createPeriod = useCreatePeriod(slug, memberId);
   const updatePeriod = useUpdatePeriod(slug, memberId);
   const closePeriod = useClosePeriod(slug, memberId);
+  const { data: membershipTypes } = useMembershipTypes(clubSlug);
+
+  // Find the default membership type for pre-selection in create mode
+  const defaultTypeId = useMemo(() => {
+    if (!membershipTypes?.length) return '';
+    const defaultType = membershipTypes.find((t) => t.isDefault);
+    return defaultType?.id ?? membershipTypes[0]?.id ?? '';
+  }, [membershipTypes]);
+
+  // Filter types: active only for create, all for edit
+  const availableTypes = useMemo(() => {
+    if (!membershipTypes) return [];
+    if (mode === 'create') return membershipTypes.filter((t) => t.isActive);
+    return membershipTypes;
+  }, [membershipTypes, mode]);
 
   // ============================================================================
   // State
@@ -102,7 +108,7 @@ export function MembershipPeriodDialog({
 
   const [joinDate, setJoinDate] = useState<string>('');
   const [leaveDate, setLeaveDate] = useState<string>('');
-  const [membershipType, setMembershipType] = useState<string>('ORDENTLICH');
+  const [membershipTypeId, setMembershipTypeId] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
@@ -113,7 +119,7 @@ export function MembershipPeriodDialog({
     if (mode === 'edit' && period) {
       setJoinDate(period.joinDate ?? '');
       setLeaveDate(period.leaveDate ?? '');
-      setMembershipType(period.membershipType);
+      setMembershipTypeId(period.membershipTypeId ?? '');
       setNotes(period.notes ?? '');
     } else if (mode === 'close') {
       // Pre-fill leaveDate with today
@@ -123,15 +129,15 @@ export function MembershipPeriodDialog({
       const d = String(today.getDate()).padStart(2, '0');
       setLeaveDate(`${y}-${m}-${d}`);
     } else {
-      // Create mode
+      // Create mode - pre-select default type
       setJoinDate('');
       setLeaveDate('');
-      setMembershipType('ORDENTLICH');
+      setMembershipTypeId(defaultTypeId);
       setNotes('');
     }
 
     setError(null);
-  }, [open, mode, period]);
+  }, [open, mode, period, defaultTypeId]);
 
   // ============================================================================
   // Validation
@@ -171,8 +177,8 @@ export function MembershipPeriodDialog({
     if (mode === 'close') {
       return !!leaveDate && !leaveDateError;
     }
-    return !!joinDate && !!membershipType && !overlapError && !leaveDateError;
-  }, [mode, joinDate, leaveDate, membershipType, overlapError, leaveDateError]);
+    return !!joinDate && !!membershipTypeId && !overlapError && !leaveDateError;
+  }, [mode, joinDate, leaveDate, membershipTypeId, overlapError, leaveDateError]);
 
   // ============================================================================
   // Handlers
@@ -181,7 +187,7 @@ export function MembershipPeriodDialog({
   const handleClose = useCallback(() => {
     setJoinDate('');
     setLeaveDate('');
-    setMembershipType('ORDENTLICH');
+    setMembershipTypeId('');
     setNotes('');
     setError(null);
     onOpenChange(false);
@@ -195,7 +201,7 @@ export function MembershipPeriodDialog({
       if (mode === 'create') {
         await createPeriod.mutateAsync({
           joinDate,
-          membershipType,
+          membershipTypeId: membershipTypeId || undefined,
           notes: notes.trim() || undefined,
         });
         toast({ title: 'Mitgliedschaft hinzugefügt' });
@@ -204,7 +210,7 @@ export function MembershipPeriodDialog({
           periodId: period.id,
           joinDate: joinDate || undefined,
           leaveDate: leaveDate || undefined,
-          membershipType: membershipType || undefined,
+          membershipTypeId: membershipTypeId || undefined,
           notes: notes.trim() || undefined,
         });
         toast({ title: 'Mitgliedschaft aktualisiert' });
@@ -226,7 +232,7 @@ export function MembershipPeriodDialog({
     period,
     joinDate,
     leaveDate,
-    membershipType,
+    membershipTypeId,
     notes,
     createPeriod,
     updatePeriod,
@@ -326,14 +332,14 @@ export function MembershipPeriodDialog({
                 <Label>
                   Mitgliedsart <span className="text-destructive">*</span>
                 </Label>
-                <Select value={membershipType} onValueChange={setMembershipType}>
+                <Select value={membershipTypeId} onValueChange={setMembershipTypeId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Mitgliedsart wählen" />
+                    <SelectValue placeholder="Mitgliedsart waehlen" />
                   </SelectTrigger>
                   <SelectContent>
-                    {MEMBERSHIP_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
+                    {availableTypes.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

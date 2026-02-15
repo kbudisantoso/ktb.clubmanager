@@ -4,19 +4,7 @@ import { useMemo } from 'react';
 import { Circle, Edit, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-/** German labels for membership types */
-const MEMBERSHIP_TYPE_LABELS: Record<string, string> = {
-  ORDENTLICH: 'Ordentlich',
-  PASSIV: 'Passiv',
-  EHREN: 'Ehren',
-  FOERDER: 'Förder',
-  JUGEND: 'Jugend',
-};
+import type { MembershipType } from '@/hooks/use-membership-types';
 
 // ============================================================================
 // Types
@@ -26,7 +14,7 @@ interface TimelinePeriod {
   id: string;
   joinDate: string | null;
   leaveDate: string | null;
-  membershipType: string;
+  membershipTypeId?: string | null;
   notes: string | null;
   createdAt: string | null;
   updatedAt: string | null;
@@ -35,6 +23,8 @@ interface TimelinePeriod {
 interface MemberTimelineProps {
   /** Membership periods to display */
   periods: TimelinePeriod[];
+  /** Available membership types for label lookup */
+  membershipTypes?: MembershipType[];
   /** Called when "Neue Mitgliedschaft" button is clicked */
   onCreatePeriod?: () => void;
   /** Called when a period's edit button is clicked */
@@ -57,10 +47,18 @@ interface MemberTimelineProps {
  */
 export function MemberTimeline({
   periods,
+  membershipTypes,
   onCreatePeriod,
   onEditPeriod,
   onClosePeriod,
 }: MemberTimelineProps) {
+  /** Resolve a membershipTypeId to a display name */
+  const getTypeName = (typeId: string | null | undefined): string => {
+    if (!typeId || !membershipTypes) return 'Unbekannt';
+    const found = membershipTypes.find((t) => t.id === typeId);
+    return found?.name ?? 'Unbekannt';
+  };
+
   // Sort periods by joinDate descending (most recent first)
   const sortedPeriods = useMemo(() => {
     if (!periods.length) return [];
@@ -147,7 +145,7 @@ export function MemberTimeline({
                               : 'bg-muted text-muted-foreground border-border'
                           )}
                         >
-                          {MEMBERSHIP_TYPE_LABELS[period.membershipType] ?? period.membershipType}
+                          {getTypeName(period.membershipTypeId)}
                         </span>
                         {isActive && (
                           <span className="text-xs text-success font-medium">Aktiv</span>

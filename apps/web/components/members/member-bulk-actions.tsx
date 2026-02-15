@@ -53,33 +53,24 @@ import { useCreateHousehold } from '@/hooks/use-households';
 import { useToast } from '@/hooks/use-toast';
 import { MemberCsvExportDialog } from './member-csv-export';
 import type { MemberListItem } from './member-list-table';
+import type { MembershipType } from '@/hooks/use-membership-types';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-/** German labels for status values */
+/** German labels for status values (6-state lifecycle) */
 const STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Aktiv',
-  INACTIVE: 'Inaktiv',
+  PROBATION: 'Probezeit',
+  DORMANT: 'Ruhend',
+  SUSPENDED: 'Gesperrt',
   PENDING: 'Ausstehend',
   LEFT: 'Ausgetreten',
 };
 
 /** Fields available for bulk editing */
-const BULK_EDIT_FIELDS = [
-  { value: 'membershipType', label: 'Mitgliedsart' },
-  { value: 'city', label: 'Ort' },
-] as const;
-
-/** Membership type options for bulk edit */
-const MEMBERSHIP_TYPE_OPTIONS = [
-  { value: 'ORDENTLICH', label: 'Ordentlich' },
-  { value: 'PASSIV', label: 'Passiv' },
-  { value: 'EHREN', label: 'Ehren' },
-  { value: 'FOERDER', label: 'Förder' },
-  { value: 'JUGEND', label: 'Jugend' },
-];
+const BULK_EDIT_FIELDS = [{ value: 'city', label: 'Ort' }] as const;
 
 // ============================================================================
 // Types
@@ -96,6 +87,8 @@ interface MemberBulkActionsProps {
   onClearSelection: () => void;
   /** Called when household creation dialog should open with pre-selected member IDs */
   onCreateHousehold?: (memberIds: string[]) => void;
+  /** Available membership types for label resolution */
+  membershipTypes?: MembershipType[];
 }
 
 // ============================================================================
@@ -113,6 +106,7 @@ export function MemberBulkActions({
   totalCount,
   onClearSelection,
   onCreateHousehold,
+  membershipTypes,
 }: MemberBulkActionsProps) {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
@@ -477,6 +471,7 @@ export function MemberBulkActions({
         members={selectedMembers}
         open={csvDialogOpen}
         onOpenChange={setCsvDialogOpen}
+        membershipTypes={membershipTypes}
       />
 
       {/* Bulk Edit Dialog */}
@@ -511,24 +506,6 @@ export function MemberBulkActions({
                 </SelectContent>
               </Select>
             </div>
-
-            {editField === 'membershipType' && (
-              <div className="space-y-1.5">
-                <Label>Neuer Wert</Label>
-                <Select value={editValue} onValueChange={setEditValue}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Mitgliedsart auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MEMBERSHIP_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
 
             {editField === 'city' && (
               <div className="space-y-1.5">
