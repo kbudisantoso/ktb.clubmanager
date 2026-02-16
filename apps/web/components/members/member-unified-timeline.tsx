@@ -136,6 +136,12 @@ export function MemberUnifiedTimeline({
   const hasActivePeriod = periods.some((p) => !p.leaveDate);
   const showNoPeriodBanner = memberStatus === 'ACTIVE' && !hasActivePeriod;
 
+  // The "current" entry is the most recent one that is not in the future
+  const currentEntryIndex = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return mergedEntries.findIndex((e) => e.date <= today);
+  }, [mergedEntries]);
+
   // Loading state
   if (statusHistoryLoading && periods.length === 0) {
     return (
@@ -193,11 +199,12 @@ export function MemberUnifiedTimeline({
 
           {/* Entries */}
           <div className="space-y-4">
-            {mergedEntries.map((entry) =>
+            {mergedEntries.map((entry, i) =>
               entry.type === 'period' && entry.period ? (
                 <PeriodEntry
                   key={entry.id}
                   period={entry.period}
+                  isCurrent={i === currentEntryIndex}
                   getTypeName={getTypeName}
                   onEdit={onEditPeriod}
                   onClose={onClosePeriod}
@@ -206,6 +213,7 @@ export function MemberUnifiedTimeline({
                 <StatusEntry
                   key={entry.id}
                   entry={entry.statusEntry}
+                  isCurrent={i === currentEntryIndex}
                   linkedPeriod={entry.linkedPeriod}
                   getTypeName={getTypeName}
                   onEdit={onEditStatusEntry}
@@ -226,40 +234,50 @@ export function MemberUnifiedTimeline({
 
 interface PeriodEntryProps {
   period: TimelinePeriod;
+  isCurrent: boolean;
   getTypeName: (typeId: string | null | undefined) => string;
   onEdit?: (period: TimelinePeriod) => void;
   onClose?: (period: TimelinePeriod) => void;
 }
 
-function PeriodEntry({ period, getTypeName, onEdit, onClose }: PeriodEntryProps) {
+function PeriodEntry({ period, isCurrent, getTypeName, onEdit, onClose }: PeriodEntryProps) {
   const isActive = !period.leaveDate;
   const duration = calculateDuration(period.joinDate, period.leaveDate);
 
   return (
     <div className="relative flex gap-3">
-      {/* Timeline dot */}
+      {/* Timeline dot — opaque bg covers the line */}
       <div className="relative z-10 flex items-start pt-1">
-        <Circle
-          className={cn(
-            'h-6 w-6 shrink-0',
-            isActive
-              ? 'fill-primary text-primary'
-              : 'fill-muted-foreground/30 text-muted-foreground/30'
-          )}
-        />
+        <div className="rounded-full bg-background">
+          <Circle
+            className={cn(
+              'h-6 w-6 shrink-0',
+              isCurrent
+                ? 'fill-primary text-primary'
+                : 'fill-muted-foreground/30 text-muted-foreground/30'
+            )}
+          />
+        </div>
       </div>
 
       {/* Period card */}
       <div
         className={cn(
           'flex-1 rounded-md border p-3 text-sm',
-          isActive ? 'border-primary/25 bg-primary/5' : 'border-border bg-muted/20 opacity-75'
+          isCurrent ? 'border-primary/25 bg-primary/5' : 'border-border bg-muted/20'
         )}
       >
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
+            {/* Date */}
+            <p className="text-xs text-muted-foreground mb-1.5">
+              {period.joinDate ? formatDate(period.joinDate) : 'Unbekannt'}
+              {' - '}
+              {period.leaveDate ? formatDate(period.leaveDate) : 'heute'}
+            </p>
+
             {/* Type badge + active indicator */}
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1.5">
               <span
                 className={cn(
                   'inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium',
@@ -273,15 +291,8 @@ function PeriodEntry({ period, getTypeName, onEdit, onClose }: PeriodEntryProps)
               {isActive && <span className="text-xs text-success font-medium">Aktiv</span>}
             </div>
 
-            {/* Date range */}
-            <p className="text-sm text-foreground">
-              {period.joinDate ? formatDate(period.joinDate) : 'Unbekannt'}
-              {' - '}
-              {period.leaveDate ? formatDate(period.leaveDate) : 'heute'}
-            </p>
-
             {/* Duration */}
-            {duration && <p className="text-xs text-muted-foreground mt-0.5">{duration}</p>}
+            {duration && <p className="text-xs text-muted-foreground">{duration}</p>}
 
             {/* Notes */}
             {period.notes && (
@@ -324,6 +335,7 @@ function PeriodEntry({ period, getTypeName, onEdit, onClose }: PeriodEntryProps)
 
 interface StatusEntryProps {
   entry: StatusHistoryEntry;
+  isCurrent: boolean;
   /** Period created/assigned during this transition */
   linkedPeriod?: TimelinePeriod;
   getTypeName: (typeId: string | null | undefined) => string;
@@ -331,18 +343,39 @@ interface StatusEntryProps {
   onDelete?: (entry: StatusHistoryEntry) => void;
 }
 
-function StatusEntry({ entry, linkedPeriod, getTypeName, onEdit, onDelete }: StatusEntryProps) {
+function StatusEntry({
+  entry,
+  isCurrent,
+  linkedPeriod,
+  getTypeName,
+  onEdit,
+  onDelete,
+}: StatusEntryProps) {
   const isSelfTransition = entry.fromStatus === entry.toStatus;
 
   return (
     <div className="relative flex gap-3">
-      {/* Timeline dot */}
+      {/* Timeline dot — opaque bg covers the line */}
       <div className="relative z-10 flex items-start pt-1">
-        <Circle className="h-6 w-6 shrink-0 fill-muted-foreground/30 text-muted-foreground/30" />
+        <div className="rounded-full bg-background">
+          <Circle
+            className={cn(
+              'h-6 w-6 shrink-0',
+              isCurrent
+                ? 'fill-primary text-primary'
+                : 'fill-muted-foreground/30 text-muted-foreground/30'
+            )}
+          />
+        </div>
       </div>
 
       {/* Status card */}
-      <div className="flex-1 rounded-md border border-border bg-muted/20 p-3 text-sm">
+      <div
+        className={cn(
+          'flex-1 rounded-md border p-3 text-sm',
+          isCurrent ? 'border-primary/25 bg-primary/5' : 'border-border bg-muted/20'
+        )}
+      >
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             {/* Date */}
