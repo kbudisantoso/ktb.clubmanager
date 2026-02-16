@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 /**
  * Member status enum - tracks lifecycle of club membership.
- * 6-state machine with 22 transitions. LEFT is no longer terminal;
- * members can re-enter via PENDING, PROBATION, or ACTIVE.
+ * 6-state machine with 22 transitions (18 cross-status + 4 self-loops).
+ * LEFT is terminal - re-entry means creating a new member record.
  */
 export const MemberStatusSchema = z.enum([
   'PENDING',
@@ -27,23 +27,24 @@ export const DEFAULT_MEMBER_STATUS: MemberStatus = 'PENDING';
 
 /**
  * Valid status transitions for the member lifecycle state machine.
- * 22 transitions total. LEFT is no longer terminal - members can re-enter.
+ * 22 transitions total: 18 cross-status + 4 self-loops (for membership type changes).
+ * LEFT is terminal - no outgoing transitions.
  *
  * State machine (22 transitions):
- *   PENDING    -> PROBATION, ACTIVE, LEFT                         (3)
- *   PROBATION  -> ACTIVE, DORMANT, SUSPENDED, LEFT                (4)
- *   ACTIVE     -> DORMANT, SUSPENDED, LEFT                        (3)
- *   DORMANT    -> ACTIVE, PROBATION, SUSPENDED, LEFT              (4)
- *   SUSPENDED  -> ACTIVE, DORMANT, PROBATION, LEFT                (4)
- *   LEFT       -> PENDING, PROBATION, ACTIVE                      (3 - re-entry)
+ *   PENDING    -> PROBATION, ACTIVE, LEFT                                    (3)
+ *   PROBATION  -> PROBATION, ACTIVE, DORMANT, SUSPENDED, LEFT               (5, incl. self)
+ *   ACTIVE     -> ACTIVE, DORMANT, SUSPENDED, LEFT                          (4, incl. self)
+ *   DORMANT    -> DORMANT, ACTIVE, PROBATION, SUSPENDED, LEFT               (5, incl. self)
+ *   SUSPENDED  -> SUSPENDED, ACTIVE, DORMANT, PROBATION, LEFT               (5, incl. self)
+ *   LEFT       -> (terminal)                                                 (0)
  */
 export const VALID_TRANSITIONS: Record<MemberStatus, readonly MemberStatus[]> = {
   PENDING: ['PROBATION', 'ACTIVE', 'LEFT'],
-  PROBATION: ['ACTIVE', 'DORMANT', 'SUSPENDED', 'LEFT'],
-  ACTIVE: ['DORMANT', 'SUSPENDED', 'LEFT'],
-  DORMANT: ['ACTIVE', 'PROBATION', 'SUSPENDED', 'LEFT'],
-  SUSPENDED: ['ACTIVE', 'DORMANT', 'PROBATION', 'LEFT'],
-  LEFT: ['PENDING', 'PROBATION', 'ACTIVE'],
+  PROBATION: ['PROBATION', 'ACTIVE', 'DORMANT', 'SUSPENDED', 'LEFT'],
+  ACTIVE: ['ACTIVE', 'DORMANT', 'SUSPENDED', 'LEFT'],
+  DORMANT: ['DORMANT', 'ACTIVE', 'PROBATION', 'SUSPENDED', 'LEFT'],
+  SUSPENDED: ['SUSPENDED', 'ACTIVE', 'DORMANT', 'PROBATION', 'LEFT'],
+  LEFT: [],
 } as const;
 
 /**
@@ -71,29 +72,36 @@ export interface NamedTransition {
  * Named transitions map. Key format: "FROM-TO".
  * Provides German action labels, destructiveness flags,
  * and optional auto-assigned left categories for the 22 valid transitions.
+ * Self-transitions (FROM === TO) are used for membership type changes.
  */
 export const NAMED_TRANSITIONS: Record<string, NamedTransition> = {
+  // PENDING transitions (3)
   'PENDING-ACTIVE': { action: 'Annehmen', destructive: false },
   'PENDING-PROBATION': { action: 'Auf Probe aufnehmen', destructive: false },
   'PENDING-LEFT': { action: 'Ablehnen', destructive: true, autoLeftCategory: 'REJECTED' },
+  // PROBATION transitions (5, incl. self)
+  'PROBATION-PROBATION': { action: 'Mitgliedsart aendern', destructive: false },
   'PROBATION-ACTIVE': { action: 'Probezeit bestaetigen', destructive: false },
   'PROBATION-DORMANT': { action: 'Ruhend stellen', destructive: false },
   'PROBATION-SUSPENDED': { action: 'Sperren', destructive: false },
   'PROBATION-LEFT': { action: 'Probezeit beenden', destructive: true },
+  // ACTIVE transitions (4, incl. self)
+  'ACTIVE-ACTIVE': { action: 'Mitgliedsart aendern', destructive: false },
   'ACTIVE-DORMANT': { action: 'Ruhend stellen', destructive: false },
   'ACTIVE-SUSPENDED': { action: 'Suspendieren', destructive: false },
   'ACTIVE-LEFT': { action: 'Austritt erfassen', destructive: true },
+  // DORMANT transitions (5, incl. self)
+  'DORMANT-DORMANT': { action: 'Mitgliedsart aendern', destructive: false },
   'DORMANT-ACTIVE': { action: 'Reaktivieren', destructive: false },
   'DORMANT-PROBATION': { action: 'Probezeit fortsetzen', destructive: false },
   'DORMANT-SUSPENDED': { action: 'Sperren', destructive: false },
   'DORMANT-LEFT': { action: 'Austritt erfassen', destructive: true },
+  // SUSPENDED transitions (5, incl. self)
+  'SUSPENDED-SUSPENDED': { action: 'Mitgliedsart aendern', destructive: false },
   'SUSPENDED-ACTIVE': { action: 'Sperre aufheben', destructive: false },
   'SUSPENDED-DORMANT': { action: 'Ruhend stellen', destructive: false },
   'SUSPENDED-PROBATION': { action: 'Probezeit fortsetzen', destructive: false },
   'SUSPENDED-LEFT': { action: 'Ausschliessen', destructive: true, autoLeftCategory: 'EXCLUSION' },
-  'LEFT-PENDING': { action: 'Wiedereintritt erfassen', destructive: false },
-  'LEFT-PROBATION': { action: 'Auf Probe aufnehmen', destructive: false },
-  'LEFT-ACTIVE': { action: 'Wiederaufnehmen', destructive: false },
 };
 
 /**
@@ -105,7 +113,8 @@ export const PRIMARY_STATUS_ACTION: Partial<Record<MemberStatus, MemberStatus>> 
   PROBATION: 'ACTIVE',
   DORMANT: 'ACTIVE',
   SUSPENDED: 'ACTIVE',
-  LEFT: 'ACTIVE',
+  // LEFT: no primary action (terminal status)
+  // ACTIVE: no primary action (dropdown only)
 };
 
 /**
