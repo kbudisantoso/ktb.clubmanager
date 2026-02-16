@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import type { MemberStatus, NamedTransition } from '@ktb/shared';
@@ -16,9 +16,17 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { DateInput } from '@/components/ui/date-input';
 import { MemberStatusBadge } from './member-status-badge';
 import { useChangeStatus } from '@/hooks/use-members';
+import { useMembershipTypes } from '@/hooks/use-membership-types';
 import { useToast } from '@/hooks/use-toast';
 import { STATUS_LABELS, LEFT_CATEGORY_OPTIONS } from '@/lib/member-status-labels';
 import { getTodayISO } from '@/lib/format-date';
@@ -49,7 +57,8 @@ interface StatusTransitionDialogProps {
  * Dialog for executing a specific named status transition.
  * Receives a pre-selected target status and named transition.
  * Shows from/to badges, reason field, optional effective date,
- * and left category selector when transitioning to LEFT.
+ * left category selector when transitioning to LEFT,
+ * and membership type selector for non-LEFT transitions.
  */
 export function StatusTransitionDialog({
   member,
@@ -62,13 +71,16 @@ export function StatusTransitionDialog({
   const slug = params.slug;
   const { toast } = useToast();
   const changeStatus = useChangeStatus(slug);
+  const { data: membershipTypes } = useMembershipTypes(slug);
 
   const [reason, setReason] = useState('');
   const [effectiveDate, setEffectiveDate] = useState<string | undefined>(undefined);
   const [leftCategory, setLeftCategory] = useState<string | null>(null);
+  const [membershipTypeId, setMembershipTypeId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
   const isToLeft = targetStatus === 'LEFT';
+  const isSelfTransition = member.status === targetStatus;
 
   // Auto-set left category when autoLeftCategory is defined
   const autoCategory = namedTransition.autoLeftCategory;
@@ -87,10 +99,38 @@ export function StatusTransitionDialog({
     [member.membershipPeriods]
   );
 
+  // Show membership type selector for all non-LEFT transitions
+  const showMembershipTypeSelector = !isToLeft;
+
+  // Available types: active only
+  const availableTypes = useMemo(() => {
+    if (!membershipTypes) return [];
+    return membershipTypes.filter((t) => t.isActive);
+  }, [membershipTypes]);
+
+  // Pre-select membership type when dialog opens
+  useEffect(() => {
+    if (!open || !membershipTypes?.length) return;
+
+    if (isSelfTransition) {
+      // Self-transition: pre-select current type
+      const activePeriod = member.membershipPeriods?.find((p) => !p.leaveDate);
+      setMembershipTypeId(activePeriod?.membershipTypeId ?? '');
+    } else if (member.status === 'PENDING') {
+      // PENDING activation: pre-select default type
+      const defaultType = membershipTypes.find((t) => t.isDefault && t.isActive);
+      setMembershipTypeId(defaultType?.id ?? membershipTypes[0]?.id ?? '');
+    } else {
+      // Other transitions: empty (optional, means keep current)
+      setMembershipTypeId('');
+    }
+  }, [open, isSelfTransition, member.status, member.membershipPeriods, membershipTypes]);
+
   const isValid =
     reason.trim().length >= 1 &&
     reason.trim().length <= 500 &&
-    (!isToLeft || effectiveLeftCategory !== null);
+    (!isToLeft || effectiveLeftCategory !== null) &&
+    (!isSelfTransition || membershipTypeId !== '');
 
   const handleSubmit = async () => {
     if (!isValid) return;
@@ -104,10 +144,13 @@ export function StatusTransitionDialog({
         reason: reason.trim(),
         effectiveDate: effectiveDate ?? undefined,
         ...(isToLeft && effectiveLeftCategory ? { leftCategory: effectiveLeftCategory } : {}),
+        ...(membershipTypeId ? { membershipTypeId } : {}),
       });
 
       toast({
-        title: `Status auf "${STATUS_LABELS[targetStatus]}" geaendert`,
+        title: isSelfTransition
+          ? 'Mitgliedsart geaendert'
+          : `Status auf "${STATUS_LABELS[targetStatus]}" geaendert`,
       });
       handleClose();
     } catch (err) {
@@ -119,6 +162,7 @@ export function StatusTransitionDialog({
     setReason('');
     setEffectiveDate(undefined);
     setLeftCategory(null);
+    setMembershipTypeId('');
     setError(null);
     onOpenChange(false);
   };
@@ -129,11 +173,17 @@ export function StatusTransitionDialog({
         <DialogHeader>
           <DialogTitle>{namedTransition.action}</DialogTitle>
           <DialogDescription>
-            <span className="inline-flex items-center gap-2 flex-wrap">
-              <MemberStatusBadge status={member.status} />
-              <span aria-hidden="true">&rarr;</span>
-              <MemberStatusBadge status={targetStatus} />
-            </span>
+            {isSelfTransition ? (
+              <span className="inline-flex items-center gap-2">
+                <MemberStatusBadge status={member.status} />
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 flex-wrap">
+                <MemberStatusBadge status={member.status} />
+                <span aria-hidden="true">&rarr;</span>
+                <MemberStatusBadge status={targetStatus} />
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -173,6 +223,32 @@ export function StatusTransitionDialog({
                     </div>
                   ))}
                 </RadioGroup>
+              )}
+            </div>
+          )}
+
+          {/* Membership type selector — for non-LEFT transitions */}
+          {showMembershipTypeSelector && availableTypes.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>
+                Mitgliedsart{isSelfTransition && <span className="text-destructive"> *</span>}
+              </Label>
+              <Select value={membershipTypeId} onValueChange={setMembershipTypeId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Mitgliedsart waehlen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTypes.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!isSelfTransition && (
+                <p className="text-xs text-muted-foreground">
+                  Leer lassen, um die aktuelle Mitgliedsart beizubehalten
+                </p>
               )}
             </div>
           )}

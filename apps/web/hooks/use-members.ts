@@ -84,6 +84,7 @@ interface ChangeStatusInput {
   reason: string;
   effectiveDate?: string;
   leftCategory?: string;
+  membershipTypeId?: string;
 }
 
 interface BulkChangeStatusInput {
@@ -270,6 +271,7 @@ export function useChangeStatus(slug: string) {
       reason,
       effectiveDate,
       leftCategory,
+      membershipTypeId,
     }: ChangeStatusInput) => {
       const res = await apiFetch(`/api/clubs/${slug}/members/${id}/change-status`, {
         method: 'POST',
@@ -279,6 +281,7 @@ export function useChangeStatus(slug: string) {
           reason,
           ...(effectiveDate && { effectiveDate }),
           ...(leftCategory && { leftCategory }),
+          ...(membershipTypeId && { membershipTypeId }),
         }),
       });
       if (!res.ok) {
@@ -292,6 +295,14 @@ export function useChangeStatus(slug: string) {
         queryKey: memberKeys.detail(slug, variables.id),
       });
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
+      // Invalidate periods (may have been created/closed during transition)
+      queryClient.invalidateQueries({
+        queryKey: ['membershipPeriods', slug, variables.id],
+      });
+      // Invalidate status history (new transition was created)
+      queryClient.invalidateQueries({
+        queryKey: memberKeys.statusHistory(slug, variables.id),
+      });
     },
     onError: (error) => {
       throw error;
