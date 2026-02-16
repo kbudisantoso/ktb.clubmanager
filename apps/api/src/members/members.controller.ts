@@ -19,6 +19,7 @@ import {
   MemberQueryDto,
   ChangeStatusDto,
   SetCancellationDto,
+  RevokeCancellationDto,
   BulkChangeStatusDto,
   UpdateStatusHistoryDto,
 } from './dto/index.js';
@@ -242,6 +243,22 @@ export class MembersController {
       userId,
       dto.reason
     );
+  }
+
+  @Post(':id/revoke-cancellation')
+  @RequirePermission(Permission.MEMBER_UPDATE)
+  @ApiOperation({ summary: 'Revoke an existing cancellation' })
+  @ApiParam({ name: 'id', description: 'Member ID' })
+  @ApiResponse({ status: 200, description: 'Cancellation revoked' })
+  @ApiResponse({ status: 400, description: 'No cancellation exists or member already left' })
+  @ApiResponse({ status: 404, description: 'Member not found' })
+  async revokeCancellation(
+    @GetClubContext() ctx: ClubContext,
+    @Param('id') id: string,
+    @Body() dto: RevokeCancellationDto,
+    @CurrentUser('id') userId: string
+  ) {
+    return this.memberStatusService.revokeCancellation(ctx.clubId, id, userId, dto.reason ?? '');
   }
 
   @Post('bulk/change-status')

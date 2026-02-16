@@ -92,6 +92,18 @@ export class SetCancellationDto {
   reason!: string;
 }
 
+export class RevokeCancellationDto {
+  @ApiPropertyOptional({
+    description: 'Reason for revoking the cancellation',
+    example: 'Mitglied hat Kuendigung zurueckgezogen',
+    maxLength: 500,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(500, { message: 'Begruendung darf maximal 500 Zeichen lang sein' })
+  reason?: string;
+}
+
 export class BulkChangeStatusDto {
   @ApiProperty({
     description: 'Member IDs to change status for',

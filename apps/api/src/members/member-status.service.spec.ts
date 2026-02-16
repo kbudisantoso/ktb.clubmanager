@@ -511,6 +511,23 @@ describe('MemberStatusService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('should reject duplicate cancellation', async () => {
+      mockTx.member.findFirst.mockResolvedValue(
+        makeMember({ status: 'ACTIVE', cancellationDate: new Date('2026-06-30') })
+      );
+
+      await expect(
+        service.setCancellation(
+          'club-1',
+          'member-1',
+          '2026-12-31',
+          '2026-05-01',
+          'user-1',
+          'Nochmal'
+        )
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('should create audit trail for cancellation event', async () => {
       mockTx.member.findFirst.mockResolvedValue(makeMember({ status: 'ACTIVE' }));
       mockTx.memberStatusTransition.create.mockResolvedValue({});
@@ -536,6 +553,62 @@ describe('MemberStatusService', () => {
           actorId: 'user-1',
         },
       });
+    });
+  });
+
+  describe('revokeCancellation()', () => {
+    it('should clear cancellation fields and create audit trail', async () => {
+      mockTx.member.findFirst.mockResolvedValue(
+        makeMember({ status: 'ACTIVE', cancellationDate: new Date('2026-06-30') })
+      );
+      mockTx.memberStatusTransition.create.mockResolvedValue({});
+      mockTx.member.update.mockResolvedValue(makeMember({ status: 'ACTIVE' }));
+
+      await service.revokeCancellation('club-1', 'member-1', 'user-1', 'Zurueckgezogen');
+
+      expect(mockTx.member.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            cancellationDate: null,
+            cancellationReceivedAt: null,
+          }),
+        })
+      );
+      expect(mockTx.memberStatusTransition.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            fromStatus: 'ACTIVE',
+            toStatus: 'ACTIVE',
+            reason: 'Zurueckgezogen',
+          }),
+        })
+      );
+    });
+
+    it('should reject when no cancellation exists', async () => {
+      mockTx.member.findFirst.mockResolvedValue(makeMember({ status: 'ACTIVE' }));
+
+      await expect(service.revokeCancellation('club-1', 'member-1', 'user-1', '')).rejects.toThrow(
+        BadRequestException
+      );
+    });
+
+    it('should reject when member is LEFT', async () => {
+      mockTx.member.findFirst.mockResolvedValue(
+        makeMember({ status: 'LEFT', cancellationDate: new Date('2026-01-01') })
+      );
+
+      await expect(service.revokeCancellation('club-1', 'member-1', 'user-1', '')).rejects.toThrow(
+        BadRequestException
+      );
+    });
+
+    it('should reject when member not found', async () => {
+      mockTx.member.findFirst.mockResolvedValue(null);
+
+      await expect(service.revokeCancellation('club-1', 'member-1', 'user-1', '')).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 

@@ -30,6 +30,8 @@ interface MemberStatusActionsProps {
   onTransition: (targetStatus: MemberStatus, namedTransition: NamedTransition) => void;
   /** Called when "Kuendigung erfassen" is selected */
   onRecordCancellation?: () => void;
+  /** Called when "Kuendigung widerrufen" is selected */
+  onRevokeCancellation?: () => void;
 }
 
 // ============================================================================
@@ -95,6 +97,7 @@ export function MemberStatusActions({
   member,
   onTransition,
   onRecordCancellation,
+  onRevokeCancellation,
 }: MemberStatusActionsProps) {
   const currentStatus = member.status as MemberStatus;
   const { primary, selfTransition, secondary, destructive } = buildTransitionActions(currentStatus);
@@ -136,20 +139,25 @@ export function MemberStatusActions({
       ))}
 
       {/* Cancellation section */}
-      {canRecordCancellation && onRecordCancellation && (
+      {canRecordCancellation && !hasCancellation && onRecordCancellation && (
         <>
           {(secondary.length > 0 || showSelfTransition) && <DropdownMenuSeparator />}
           <DropdownMenuItem onClick={onRecordCancellation}>Kuendigung erfassen</DropdownMenuItem>
         </>
       )}
 
-      {/* Active cancellation notice */}
+      {/* Active cancellation: show notice + revoke option */}
       {hasCancellation && (
         <>
           <DropdownMenuSeparator />
           <div className="px-2 py-1.5 text-xs text-warning-foreground">
             Kuendigung zum {formatDate(member.cancellationDate!)}
           </div>
+          {onRevokeCancellation && (
+            <DropdownMenuItem onClick={onRevokeCancellation}>
+              Kuendigung widerrufen
+            </DropdownMenuItem>
+          )}
         </>
       )}
 

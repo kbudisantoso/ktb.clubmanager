@@ -229,6 +229,13 @@ export class MemberStatusService {
         );
       }
 
+      // Prevent duplicate cancellation
+      if (member.cancellationDate) {
+        throw new BadRequestException(
+          `Fuer dieses Mitglied ist bereits eine Kuendigung zum ${toDateString(member.cancellationDate)} erfasst`
+        );
+      }
+
       // Create audit trail for cancellation event (status stays the same)
       await tx.memberStatusTransition.create({
         data: {
@@ -257,6 +264,64 @@ export class MemberStatusService {
       this.logger.log(
         `Cancellation set: Member ${memberId} cancellation date ${cancellationDate} by ${userId}`
       );
+
+      return updated;
+    });
+  }
+
+  /**
+   * Revoke an existing cancellation.
+   * Clears cancellationDate and cancellationReceivedAt, creates audit trail.
+   * Only allowed when a cancellation exists and the member hasn't already left.
+   */
+  async revokeCancellation(clubId: string, memberId: string, userId: string, reason: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const member = await tx.member.findFirst({
+        where: { id: memberId, clubId, deletedAt: null },
+      });
+
+      if (!member) {
+        throw new NotFoundException('Mitglied nicht gefunden');
+      }
+
+      if (!member.cancellationDate) {
+        throw new BadRequestException('Keine Kuendigung vorhanden');
+      }
+
+      if (member.status === 'LEFT') {
+        throw new BadRequestException(
+          'Kuendigung kann nicht widerrufen werden — Mitglied ist bereits ausgetreten'
+        );
+      }
+
+      const currentStatus = member.status as MemberStatus;
+
+      // Create audit trail for revocation
+      await tx.memberStatusTransition.create({
+        data: {
+          memberId,
+          clubId,
+          fromStatus: currentStatus,
+          toStatus: currentStatus,
+          reason: reason || 'Kuendigung widerrufen',
+          effectiveDate: new Date(),
+          actorId: userId,
+        },
+      });
+
+      const updated = await tx.member.update({
+        where: { id: memberId },
+        data: {
+          cancellationDate: null,
+          cancellationReceivedAt: null,
+          statusChangeReason: reason || 'Kuendigung widerrufen',
+          statusChangedAt: new Date(),
+          statusChangedBy: userId,
+          version: { increment: 1 },
+        },
+      });
+
+      this.logger.log(`Cancellation revoked: Member ${memberId} by ${userId}`);
 
       return updated;
     });

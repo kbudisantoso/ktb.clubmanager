@@ -383,6 +383,39 @@ export function useSetCancellation(slug: string) {
 }
 
 /**
+ * Revoke an existing cancellation for a member.
+ * Clears cancellationDate and cancellationReceivedAt.
+ */
+export function useRevokeCancellation(slug: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: { id: string; reason?: string }) => {
+      const res = await apiFetch(`/api/clubs/${slug}/members/${input.id}/revoke-cancellation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: input.reason ?? '' }),
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || 'Fehler beim Widerrufen der Kuendigung');
+      }
+      return res.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: memberKeys.detail(slug, variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: memberKeys.statusHistory(slug, variables.id),
+      });
+      queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
+    },
+    retry: 1,
+  });
+}
+
+/**
  * Update a status history entry (reason, effectiveDate, leftCategory).
  * PATCH /api/clubs/:slug/members/:memberId/status-history/:transitionId
  */

@@ -27,7 +27,11 @@ import { MembershipPeriodDialog } from '@/components/members/membership-period-d
 import type { DialogMode } from '@/components/members/membership-period-dialog';
 import { useMemberPeriods } from '@/hooks/use-membership-periods';
 import { useMembershipTypes } from '@/hooks/use-membership-types';
-import { useMemberStatusHistory, useDeleteStatusHistory } from '@/hooks/use-members';
+import {
+  useMemberStatusHistory,
+  useDeleteStatusHistory,
+  useRevokeCancellation,
+} from '@/hooks/use-members';
 import type { StatusHistoryEntry } from '@/hooks/use-members';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/format-date';
@@ -83,6 +87,10 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
 
   // Cancellation dialog state
   const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
+
+  // Revoke cancellation state
+  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
+  const revokeCancellation = useRevokeCancellation(clubSlug);
 
   // Status history edit/delete state
   const [editingStatusEntry, setEditingStatusEntry] = useState<StatusHistoryEntry | null>(null);
@@ -163,6 +171,25 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
     setCancellationDialogOpen(true);
   }, []);
 
+  // Handle cancellation revocation
+  const handleRevokeCancellation = useCallback(() => {
+    setRevokeDialogOpen(true);
+  }, []);
+
+  const handleConfirmRevoke = useCallback(async () => {
+    try {
+      await revokeCancellation.mutateAsync({ id: member.id });
+      toast({ title: 'Kuendigung widerrufen' });
+    } catch {
+      toast({
+        title: 'Fehler',
+        description: 'Die Kuendigung konnte nicht widerrufen werden.',
+        variant: 'destructive',
+      });
+    }
+    setRevokeDialogOpen(false);
+  }, [member.id, revokeCancellation, toast]);
+
   // Handle status history edit
   const handleEditStatusEntry = useCallback((entry: StatusHistoryEntry) => {
     setEditingStatusEntry(entry);
@@ -208,6 +235,7 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
               member={member}
               onTransition={handleTransition}
               onRecordCancellation={handleRecordCancellation}
+              onRevokeCancellation={handleRevokeCancellation}
             />
           </div>
         </div>
@@ -317,6 +345,30 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
         open={anonymizeDialogOpen}
         onOpenChange={setAnonymizeDialogOpen}
       />
+
+      {/* Revoke cancellation confirmation */}
+      <AlertDialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kuendigung widerrufen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Die Kuendigung zum{' '}
+              {member.cancellationDate ? formatDate(member.cancellationDate) : ''} wird aufgehoben.
+              Das Mitglied bleibt im aktuellen Status.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmRevoke}
+              disabled={revokeCancellation.isPending}
+            >
+              {revokeCancellation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Widerrufen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Status history delete confirmation */}
       <AlertDialog
