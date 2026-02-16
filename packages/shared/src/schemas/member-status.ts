@@ -88,7 +88,7 @@ export const NAMED_TRANSITIONS: Record<string, NamedTransition> = {
   // ACTIVE transitions (4, incl. self)
   'ACTIVE-ACTIVE': { action: 'Mitgliedsart aendern', destructive: false },
   'ACTIVE-DORMANT': { action: 'Ruhend stellen', destructive: false },
-  'ACTIVE-SUSPENDED': { action: 'Suspendieren', destructive: false },
+  'ACTIVE-SUSPENDED': { action: 'Sperren', destructive: false },
   'ACTIVE-LEFT': { action: 'Austritt erfassen', destructive: true },
   // DORMANT transitions (5, incl. self)
   'DORMANT-DORMANT': { action: 'Mitgliedsart aendern', destructive: false },
