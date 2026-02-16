@@ -9,7 +9,7 @@ import {
   HouseholdRoleSchema,
   DeletionReasonSchema,
   type MemberStatus,
-} from './member-status';
+} from './member-status.js';
 
 describe('MemberStatusSchema', () => {
   it('should validate all 6 status values', () => {
