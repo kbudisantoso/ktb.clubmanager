@@ -289,6 +289,7 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
           statusHistoryLoading={statusHistoryLoading}
           membershipTypes={membershipTypes}
           memberStatus={member.status}
+          cancellationDate={member.cancellationDate}
           onEditPeriod={handleEditPeriod}
           onClosePeriod={handleClosePeriod}
           onEditStatusEntry={handleEditStatusEntry}

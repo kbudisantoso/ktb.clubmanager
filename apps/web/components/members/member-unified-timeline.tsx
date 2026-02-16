@@ -49,6 +49,8 @@ interface MemberUnifiedTimelineProps {
   membershipTypes?: MembershipType[];
   /** Current member status (for R3 banner) */
   memberStatus: string;
+  /** Cancellation date if present (YYYY-MM-DD or ISO string) */
+  cancellationDate?: string | null;
   /** Called when a period's edit button is clicked */
   onEditPeriod?: (period: TimelinePeriod) => void;
   /** Called when a period's close button is clicked */
@@ -77,6 +79,7 @@ export function MemberUnifiedTimeline({
   statusHistoryLoading,
   membershipTypes,
   memberStatus,
+  cancellationDate,
   onEditPeriod,
   onClosePeriod,
   onEditStatusEntry,
@@ -232,6 +235,8 @@ export function MemberUnifiedTimeline({
                   <TodayCard
                     memberStatus={memberStatus}
                     typeInfo={activePeriod ? getTypeInfo(activePeriod.membershipTypeId) : null}
+                    hasActivePeriod={hasActivePeriod}
+                    cancellationDate={cancellationDate}
                   />
                 ) : entry.type === 'period' && entry.period ? (
                   <PeriodEntry
@@ -524,9 +529,14 @@ function StatusEntry({
 interface TodayCardProps {
   memberStatus: string;
   typeInfo: { name: string; color: { bg: string; text: string; border: string } } | null;
+  hasActivePeriod: boolean;
+  cancellationDate?: string | null;
 }
 
-function TodayCard({ memberStatus, typeInfo }: TodayCardProps) {
+function TodayCard({ memberStatus, typeInfo, hasActivePeriod, cancellationDate }: TodayCardProps) {
+  // Virtual label for members without a real membership type
+  const virtualLabel = memberStatus === 'PENDING' && !hasActivePeriod ? 'Beitrittsanfrage' : null;
+
   return (
     <div className="relative flex gap-3">
       <div className="relative z-10 flex items-start pt-1">
@@ -550,7 +560,17 @@ function TodayCard({ memberStatus, typeInfo }: TodayCardProps) {
               {typeInfo.name}
             </span>
           )}
+          {!typeInfo && virtualLabel && (
+            <span className="inline-flex items-center rounded-md border border-muted-foreground/25 bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+              {virtualLabel}
+            </span>
+          )}
         </div>
+        {cancellationDate && memberStatus !== 'LEFT' && (
+          <p className="text-xs text-warning-foreground mt-1.5">
+            Gekuendigt zum {formatDate(cancellationDate)}
+          </p>
+        )}
       </div>
     </div>
   );

@@ -322,4 +322,32 @@ describe('MemberUnifiedTimeline', () => {
     // "Unbekannt" may appear in today card + period card
     expect(screen.getAllByText('Unbekannt').length).toBeGreaterThan(0);
   });
+
+  it('shows "Beitrittsanfrage" virtual label for PENDING member without period', () => {
+    render(
+      <MemberUnifiedTimeline
+        periods={[]}
+        statusHistory={[{ ...mockStatusEntry, fromStatus: 'PENDING', toStatus: 'PENDING' }]}
+        statusHistoryLoading={false}
+        memberStatus="PENDING"
+      />
+    );
+
+    expect(screen.getByText('Beitrittsanfrage')).toBeInTheDocument();
+  });
+
+  it('shows cancellation notice on today card', () => {
+    render(
+      <MemberUnifiedTimeline
+        periods={[mockPeriod]}
+        statusHistory={[]}
+        statusHistoryLoading={false}
+        membershipTypes={mockMembershipTypes}
+        memberStatus="ACTIVE"
+        cancellationDate="2026-12-31"
+      />
+    );
+
+    expect(screen.getByText(/Gekuendigt zum/)).toBeInTheDocument();
+  });
 });
