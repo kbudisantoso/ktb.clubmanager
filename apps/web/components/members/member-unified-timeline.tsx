@@ -27,7 +27,7 @@ export interface TimelinePeriod {
 
 interface UnifiedEntry {
   id: string;
-  type: 'period' | 'status';
+  type: 'period' | 'status' | 'today';
   date: string;
   period?: TimelinePeriod;
   statusEntry?: StatusHistoryEntry;
@@ -148,9 +148,25 @@ export function MemberUnifiedTimeline({
   const hasActivePeriod = !!activePeriod;
   const showNoPeriodBanner = memberStatus === 'ACTIVE' && !hasActivePeriod;
 
-  // Virtual "today" card: shown when the newest entry is not from today
+  // Inject a virtual "today" entry at its correct chronological position.
+  // Only added when no real entry already exists for today's date.
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const showTodayCard = mergedEntries.length > 0 && mergedEntries[0].date !== today;
+  const timelineEntries = useMemo(() => {
+    if (mergedEntries.length === 0) return mergedEntries;
+    const hasEntryToday = mergedEntries.some((e) => e.date === today);
+    if (hasEntryToday) return mergedEntries;
+
+    const todayEntry: UnifiedEntry = { id: 'virtual-today', type: 'today', date: today };
+    // Entries are sorted descending — find where today fits
+    const insertIdx = mergedEntries.findIndex((e) => e.date <= today);
+    if (insertIdx === -1) {
+      // All entries are in the future — today goes last
+      return [...mergedEntries, todayEntry];
+    }
+    const result = [...mergedEntries];
+    result.splice(insertIdx, 0, todayEntry);
+    return result;
+  }, [mergedEntries, today]);
 
   // Loading state
   if (statusHistoryLoading && periods.length === 0) {
@@ -175,7 +191,7 @@ export function MemberUnifiedTimeline({
   }
 
   // Empty state
-  if (mergedEntries.length === 0 && !showNoPeriodBanner) {
+  if (timelineEntries.length === 0 && !showNoPeriodBanner) {
     return (
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-muted-foreground">Verlauf</h3>
@@ -202,30 +218,23 @@ export function MemberUnifiedTimeline({
       )}
 
       {/* Timeline */}
-      {mergedEntries.length > 0 && (
+      {timelineEntries.length > 0 && (
         <div className="relative">
           {/* Vertical line */}
           <div className="absolute left-2.75 top-3 bottom-3 w-0.5 bg-border" />
 
           <div className="space-y-0">
-            {/* Virtual "today" card — current state summary */}
-            {showTodayCard && (
-              <>
-                <TodayCard
-                  memberStatus={memberStatus}
-                  typeName={activePeriod ? getTypeName(activePeriod.membershipTypeId) : null}
-                />
-                <DurationSeparator duration={calculateDuration(mergedEntries[0].date, null)} />
-              </>
-            )}
-
-            {/* Actual entries with duration separators between them */}
-            {mergedEntries.map((entry, i) => (
+            {timelineEntries.map((entry, i) => (
               <div key={entry.id}>
-                {entry.type === 'period' && entry.period ? (
+                {entry.type === 'today' ? (
+                  <TodayCard
+                    memberStatus={memberStatus}
+                    typeName={activePeriod ? getTypeName(activePeriod.membershipTypeId) : null}
+                  />
+                ) : entry.type === 'period' && entry.period ? (
                   <PeriodEntry
                     period={entry.period}
-                    isCurrent={!showTodayCard && i === 0}
+                    isCurrent={entry.date === today}
                     getTypeName={getTypeName}
                     onEdit={onEditPeriod}
                     onClose={onClosePeriod}
@@ -233,7 +242,7 @@ export function MemberUnifiedTimeline({
                 ) : entry.type === 'status' && entry.statusEntry ? (
                   <StatusEntry
                     entry={entry.statusEntry}
-                    isCurrent={!showTodayCard && i === 0}
+                    isCurrent={entry.date === today}
                     linkedPeriod={entry.linkedPeriod}
                     previousPeriod={entry.previousPeriod}
                     getTypeName={getTypeName}
@@ -243,9 +252,9 @@ export function MemberUnifiedTimeline({
                 ) : null}
 
                 {/* Duration separator between this and the next (older) entry */}
-                {i < mergedEntries.length - 1 && (
+                {i < timelineEntries.length - 1 && (
                   <DurationSeparator
-                    duration={calculateDuration(mergedEntries[i + 1].date, entry.date)}
+                    duration={calculateDuration(timelineEntries[i + 1].date, entry.date)}
                   />
                 )}
               </div>
