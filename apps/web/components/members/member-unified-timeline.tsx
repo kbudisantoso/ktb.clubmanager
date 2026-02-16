@@ -87,36 +87,28 @@ export function MemberUnifiedTimeline({
   };
 
   // Merge and sort all entries by date descending.
-  // Self-transitions (fromStatus === toStatus) are linked with their
-  // corresponding new period so they render as a single combined entry.
+  // When a status transition created a new period (same effectiveDate = joinDate),
+  // the period is linked to the transition and not shown separately.
   const mergedEntries = useMemo(() => {
     const entries: UnifiedEntry[] = [];
 
-    // Collect self-transition dates to suppress their linked periods
-    const selfTransitionDates = new Set<string>();
-    const selfTransitionPeriods = new Map<string, TimelinePeriod>();
+    // Link each transition to its corresponding new period (matching joinDate)
+    const linkedPeriodIds = new Set<string>();
+    const transitionPeriods = new Map<string, TimelinePeriod>();
 
     if (statusHistory) {
       for (const entry of statusHistory) {
-        if (entry.fromStatus === entry.toStatus) {
-          selfTransitionDates.add(entry.effectiveDate);
-          // Find the period that was created for this self-transition (same joinDate)
-          const linked = periods.find((p) => p.joinDate === entry.effectiveDate);
-          if (linked) {
-            selfTransitionPeriods.set(entry.id, linked);
-          }
+        const linked = periods.find((p) => p.joinDate === entry.effectiveDate);
+        if (linked) {
+          transitionPeriods.set(entry.id, linked);
+          linkedPeriodIds.add(linked.id);
         }
       }
     }
 
     for (const period of periods) {
-      // Skip periods that are linked to a self-transition
-      const periodDate = period.joinDate ?? '';
-      if (selfTransitionDates.has(periodDate)) {
-        // Check if this specific period is linked to a self-transition
-        const isLinked = Array.from(selfTransitionPeriods.values()).some((p) => p.id === period.id);
-        if (isLinked) continue;
-      }
+      // Skip periods that are linked to a transition
+      if (linkedPeriodIds.has(period.id)) continue;
 
       entries.push({
         id: `period-${period.id}`,
@@ -133,7 +125,7 @@ export function MemberUnifiedTimeline({
           type: 'status',
           date: entry.effectiveDate,
           statusEntry: entry,
-          linkedPeriod: selfTransitionPeriods.get(entry.id),
+          linkedPeriod: transitionPeriods.get(entry.id),
         });
       }
     }
@@ -332,7 +324,7 @@ function PeriodEntry({ period, getTypeName, onEdit, onClose }: PeriodEntryProps)
 
 interface StatusEntryProps {
   entry: StatusHistoryEntry;
-  /** For self-transitions: the new period created by the type change */
+  /** Period created/assigned during this transition */
   linkedPeriod?: TimelinePeriod;
   getTypeName: (typeId: string | null | undefined) => string;
   onEdit?: (entry: StatusHistoryEntry) => void;
@@ -358,22 +350,33 @@ function StatusEntry({ entry, linkedPeriod, getTypeName, onEdit, onDelete }: Sta
               {formatDate(entry.effectiveDate)}
             </p>
 
-            {/* Self-transition: show type change badge instead of from→to */}
-            {isSelfTransition && linkedPeriod ? (
+            {isSelfTransition ? (
+              /* Self-transition: show type change badge instead of from→to */
               <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                 <span className="text-xs font-medium text-muted-foreground">
                   Mitgliedsart geaendert:
                 </span>
-                <span className="inline-flex items-center rounded-md border bg-muted px-2 py-0.5 text-xs font-medium text-foreground border-border">
-                  {getTypeName(linkedPeriod.membershipTypeId)}
-                </span>
+                {linkedPeriod && (
+                  <span className="inline-flex items-center rounded-md border bg-muted px-2 py-0.5 text-xs font-medium text-foreground border-border">
+                    {getTypeName(linkedPeriod.membershipTypeId)}
+                  </span>
+                )}
               </div>
             ) : (
-              /* Status transition: fromStatus -> toStatus */
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <MemberStatusBadge status={entry.fromStatus} />
-                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <MemberStatusBadge status={entry.toStatus} />
+              /* Status transition: fromStatus -> toStatus, with optional type badge */
+              <div className="space-y-1.5 mb-1.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <MemberStatusBadge status={entry.fromStatus} />
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <MemberStatusBadge status={entry.toStatus} />
+                </div>
+                {linkedPeriod && (
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center rounded-md border bg-muted px-2 py-0.5 text-xs font-medium text-foreground border-border">
+                      {getTypeName(linkedPeriod.membershipTypeId)}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
