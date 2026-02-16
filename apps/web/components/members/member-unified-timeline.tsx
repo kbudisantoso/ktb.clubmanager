@@ -372,6 +372,10 @@ function StatusEntry({
   onDelete,
 }: StatusEntryProps) {
   const isSelfTransition = entry.fromStatus === entry.toStatus;
+  const hasTypeChange =
+    previousPeriod &&
+    linkedPeriod &&
+    previousPeriod.membershipTypeId !== linkedPeriod.membershipTypeId;
   const typeBadgeClass =
     'inline-flex items-center rounded-md border bg-muted px-2 py-0.5 text-xs font-medium text-foreground border-border';
 
@@ -405,38 +409,39 @@ function StatusEntry({
               {formatDate(entry.effectiveDate)}
             </p>
 
-            {isSelfTransition ? (
-              /* Self-transition: old type → new type */
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                {previousPeriod && (
-                  <span className={typeBadgeClass}>
-                    {getTypeName(previousPeriod.membershipTypeId)}
-                  </span>
-                )}
-                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                {linkedPeriod && (
-                  <span className={typeBadgeClass}>
-                    {getTypeName(linkedPeriod.membershipTypeId)}
-                  </span>
-                )}
-              </div>
-            ) : (
-              /* Status transition: fromStatus → toStatus, with optional type badge */
-              <div className="space-y-1.5 mb-1.5">
+            {/* Change visualization — consistent arrow pattern */}
+            <div className="space-y-1.5 mb-1.5">
+              {/* Status change row (skip for self-transitions) */}
+              {!isSelfTransition && (
                 <div className="flex items-center gap-2 flex-wrap">
                   <MemberStatusBadge status={entry.fromStatus} />
                   <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   <MemberStatusBadge status={entry.toStatus} />
                 </div>
-                {linkedPeriod && (
-                  <div className="flex items-center gap-2">
-                    <span className={typeBadgeClass}>
-                      {getTypeName(linkedPeriod.membershipTypeId)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+
+              {/* Type change row: old → new (shown when types differ) */}
+              {hasTypeChange && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={typeBadgeClass}>
+                    {getTypeName(previousPeriod?.membershipTypeId)}
+                  </span>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className={typeBadgeClass}>
+                    {getTypeName(linkedPeriod?.membershipTypeId)}
+                  </span>
+                </div>
+              )}
+
+              {/* Type badge only (no change, just assigned) */}
+              {!hasTypeChange && linkedPeriod && !isSelfTransition && (
+                <div className="flex items-center gap-2">
+                  <span className={typeBadgeClass}>
+                    {getTypeName(linkedPeriod.membershipTypeId)}
+                  </span>
+                </div>
+              )}
+            </div>
 
             {/* Reason */}
             <p className="text-sm text-foreground">{entry.reason}</p>
