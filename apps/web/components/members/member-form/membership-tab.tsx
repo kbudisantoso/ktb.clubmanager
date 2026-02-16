@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { AlertTriangle, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import type { MemberStatus, NamedTransition } from '@ktb/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +15,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { MemberStatusBadge } from '@/components/members/member-status-badge';
+import { MemberStatusActions } from '@/components/members/member-status-actions';
+import { StatusTransitionDialog } from '@/components/members/status-transition-dialog';
 import { MemberUnifiedTimeline } from '@/components/members/member-unified-timeline';
 import type { TimelinePeriod } from '@/components/members/member-unified-timeline';
 import { MembershipPeriodDialog } from '@/components/members/membership-period-dialog';
@@ -35,8 +37,6 @@ interface MembershipTabProps {
   member: MemberDetail;
   /** Club slug for API calls */
   slug: string;
-  /** Called when "Status ändern" is clicked */
-  onChangeStatus?: () => void;
 }
 
 // ============================================================================
@@ -50,7 +50,7 @@ interface MembershipTabProps {
  * Includes R2 workflow: after creating a period for a PENDING member,
  * prompts to activate the member.
  */
-export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabProps) {
+export function MembershipTab({ member, slug }: MembershipTabProps) {
   const params = useParams<{ slug: string }>();
   const clubSlug = params.slug;
   const { toast } = useToast();
@@ -79,6 +79,11 @@ export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabPro
 
   // R2: Activation prompt state
   const [activationPromptOpen, setActivationPromptOpen] = useState(false);
+
+  // Status transition dialog state (Variante C)
+  const [transitionDialogOpen, setTransitionDialogOpen] = useState(false);
+  const [selectedTarget, setSelectedTarget] = useState<MemberStatus | null>(null);
+  const [selectedTransition, setSelectedTransition] = useState<NamedTransition | null>(null);
 
   // Derive active membership type name for the top section
   const activeTypeName = useMemo(() => {
@@ -141,6 +146,16 @@ export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabPro
     setActivationPromptOpen(false);
   }, [changeStatus, member.id, toast]);
 
+  // Handle transition selection from MemberStatusActions
+  const handleTransition = useCallback(
+    (targetStatus: MemberStatus, namedTransition: NamedTransition) => {
+      setSelectedTarget(targetStatus);
+      setSelectedTransition(namedTransition);
+      setTransitionDialogOpen(true);
+    },
+    []
+  );
+
   return (
     <>
       <div className="space-y-6">
@@ -153,11 +168,7 @@ export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabPro
           {activeJoinDate && (
             <span className="text-sm text-muted-foreground">seit {formatDate(activeJoinDate)}</span>
           )}
-          {onChangeStatus && member.status !== 'LEFT' && (
-            <Button type="button" variant="outline" size="sm" onClick={onChangeStatus}>
-              Status aendern
-            </Button>
-          )}
+          <MemberStatusActions member={member} onTransition={handleTransition} />
         </div>
 
         {/* Cancellation notice */}
@@ -221,6 +232,17 @@ export function MembershipTab({ member, slug, onChangeStatus }: MembershipTabPro
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Status transition dialog (Variante C) */}
+      {selectedTarget && selectedTransition && (
+        <StatusTransitionDialog
+          member={member}
+          targetStatus={selectedTarget}
+          namedTransition={selectedTransition}
+          open={transitionDialogOpen}
+          onOpenChange={setTransitionDialogOpen}
+        />
+      )}
     </>
   );
 }
