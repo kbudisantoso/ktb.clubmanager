@@ -103,8 +103,8 @@ describe('MemberUnifiedTimeline', () => {
     );
 
     expect(screen.getByText('Verlauf')).toBeInTheDocument();
-    // Period entry: type name resolved
-    expect(screen.getByText('Ordentliches Mitglied')).toBeInTheDocument();
+    // Type name resolved (may appear in today card + entry)
+    expect(screen.getAllByText('Ordentliches Mitglied').length).toBeGreaterThan(0);
     // Status entry: reason text
     expect(screen.getByText('Aufnahme durch Vorstand bestaetigt')).toBeInTheDocument();
   });
@@ -136,7 +136,8 @@ describe('MemberUnifiedTimeline', () => {
       />
     );
 
-    expect(screen.getByText('Aktiv')).toBeInTheDocument();
+    // "Aktiv" may appear in today card badge + period card indicator
+    expect(screen.getAllByText('Aktiv').length).toBeGreaterThan(0);
     expect(screen.getByText('01.03.2024')).toBeInTheDocument();
   });
 
@@ -316,6 +317,7 @@ describe('MemberUnifiedTimeline', () => {
       />
     );
 
-    expect(screen.getByText('Unbekannt')).toBeInTheDocument();
+    // "Unbekannt" may appear in today card + period card
+    expect(screen.getAllByText('Unbekannt').length).toBeGreaterThan(0);
   });
 });

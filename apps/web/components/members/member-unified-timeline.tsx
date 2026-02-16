@@ -144,14 +144,13 @@ export function MemberUnifiedTimeline({
     return entries.sort((a, b) => b.date.localeCompare(a.date));
   }, [periods, statusHistory]);
 
-  const hasActivePeriod = periods.some((p) => !p.leaveDate);
+  const activePeriod = periods.find((p) => !p.leaveDate);
+  const hasActivePeriod = !!activePeriod;
   const showNoPeriodBanner = memberStatus === 'ACTIVE' && !hasActivePeriod;
 
-  // The "current" entry is the most recent one that is not in the future
-  const currentEntryIndex = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return mergedEntries.findIndex((e) => e.date <= today);
-  }, [mergedEntries]);
+  // Virtual "today" card: shown when the newest entry is not from today
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const showTodayCard = mergedEntries.length > 0 && mergedEntries[0].date !== today;
 
   // Loading state
   if (statusHistoryLoading && periods.length === 0) {
@@ -208,37 +207,49 @@ export function MemberUnifiedTimeline({
           {/* Vertical line */}
           <div className="absolute left-2.75 top-3 bottom-3 w-0.5 bg-border" />
 
-          {/* Entries */}
-          <div className="space-y-4">
-            {mergedEntries.map((entry, i) => {
-              // Duration: from this entry's date to the next (newer) entry's date, or today
-              const endDate = i === 0 ? null : mergedEntries[i - 1].date;
-              const duration = calculateDuration(entry.date, endDate);
+          <div className="space-y-0">
+            {/* Virtual "today" card — current state summary */}
+            {showTodayCard && (
+              <>
+                <TodayCard
+                  memberStatus={memberStatus}
+                  typeName={activePeriod ? getTypeName(activePeriod.membershipTypeId) : null}
+                />
+                <DurationSeparator duration={calculateDuration(mergedEntries[0].date, null)} />
+              </>
+            )}
 
-              return entry.type === 'period' && entry.period ? (
-                <PeriodEntry
-                  key={entry.id}
-                  period={entry.period}
-                  duration={duration}
-                  isCurrent={i === currentEntryIndex}
-                  getTypeName={getTypeName}
-                  onEdit={onEditPeriod}
-                  onClose={onClosePeriod}
-                />
-              ) : entry.type === 'status' && entry.statusEntry ? (
-                <StatusEntry
-                  key={entry.id}
-                  entry={entry.statusEntry}
-                  duration={duration}
-                  isCurrent={i === currentEntryIndex}
-                  linkedPeriod={entry.linkedPeriod}
-                  previousPeriod={entry.previousPeriod}
-                  getTypeName={getTypeName}
-                  onEdit={onEditStatusEntry}
-                  onDelete={onDeleteStatusEntry}
-                />
-              ) : null;
-            })}
+            {/* Actual entries with duration separators between them */}
+            {mergedEntries.map((entry, i) => (
+              <div key={entry.id}>
+                {entry.type === 'period' && entry.period ? (
+                  <PeriodEntry
+                    period={entry.period}
+                    isCurrent={!showTodayCard && i === 0}
+                    getTypeName={getTypeName}
+                    onEdit={onEditPeriod}
+                    onClose={onClosePeriod}
+                  />
+                ) : entry.type === 'status' && entry.statusEntry ? (
+                  <StatusEntry
+                    entry={entry.statusEntry}
+                    isCurrent={!showTodayCard && i === 0}
+                    linkedPeriod={entry.linkedPeriod}
+                    previousPeriod={entry.previousPeriod}
+                    getTypeName={getTypeName}
+                    onEdit={onEditStatusEntry}
+                    onDelete={onDeleteStatusEntry}
+                  />
+                ) : null}
+
+                {/* Duration separator between this and the next (older) entry */}
+                {i < mergedEntries.length - 1 && (
+                  <DurationSeparator
+                    duration={calculateDuration(mergedEntries[i + 1].date, entry.date)}
+                  />
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -252,21 +263,13 @@ export function MemberUnifiedTimeline({
 
 interface PeriodEntryProps {
   period: TimelinePeriod;
-  duration: string | null;
   isCurrent: boolean;
   getTypeName: (typeId: string | null | undefined) => string;
   onEdit?: (period: TimelinePeriod) => void;
   onClose?: (period: TimelinePeriod) => void;
 }
 
-function PeriodEntry({
-  period,
-  duration,
-  isCurrent,
-  getTypeName,
-  onEdit,
-  onClose,
-}: PeriodEntryProps) {
+function PeriodEntry({ period, isCurrent, getTypeName, onEdit, onClose }: PeriodEntryProps) {
   const isActive = !period.leaveDate;
 
   return (
@@ -313,9 +316,6 @@ function PeriodEntry({
               </span>
               {isActive && <span className="text-xs text-success font-medium">Aktiv</span>}
             </div>
-
-            {/* Duration */}
-            {duration && <p className="text-xs text-muted-foreground">{duration}</p>}
 
             {/* Notes */}
             {period.notes && (
@@ -365,7 +365,6 @@ function PeriodEntry({
 
 interface StatusEntryProps {
   entry: StatusHistoryEntry;
-  duration: string | null;
   isCurrent: boolean;
   /** The new period created during this transition */
   linkedPeriod?: TimelinePeriod;
@@ -378,7 +377,6 @@ interface StatusEntryProps {
 
 function StatusEntry({
   entry,
-  duration,
   isCurrent,
   linkedPeriod,
   previousPeriod,
@@ -461,9 +459,6 @@ function StatusEntry({
             {/* Reason */}
             <p className="text-sm text-foreground">{entry.reason}</p>
 
-            {/* Duration */}
-            {duration && <p className="text-xs text-muted-foreground mt-0.5">{duration}</p>}
-
             {/* Left category label if present */}
             {entry.leftCategory && (
               <p className="text-xs text-muted-foreground mt-1">
@@ -507,6 +502,61 @@ function StatusEntry({
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Today card — virtual "current state" summary at top of timeline
+// ----------------------------------------------------------------------------
+
+interface TodayCardProps {
+  memberStatus: string;
+  typeName: string | null;
+}
+
+function TodayCard({ memberStatus, typeName }: TodayCardProps) {
+  return (
+    <div className="relative flex gap-3">
+      <div className="relative z-10 flex items-start pt-1">
+        <div className="rounded-full bg-background">
+          <Circle className="h-6 w-6 shrink-0 fill-primary text-primary" />
+        </div>
+      </div>
+      <div className="flex-1 rounded-md border border-primary/25 bg-primary/5 p-3 text-sm">
+        <p className="text-xs text-muted-foreground mb-1.5">Heute</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <MemberStatusBadge status={memberStatus} />
+          {typeName && (
+            <span className="inline-flex items-center rounded-md border bg-muted px-2 py-0.5 text-xs font-medium text-foreground border-border">
+              {typeName}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Duration separator — small label between timeline entries
+// ----------------------------------------------------------------------------
+
+interface DurationSeparatorProps {
+  duration: string | null;
+}
+
+function DurationSeparator({ duration }: DurationSeparatorProps) {
+  if (!duration) return null;
+
+  return (
+    <div className="relative flex items-center py-1.5">
+      {/* Aligned with timeline dot center */}
+      <div className="w-6 shrink-0 flex justify-center">
+        <span className="relative z-10 text-[10px] text-muted-foreground/60 bg-background px-0.5">
+          {duration}
+        </span>
       </div>
     </div>
   );
