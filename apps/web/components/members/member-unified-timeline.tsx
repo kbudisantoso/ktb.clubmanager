@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { ArrowRight, AlertTriangle, Circle, Edit, XCircle } from 'lucide-react';
+import { ArrowRight, AlertTriangle, Circle, Edit, Trash2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -50,6 +50,10 @@ interface MemberUnifiedTimelineProps {
   onEditPeriod?: (period: TimelinePeriod) => void;
   /** Called when a period's close button is clicked */
   onClosePeriod?: (period: TimelinePeriod) => void;
+  /** Called when a status entry's edit button is clicked */
+  onEditStatusEntry?: (entry: StatusHistoryEntry) => void;
+  /** Called when a status entry's delete button is clicked */
+  onDeleteStatusEntry?: (entry: StatusHistoryEntry) => void;
 }
 
 // ============================================================================
@@ -73,6 +77,8 @@ export function MemberUnifiedTimeline({
   onCreatePeriod,
   onEditPeriod,
   onClosePeriod,
+  onEditStatusEntry,
+  onDeleteStatusEntry,
 }: MemberUnifiedTimelineProps) {
   /** Resolve a membershipTypeId to a display name */
   const getTypeName = (typeId: string | null | undefined): string => {
@@ -205,7 +211,12 @@ export function MemberUnifiedTimeline({
                   onClose={onClosePeriod}
                 />
               ) : entry.type === 'status' && entry.statusEntry ? (
-                <StatusEntry key={entry.id} entry={entry.statusEntry} />
+                <StatusEntry
+                  key={entry.id}
+                  entry={entry.statusEntry}
+                  onEdit={onEditStatusEntry}
+                  onDelete={onDeleteStatusEntry}
+                />
               ) : null
             )}
           </div>
@@ -319,9 +330,11 @@ function PeriodEntry({ period, getTypeName, onEdit, onClose }: PeriodEntryProps)
 
 interface StatusEntryProps {
   entry: StatusHistoryEntry;
+  onEdit?: (entry: StatusHistoryEntry) => void;
+  onDelete?: (entry: StatusHistoryEntry) => void;
 }
 
-function StatusEntry({ entry }: StatusEntryProps) {
+function StatusEntry({ entry, onEdit, onDelete }: StatusEntryProps) {
   return (
     <div className="relative flex gap-3">
       {/* Timeline dot */}
@@ -331,30 +344,66 @@ function StatusEntry({ entry }: StatusEntryProps) {
 
       {/* Status card */}
       <div className="flex-1 rounded-md border border-border bg-muted/20 p-3 text-sm">
-        {/* Date */}
-        <p className="text-xs text-muted-foreground mb-1.5">{formatDate(entry.effectiveDate)}</p>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            {/* Date */}
+            <p className="text-xs text-muted-foreground mb-1.5">
+              {formatDate(entry.effectiveDate)}
+            </p>
 
-        {/* Status transition: fromStatus -> toStatus */}
-        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-          <MemberStatusBadge status={entry.fromStatus} />
-          <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <MemberStatusBadge status={entry.toStatus} />
+            {/* Status transition: fromStatus -> toStatus */}
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <MemberStatusBadge status={entry.fromStatus} />
+              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <MemberStatusBadge status={entry.toStatus} />
+            </div>
+
+            {/* Reason */}
+            <p className="text-sm text-foreground">{entry.reason}</p>
+
+            {/* Left category label if present */}
+            {entry.leftCategory && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {LEFT_CATEGORY_LABELS[entry.leftCategory] ?? entry.leftCategory}
+              </p>
+            )}
+
+            {/* CreatedAt timestamp */}
+            <p className="text-xs text-muted-foreground/60 mt-1.5">
+              Erstellt: {formatDateTime(entry.createdAt)}
+            </p>
+          </div>
+
+          {/* Action buttons */}
+          {(onEdit || onDelete) && (
+            <div className="flex items-center gap-1 shrink-0">
+              {onEdit && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => onEdit(entry)}
+                >
+                  <Edit className="h-3.5 w-3.5" />
+                  <span className="sr-only">Bearbeiten</span>
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-destructive hover:text-destructive"
+                  onClick={() => onDelete(entry)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span className="sr-only">Loeschen</span>
+                </Button>
+              )}
+            </div>
+          )}
         </div>
-
-        {/* Reason */}
-        <p className="text-sm text-foreground">{entry.reason}</p>
-
-        {/* Left category label if present */}
-        {entry.leftCategory && (
-          <p className="text-xs text-muted-foreground mt-1">
-            {LEFT_CATEGORY_LABELS[entry.leftCategory] ?? entry.leftCategory}
-          </p>
-        )}
-
-        {/* CreatedAt timestamp */}
-        <p className="text-xs text-muted-foreground/60 mt-1.5">
-          Erstellt: {formatDateTime(entry.createdAt)}
-        </p>
       </div>
     </div>
   );
