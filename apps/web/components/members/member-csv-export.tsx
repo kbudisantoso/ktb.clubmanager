@@ -99,8 +99,8 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   },
   {
     key: 'membershipType',
-    label: 'Beitragsart',
-    csvHeader: 'Beitragsart',
+    label: 'Mitgliedschaft',
+    csvHeader: 'Mitgliedschaft',
     defaultSelected: true,
     getValue: (m, types) => {
       const period = getActivePeriod(m.membershipPeriods);

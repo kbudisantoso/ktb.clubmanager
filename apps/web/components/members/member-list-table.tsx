@@ -175,7 +175,7 @@ export function MemberListTable({
             <TableHead className={colClass('email')}>E-Mail</TableHead>
             <TableHead className={colClass('phone')}>Telefon</TableHead>
             <TableHead className={colClass('household')}>Haushalt</TableHead>
-            <TableHead className={colClass('membershipType')}>Beitragsart</TableHead>
+            <TableHead className={colClass('membershipType')}>Mitgliedschaft</TableHead>
             <TableHead className={colClass('joinDate')}>Eintritt</TableHead>
             <TableHead className={colClass('notes')}>Notizen</TableHead>
           </TableRow>
@@ -244,7 +244,7 @@ export function MemberListTable({
             <TableHead className={colClass('email')}>E-Mail</TableHead>
             <TableHead className={colClass('phone')}>Telefon</TableHead>
             <TableHead className={colClass('household')}>Haushalt</TableHead>
-            <TableHead className={colClass('membershipType')}>Beitragsart</TableHead>
+            <TableHead className={colClass('membershipType')}>Mitgliedschaft</TableHead>
             <TableHead className={colClass('joinDate')}>Eintritt</TableHead>
             <TableHead className={colClass('notes')}>Notizen</TableHead>
           </TableRow>
@@ -347,7 +347,7 @@ export function MemberListTable({
                   )}
                 </TableCell>
 
-                {/* Beitragsart */}
+                {/* Mitgliedschaft */}
                 <TableCell className={colClass('membershipType')}>
                   {activePeriod?.membershipTypeId
                     ? (membershipTypes?.find((t) => t.id === activePeriod.membershipTypeId)?.name ??

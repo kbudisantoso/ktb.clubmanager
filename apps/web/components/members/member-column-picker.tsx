@@ -21,7 +21,7 @@ const COLUMN_LABELS: { key: ColumnKey; label: string }[] = [
   { key: 'email', label: 'E-Mail' },
   { key: 'phone', label: 'Telefon' },
   { key: 'household', label: 'Haushalt' },
-  { key: 'membershipType', label: 'Beitragsart' },
+  { key: 'membershipType', label: 'Mitgliedschaft' },
   { key: 'joinDate', label: 'Eintritt' },
   { key: 'notes', label: 'Notizen' },
 ];
