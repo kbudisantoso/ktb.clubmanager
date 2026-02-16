@@ -44,8 +44,6 @@ interface MemberUnifiedTimelineProps {
   membershipTypes?: MembershipType[];
   /** Current member status (for R3 banner) */
   memberStatus: string;
-  /** Called when "Neue Mitgliedschaft" button is clicked */
-  onCreatePeriod?: () => void;
   /** Called when a period's edit button is clicked */
   onEditPeriod?: (period: TimelinePeriod) => void;
   /** Called when a period's close button is clicked */
@@ -74,7 +72,6 @@ export function MemberUnifiedTimeline({
   statusHistoryLoading,
   membershipTypes,
   memberStatus,
-  onCreatePeriod,
   onEditPeriod,
   onClosePeriod,
   onEditStatusEntry,
@@ -143,14 +140,7 @@ export function MemberUnifiedTimeline({
   if (mergedEntries.length === 0 && !showNoPeriodBanner) {
     return (
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-muted-foreground">Verlauf</h3>
-          {onCreatePeriod && (
-            <Button type="button" variant="outline" size="sm" onClick={onCreatePeriod}>
-              Neue Mitgliedschaft
-            </Button>
-          )}
-        </div>
+        <h3 className="text-sm font-medium text-muted-foreground">Verlauf</h3>
         <p className="text-sm text-muted-foreground/50 py-4 text-center">
           Keine Eintraege vorhanden
         </p>
@@ -161,35 +151,15 @@ export function MemberUnifiedTimeline({
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-muted-foreground">Verlauf</h3>
-        {onCreatePeriod && (
-          <Button type="button" variant="outline" size="sm" onClick={onCreatePeriod}>
-            Neue Mitgliedschaft
-          </Button>
-        )}
-      </div>
+      <h3 className="text-sm font-medium text-muted-foreground">Verlauf</h3>
 
-      {/* R3: Active member without period banner */}
+      {/* R3: Active member without period banner (informational only) */}
       {showNoPeriodBanner && (
         <div className="flex items-start gap-2 rounded-md border border-amber-500/25 bg-amber-500/10 p-3">
           <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-          <div className="flex-1 text-sm">
-            <p className="text-amber-600 dark:text-amber-400">
-              Dieses Mitglied ist aktiv, hat aber noch keine Mitgliedschaft zugewiesen.
-            </p>
-            {onCreatePeriod && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={onCreatePeriod}
-              >
-                Mitgliedschaft erstellen
-              </Button>
-            )}
-          </div>
+          <p className="text-sm text-amber-600 dark:text-amber-400">
+            Dieses Mitglied ist aktiv, hat aber noch keine Mitgliedschaft zugewiesen.
+          </p>
         </div>
       )}
 

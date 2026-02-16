@@ -196,22 +196,18 @@ describe('MemberUnifiedTimeline', () => {
   });
 
   it('shows R3 banner for ACTIVE member without active period', () => {
-    const onCreatePeriod = vi.fn();
-
     render(
       <MemberUnifiedTimeline
         periods={[closedPeriod]}
         statusHistory={[]}
         statusHistoryLoading={false}
         memberStatus="ACTIVE"
-        onCreatePeriod={onCreatePeriod}
       />
     );
 
     expect(
       screen.getByText('Dieses Mitglied ist aktiv, hat aber noch keine Mitgliedschaft zugewiesen.')
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Mitgliedschaft erstellen' })).toBeInTheDocument();
   });
 
   it('does NOT show R3 banner for ACTIVE member WITH active period', () => {
@@ -246,25 +242,6 @@ describe('MemberUnifiedTimeline', () => {
         'Dieses Mitglied ist aktiv, hat aber noch keine Mitgliedschaft zugewiesen.'
       )
     ).not.toBeInTheDocument();
-  });
-
-  it('shows "Neue Mitgliedschaft" button and calls onCreatePeriod', async () => {
-    const user = userEvent.setup();
-    const onCreatePeriod = vi.fn();
-
-    render(
-      <MemberUnifiedTimeline
-        periods={[mockPeriod]}
-        statusHistory={[]}
-        statusHistoryLoading={false}
-        memberStatus="ACTIVE"
-        onCreatePeriod={onCreatePeriod}
-      />
-    );
-
-    const btn = screen.getByRole('button', { name: 'Neue Mitgliedschaft' });
-    await user.click(btn);
-    expect(onCreatePeriod).toHaveBeenCalledOnce();
   });
 
   it('calls onEditPeriod when edit button is clicked', async () => {
