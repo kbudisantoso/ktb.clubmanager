@@ -551,13 +551,10 @@ function DurationSeparator({ duration }: DurationSeparatorProps) {
   if (!duration) return null;
 
   return (
-    <div className="relative flex items-center py-1.5">
-      {/* Aligned with timeline dot center */}
-      <div className="w-6 shrink-0 flex justify-center">
-        <span className="relative z-10 text-[10px] text-muted-foreground/60 bg-background px-0.5">
-          {duration}
-        </span>
-      </div>
+    <div className="relative py-1.5 pl-1">
+      <span className="relative z-10 text-[10px] text-muted-foreground/60 bg-background px-0.5 whitespace-nowrap">
+        {duration}
+      </span>
     </div>
   );
 }
