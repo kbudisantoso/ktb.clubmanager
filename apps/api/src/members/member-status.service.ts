@@ -246,6 +246,7 @@ export class MemberStatusService {
 
   /**
    * Get status transition history for a member.
+   * Excludes soft-deleted entries.
    */
   async getStatusHistory(clubId: string, memberId: string) {
     const member = await this.prisma.member.findFirst({
@@ -257,7 +258,7 @@ export class MemberStatusService {
     }
 
     const transitions = await this.prisma.memberStatusTransition.findMany({
-      where: { memberId, clubId },
+      where: { memberId, clubId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -273,5 +274,114 @@ export class MemberStatusService {
       actorId: t.actorId,
       createdAt: t.createdAt.toISOString(),
     }));
+  }
+
+  /**
+   * Update a status history entry (reason, effectiveDate, leftCategory).
+   * Only modifiable fields can be changed - fromStatus/toStatus are immutable.
+   *
+   * @param clubId - Club tenant ID
+   * @param memberId - Member the transition belongs to
+   * @param transitionId - ID of the transition to update
+   * @param updates - Fields to update
+   * @param userId - User performing the update (for audit)
+   */
+  async updateStatusHistoryEntry(
+    clubId: string,
+    memberId: string,
+    transitionId: string,
+    updates: { reason?: string; effectiveDate?: string; leftCategory?: LeftCategory },
+    userId: string
+  ) {
+    const transition = await this.prisma.memberStatusTransition.findFirst({
+      where: { id: transitionId, memberId, clubId, deletedAt: null },
+    });
+
+    if (!transition) {
+      throw new NotFoundException('Statusuebergang nicht gefunden');
+    }
+
+    const data: Record<string, unknown> = {};
+    if (updates.reason !== undefined) {
+      data.reason = updates.reason;
+    }
+    if (updates.effectiveDate !== undefined) {
+      data.effectiveDate = new Date(updates.effectiveDate);
+    }
+    if (updates.leftCategory !== undefined) {
+      data.leftCategory = updates.leftCategory;
+    }
+
+    const updated = await this.prisma.memberStatusTransition.update({
+      where: { id: transitionId },
+      data,
+    });
+
+    this.logger.log(
+      `Status history entry ${transitionId} updated by ${userId} for member ${memberId}`
+    );
+
+    return {
+      id: updated.id,
+      memberId: updated.memberId,
+      clubId: updated.clubId,
+      fromStatus: updated.fromStatus,
+      toStatus: updated.toStatus,
+      reason: updated.reason,
+      leftCategory: updated.leftCategory,
+      effectiveDate: toDateString(updated.effectiveDate),
+      actorId: updated.actorId,
+      createdAt: updated.createdAt.toISOString(),
+    };
+  }
+
+  /**
+   * Soft-delete a status history entry.
+   * Cannot delete the most recent transition that established the current member status.
+   *
+   * @param clubId - Club tenant ID
+   * @param memberId - Member the transition belongs to
+   * @param transitionId - ID of the transition to delete
+   * @param userId - User performing the deletion
+   */
+  async deleteStatusHistoryEntry(
+    clubId: string,
+    memberId: string,
+    transitionId: string,
+    userId: string
+  ) {
+    const transition = await this.prisma.memberStatusTransition.findFirst({
+      where: { id: transitionId, memberId, clubId, deletedAt: null },
+    });
+
+    if (!transition) {
+      throw new NotFoundException('Statusuebergang nicht gefunden');
+    }
+
+    // Check if this is the most recent transition (cannot delete current-status-establishing entry)
+    const mostRecent = await this.prisma.memberStatusTransition.findFirst({
+      where: { memberId, clubId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (mostRecent && mostRecent.id === transitionId) {
+      throw new BadRequestException(
+        'Der aktuellste Statusuebergang kann nicht geloescht werden, da er den aktuellen Status begruendet'
+      );
+    }
+
+    await this.prisma.memberStatusTransition.update({
+      where: { id: transitionId },
+      data: {
+        deletedAt: new Date(),
+        deletedBy: userId,
+      },
+    });
+
+    this.logger.log(
+      `Status history entry ${transitionId} soft-deleted by ${userId} for member ${memberId}`
+    );
+
+    return { success: true };
   }
 }

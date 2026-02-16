@@ -20,6 +20,7 @@ import {
   ChangeStatusDto,
   SetCancellationDto,
   BulkChangeStatusDto,
+  UpdateStatusHistoryDto,
 } from './dto/index.js';
 
 class SoftDeleteBodyDto {
@@ -69,6 +70,47 @@ export class MembersController {
   @ApiResponse({ status: 404, description: 'Member not found' })
   async getStatusHistory(@GetClubContext() ctx: ClubContext, @Param('id') id: string) {
     return this.memberStatusService.getStatusHistory(ctx.clubId, id);
+  }
+
+  @Patch(':id/status-history/:transitionId')
+  @RequirePermission(Permission.MEMBER_UPDATE)
+  @ApiOperation({ summary: 'Update a status history entry (reason, date, category)' })
+  @ApiParam({ name: 'id', description: 'Member ID' })
+  @ApiParam({ name: 'transitionId', description: 'Status transition ID' })
+  @ApiResponse({ status: 200, description: 'Status history entry updated' })
+  @ApiResponse({ status: 404, description: 'Transition not found' })
+  async updateStatusHistory(
+    @GetClubContext() ctx: ClubContext,
+    @Param('id') id: string,
+    @Param('transitionId') transitionId: string,
+    @Body() dto: UpdateStatusHistoryDto,
+    @CurrentUser('id') userId: string
+  ) {
+    return this.memberStatusService.updateStatusHistoryEntry(
+      ctx.clubId,
+      id,
+      transitionId,
+      dto,
+      userId
+    );
+  }
+
+  @Delete(':id/status-history/:transitionId')
+  @HttpCode(200)
+  @RequirePermission(Permission.MEMBER_UPDATE)
+  @ApiOperation({ summary: 'Soft-delete a status history entry' })
+  @ApiParam({ name: 'id', description: 'Member ID' })
+  @ApiParam({ name: 'transitionId', description: 'Status transition ID' })
+  @ApiResponse({ status: 200, description: 'Status history entry deleted' })
+  @ApiResponse({ status: 400, description: 'Cannot delete the most recent transition' })
+  @ApiResponse({ status: 404, description: 'Transition not found' })
+  async deleteStatusHistory(
+    @GetClubContext() ctx: ClubContext,
+    @Param('id') id: string,
+    @Param('transitionId') transitionId: string,
+    @CurrentUser('id') userId: string
+  ) {
+    return this.memberStatusService.deleteStatusHistoryEntry(ctx.clubId, id, transitionId, userId);
   }
 
   @Post()
