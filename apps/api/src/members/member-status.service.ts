@@ -23,6 +23,12 @@ export class MemberStatusService {
    * Change a member's status with validation against the VALID_TRANSITIONS state machine.
    * Wrapped in $transaction for atomicity. Creates a MemberStatusTransition audit record.
    *
+   * Supports self-transitions (from === to) for membership type changes.
+   * Supports optional membershipTypeId for period management:
+   * - Self-transitions: closes current period, creates new one with new type (required)
+   * - Non-self transitions with membershipTypeId: inline type change during transition
+   * - Transitions to LEFT: closes active period
+   *
    * @param clubId - Club tenant ID
    * @param memberId - Member to change status for
    * @param newStatus - Target status
@@ -30,6 +36,7 @@ export class MemberStatusService {
    * @param userId - User performing the change
    * @param effectiveDate - Optional effective date (YYYY-MM-DD), defaults to today
    * @param leftCategory - Required when transitioning to LEFT
+   * @param membershipTypeId - Optional membership type for period management
    */
   async changeStatus(
     clubId: string,
@@ -38,7 +45,8 @@ export class MemberStatusService {
     reason: string,
     userId: string,
     effectiveDate?: string,
-    leftCategory?: LeftCategory
+    leftCategory?: LeftCategory,
+    membershipTypeId?: string
   ) {
     const effectiveDateValue = effectiveDate || toDateString(new Date());
 
@@ -52,6 +60,7 @@ export class MemberStatusService {
       }
 
       const currentStatus = member.status as MemberStatus;
+      const isSelfTransition = currentStatus === newStatus;
       const allowedTransitions = VALID_TRANSITIONS[currentStatus];
 
       if (!allowedTransitions.includes(newStatus)) {
@@ -65,6 +74,13 @@ export class MemberStatusService {
       if (newStatus === 'LEFT' && !leftCategory) {
         throw new BadRequestException(
           'Austrittsgrund (leftCategory) ist erforderlich bei Statuswechsel zu LEFT'
+        );
+      }
+
+      // Self-transitions require membershipTypeId (that's the whole point)
+      if (isSelfTransition && !membershipTypeId) {
+        throw new BadRequestException(
+          'Mitgliedsart ist erforderlich bei Aenderung der Mitgliedsart'
         );
       }
 
@@ -84,7 +100,6 @@ export class MemberStatusService {
 
       // If transitioning to LEFT, close active membership period and set cancellation date if needed
       if (newStatus === 'LEFT') {
-        // Close active membership period
         const activePeriod = await tx.membershipPeriod.findFirst({
           where: { memberId, leaveDate: null },
           orderBy: { joinDate: 'desc' },
@@ -97,7 +112,6 @@ export class MemberStatusService {
           });
         }
 
-        // Set cancellationDate if not already set
         if (!member.cancellationDate) {
           await tx.member.update({
             where: { id: memberId },
@@ -106,9 +120,56 @@ export class MemberStatusService {
         }
       }
 
-      // When re-entering from LEFT, clear cancellation fields
-      const clearCancellationData =
-        currentStatus === 'LEFT' ? { cancellationDate: null, cancellationReceivedAt: null } : {};
+      // Handle membership type changes via period management
+      if (membershipTypeId && newStatus !== 'LEFT') {
+        const currentPeriod = await tx.membershipPeriod.findFirst({
+          where: { memberId, leaveDate: null },
+          orderBy: { joinDate: 'desc' },
+        });
+
+        if (currentPeriod && currentPeriod.membershipTypeId !== membershipTypeId) {
+          // Close current period and create new one with new type
+          await tx.membershipPeriod.update({
+            where: { id: currentPeriod.id },
+            data: { leaveDate: new Date(effectiveDateValue) },
+          });
+          await tx.membershipPeriod.create({
+            data: {
+              memberId,
+              joinDate: new Date(effectiveDateValue),
+              membershipTypeId,
+            },
+          });
+        } else if (!currentPeriod) {
+          // No active period (e.g., PENDING activation) — create new one
+          await tx.membershipPeriod.create({
+            data: {
+              memberId,
+              joinDate: new Date(effectiveDateValue),
+              membershipTypeId,
+            },
+          });
+        }
+      }
+
+      // For self-transitions: only bump version, no status change needed
+      if (isSelfTransition) {
+        const updated = await tx.member.update({
+          where: { id: memberId },
+          data: {
+            statusChangedAt: new Date(),
+            statusChangedBy: userId,
+            statusChangeReason: reason,
+            version: { increment: 1 },
+          },
+        });
+
+        this.logger.log(
+          `Membership type changed: Member ${memberId} (self-transition ${currentStatus}) by ${userId}`
+        );
+
+        return updated;
+      }
 
       const updated = await tx.member.update({
         where: { id: memberId },
@@ -118,7 +179,6 @@ export class MemberStatusService {
           statusChangedBy: userId,
           statusChangeReason: reason,
           version: { increment: 1 },
-          ...clearCancellationData,
         },
       });
 

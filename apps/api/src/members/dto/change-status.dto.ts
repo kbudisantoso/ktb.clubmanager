@@ -49,6 +49,14 @@ export class ChangeStatusDto {
   @IsEnum(LeftCategoryDto)
   @IsOptional()
   leftCategory?: LeftCategoryDto;
+
+  @ApiPropertyOptional({
+    description:
+      'Membership type ID for period management (type change during transition or auto-create on activation)',
+  })
+  @IsString()
+  @IsOptional()
+  membershipTypeId?: string;
 }
 
 export class SetCancellationDto {

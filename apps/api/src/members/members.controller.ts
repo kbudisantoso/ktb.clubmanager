@@ -216,7 +216,8 @@ export class MembersController {
       dto.reason,
       userId,
       dto.effectiveDate,
-      dto.leftCategory
+      dto.leftCategory,
+      dto.membershipTypeId
     );
   }
 
