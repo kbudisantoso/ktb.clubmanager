@@ -32,6 +32,7 @@ export enum MemberStatusDto {
 export enum LeftCategoryDto {
   VOLUNTARY = 'VOLUNTARY',
   EXCLUSION = 'EXCLUSION',
+  REJECTED = 'REJECTED',
   DEATH = 'DEATH',
   OTHER = 'OTHER',
 }
