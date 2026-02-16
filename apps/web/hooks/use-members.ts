@@ -330,6 +330,48 @@ export function useBulkChangeStatus(slug: string) {
 }
 
 /**
+ * Record a cancellation for a member.
+ * Sets cancellationDate, cancellationReceivedAt, and reason.
+ */
+export function useSetCancellation(slug: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      cancellationDate: string;
+      cancellationReceivedAt: string;
+      reason: string;
+    }) => {
+      const res = await apiFetch(`/api/clubs/${slug}/members/${input.id}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cancellationDate: input.cancellationDate,
+          cancellationReceivedAt: input.cancellationReceivedAt,
+          reason: input.reason,
+        }),
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || 'Fehler beim Erfassen der Kuendigung');
+      }
+      return res.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: memberKeys.detail(slug, variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: memberKeys.statusHistory(slug, variables.id),
+      });
+      queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
+    },
+    retry: 1,
+  });
+}
+
+/**
  * Anonymize a member (DSGVO Art. 17).
  * Irreversible. Only for members with status LEFT.
  */
