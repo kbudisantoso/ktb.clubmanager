@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2, ShieldAlert } from 'lucide-react';
 import type { MemberStatus, NamedTransition } from '@ktb/shared';
 import {
   AlertDialog,
@@ -14,11 +14,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { MemberStatusBadge } from '@/components/members/member-status-badge';
 import { MemberStatusActions } from '@/components/members/member-status-actions';
 import { StatusTransitionDialog } from '@/components/members/status-transition-dialog';
 import { CancellationDialog } from '@/components/members/cancellation-dialog';
 import { StatusHistoryEditDialog } from '@/components/members/status-history-edit-dialog';
+import { MemberAnonymizeDialog } from '@/components/members/member-anonymize-dialog';
 import { MemberUnifiedTimeline } from '@/components/members/member-unified-timeline';
 import type { TimelinePeriod } from '@/components/members/member-unified-timeline';
 import { MembershipPeriodDialog } from '@/components/members/membership-period-dialog';
@@ -87,6 +89,9 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
   const [deletingStatusEntry, setDeletingStatusEntry] = useState<StatusHistoryEntry | null>(null);
   const deleteStatusHistory = useDeleteStatusHistory(slug, member.id);
 
+  // Anonymization dialog state (DSGVO reminder)
+  const [anonymizeDialogOpen, setAnonymizeDialogOpen] = useState(false);
+
   // Derive active membership type name for the top section
   const activeTypeName = useMemo(() => {
     const activePeriod = displayPeriods.find((p) => !p.leaveDate);
@@ -107,6 +112,29 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
     const activePeriod = displayPeriods.find((p) => !p.leaveDate);
     return activePeriod?.joinDate ?? null;
   }, [statusHistory, member.status, displayPeriods]);
+
+  // DSGVO anonymization reminder: show 30 days after exit for LEFT members
+  const anonymizationReminder = useMemo(() => {
+    if (member.status !== 'LEFT' || member.anonymizedAt) return null;
+
+    // Find exit date from status history (most recent →LEFT transition)
+    let exitDate: string | null = null;
+    if (statusHistory?.length) {
+      const leftEntry = [...statusHistory].reverse().find((t) => t.toStatus === 'LEFT');
+      if (leftEntry) exitDate = leftEntry.effectiveDate;
+    }
+    // Fallback: cancellation date
+    if (!exitDate) exitDate = member.cancellationDate;
+    if (!exitDate) return null;
+
+    const exit = new Date(exitDate);
+    const threshold = new Date(exit);
+    threshold.setDate(threshold.getDate() + 30);
+
+    if (new Date() < threshold) return null;
+
+    return exitDate;
+  }, [member.status, member.anonymizedAt, member.cancellationDate, statusHistory]);
 
   const handleEditPeriod = useCallback((period: TimelinePeriod) => {
     setSelectedPeriod(period);
@@ -201,6 +229,31 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
           </div>
         )}
 
+        {/* DSGVO anonymization reminder */}
+        {anonymizationReminder && (
+          <div className="flex items-start gap-2 rounded-md border border-destructive/25 bg-destructive/10 p-3">
+            <ShieldAlert className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+            <div className="flex-1 text-sm">
+              <p className="font-medium text-destructive">
+                Personenbezogene Daten muessen geloescht werden
+              </p>
+              <p className="text-muted-foreground mt-0.5">
+                Dieses Mitglied ist seit {formatDate(anonymizationReminder)} ausgetreten.
+                Personenbezogene Daten sollten gemaess DSGVO geloescht werden.
+              </p>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="mt-2"
+                onClick={() => setAnonymizeDialogOpen(true)}
+              >
+                Daten loeschen
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* R1: Unified timeline */}
         <MemberUnifiedTimeline
           periods={displayPeriods}
@@ -256,6 +309,14 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
           memberId={member.id}
         />
       )}
+
+      {/* Anonymize dialog (DSGVO) */}
+      <MemberAnonymizeDialog
+        member={member}
+        slug={slug}
+        open={anonymizeDialogOpen}
+        onOpenChange={setAnonymizeDialogOpen}
+      />
 
       {/* Status history delete confirmation */}
       <AlertDialog
