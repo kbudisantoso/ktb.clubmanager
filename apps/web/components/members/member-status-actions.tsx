@@ -41,7 +41,7 @@ const CANCELLATION_STATUSES: readonly string[] = ['ACTIVE', 'PROBATION', 'DORMAN
 
 /**
  * Build the list of available transitions for a given status,
- * split into primary, non-destructive secondary, and destructive secondary.
+ * split into primary, self-transition, non-destructive secondary, and destructive secondary.
  */
 function buildTransitionActions(currentStatus: MemberStatus) {
   const allTargets = VALID_TRANSITIONS[currentStatus] ?? [];
@@ -55,11 +55,19 @@ function buildTransitionActions(currentStatus: MemberStatus) {
         }
       : null;
 
+  // Extract self-transition separately (for "Mitgliedsart aendern")
+  const selfKey = `${currentStatus}-${currentStatus}`;
+  const selfTransitionEntry = NAMED_TRANSITIONS[selfKey];
+  const selfTransition =
+    selfTransitionEntry && allTargets.includes(currentStatus)
+      ? { target: currentStatus, transition: selfTransitionEntry }
+      : null;
+
   const secondary: { target: MemberStatus; transition: NamedTransition }[] = [];
   const destructive: { target: MemberStatus; transition: NamedTransition }[] = [];
 
   for (const target of allTargets) {
-    if (target === primaryTarget) continue;
+    if (target === primaryTarget || target === currentStatus) continue;
     const key = `${currentStatus}-${target}`;
     const transition = NAMED_TRANSITIONS[key];
     if (!transition) continue;
@@ -71,7 +79,7 @@ function buildTransitionActions(currentStatus: MemberStatus) {
     }
   }
 
-  return { primary, secondary, destructive };
+  return { primary, selfTransition, secondary, destructive };
 }
 
 // ============================================================================
@@ -89,21 +97,38 @@ export function MemberStatusActions({
   onRecordCancellation,
 }: MemberStatusActionsProps) {
   const currentStatus = member.status as MemberStatus;
-  const { primary, secondary, destructive } = buildTransitionActions(currentStatus);
+  const { primary, selfTransition, secondary, destructive } = buildTransitionActions(currentStatus);
   const hasCancellation = !!member.cancellationDate && member.status !== 'LEFT';
   const canRecordCancellation = CANCELLATION_STATUSES.includes(member.status);
+  const hasActivePeriod = member.membershipPeriods?.some((p) => !p.leaveDate) ?? false;
+  // Only show "Mitgliedsart aendern" when member has an active period
+  const showSelfTransition = selfTransition && hasActivePeriod;
 
   const hasDropdownItems =
-    secondary.length > 0 || destructive.length > 0 || canRecordCancellation || hasCancellation;
+    showSelfTransition ||
+    secondary.length > 0 ||
+    destructive.length > 0 ||
+    canRecordCancellation ||
+    hasCancellation;
 
-  // No actions available at all (shouldn't happen with 22-transition state machine, but safe)
+  // No actions available at all (LEFT members have no transitions)
   if (!primary && !hasDropdownItems) {
     return null;
   }
 
   const dropdownContent = (
     <DropdownMenuContent align="end">
+      {/* Self-transition: "Mitgliedsart aendern" — first item */}
+      {showSelfTransition && (
+        <DropdownMenuItem
+          onClick={() => onTransition(selfTransition.target, selfTransition.transition)}
+        >
+          {selfTransition.transition.action}
+        </DropdownMenuItem>
+      )}
+
       {/* Non-destructive secondary transitions */}
+      {secondary.length > 0 && showSelfTransition && <DropdownMenuSeparator />}
       {secondary.map(({ target, transition }) => (
         <DropdownMenuItem key={target} onClick={() => onTransition(target, transition)}>
           {transition.action}
@@ -113,7 +138,7 @@ export function MemberStatusActions({
       {/* Cancellation section */}
       {canRecordCancellation && onRecordCancellation && (
         <>
-          {secondary.length > 0 && <DropdownMenuSeparator />}
+          {(secondary.length > 0 || showSelfTransition) && <DropdownMenuSeparator />}
           <DropdownMenuItem onClick={onRecordCancellation}>Kuendigung erfassen</DropdownMenuItem>
         </>
       )}
