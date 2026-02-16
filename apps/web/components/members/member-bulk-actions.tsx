@@ -439,7 +439,8 @@ export function MemberBulkActions({
             </AlertDialogTitle>
             <AlertDialogDescription>
               Der Status wird auf &ldquo;
-              {STATUS_LABELS[statusConfirmState.targetStatus] ?? statusConfirmState.targetStatus}
+              {STATUS_LABELS[statusConfirmState.targetStatus as keyof typeof STATUS_LABELS] ??
+                statusConfirmState.targetStatus}
               &rdquo; geändert.
             </AlertDialogDescription>
           </AlertDialogHeader>

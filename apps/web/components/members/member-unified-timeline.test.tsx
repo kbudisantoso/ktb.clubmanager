@@ -67,6 +67,8 @@ const mockMembershipTypes = [
     vote: true,
     assemblyAttendance: true,
     eligibleForOffice: true,
+    createdAt: '2025-01-01T00:00:00.000Z',
+    updatedAt: '2025-01-01T00:00:00.000Z',
   },
   {
     id: 'type-2',
@@ -79,6 +81,8 @@ const mockMembershipTypes = [
     vote: false,
     assemblyAttendance: false,
     eligibleForOffice: false,
+    createdAt: '2025-01-01T00:00:00.000Z',
+    updatedAt: '2025-01-01T00:00:00.000Z',
   },
 ];
 

@@ -362,22 +362,6 @@ describe('MemberStatusService', () => {
     });
 
     describe('invalid transitions', () => {
-      it('should reject LEFT -> ACTIVE', async () => {
-        mockTx.member.findFirst.mockResolvedValue(makeMember({ status: 'LEFT' }));
-
-        await expect(
-          service.changeStatus('club-1', 'member-1', 'ACTIVE', 'Test', 'user-1')
-        ).rejects.toThrow(BadRequestException);
-      });
-
-      it('should reject LEFT -> PENDING', async () => {
-        mockTx.member.findFirst.mockResolvedValue(makeMember({ status: 'LEFT' }));
-
-        await expect(
-          service.changeStatus('club-1', 'member-1', 'PENDING', 'Test', 'user-1')
-        ).rejects.toThrow(BadRequestException);
-      });
-
       it('should reject ACTIVE -> PENDING', async () => {
         mockTx.member.findFirst.mockResolvedValue(makeMember({ status: 'ACTIVE' }));
 
@@ -386,16 +370,32 @@ describe('MemberStatusService', () => {
         ).rejects.toThrow(BadRequestException);
       });
 
-      it('should reject DORMANT -> PROBATION', async () => {
-        mockTx.member.findFirst.mockResolvedValue(makeMember({ status: 'DORMANT' }));
+      it('should reject ACTIVE -> PROBATION', async () => {
+        mockTx.member.findFirst.mockResolvedValue(makeMember({ status: 'ACTIVE' }));
 
         await expect(
           service.changeStatus('club-1', 'member-1', 'PROBATION', 'Test', 'user-1')
         ).rejects.toThrow(BadRequestException);
       });
 
-      it('should reject PROBATION -> DORMANT', async () => {
-        mockTx.member.findFirst.mockResolvedValue(makeMember({ status: 'PROBATION' }));
+      it('should reject PENDING -> DORMANT', async () => {
+        mockTx.member.findFirst.mockResolvedValue(makeMember({ status: 'PENDING' }));
+
+        await expect(
+          service.changeStatus('club-1', 'member-1', 'DORMANT', 'Test', 'user-1')
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it('should reject PENDING -> SUSPENDED', async () => {
+        mockTx.member.findFirst.mockResolvedValue(makeMember({ status: 'PENDING' }));
+
+        await expect(
+          service.changeStatus('club-1', 'member-1', 'SUSPENDED', 'Test', 'user-1')
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it('should reject LEFT -> DORMANT', async () => {
+        mockTx.member.findFirst.mockResolvedValue(makeMember({ status: 'LEFT' }));
 
         await expect(
           service.changeStatus('club-1', 'member-1', 'DORMANT', 'Test', 'user-1')

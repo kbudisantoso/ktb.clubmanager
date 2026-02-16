@@ -81,7 +81,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
     label: 'Status',
     csvHeader: 'Status',
     defaultSelected: true,
-    getValue: (m) => STATUS_LABELS[m.status] ?? m.status,
+    getValue: (m) => STATUS_LABELS[m.status as keyof typeof STATUS_LABELS] ?? m.status,
   },
   {
     key: 'email',
