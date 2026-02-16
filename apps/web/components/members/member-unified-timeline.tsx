@@ -551,7 +551,7 @@ function DurationSeparator({ duration }: DurationSeparatorProps) {
   if (!duration) return null;
 
   return (
-    <div className="relative py-1.5 pl-1">
+    <div className="relative py-1.5">
       <span className="relative z-10 text-[10px] text-muted-foreground/60 bg-background px-0.5 whitespace-nowrap">
         {duration}
       </span>
