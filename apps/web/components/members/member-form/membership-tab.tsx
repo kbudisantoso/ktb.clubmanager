@@ -17,13 +17,20 @@ import {
 import { MemberStatusBadge } from '@/components/members/member-status-badge';
 import { MemberStatusActions } from '@/components/members/member-status-actions';
 import { StatusTransitionDialog } from '@/components/members/status-transition-dialog';
+import { CancellationDialog } from '@/components/members/cancellation-dialog';
+import { StatusHistoryEditDialog } from '@/components/members/status-history-edit-dialog';
 import { MemberUnifiedTimeline } from '@/components/members/member-unified-timeline';
 import type { TimelinePeriod } from '@/components/members/member-unified-timeline';
 import { MembershipPeriodDialog } from '@/components/members/membership-period-dialog';
 import type { DialogMode } from '@/components/members/membership-period-dialog';
 import { useMemberPeriods } from '@/hooks/use-membership-periods';
 import { useMembershipTypes } from '@/hooks/use-membership-types';
-import { useMemberStatusHistory, useChangeStatus } from '@/hooks/use-members';
+import {
+  useMemberStatusHistory,
+  useChangeStatus,
+  useDeleteStatusHistory,
+} from '@/hooks/use-members';
+import type { StatusHistoryEntry } from '@/hooks/use-members';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/format-date';
 import type { MemberDetail } from '@/hooks/use-member-detail';
@@ -84,6 +91,14 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
   const [transitionDialogOpen, setTransitionDialogOpen] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<MemberStatus | null>(null);
   const [selectedTransition, setSelectedTransition] = useState<NamedTransition | null>(null);
+
+  // Cancellation dialog state
+  const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
+
+  // Status history edit/delete state
+  const [editingStatusEntry, setEditingStatusEntry] = useState<StatusHistoryEntry | null>(null);
+  const [deletingStatusEntry, setDeletingStatusEntry] = useState<StatusHistoryEntry | null>(null);
+  const deleteStatusHistory = useDeleteStatusHistory(slug, member.id);
 
   // Derive active membership type name for the top section
   const activeTypeName = useMemo(() => {
@@ -156,6 +171,37 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
     []
   );
 
+  // Handle cancellation recording
+  const handleRecordCancellation = useCallback(() => {
+    setCancellationDialogOpen(true);
+  }, []);
+
+  // Handle status history edit
+  const handleEditStatusEntry = useCallback((entry: StatusHistoryEntry) => {
+    setEditingStatusEntry(entry);
+  }, []);
+
+  // Handle status history delete (shows confirmation)
+  const handleDeleteStatusEntry = useCallback((entry: StatusHistoryEntry) => {
+    setDeletingStatusEntry(entry);
+  }, []);
+
+  // Confirm delete
+  const handleConfirmDeleteStatusEntry = useCallback(async () => {
+    if (!deletingStatusEntry) return;
+    try {
+      await deleteStatusHistory.mutateAsync(deletingStatusEntry.id);
+      toast({ title: 'Eintrag geloescht' });
+    } catch {
+      toast({
+        title: 'Fehler beim Loeschen',
+        description: 'Der Eintrag konnte nicht geloescht werden.',
+        variant: 'destructive',
+      });
+    }
+    setDeletingStatusEntry(null);
+  }, [deletingStatusEntry, deleteStatusHistory, toast]);
+
   return (
     <>
       <div className="space-y-6">
@@ -168,7 +214,11 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
           {activeJoinDate && (
             <span className="text-sm text-muted-foreground">seit {formatDate(activeJoinDate)}</span>
           )}
-          <MemberStatusActions member={member} onTransition={handleTransition} />
+          <MemberStatusActions
+            member={member}
+            onTransition={handleTransition}
+            onRecordCancellation={handleRecordCancellation}
+          />
         </div>
 
         {/* Cancellation notice */}
@@ -198,6 +248,8 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
           onCreatePeriod={handleCreatePeriod}
           onEditPeriod={handleEditPeriod}
           onClosePeriod={handleClosePeriod}
+          onEditStatusEntry={handleEditStatusEntry}
+          onDeleteStatusEntry={handleDeleteStatusEntry}
         />
       </div>
 
@@ -243,6 +295,54 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
           onOpenChange={setTransitionDialogOpen}
         />
       )}
+
+      {/* Cancellation dialog */}
+      <CancellationDialog
+        member={member}
+        open={cancellationDialogOpen}
+        onOpenChange={setCancellationDialogOpen}
+      />
+
+      {/* Status history edit dialog */}
+      {editingStatusEntry && (
+        <StatusHistoryEditDialog
+          entry={editingStatusEntry}
+          open={!!editingStatusEntry}
+          onOpenChange={(open) => {
+            if (!open) setEditingStatusEntry(null);
+          }}
+          slug={slug}
+          memberId={member.id}
+        />
+      )}
+
+      {/* Status history delete confirmation */}
+      <AlertDialog
+        open={!!deletingStatusEntry}
+        onOpenChange={(open) => {
+          if (!open) setDeletingStatusEntry(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Statuseintrag loeschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Dieser Eintrag wird unwiderruflich entfernt. Moechten Sie fortfahren?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeleteStatusEntry}
+              disabled={deleteStatusHistory.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteStatusHistory.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Loeschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
