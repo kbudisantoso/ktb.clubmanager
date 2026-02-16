@@ -1,6 +1,25 @@
 import { z } from 'zod';
 
 /**
+ * Available badge colors for membership types.
+ * Maps to CSS variables with light/dark mode variants.
+ */
+export const MEMBER_TYPE_COLORS = [
+  'BLUE',
+  'GREEN',
+  'PURPLE',
+  'AMBER',
+  'ROSE',
+  'TEAL',
+  'SLATE',
+  'INDIGO',
+] as const;
+
+export type MemberTypeColor = (typeof MEMBER_TYPE_COLORS)[number];
+
+export const MemberTypeColorSchema = z.enum(MEMBER_TYPE_COLORS);
+
+/**
  * Schema for creating a new membership type (club-scoped entity).
  * Replaces the former MembershipType enum with a dynamic, configurable model.
  */
@@ -35,6 +54,9 @@ export const CreateMembershipTypeSchema = z.object({
 
   /** Whether members are eligible for board positions */
   eligibleForOffice: z.boolean().optional(),
+
+  /** Badge color for UI display */
+  color: MemberTypeColorSchema.optional(),
 });
 
 export type CreateMembershipType = z.infer<typeof CreateMembershipTypeSchema>;
@@ -62,6 +84,7 @@ export const MembershipTypeResponseSchema = z.object({
   vote: z.boolean(),
   assemblyAttendance: z.boolean(),
   eligibleForOffice: z.boolean(),
+  color: MemberTypeColorSchema,
   createdAt: z.string(),
   updatedAt: z.string(),
 });

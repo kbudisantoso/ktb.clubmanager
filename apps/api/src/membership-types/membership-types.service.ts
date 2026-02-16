@@ -73,6 +73,7 @@ export class MembershipTypesService {
         vote: dto.vote ?? true,
         assemblyAttendance: dto.assemblyAttendance ?? true,
         eligibleForOffice: dto.eligibleForOffice ?? true,
+        ...(dto.color && { color: dto.color as never }),
       },
     });
   }
@@ -126,6 +127,7 @@ export class MembershipTypesService {
             ...(dto.eligibleForOffice !== undefined && {
               eligibleForOffice: dto.eligibleForOffice,
             }),
+            ...(dto.color !== undefined && { color: dto.color as never }),
           },
         });
       });
@@ -145,6 +147,7 @@ export class MembershipTypesService {
           assemblyAttendance: dto.assemblyAttendance,
         }),
         ...(dto.eligibleForOffice !== undefined && { eligibleForOffice: dto.eligibleForOffice }),
+        ...(dto.color !== undefined && { color: dto.color as never }),
       },
     });
   }
@@ -196,6 +199,7 @@ export class MembershipTypesService {
         vote: true,
         assemblyAttendance: true,
         eligibleForOffice: true,
+        color: 'BLUE' as never,
       },
       {
         name: 'Passives Mitglied',
@@ -207,6 +211,7 @@ export class MembershipTypesService {
         vote: false,
         assemblyAttendance: true,
         eligibleForOffice: false,
+        color: 'SLATE' as never,
       },
       {
         name: 'Ehrenmitglied',
@@ -218,6 +223,7 @@ export class MembershipTypesService {
         vote: true,
         assemblyAttendance: true,
         eligibleForOffice: false,
+        color: 'PURPLE' as never,
       },
       {
         name: 'Foerdermitglied',
@@ -229,6 +235,7 @@ export class MembershipTypesService {
         vote: false,
         assemblyAttendance: false,
         eligibleForOffice: false,
+        color: 'GREEN' as never,
       },
       {
         name: 'Jugendmitglied',
@@ -240,6 +247,7 @@ export class MembershipTypesService {
         vote: false,
         assemblyAttendance: true,
         eligibleForOffice: false,
+        color: 'AMBER' as never,
       },
     ];
 

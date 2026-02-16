@@ -4,11 +4,13 @@ import {
   IsOptional,
   IsBoolean,
   IsInt,
+  IsIn,
   Min,
   MinLength,
   MaxLength,
   Matches,
 } from 'class-validator';
+import { MEMBER_TYPE_COLORS } from '@ktb/shared';
 
 export class CreateMembershipTypeDto {
   @ApiProperty({
@@ -88,4 +90,14 @@ export class CreateMembershipTypeDto {
   @IsBoolean()
   @IsOptional()
   eligibleForOffice?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Badge color for UI display',
+    enum: MEMBER_TYPE_COLORS,
+    default: 'BLUE',
+  })
+  @IsString()
+  @IsOptional()
+  @IsIn([...MEMBER_TYPE_COLORS], { message: 'Ungueltige Farbe' })
+  color?: string;
 }

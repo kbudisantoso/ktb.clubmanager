@@ -449,6 +449,26 @@ enum Salutation {
   DIVERS
 }
 
+/// Color palette for membership type badges (light/dark mode aware via CSS variables)
+enum MemberTypeColor {
+  /// Blue (default)
+  BLUE
+  /// Green
+  GREEN
+  /// Purple
+  PURPLE
+  /// Amber / warm yellow
+  AMBER
+  /// Rose / pink
+  ROSE
+  /// Teal / blue-green
+  TEAL
+  /// Slate / neutral gray
+  SLATE
+  /// Indigo / deep blue
+  INDIGO
+}
+
 /// Club-scoped membership type entity (replaces the former MembershipType enum).
 /// Each club defines its own membership types with configurable rights/settings.
 model MembershipType {
@@ -478,10 +498,13 @@ model MembershipType {
   /// Whether members can attend general assembly (Versammlungsteilnahme)
   assemblyAttendance  Boolean  @default(true)
   /// Whether members are eligible for board positions (Wahlfaehigkeit)
-  eligibleForOffice   Boolean  @default(true)
+  eligibleForOffice   Boolean         @default(true)
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  /// Badge color for UI display (light/dark mode aware)
+  color               MemberTypeColor @default(BLUE)
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
   /// Membership periods using this type
   membershipPeriods   MembershipPeriod[]
