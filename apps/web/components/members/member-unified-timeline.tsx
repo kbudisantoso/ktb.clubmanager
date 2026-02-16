@@ -28,7 +28,7 @@ export interface TimelinePeriod {
 
 interface UnifiedEntry {
   id: string;
-  type: 'period' | 'status' | 'today';
+  type: 'period' | 'status' | 'today' | 'entry' | 'exit';
   date: string;
   period?: TimelinePeriod;
   statusEntry?: StatusHistoryEntry;
@@ -36,6 +36,10 @@ interface UnifiedEntry {
   linkedPeriod?: TimelinePeriod;
   /** The period that was closed during this transition (for old→new display) */
   previousPeriod?: TimelinePeriod;
+  /** For virtual entry/exit: the membership type ID of the new/current type */
+  virtualTypeId?: string | null;
+  /** For virtual exit: the membership type ID being left */
+  virtualFromTypeId?: string | null;
 }
 
 interface MemberUnifiedTimelineProps {
@@ -161,25 +165,78 @@ export function MemberUnifiedTimeline({
   const hasActivePeriod = !!activePeriod;
   const showNoPeriodBanner = memberStatus === 'ACTIVE' && !hasActivePeriod;
 
-  // Inject a virtual "today" entry at its correct chronological position.
-  // Only added when no real entry already exists for today's date.
+  // Find the earliest period (for virtual entry card)
+  const earliestPeriod = useMemo(
+    () =>
+      periods.length > 0
+        ? periods.reduce((earliest, p) =>
+            (p.joinDate ?? '') < (earliest.joinDate ?? '') ? p : earliest
+          )
+        : null,
+    [periods]
+  );
+
+  // Check if the earliest period already has a linked transition
+  const earliestHasTransition = useMemo(() => {
+    if (!earliestPeriod || !statusHistory) return false;
+    return statusHistory.some((t) => t.effectiveDate === earliestPeriod.joinDate);
+  }, [earliestPeriod, statusHistory]);
+
+  // Inject virtual entries: today card, entry card (bottom), exit card (cancellation)
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
   const timelineEntries = useMemo(() => {
-    if (mergedEntries.length === 0) return mergedEntries;
-    const hasEntryToday = mergedEntries.some((e) => e.date === today);
-    if (hasEntryToday) return mergedEntries;
-
-    const todayEntry: UnifiedEntry = { id: 'virtual-today', type: 'today', date: today };
-    // Entries are sorted descending — find where today fits
-    const insertIdx = mergedEntries.findIndex((e) => e.date <= today);
-    if (insertIdx === -1) {
-      // All entries are in the future — today goes last
-      return [...mergedEntries, todayEntry];
-    }
     const result = [...mergedEntries];
-    result.splice(insertIdx, 0, todayEntry);
+
+    // Virtual entry card at the bottom: "Beitritt" → first type
+    // Only when earliest period has no linked transition (migrated data)
+    if (earliestPeriod && !earliestHasTransition) {
+      const entryDate = earliestPeriod.joinDate ?? '';
+      result.push({
+        id: 'virtual-entry',
+        type: 'entry',
+        date: entryDate,
+        virtualTypeId: earliestPeriod.membershipTypeId,
+      });
+    }
+
+    // Virtual exit card: current type → "Ehemaliges Mitglied" at cancellation date
+    if (cancellationDate && memberStatus !== 'LEFT') {
+      const exitDate = cancellationDate.split('T')[0];
+      result.push({
+        id: 'virtual-exit',
+        type: 'exit',
+        date: exitDate,
+        virtualFromTypeId: activePeriod?.membershipTypeId,
+      });
+    }
+
+    // Re-sort after injecting virtual entries (descending by date)
+    result.sort((a, b) => b.date.localeCompare(a.date));
+
+    // Inject today card at its correct position
+    if (result.length > 0) {
+      const hasEntryToday = result.some((e) => e.date === today);
+      if (!hasEntryToday) {
+        const todayEntry: UnifiedEntry = { id: 'virtual-today', type: 'today', date: today };
+        const insertIdx = result.findIndex((e) => e.date <= today);
+        if (insertIdx === -1) {
+          result.push(todayEntry);
+        } else {
+          result.splice(insertIdx, 0, todayEntry);
+        }
+      }
+    }
+
     return result;
-  }, [mergedEntries, today]);
+  }, [
+    mergedEntries,
+    today,
+    earliestPeriod,
+    earliestHasTransition,
+    cancellationDate,
+    memberStatus,
+    activePeriod,
+  ]);
 
   // Loading state
   if (statusHistoryLoading && periods.length === 0) {
@@ -264,6 +321,10 @@ export function MemberUnifiedTimeline({
                     onEdit={onEditStatusEntry}
                     onDelete={onDeleteStatusEntry}
                   />
+                ) : entry.type === 'entry' ? (
+                  <EntryCard date={entry.date} typeInfo={getTypeInfo(entry.virtualTypeId)} />
+                ) : entry.type === 'exit' ? (
+                  <ExitCard date={entry.date} fromTypeInfo={getTypeInfo(entry.virtualFromTypeId)} />
                 ) : null}
 
                 {/* Duration separator between this and the next (older) entry */}
@@ -579,6 +640,70 @@ function TodayCard({ memberStatus, typeInfo, hasActivePeriod, cancellationDate }
             Gekuendigt zum {formatDate(cancellationDate)}
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Entry card — virtual "first membership" marker at the bottom of the timeline
+// ----------------------------------------------------------------------------
+
+interface EntryCardProps {
+  date: string;
+  typeInfo: { name: string; color: { bg: string; text: string; border: string } };
+}
+
+function EntryCard({ date, typeInfo }: EntryCardProps) {
+  return (
+    <div className="relative flex gap-3">
+      <div className="relative z-10 flex items-start pt-1">
+        <div className="rounded-full bg-background">
+          <Circle className="h-6 w-6 shrink-0 fill-muted-foreground/30 text-muted-foreground/30" />
+        </div>
+      </div>
+      <div className="flex-1 rounded-md border border-border bg-muted/20 p-3 text-sm">
+        <p className="text-xs text-muted-foreground mb-1.5">{formatDate(date)}</p>
+        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+          <span className="inline-flex items-center rounded-md border border-muted-foreground/25 bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+            Beitritt
+          </span>
+          <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <TypeBadge typeInfo={typeInfo} />
+        </div>
+        <p className="text-sm text-foreground">Aufnahme als Mitglied</p>
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Exit card — virtual "leaving" marker at the cancellation date
+// ----------------------------------------------------------------------------
+
+interface ExitCardProps {
+  date: string;
+  fromTypeInfo: { name: string; color: { bg: string; text: string; border: string } };
+}
+
+function ExitCard({ date, fromTypeInfo }: ExitCardProps) {
+  return (
+    <div className="relative flex gap-3">
+      <div className="relative z-10 flex items-start pt-1">
+        <div className="rounded-full bg-background">
+          <Circle className="h-6 w-6 shrink-0 fill-muted-foreground/30 text-muted-foreground/30" />
+        </div>
+      </div>
+      <div className="flex-1 rounded-md border border-border bg-muted/20 p-3 text-sm">
+        <p className="text-xs text-muted-foreground mb-1.5">{formatDate(date)}</p>
+        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+          <TypeBadge typeInfo={fromTypeInfo} />
+          <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="inline-flex items-center rounded-md border border-muted-foreground/25 bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+            Ehemaliges Mitglied
+          </span>
+        </div>
+        <p className="text-sm text-foreground">Austritt aus dem Verein</p>
       </div>
     </div>
   );

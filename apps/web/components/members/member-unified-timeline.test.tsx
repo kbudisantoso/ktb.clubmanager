@@ -122,9 +122,10 @@ describe('MemberUnifiedTimeline', () => {
       />
     );
 
-    expect(screen.getByText('Passives Mitglied')).toBeInTheDocument();
-    // Only start date shown (end date is implicit from next entry)
-    expect(screen.getByText('15.01.2022')).toBeInTheDocument();
+    // Type name appears in period card + virtual entry card
+    expect(screen.getAllByText('Passives Mitglied').length).toBeGreaterThan(0);
+    // Start date appears in period card + virtual entry card
+    expect(screen.getAllByText('15.01.2022').length).toBeGreaterThan(0);
   });
 
   it('renders active period with "Aktiv" label and start date', () => {
@@ -140,7 +141,8 @@ describe('MemberUnifiedTimeline', () => {
 
     // "Aktiv" may appear in today card badge + period card indicator
     expect(screen.getAllByText('Aktiv').length).toBeGreaterThan(0);
-    expect(screen.getByText('01.03.2024')).toBeInTheDocument();
+    // Date may appear in period card + virtual entry card
+    expect(screen.getAllByText('01.03.2024').length).toBeGreaterThan(0);
   });
 
   it('renders status card with from/to badges and reason', () => {
@@ -358,5 +360,66 @@ describe('MemberUnifiedTimeline', () => {
     );
 
     expect(screen.getByText(/Gekuendigt zum/)).toBeInTheDocument();
+  });
+
+  it('shows virtual entry card with "Beitritt" for earliest unlinked period', () => {
+    render(
+      <MemberUnifiedTimeline
+        periods={[closedPeriod]}
+        statusHistory={[]}
+        statusHistoryLoading={false}
+        membershipTypes={mockMembershipTypes}
+        memberStatus="ACTIVE"
+      />
+    );
+
+    expect(screen.getByText('Beitritt')).toBeInTheDocument();
+    expect(screen.getByText('Aufnahme als Mitglied')).toBeInTheDocument();
+  });
+
+  it('does NOT show virtual entry card when earliest period has a linked transition', () => {
+    // mockStatusEntry has effectiveDate '2024-03-01' matching mockPeriod.joinDate
+    render(
+      <MemberUnifiedTimeline
+        periods={[mockPeriod]}
+        statusHistory={[mockStatusEntry]}
+        statusHistoryLoading={false}
+        membershipTypes={mockMembershipTypes}
+        memberStatus="ACTIVE"
+      />
+    );
+
+    expect(screen.queryByText('Beitritt')).not.toBeInTheDocument();
+  });
+
+  it('shows virtual exit card with "Ehemaliges Mitglied" when cancellation exists', () => {
+    render(
+      <MemberUnifiedTimeline
+        periods={[mockPeriod]}
+        statusHistory={[]}
+        statusHistoryLoading={false}
+        membershipTypes={mockMembershipTypes}
+        memberStatus="ACTIVE"
+        cancellationDate="2026-12-31"
+      />
+    );
+
+    expect(screen.getByText('Ehemaliges Mitglied')).toBeInTheDocument();
+    expect(screen.getByText('Austritt aus dem Verein')).toBeInTheDocument();
+  });
+
+  it('does NOT show virtual exit card for LEFT members', () => {
+    render(
+      <MemberUnifiedTimeline
+        periods={[closedPeriod]}
+        statusHistory={[mockLeftEntry]}
+        statusHistoryLoading={false}
+        membershipTypes={mockMembershipTypes}
+        memberStatus="LEFT"
+        cancellationDate="2025-01-01"
+      />
+    );
+
+    expect(screen.queryByText('Ehemaliges Mitglied')).not.toBeInTheDocument();
   });
 });
