@@ -108,11 +108,18 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
     return type?.name ?? null;
   }, [displayPeriods, membershipTypes]);
 
-  // Derive entry date from active period
-  const activeJoinDate = useMemo(() => {
+  // Derive "seit" date from the last status transition into current status
+  const activeSinceDate = useMemo(() => {
+    if (statusHistory?.length) {
+      const entry = statusHistory.find(
+        (t) => t.toStatus === member.status && t.fromStatus !== t.toStatus
+      );
+      if (entry) return entry.effectiveDate;
+    }
+    // Fallback for migrated data: active period joinDate
     const activePeriod = displayPeriods.find((p) => !p.leaveDate);
     return activePeriod?.joinDate ?? null;
-  }, [displayPeriods]);
+  }, [statusHistory, member.status, displayPeriods]);
 
   const handleCreatePeriod = useCallback(() => {
     setSelectedPeriod(null);
@@ -211,14 +218,18 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
           {activeTypeName && (
             <span className="text-sm text-muted-foreground">{activeTypeName}</span>
           )}
-          {activeJoinDate && (
-            <span className="text-sm text-muted-foreground">seit {formatDate(activeJoinDate)}</span>
+          {activeSinceDate && (
+            <span className="text-sm text-muted-foreground">
+              seit {formatDate(activeSinceDate)}
+            </span>
           )}
-          <MemberStatusActions
-            member={member}
-            onTransition={handleTransition}
-            onRecordCancellation={handleRecordCancellation}
-          />
+          <div className="ml-auto">
+            <MemberStatusActions
+              member={member}
+              onTransition={handleTransition}
+              onRecordCancellation={handleRecordCancellation}
+            />
+          </div>
         </div>
 
         {/* Cancellation notice */}
