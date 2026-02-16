@@ -423,6 +423,8 @@ enum LeftCategory {
   VOLUNTARY
   /// Exclusion by board decision (Ausschluss)
   EXCLUSION
+  /// Application rejected (Antrag abgelehnt)
+  REJECTED
   /// Death of the member (Todesfall)
   DEATH
   /// Other reason (Sonstiges)
@@ -727,6 +729,10 @@ model MemberStatusTransition {
   actorId       String
   /// When this transition record was created
   createdAt     DateTime      @default(now())
+  /// Soft delete timestamp
+  deletedAt     DateTime?
+  /// User who deleted this entry
+  deletedBy     String?
 
   @@index([memberId])
   @@index([clubId])
