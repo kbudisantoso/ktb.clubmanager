@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { formatDate, formatDateTime, calculateDuration } from '@/lib/format-date';
 import { LEFT_CATEGORY_LABELS } from '@/lib/member-status-labels';
+import { getTypeColorClasses } from '@/lib/member-type-colors';
 import { MemberStatusBadge } from './member-status-badge';
 import type { MembershipType } from '@/hooks/use-membership-types';
 import type { StatusHistoryEntry } from '@/hooks/use-members';
@@ -81,11 +82,12 @@ export function MemberUnifiedTimeline({
   onEditStatusEntry,
   onDeleteStatusEntry,
 }: MemberUnifiedTimelineProps) {
-  /** Resolve a membershipTypeId to a display name */
-  const getTypeName = (typeId: string | null | undefined): string => {
-    if (!typeId || !membershipTypes) return 'Unbekannt';
+  /** Resolve a membershipTypeId to display name and color classes */
+  const getTypeInfo = (typeId: string | null | undefined) => {
+    if (!typeId || !membershipTypes) return { name: 'Unbekannt', color: getTypeColorClasses(null) };
     const found = membershipTypes.find((t) => t.id === typeId);
-    return found?.name ?? 'Unbekannt';
+    if (!found) return { name: 'Unbekannt', color: getTypeColorClasses(null) };
+    return { name: found.name, color: getTypeColorClasses(found.color) };
   };
 
   // Merge and sort all entries by date descending.
@@ -229,13 +231,13 @@ export function MemberUnifiedTimeline({
                 {entry.type === 'today' ? (
                   <TodayCard
                     memberStatus={memberStatus}
-                    typeName={activePeriod ? getTypeName(activePeriod.membershipTypeId) : null}
+                    typeInfo={activePeriod ? getTypeInfo(activePeriod.membershipTypeId) : null}
                   />
                 ) : entry.type === 'period' && entry.period ? (
                   <PeriodEntry
                     period={entry.period}
                     isCurrent={entry.date === today}
-                    getTypeName={getTypeName}
+                    getTypeInfo={getTypeInfo}
                     onEdit={onEditPeriod}
                     onClose={onClosePeriod}
                   />
@@ -245,7 +247,7 @@ export function MemberUnifiedTimeline({
                     isCurrent={entry.date === today}
                     linkedPeriod={entry.linkedPeriod}
                     previousPeriod={entry.previousPeriod}
-                    getTypeName={getTypeName}
+                    getTypeInfo={getTypeInfo}
                     onEdit={onEditStatusEntry}
                     onDelete={onDeleteStatusEntry}
                   />
@@ -273,13 +275,17 @@ export function MemberUnifiedTimeline({
 interface PeriodEntryProps {
   period: TimelinePeriod;
   isCurrent: boolean;
-  getTypeName: (typeId: string | null | undefined) => string;
+  getTypeInfo: (typeId: string | null | undefined) => {
+    name: string;
+    color: { bg: string; text: string; border: string };
+  };
   onEdit?: (period: TimelinePeriod) => void;
   onClose?: (period: TimelinePeriod) => void;
 }
 
-function PeriodEntry({ period, isCurrent, getTypeName, onEdit, onClose }: PeriodEntryProps) {
+function PeriodEntry({ period, isCurrent, getTypeInfo, onEdit, onClose }: PeriodEntryProps) {
   const isActive = !period.leaveDate;
+  const typeInfo = getTypeInfo(period.membershipTypeId);
 
   return (
     <div className="relative flex gap-3">
@@ -318,10 +324,10 @@ function PeriodEntry({ period, isCurrent, getTypeName, onEdit, onClose }: Period
                   'inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium',
                   isActive
                     ? 'bg-success/15 text-success border-success/25'
-                    : 'bg-muted text-muted-foreground border-border'
+                    : `${typeInfo.color.bg} ${typeInfo.color.text} ${typeInfo.color.border}`
                 )}
               >
-                {getTypeName(period.membershipTypeId)}
+                {typeInfo.name}
               </span>
               {isActive && <span className="text-xs text-success font-medium">Aktiv</span>}
             </div>
@@ -379,7 +385,10 @@ interface StatusEntryProps {
   linkedPeriod?: TimelinePeriod;
   /** The period that was closed during this transition */
   previousPeriod?: TimelinePeriod;
-  getTypeName: (typeId: string | null | undefined) => string;
+  getTypeInfo: (typeId: string | null | undefined) => {
+    name: string;
+    color: { bg: string; text: string; border: string };
+  };
   onEdit?: (entry: StatusHistoryEntry) => void;
   onDelete?: (entry: StatusHistoryEntry) => void;
 }
@@ -389,7 +398,7 @@ function StatusEntry({
   isCurrent,
   linkedPeriod,
   previousPeriod,
-  getTypeName,
+  getTypeInfo,
   onEdit,
   onDelete,
 }: StatusEntryProps) {
@@ -398,8 +407,6 @@ function StatusEntry({
     previousPeriod &&
     linkedPeriod &&
     previousPeriod.membershipTypeId !== linkedPeriod.membershipTypeId;
-  const typeBadgeClass =
-    'inline-flex items-center rounded-md border bg-muted px-2 py-0.5 text-xs font-medium text-foreground border-border';
 
   return (
     <div className="relative flex gap-3">
@@ -442,25 +449,19 @@ function StatusEntry({
                 </div>
               )}
 
-              {/* Type change row: old → new (shown when types differ) */}
+              {/* Type change row: old -> new (shown when types differ) */}
               {hasTypeChange && (
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className={typeBadgeClass}>
-                    {getTypeName(previousPeriod?.membershipTypeId)}
-                  </span>
+                  <TypeBadge typeInfo={getTypeInfo(previousPeriod?.membershipTypeId)} />
                   <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className={typeBadgeClass}>
-                    {getTypeName(linkedPeriod?.membershipTypeId)}
-                  </span>
+                  <TypeBadge typeInfo={getTypeInfo(linkedPeriod?.membershipTypeId)} />
                 </div>
               )}
 
               {/* Type badge only (no change, just assigned) */}
               {!hasTypeChange && linkedPeriod && !isSelfTransition && (
                 <div className="flex items-center gap-2">
-                  <span className={typeBadgeClass}>
-                    {getTypeName(linkedPeriod.membershipTypeId)}
-                  </span>
+                  <TypeBadge typeInfo={getTypeInfo(linkedPeriod.membershipTypeId)} />
                 </div>
               )}
             </div>
@@ -522,10 +523,10 @@ function StatusEntry({
 
 interface TodayCardProps {
   memberStatus: string;
-  typeName: string | null;
+  typeInfo: { name: string; color: { bg: string; text: string; border: string } } | null;
 }
 
-function TodayCard({ memberStatus, typeName }: TodayCardProps) {
+function TodayCard({ memberStatus, typeInfo }: TodayCardProps) {
   return (
     <div className="relative flex gap-3">
       <div className="relative z-10 flex items-start pt-1">
@@ -537,14 +538,44 @@ function TodayCard({ memberStatus, typeName }: TodayCardProps) {
         <p className="text-xs text-muted-foreground mb-1.5">Heute</p>
         <div className="flex items-center gap-2 flex-wrap">
           <MemberStatusBadge status={memberStatus} />
-          {typeName && (
-            <span className="inline-flex items-center rounded-md border bg-muted px-2 py-0.5 text-xs font-medium text-foreground border-border">
-              {typeName}
+          {typeInfo && (
+            <span
+              className={cn(
+                'inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium',
+                typeInfo.color.bg,
+                typeInfo.color.text,
+                typeInfo.color.border
+              )}
+            >
+              {typeInfo.name}
             </span>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Type badge — colored membership type label
+// ----------------------------------------------------------------------------
+
+function TypeBadge({
+  typeInfo,
+}: {
+  typeInfo: { name: string; color: { bg: string; text: string; border: string } };
+}) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium',
+        typeInfo.color.bg,
+        typeInfo.color.text,
+        typeInfo.color.border
+      )}
+    >
+      {typeInfo.name}
+    </span>
   );
 }
 
