@@ -210,11 +210,16 @@ export function MemberUnifiedTimeline({
 
           {/* Entries */}
           <div className="space-y-4">
-            {mergedEntries.map((entry, i) =>
-              entry.type === 'period' && entry.period ? (
+            {mergedEntries.map((entry, i) => {
+              // Duration: from this entry's date to the next (newer) entry's date, or today
+              const endDate = i === 0 ? null : mergedEntries[i - 1].date;
+              const duration = calculateDuration(entry.date, endDate);
+
+              return entry.type === 'period' && entry.period ? (
                 <PeriodEntry
                   key={entry.id}
                   period={entry.period}
+                  duration={duration}
                   isCurrent={i === currentEntryIndex}
                   getTypeName={getTypeName}
                   onEdit={onEditPeriod}
@@ -224,6 +229,7 @@ export function MemberUnifiedTimeline({
                 <StatusEntry
                   key={entry.id}
                   entry={entry.statusEntry}
+                  duration={duration}
                   isCurrent={i === currentEntryIndex}
                   linkedPeriod={entry.linkedPeriod}
                   previousPeriod={entry.previousPeriod}
@@ -231,8 +237,8 @@ export function MemberUnifiedTimeline({
                   onEdit={onEditStatusEntry}
                   onDelete={onDeleteStatusEntry}
                 />
-              ) : null
-            )}
+              ) : null;
+            })}
           </div>
         </div>
       )}
@@ -246,15 +252,22 @@ export function MemberUnifiedTimeline({
 
 interface PeriodEntryProps {
   period: TimelinePeriod;
+  duration: string | null;
   isCurrent: boolean;
   getTypeName: (typeId: string | null | undefined) => string;
   onEdit?: (period: TimelinePeriod) => void;
   onClose?: (period: TimelinePeriod) => void;
 }
 
-function PeriodEntry({ period, isCurrent, getTypeName, onEdit, onClose }: PeriodEntryProps) {
+function PeriodEntry({
+  period,
+  duration,
+  isCurrent,
+  getTypeName,
+  onEdit,
+  onClose,
+}: PeriodEntryProps) {
   const isActive = !period.leaveDate;
-  const duration = calculateDuration(period.joinDate, period.leaveDate);
 
   return (
     <div className="relative flex gap-3">
@@ -352,6 +365,7 @@ function PeriodEntry({ period, isCurrent, getTypeName, onEdit, onClose }: Period
 
 interface StatusEntryProps {
   entry: StatusHistoryEntry;
+  duration: string | null;
   isCurrent: boolean;
   /** The new period created during this transition */
   linkedPeriod?: TimelinePeriod;
@@ -364,6 +378,7 @@ interface StatusEntryProps {
 
 function StatusEntry({
   entry,
+  duration,
   isCurrent,
   linkedPeriod,
   previousPeriod,
@@ -445,6 +460,9 @@ function StatusEntry({
 
             {/* Reason */}
             <p className="text-sm text-foreground">{entry.reason}</p>
+
+            {/* Duration */}
+            {duration && <p className="text-xs text-muted-foreground mt-0.5">{duration}</p>}
 
             {/* Left category label if present */}
             {entry.leftCategory && (
