@@ -105,7 +105,7 @@ describe('MemberUnifiedTimeline', () => {
     );
 
     expect(screen.getByText('Verlauf')).toBeInTheDocument();
-    // Type name resolved (may appear in today card + entry)
+    // Type name resolved (may appear in today card + period card)
     expect(screen.getAllByText('Ordentliches Mitglied').length).toBeGreaterThan(0);
     // Status entry: reason text
     expect(screen.getByText('Aufnahme durch Vorstand bestaetigt')).toBeInTheDocument();
@@ -122,10 +122,9 @@ describe('MemberUnifiedTimeline', () => {
       />
     );
 
-    // Type name appears in period card + virtual entry card
+    // Type name appears in period card (with Beitritt display)
     expect(screen.getAllByText('Passives Mitglied').length).toBeGreaterThan(0);
-    // Start date appears in period card + virtual entry card
-    expect(screen.getAllByText('15.01.2022').length).toBeGreaterThan(0);
+    expect(screen.getByText('15.01.2022')).toBeInTheDocument();
   });
 
   it('renders active period with "Aktiv" label and start date', () => {
@@ -141,8 +140,7 @@ describe('MemberUnifiedTimeline', () => {
 
     // "Aktiv" may appear in today card badge + period card indicator
     expect(screen.getAllByText('Aktiv').length).toBeGreaterThan(0);
-    // Date may appear in period card + virtual entry card
-    expect(screen.getAllByText('01.03.2024').length).toBeGreaterThan(0);
+    expect(screen.getByText('01.03.2024')).toBeInTheDocument();
   });
 
   it('renders status card with from/to badges and reason', () => {
@@ -321,7 +319,7 @@ describe('MemberUnifiedTimeline', () => {
       />
     );
 
-    // "Unbekannt" may appear in today card + period card
+    // "Unbekannt" may appear in today card + period card (initial entry display)
     expect(screen.getAllByText('Unbekannt').length).toBeGreaterThan(0);
   });
 
@@ -362,7 +360,7 @@ describe('MemberUnifiedTimeline', () => {
     expect(screen.getByText(/Gekuendigt zum/)).toBeInTheDocument();
   });
 
-  it('shows virtual entry card with "Beitritt" for earliest unlinked period', () => {
+  it('shows "Beitritt" entry display on earliest unlinked period card', () => {
     render(
       <MemberUnifiedTimeline
         periods={[closedPeriod]}
@@ -377,7 +375,7 @@ describe('MemberUnifiedTimeline', () => {
     expect(screen.getByText('Aufnahme als Mitglied')).toBeInTheDocument();
   });
 
-  it('does NOT show virtual entry card when earliest period has a linked transition', () => {
+  it('does NOT show "Beitritt" when earliest period has a linked transition', () => {
     // mockStatusEntry has effectiveDate '2024-03-01' matching mockPeriod.joinDate
     render(
       <MemberUnifiedTimeline

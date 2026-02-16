@@ -28,7 +28,7 @@ export interface TimelinePeriod {
 
 interface UnifiedEntry {
   id: string;
-  type: 'period' | 'status' | 'today' | 'entry' | 'exit';
+  type: 'period' | 'status' | 'today' | 'exit';
   date: string;
   period?: TimelinePeriod;
   statusEntry?: StatusHistoryEntry;
@@ -36,8 +36,6 @@ interface UnifiedEntry {
   linkedPeriod?: TimelinePeriod;
   /** The period that was closed during this transition (for old→new display) */
   previousPeriod?: TimelinePeriod;
-  /** For virtual entry/exit: the membership type ID of the new/current type */
-  virtualTypeId?: string | null;
   /** For virtual exit: the membership type ID being left */
   virtualFromTypeId?: string | null;
 }
@@ -182,22 +180,21 @@ export function MemberUnifiedTimeline({
     return statusHistory.some((t) => t.effectiveDate === earliestPeriod.joinDate);
   }, [earliestPeriod, statusHistory]);
 
-  // Inject virtual entries: today card, entry card (bottom), exit card (cancellation)
+  // Derive the initial status from the earliest transition's fromStatus
+  const initialStatus = useMemo(() => {
+    if (!statusHistory || statusHistory.length === 0) return memberStatus;
+    const oldest = statusHistory.reduce((o, t) => (t.effectiveDate < o.effectiveDate ? t : o));
+    return oldest.fromStatus;
+  }, [statusHistory, memberStatus]);
+
+  // ID of the earliest unlinked period (for "Beitritt" display)
+  const earliestUnlinkedPeriodId =
+    earliestPeriod && !earliestHasTransition ? earliestPeriod.id : null;
+
+  // Inject virtual entries: today card, exit card (cancellation)
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
   const timelineEntries = useMemo(() => {
     const result = [...mergedEntries];
-
-    // Virtual entry card at the bottom: "Beitritt" → first type
-    // Only when earliest period has no linked transition (migrated data)
-    if (earliestPeriod && !earliestHasTransition) {
-      const entryDate = earliestPeriod.joinDate ?? '';
-      result.push({
-        id: 'virtual-entry',
-        type: 'entry',
-        date: entryDate,
-        virtualTypeId: earliestPeriod.membershipTypeId,
-      });
-    }
 
     // Virtual exit card: current type → "Ehemaliges Mitglied" at cancellation date
     if (cancellationDate && memberStatus !== 'LEFT') {
@@ -211,7 +208,9 @@ export function MemberUnifiedTimeline({
     }
 
     // Re-sort after injecting virtual entries (descending by date)
-    result.sort((a, b) => b.date.localeCompare(a.date));
+    if (cancellationDate && memberStatus !== 'LEFT') {
+      result.sort((a, b) => b.date.localeCompare(a.date));
+    }
 
     // Inject today card at its correct position
     if (result.length > 0) {
@@ -228,15 +227,7 @@ export function MemberUnifiedTimeline({
     }
 
     return result;
-  }, [
-    mergedEntries,
-    today,
-    earliestPeriod,
-    earliestHasTransition,
-    cancellationDate,
-    memberStatus,
-    activePeriod,
-  ]);
+  }, [mergedEntries, today, cancellationDate, memberStatus, activePeriod]);
 
   // Loading state
   if (statusHistoryLoading && periods.length === 0) {
@@ -310,6 +301,10 @@ export function MemberUnifiedTimeline({
                     getTypeInfo={getTypeInfo}
                     onEdit={onEditPeriod}
                     onClose={onClosePeriod}
+                    isInitialEntry={entry.period.id === earliestUnlinkedPeriodId}
+                    initialStatus={
+                      entry.period.id === earliestUnlinkedPeriodId ? initialStatus : undefined
+                    }
                   />
                 ) : entry.type === 'status' && entry.statusEntry ? (
                   <StatusEntry
@@ -321,8 +316,6 @@ export function MemberUnifiedTimeline({
                     onEdit={onEditStatusEntry}
                     onDelete={onDeleteStatusEntry}
                   />
-                ) : entry.type === 'entry' ? (
-                  <EntryCard date={entry.date} typeInfo={getTypeInfo(entry.virtualTypeId)} />
                 ) : entry.type === 'exit' ? (
                   <ExitCard date={entry.date} fromTypeInfo={getTypeInfo(entry.virtualFromTypeId)} />
                 ) : null}
@@ -355,9 +348,21 @@ interface PeriodEntryProps {
   };
   onEdit?: (period: TimelinePeriod) => void;
   onClose?: (period: TimelinePeriod) => void;
+  /** When true, this is the earliest period — shows "Beitritt → Type" + initial status */
+  isInitialEntry?: boolean;
+  /** The member's initial status (before any transitions) */
+  initialStatus?: string;
 }
 
-function PeriodEntry({ period, isCurrent, getTypeInfo, onEdit, onClose }: PeriodEntryProps) {
+function PeriodEntry({
+  period,
+  isCurrent,
+  getTypeInfo,
+  onEdit,
+  onClose,
+  isInitialEntry,
+  initialStatus,
+}: PeriodEntryProps) {
   const isActive = !period.leaveDate;
   const typeInfo = getTypeInfo(period.membershipTypeId);
 
@@ -391,20 +396,41 @@ function PeriodEntry({ period, isCurrent, getTypeInfo, onEdit, onClose }: Period
               {period.joinDate ? formatDate(period.joinDate) : 'Unbekannt'}
             </p>
 
-            {/* Type badge + active indicator */}
-            <div className="flex items-center gap-2 mb-1.5">
-              <span
-                className={cn(
-                  'inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium',
-                  isActive
-                    ? 'bg-success/15 text-success border-success/25'
-                    : `${typeInfo.color.bg} ${typeInfo.color.text} ${typeInfo.color.border}`
+            {/* Initial entry: status badge + "Beitritt → Type" */}
+            {isInitialEntry && (
+              <>
+                {initialStatus && (
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <MemberStatusBadge status={initialStatus} />
+                  </div>
                 )}
-              >
-                {typeInfo.name}
-              </span>
-              {isActive && <span className="text-xs text-success font-medium">Aktiv</span>}
-            </div>
+                <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                  <span className="inline-flex items-center rounded-md border border-muted-foreground/25 bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    Beitritt
+                  </span>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <TypeBadge typeInfo={typeInfo} />
+                </div>
+                <p className="text-sm text-foreground">Aufnahme als Mitglied</p>
+              </>
+            )}
+
+            {/* Normal period: Type badge + active indicator */}
+            {!isInitialEntry && (
+              <div className="flex items-center gap-2 mb-1.5">
+                <span
+                  className={cn(
+                    'inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium',
+                    isActive
+                      ? 'bg-success/15 text-success border-success/25'
+                      : `${typeInfo.color.bg} ${typeInfo.color.text} ${typeInfo.color.border}`
+                  )}
+                >
+                  {typeInfo.name}
+                </span>
+                {isActive && <span className="text-xs text-success font-medium">Aktiv</span>}
+              </div>
+            )}
 
             {/* Notes */}
             {period.notes && (
@@ -640,38 +666,6 @@ function TodayCard({ memberStatus, typeInfo, hasActivePeriod, cancellationDate }
             Gekuendigt zum {formatDate(cancellationDate)}
           </p>
         )}
-      </div>
-    </div>
-  );
-}
-
-// ----------------------------------------------------------------------------
-// Entry card — virtual "first membership" marker at the bottom of the timeline
-// ----------------------------------------------------------------------------
-
-interface EntryCardProps {
-  date: string;
-  typeInfo: { name: string; color: { bg: string; text: string; border: string } };
-}
-
-function EntryCard({ date, typeInfo }: EntryCardProps) {
-  return (
-    <div className="relative flex gap-3">
-      <div className="relative z-10 flex items-start pt-1">
-        <div className="rounded-full bg-background">
-          <Circle className="h-6 w-6 shrink-0 fill-muted-foreground/30 text-muted-foreground/30" />
-        </div>
-      </div>
-      <div className="flex-1 rounded-md border border-border bg-muted/20 p-3 text-sm">
-        <p className="text-xs text-muted-foreground mb-1.5">{formatDate(date)}</p>
-        <div className="flex items-center gap-2 flex-wrap mb-1.5">
-          <span className="inline-flex items-center rounded-md border border-muted-foreground/25 bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-            Beitritt
-          </span>
-          <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <TypeBadge typeInfo={typeInfo} />
-        </div>
-        <p className="text-sm text-foreground">Aufnahme als Mitglied</p>
       </div>
     </div>
   );
