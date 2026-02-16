@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { STATUS_LABELS } from '@/lib/member-status-labels';
 import type { MemberListItem } from './member-list-table';
 import type { MembershipType } from '@/hooks/use-membership-types';
 
@@ -29,16 +30,6 @@ interface ExportColumn {
   /** Extract value from a member, optionally using membership types for lookup */
   getValue: (member: MemberListItem, membershipTypes?: MembershipType[]) => string;
 }
-
-/** Status German labels (6-state lifecycle) */
-const STATUS_LABELS: Record<string, string> = {
-  ACTIVE: 'Aktiv',
-  PROBATION: 'Probezeit',
-  DORMANT: 'Ruhend',
-  SUSPENDED: 'Gesperrt',
-  PENDING: 'Mitgliedschaft beantragt',
-  LEFT: 'Ausgetreten',
-};
 
 /**
  * Get the active membership period for a member.

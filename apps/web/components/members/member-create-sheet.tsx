@@ -28,6 +28,7 @@ import { useNumberRanges } from '@/hooks/use-number-ranges';
 import { useMembershipTypes } from '@/hooks/use-membership-types';
 import { useToast } from '@/hooks/use-toast';
 import { getTodayISO } from '@/lib/format-date';
+import { STATUS_LABELS } from '@/lib/member-status-labels';
 import { PersonTypeToggle } from './person-type-toggle';
 import { AddressAutocomplete } from './address-autocomplete';
 
@@ -44,15 +45,8 @@ const SALUTATION_OPTIONS = [
   { value: 'DIVERS', label: 'Divers' },
 ] as const;
 
-/** German labels for member status */
-const STATUS_OPTIONS = [
-  { value: 'PENDING', label: 'Mitgliedschaft beantragt' },
-  { value: 'PROBATION', label: 'Probezeit' },
-  { value: 'ACTIVE', label: 'Aktiv' },
-  { value: 'DORMANT', label: 'Ruhend' },
-  { value: 'SUSPENDED', label: 'Gesperrt' },
-  { value: 'LEFT', label: 'Ausgetreten' },
-] as const;
+/** Status options derived from shared labels */
+const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }));
 
 interface MemberCreateSheetProps {
   /** Club slug for API calls */

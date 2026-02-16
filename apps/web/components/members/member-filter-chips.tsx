@@ -4,17 +4,8 @@ import { X } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { MemberFilters, SetMemberFilters, MemberStatus } from '@/hooks/use-member-filters';
-
-/** German labels for member status values */
-const STATUS_LABELS: Record<MemberStatus, string> = {
-  ACTIVE: 'Aktiv',
-  PROBATION: 'Probezeit',
-  DORMANT: 'Ruhend',
-  SUSPENDED: 'Gesperrt',
-  PENDING: 'Mitgliedschaft beantragt',
-  LEFT: 'Ausgetreten',
-};
+import type { MemberFilters, SetMemberFilters } from '@/hooks/use-member-filters';
+import { STATUS_LABELS } from '@/lib/member-status-labels';
 
 /** Labels for household meta-options */
 const HOUSEHOLD_META_LABELS: Record<string, string> = {

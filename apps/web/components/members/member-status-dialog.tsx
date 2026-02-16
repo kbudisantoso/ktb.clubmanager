@@ -19,22 +19,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { DateInput } from '@/components/ui/date-input';
 import { useChangeStatus } from '@/hooks/use-members';
 import { useToast } from '@/hooks/use-toast';
+import { STATUS_LABELS, LEFT_CATEGORY_OPTIONS } from '@/lib/member-status-labels';
 import { MemberStatusBadge } from './member-status-badge';
 import type { MemberDetail } from '@/hooks/use-member-detail';
 
 // ============================================================================
 // Constants
 // ============================================================================
-
-/** German labels for each member status */
-const STATUS_LABELS: Record<string, string> = {
-  ACTIVE: 'Aktiv',
-  PROBATION: 'Probezeit',
-  DORMANT: 'Ruhend',
-  SUSPENDED: 'Gesperrt',
-  PENDING: 'Mitgliedschaft beantragt',
-  LEFT: 'Ausgetreten',
-};
 
 /** German descriptions for each transition */
 const TRANSITION_DESCRIPTIONS: Record<string, string> = {
@@ -45,14 +36,6 @@ const TRANSITION_DESCRIPTIONS: Record<string, string> = {
   LEFT: 'Mitglied tritt aus dem Verein aus. Dies ist endgültig.',
   PENDING: 'Mitglied wird zurück auf beantragt gesetzt.',
 };
-
-/** German labels for left categories */
-const LEFT_CATEGORY_OPTIONS = [
-  { value: 'VOLUNTARY', label: 'Freiwilliger Austritt' },
-  { value: 'EXCLUSION', label: 'Ausschluss' },
-  { value: 'DEATH', label: 'Tod' },
-  { value: 'OTHER', label: 'Sonstiges' },
-] as const;
 
 // ============================================================================
 // Types

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { formatDate, formatDateTime, calculateDuration } from '@/lib/format-date';
+import { LEFT_CATEGORY_LABELS } from '@/lib/member-status-labels';
 import { MemberStatusBadge } from './member-status-badge';
 import type { MembershipType } from '@/hooks/use-membership-types';
 import type { StatusHistoryEntry } from '@/hooks/use-members';
@@ -50,18 +51,6 @@ interface MemberUnifiedTimelineProps {
   /** Called when a period's close button is clicked */
   onClosePeriod?: (period: TimelinePeriod) => void;
 }
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-/** German labels for left categories */
-const LEFT_CATEGORY_LABELS: Record<string, string> = {
-  VOLUNTARY: 'Freiwilliger Austritt',
-  EXCLUSION: 'Ausschluss',
-  DEATH: 'Tod',
-  OTHER: 'Sonstiges',
-};
 
 // ============================================================================
 // Component

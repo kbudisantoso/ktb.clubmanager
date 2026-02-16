@@ -51,6 +51,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useBulkChangeStatus, useUpdateMember } from '@/hooks/use-members';
 import { useCreateHousehold } from '@/hooks/use-households';
 import { useToast } from '@/hooks/use-toast';
+import { STATUS_LABELS } from '@/lib/member-status-labels';
 import { MemberCsvExportDialog } from './member-csv-export';
 import type { MemberListItem } from './member-list-table';
 import type { MembershipType } from '@/hooks/use-membership-types';
@@ -58,16 +59,6 @@ import type { MembershipType } from '@/hooks/use-membership-types';
 // ============================================================================
 // Constants
 // ============================================================================
-
-/** German labels for status values (6-state lifecycle) */
-const STATUS_LABELS: Record<string, string> = {
-  ACTIVE: 'Aktiv',
-  PROBATION: 'Probezeit',
-  DORMANT: 'Ruhend',
-  SUSPENDED: 'Gesperrt',
-  PENDING: 'Mitgliedschaft beantragt',
-  LEFT: 'Ausgetreten',
-};
 
 /** Fields available for bulk editing */
 const BULK_EDIT_FIELDS = [{ value: 'city', label: 'Ort' }] as const;
