@@ -135,13 +135,21 @@ export function MemberUnifiedTimeline({
 
     if (statusHistory) {
       for (const entry of statusHistory) {
+        const linked = transitionPeriods.get(entry.id);
+        const previous = closedPeriods.get(entry.id);
+
+        // Hide self-transitions that have no period change (cancellation/revocation audit entries).
+        // These are already shown via the cancellation banner and TodayCard notice.
+        const isSelfTransition = entry.fromStatus === entry.toStatus;
+        if (isSelfTransition && !linked && !previous) continue;
+
         entries.push({
           id: `status-${entry.id}`,
           type: 'status',
           date: entry.effectiveDate,
           statusEntry: entry,
-          linkedPeriod: transitionPeriods.get(entry.id),
-          previousPeriod: closedPeriods.get(entry.id),
+          linkedPeriod: linked,
+          previousPeriod: previous,
         });
       }
     }

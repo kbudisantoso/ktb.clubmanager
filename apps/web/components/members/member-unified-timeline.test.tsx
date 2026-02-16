@@ -324,10 +324,19 @@ describe('MemberUnifiedTimeline', () => {
   });
 
   it('shows "Beitrittsanfrage" virtual label for PENDING member without period', () => {
+    // Use a non-self transition so it shows up in timeline (triggers TodayCard)
+    const pendingEntry: StatusHistoryEntry = {
+      ...mockStatusEntry,
+      fromStatus: 'ACTIVE',
+      toStatus: 'PENDING',
+      reason: 'Status zurueckgesetzt',
+      effectiveDate: '2024-01-15',
+    };
+
     render(
       <MemberUnifiedTimeline
         periods={[]}
-        statusHistory={[{ ...mockStatusEntry, fromStatus: 'PENDING', toStatus: 'PENDING' }]}
+        statusHistory={[pendingEntry]}
         statusHistoryLoading={false}
         memberStatus="PENDING"
       />
