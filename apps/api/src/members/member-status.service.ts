@@ -106,6 +106,10 @@ export class MemberStatusService {
         }
       }
 
+      // When re-entering from LEFT, clear cancellation fields
+      const clearCancellationData =
+        currentStatus === 'LEFT' ? { cancellationDate: null, cancellationReceivedAt: null } : {};
+
       const updated = await tx.member.update({
         where: { id: memberId },
         data: {
@@ -114,6 +118,7 @@ export class MemberStatusService {
           statusChangedBy: userId,
           statusChangeReason: reason,
           version: { increment: 1 },
+          ...clearCancellationData,
         },
       });
 
