@@ -2,15 +2,7 @@
 
 import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import {
-  MoreHorizontal,
-  RefreshCw,
-  Users,
-  UserX,
-  Calendar,
-  Trash2,
-  ShieldAlert,
-} from 'lucide-react';
+import { MoreHorizontal, Users, Calendar, Trash2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -29,14 +21,8 @@ import type { MemberDetail } from '@/hooks/use-member-detail';
 interface MemberDetailHeaderProps {
   /** Full member data */
   member: MemberDetail;
-  /** Called when "Status ändern" is clicked */
-  onChangeStatus?: () => void;
   /** Called when "Haushalt zuordnen" is clicked */
   onAssignHousehold?: () => void;
-  /** Called when "Mitgliedschaft beenden" is clicked */
-  onEndMembership?: () => void;
-  /** Called when "Kündigung erfassen" is clicked */
-  onRecordCancellation?: () => void;
   /** Called when "Löschen" is clicked */
   onDelete?: () => void;
   /** Called when "Anonymisieren" is clicked */
@@ -49,10 +35,7 @@ interface MemberDetailHeaderProps {
  */
 export function MemberDetailHeader({
   member,
-  onChangeStatus,
   onAssignHousehold,
-  onEndMembership,
-  onRecordCancellation,
   onDelete,
   onAnonymize,
 }: MemberDetailHeaderProps) {
@@ -155,29 +138,10 @@ export function MemberDetailHeader({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {member.status !== 'LEFT' && (
-              <DropdownMenuItem onClick={onChangeStatus}>
-                <RefreshCw className="h-4 w-4" />
-                Status ändern
-              </DropdownMenuItem>
-            )}
             <DropdownMenuItem onClick={onAssignHousehold}>
               <Users className="h-4 w-4" />
               {member.household ? 'Haushalt bearbeiten' : 'Haushalt zuordnen'}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onEndMembership}>
-              <UserX className="h-4 w-4" />
-              Mitgliedschaft beenden
-            </DropdownMenuItem>
-            {['ACTIVE', 'PROBATION', 'DORMANT', 'SUSPENDED'].includes(member.status) && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onRecordCancellation}>
-                  <Calendar className="h-4 w-4" />
-                  Kuendigung erfassen
-                </DropdownMenuItem>
-              </>
-            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" disabled={!isLeft} onClick={onDelete}>
               <Trash2 className="h-4 w-4" />

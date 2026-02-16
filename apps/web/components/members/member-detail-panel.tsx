@@ -19,7 +19,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useMember } from '@/hooks/use-member-detail';
 import { MemberDetailHeader } from './member-detail-header';
 import { MemberForm } from './member-form/member-form';
-import { MemberStatusDialog } from './member-status-dialog';
 import { MemberDeleteDialog } from './member-delete-dialog';
 import { MemberAnonymizeDialog } from './member-anonymize-dialog';
 
@@ -72,7 +71,6 @@ function DetailContent({
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
   const { data: member, isLoading, isError } = useMember(slug, memberId);
-  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [anonymizeDialogOpen, setAnonymizeDialogOpen] = useState(false);
 
@@ -134,26 +132,13 @@ function DetailContent({
       <div className="p-4 border-b">
         <MemberDetailHeader
           member={member}
-          onChangeStatus={() => setStatusDialogOpen(true)}
           onDelete={() => setDeleteDialogOpen(true)}
           onAnonymize={() => setAnonymizeDialogOpen(true)}
         />
       </div>
 
       {/* Form content — MemberForm manages its own scroll + fixed footer */}
-      <MemberForm
-        member={member}
-        slug={slug}
-        onChangeStatus={() => setStatusDialogOpen(true)}
-        onDirtyChange={handleDirtyChange}
-      />
-
-      {/* Status change dialog */}
-      <MemberStatusDialog
-        member={member}
-        open={statusDialogOpen}
-        onOpenChange={setStatusDialogOpen}
-      />
+      <MemberForm member={member} slug={slug} onDirtyChange={handleDirtyChange} />
 
       {/* Delete dialog */}
       <MemberDeleteDialog

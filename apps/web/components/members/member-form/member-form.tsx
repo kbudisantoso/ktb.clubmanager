@@ -27,8 +27,6 @@ interface MemberFormProps {
   member: MemberDetail;
   /** Club slug for API calls */
   slug: string;
-  /** Called when status change button is clicked */
-  onChangeStatus?: () => void;
   /** Called when the form dirty state changes */
   onDirtyChange?: (dirty: boolean) => void;
 }
@@ -75,7 +73,7 @@ function memberToFormValues(member: MemberDetail): FormValues {
  * Always-editable member form with vertical sections.
  * All fields are editable — a sticky save bar appears when the form is dirty.
  */
-export function MemberForm({ member, slug, onChangeStatus, onDirtyChange }: MemberFormProps) {
+export function MemberForm({ member, slug, onDirtyChange }: MemberFormProps) {
   const { toast } = useToast();
   const updateMember = useUpdateMember(slug);
 
@@ -184,7 +182,7 @@ export function MemberForm({ member, slug, onChangeStatus, onDirtyChange }: Memb
 
           {/* Section: Mitgliedschaft */}
           <SectionHeader title="Mitgliedschaft" />
-          <MembershipTab member={member} slug={slug} onChangeStatus={onChangeStatus} />
+          <MembershipTab member={member} slug={slug} />
 
           <Separator />
 
