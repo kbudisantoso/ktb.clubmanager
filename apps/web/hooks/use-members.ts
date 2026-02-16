@@ -372,6 +372,79 @@ export function useSetCancellation(slug: string) {
 }
 
 /**
+ * Update a status history entry (reason, effectiveDate, leftCategory).
+ * PATCH /api/clubs/:slug/members/:memberId/status-history/:transitionId
+ */
+export function useUpdateStatusHistory(slug: string, memberId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      transitionId,
+      ...data
+    }: {
+      transitionId: string;
+      reason?: string;
+      effectiveDate?: string;
+      leftCategory?: string;
+    }) => {
+      const res = await apiFetch(
+        `/api/clubs/${slug}/members/${memberId}/status-history/${transitionId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }
+      );
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || 'Fehler beim Aktualisieren des Eintrags');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: memberKeys.statusHistory(slug, memberId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: memberKeys.detail(slug, memberId),
+      });
+    },
+    retry: 1,
+  });
+}
+
+/**
+ * Delete a status history entry (soft-delete).
+ * DELETE /api/clubs/:slug/members/:memberId/status-history/:transitionId
+ */
+export function useDeleteStatusHistory(slug: string, memberId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (transitionId: string) => {
+      const res = await apiFetch(
+        `/api/clubs/${slug}/members/${memberId}/status-history/${transitionId}`,
+        { method: 'DELETE' }
+      );
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || 'Fehler beim Loeschen des Eintrags');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: memberKeys.statusHistory(slug, memberId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: memberKeys.detail(slug, memberId),
+      });
+    },
+  });
+}
+
+/**
  * Anonymize a member (DSGVO Art. 17).
  * Irreversible. Only for members with status LEFT.
  */
