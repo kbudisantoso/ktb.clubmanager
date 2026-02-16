@@ -121,10 +121,11 @@ describe('MemberUnifiedTimeline', () => {
     );
 
     expect(screen.getByText('Passives Mitglied')).toBeInTheDocument();
-    expect(screen.getByText('15.01.2022 - 31.12.2023')).toBeInTheDocument();
+    // Only start date shown (end date is implicit from next entry)
+    expect(screen.getByText('15.01.2022')).toBeInTheDocument();
   });
 
-  it('renders active period with "Aktiv" label and "heute" end date', () => {
+  it('renders active period with "Aktiv" label and start date', () => {
     render(
       <MemberUnifiedTimeline
         periods={[mockPeriod]}
@@ -136,7 +137,7 @@ describe('MemberUnifiedTimeline', () => {
     );
 
     expect(screen.getByText('Aktiv')).toBeInTheDocument();
-    expect(screen.getByText(/heute/)).toBeInTheDocument();
+    expect(screen.getByText('01.03.2024')).toBeInTheDocument();
   });
 
   it('renders status card with from/to badges and reason', () => {

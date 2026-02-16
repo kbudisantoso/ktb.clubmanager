@@ -31,8 +31,10 @@ interface UnifiedEntry {
   date: string;
   period?: TimelinePeriod;
   statusEntry?: StatusHistoryEntry;
-  /** For self-transitions: the new period that was created */
+  /** The new period created during this transition */
   linkedPeriod?: TimelinePeriod;
+  /** The period that was closed during this transition (for old→new display) */
+  previousPeriod?: TimelinePeriod;
 }
 
 interface MemberUnifiedTimelineProps {
@@ -92,9 +94,10 @@ export function MemberUnifiedTimeline({
   const mergedEntries = useMemo(() => {
     const entries: UnifiedEntry[] = [];
 
-    // Link each transition to its corresponding new period (matching joinDate)
+    // Link each transition to its corresponding new + previous period
     const linkedPeriodIds = new Set<string>();
     const transitionPeriods = new Map<string, TimelinePeriod>();
+    const closedPeriods = new Map<string, TimelinePeriod>();
 
     if (statusHistory) {
       for (const entry of statusHistory) {
@@ -102,6 +105,13 @@ export function MemberUnifiedTimeline({
         if (linked) {
           transitionPeriods.set(entry.id, linked);
           linkedPeriodIds.add(linked.id);
+        }
+        // Find the period that was closed at this transition's date
+        const previous = periods.find(
+          (p) => p.leaveDate === entry.effectiveDate && p.id !== linked?.id
+        );
+        if (previous) {
+          closedPeriods.set(entry.id, previous);
         }
       }
     }
@@ -126,6 +136,7 @@ export function MemberUnifiedTimeline({
           date: entry.effectiveDate,
           statusEntry: entry,
           linkedPeriod: transitionPeriods.get(entry.id),
+          previousPeriod: closedPeriods.get(entry.id),
         });
       }
     }
@@ -215,6 +226,7 @@ export function MemberUnifiedTimeline({
                   entry={entry.statusEntry}
                   isCurrent={i === currentEntryIndex}
                   linkedPeriod={entry.linkedPeriod}
+                  previousPeriod={entry.previousPeriod}
                   getTypeName={getTypeName}
                   onEdit={onEditStatusEntry}
                   onDelete={onDeleteStatusEntry}
@@ -269,11 +281,9 @@ function PeriodEntry({ period, isCurrent, getTypeName, onEdit, onClose }: Period
       >
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            {/* Date */}
+            {/* Date — start date only, end date is implicit from next entry */}
             <p className="text-xs text-muted-foreground mb-1.5">
               {period.joinDate ? formatDate(period.joinDate) : 'Unbekannt'}
-              {' - '}
-              {period.leaveDate ? formatDate(period.leaveDate) : 'heute'}
             </p>
 
             {/* Type badge + active indicator */}
@@ -297,6 +307,13 @@ function PeriodEntry({ period, isCurrent, getTypeName, onEdit, onClose }: Period
             {/* Notes */}
             {period.notes && (
               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{period.notes}</p>
+            )}
+
+            {/* Recorded timestamp */}
+            {period.createdAt && (
+              <p className="text-xs text-muted-foreground/60 mt-1.5">
+                Erfasst: {formatDateTime(period.createdAt)}
+              </p>
             )}
           </div>
 
@@ -336,8 +353,10 @@ function PeriodEntry({ period, isCurrent, getTypeName, onEdit, onClose }: Period
 interface StatusEntryProps {
   entry: StatusHistoryEntry;
   isCurrent: boolean;
-  /** Period created/assigned during this transition */
+  /** The new period created during this transition */
   linkedPeriod?: TimelinePeriod;
+  /** The period that was closed during this transition */
+  previousPeriod?: TimelinePeriod;
   getTypeName: (typeId: string | null | undefined) => string;
   onEdit?: (entry: StatusHistoryEntry) => void;
   onDelete?: (entry: StatusHistoryEntry) => void;
@@ -347,11 +366,14 @@ function StatusEntry({
   entry,
   isCurrent,
   linkedPeriod,
+  previousPeriod,
   getTypeName,
   onEdit,
   onDelete,
 }: StatusEntryProps) {
   const isSelfTransition = entry.fromStatus === entry.toStatus;
+  const typeBadgeClass =
+    'inline-flex items-center rounded-md border bg-muted px-2 py-0.5 text-xs font-medium text-foreground border-border';
 
   return (
     <div className="relative flex gap-3">
@@ -384,19 +406,22 @@ function StatusEntry({
             </p>
 
             {isSelfTransition ? (
-              /* Self-transition: show type change badge instead of from→to */
+              /* Self-transition: old type → new type */
               <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Mitgliedsart geaendert:
-                </span>
+                {previousPeriod && (
+                  <span className={typeBadgeClass}>
+                    {getTypeName(previousPeriod.membershipTypeId)}
+                  </span>
+                )}
+                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 {linkedPeriod && (
-                  <span className="inline-flex items-center rounded-md border bg-muted px-2 py-0.5 text-xs font-medium text-foreground border-border">
+                  <span className={typeBadgeClass}>
                     {getTypeName(linkedPeriod.membershipTypeId)}
                   </span>
                 )}
               </div>
             ) : (
-              /* Status transition: fromStatus -> toStatus, with optional type badge */
+              /* Status transition: fromStatus → toStatus, with optional type badge */
               <div className="space-y-1.5 mb-1.5">
                 <div className="flex items-center gap-2 flex-wrap">
                   <MemberStatusBadge status={entry.fromStatus} />
@@ -405,7 +430,7 @@ function StatusEntry({
                 </div>
                 {linkedPeriod && (
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center rounded-md border bg-muted px-2 py-0.5 text-xs font-medium text-foreground border-border">
+                    <span className={typeBadgeClass}>
                       {getTypeName(linkedPeriod.membershipTypeId)}
                     </span>
                   </div>
@@ -423,9 +448,9 @@ function StatusEntry({
               </p>
             )}
 
-            {/* CreatedAt timestamp */}
+            {/* Recorded timestamp */}
             <p className="text-xs text-muted-foreground/60 mt-1.5">
-              Erstellt: {formatDateTime(entry.createdAt)}
+              Erfasst: {formatDateTime(entry.createdAt)}
             </p>
           </div>
 
