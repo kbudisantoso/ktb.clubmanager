@@ -236,7 +236,7 @@ export const MemberStatusTransitionResponseSchema = z.object({
   id: z.string(),
   memberId: z.string(),
   clubId: z.string(),
-  fromStatus: MemberStatusSchema,
+  fromStatus: MemberStatusSchema, // Computed on read from chain walk (not stored in DB)
   toStatus: MemberStatusSchema,
   reason: z.string(),
   leftCategory: LeftCategorySchema.nullable().optional(),

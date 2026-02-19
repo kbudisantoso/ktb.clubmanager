@@ -28,7 +28,8 @@ model Club {
   /// Club visibility (PUBLIC = searchable, PRIVATE = invite-only)
   visibility ClubVisibility @default(PRIVATE)
   /// 8-char code for joining (XXXX-XXXX format stored without dash)
-  inviteCode String?        @unique
+  /// Uniqueness enforced via partial index (active records only) — see migration
+  inviteCode String?
 
   /// Preset color name for avatar fallback (blue, green, red, etc.)
   avatarColor String?
@@ -718,7 +719,7 @@ model MembershipPeriod {
   membershipTypeId   String?
   membershipType     MembershipType? @relation(fields: [membershipTypeId], references: [id])
   /// Optional notes about this period
-  notes              String?
+  notes                  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -738,8 +739,6 @@ model MemberStatusTransition {
   member        Member        @relation(fields: [memberId], references: [id])
   /// Club context for efficient querying
   clubId        String
-  /// Previous status before this transition
-  fromStatus    MemberStatus
   /// New status after this transition
   toStatus      MemberStatus
   /// Reason for the status change (visible in timeline)
@@ -753,9 +752,11 @@ model MemberStatusTransition {
   /// When this transition record was created
   createdAt     DateTime      @default(now())
   /// Soft delete timestamp
-  deletedAt     DateTime?
+  deletedAt              DateTime?
   /// User who deleted this entry
-  deletedBy     String?
+  deletedBy              String?
+  /// ID of the transition that caused this entry to be cascade-deleted (for reversibility)
+  deletedByTransitionId  String?
 
   @@index([memberId])
   @@index([clubId])

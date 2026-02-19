@@ -57,20 +57,38 @@ describe('VALID_TRANSITIONS', () => {
     expect(VALID_TRANSITIONS.PENDING).toEqual(['PROBATION', 'ACTIVE', 'LEFT']);
   });
 
-  it('should allow PROBATION -> ACTIVE, LEFT', () => {
-    expect(VALID_TRANSITIONS.PROBATION).toEqual(['ACTIVE', 'LEFT']);
+  it('should allow PROBATION -> PROBATION, ACTIVE, DORMANT, SUSPENDED, LEFT', () => {
+    expect(VALID_TRANSITIONS.PROBATION).toEqual([
+      'PROBATION',
+      'ACTIVE',
+      'DORMANT',
+      'SUSPENDED',
+      'LEFT',
+    ]);
   });
 
-  it('should allow ACTIVE -> DORMANT, SUSPENDED, LEFT', () => {
-    expect(VALID_TRANSITIONS.ACTIVE).toEqual(['DORMANT', 'SUSPENDED', 'LEFT']);
+  it('should allow ACTIVE -> ACTIVE, DORMANT, SUSPENDED, LEFT', () => {
+    expect(VALID_TRANSITIONS.ACTIVE).toEqual(['ACTIVE', 'DORMANT', 'SUSPENDED', 'LEFT']);
   });
 
-  it('should allow DORMANT -> ACTIVE, LEFT', () => {
-    expect(VALID_TRANSITIONS.DORMANT).toEqual(['ACTIVE', 'LEFT']);
+  it('should allow DORMANT -> DORMANT, ACTIVE, PROBATION, SUSPENDED, LEFT', () => {
+    expect(VALID_TRANSITIONS.DORMANT).toEqual([
+      'DORMANT',
+      'ACTIVE',
+      'PROBATION',
+      'SUSPENDED',
+      'LEFT',
+    ]);
   });
 
-  it('should allow SUSPENDED -> ACTIVE, DORMANT, LEFT', () => {
-    expect(VALID_TRANSITIONS.SUSPENDED).toEqual(['ACTIVE', 'DORMANT', 'LEFT']);
+  it('should allow SUSPENDED -> SUSPENDED, ACTIVE, DORMANT, PROBATION, LEFT', () => {
+    expect(VALID_TRANSITIONS.SUSPENDED).toEqual([
+      'SUSPENDED',
+      'ACTIVE',
+      'DORMANT',
+      'PROBATION',
+      'LEFT',
+    ]);
   });
 
   it('should make LEFT terminal (no transitions)', () => {
@@ -80,7 +98,7 @@ describe('VALID_TRANSITIONS', () => {
 
 describe('LeftCategorySchema', () => {
   it('should validate all left categories', () => {
-    const categories = ['VOLUNTARY', 'EXCLUSION', 'DEATH', 'OTHER'];
+    const categories = ['VOLUNTARY', 'EXCLUSION', 'REJECTED', 'DEATH', 'OTHER'];
     for (const c of categories) {
       expect(LeftCategorySchema.parse(c)).toBe(c);
     }
