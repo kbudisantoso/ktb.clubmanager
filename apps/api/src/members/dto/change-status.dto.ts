@@ -82,7 +82,7 @@ export class SetCancellationDto {
 
   @ApiProperty({
     description: 'Reason for the cancellation',
-    example: 'Kuendigung per Brief',
+    example: 'Kündigung per Brief',
     minLength: 1,
     maxLength: 500,
   })
@@ -95,7 +95,7 @@ export class SetCancellationDto {
 export class RevokeCancellationDto {
   @ApiPropertyOptional({
     description: 'Reason for revoking the cancellation',
-    example: 'Mitglied hat Kuendigung zurueckgezogen',
+    example: 'Mitglied hat Kündigung zurückgezogen',
     maxLength: 500,
   })
   @IsString()

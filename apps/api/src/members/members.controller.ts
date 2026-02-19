@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Query, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength, IsOptional } from 'class-validator';
 import {
   RequireClubContext,
   GetClubContext,
@@ -29,6 +29,12 @@ class SoftDeleteBodyDto {
   @IsNotEmpty({ message: 'Begruendung ist erforderlich' })
   @MaxLength(500, { message: 'Begruendung darf maximal 500 Zeichen lang sein' })
   reason!: string;
+}
+
+class LinkUserBodyDto {
+  @IsString({ message: 'userId muss ein Text sein' })
+  @IsOptional()
+  userId!: string | null;
 }
 
 @ApiTags('Members')
@@ -197,6 +203,29 @@ export class MembersController {
     return this.membersService.anonymize(ctx.clubId, id, userId);
   }
 
+  @Post(':id/change-status/preview')
+  @RequirePermission(Permission.MEMBER_READ)
+  @ApiOperation({ summary: 'Preview impact of a status change (dry run)' })
+  @ApiParam({ name: 'id', description: 'Member ID' })
+  @ApiResponse({ status: 200, description: 'Preview of chain recalculation impact' })
+  @ApiResponse({ status: 404, description: 'Member not found' })
+  async previewChangeStatus(
+    @GetClubContext() ctx: ClubContext,
+    @Param('id') id: string,
+    @Body() dto: ChangeStatusDto,
+    @CurrentUser('id') userId: string
+  ) {
+    return this.memberStatusService.previewChangeStatus(
+      ctx.clubId,
+      id,
+      dto.newStatus,
+      dto.reason,
+      userId,
+      dto.effectiveDate,
+      dto.leftCategory
+    );
+  }
+
   @Post(':id/change-status')
   @RequirePermission(Permission.MEMBER_UPDATE)
   @ApiOperation({ summary: 'Change member status (validates transitions)' })
@@ -278,5 +307,29 @@ export class MembersController {
       userId,
       dto.leftCategory
     );
+  }
+
+  @Get(':id/linkable-users')
+  @RequirePermission(Permission.USERS_UPDATE)
+  @ApiOperation({ summary: 'Get users that can be linked to this member' })
+  @ApiParam({ name: 'id', description: 'Member ID' })
+  @ApiResponse({ status: 200, description: 'Linkable users with match info' })
+  async getLinkableUsers(@GetClubContext() ctx: ClubContext, @Param('id') id: string) {
+    return this.membersService.getLinkableUsers(ctx.clubId, id);
+  }
+
+  @Patch(':id/link-user')
+  @RequirePermission(Permission.USERS_UPDATE)
+  @ApiOperation({ summary: 'Link or unlink a user account to a member' })
+  @ApiParam({ name: 'id', description: 'Member ID' })
+  @ApiResponse({ status: 200, description: 'Member updated' })
+  @ApiResponse({ status: 400, description: 'User not in this club' })
+  @ApiResponse({ status: 409, description: 'User already linked to another member' })
+  async linkUser(
+    @GetClubContext() ctx: ClubContext,
+    @Param('id') id: string,
+    @Body() body: LinkUserBodyDto
+  ) {
+    return this.membersService.linkUser(ctx.clubId, id, body.userId);
   }
 }

@@ -1,36 +1,55 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { SystemUserService } from '../../common/services/system-user.service.js';
+import { MemberStatusService } from '../member-status.service.js';
+import type { LeftCategory, MemberStatus } from '@ktb/shared';
 
 /**
  * Scheduled service for automatic member status transitions.
  *
- * Runs cross-tenant by design - the system job processes all clubs.
- * Uses raw prisma (NOT forClub) since this is a system-level operation.
+ * Runs cross-tenant by design — the system job processes all clubs.
+ * Uses MemberStatusService.changeStatus() for full chain validation.
+ *
+ * Also runs on application startup to catch up on any cancellations
+ * that were missed while the server was down (e.g., dev restarts).
  */
 @Injectable()
-export class MemberSchedulerService {
+export class MemberSchedulerService implements OnApplicationBootstrap {
   private readonly logger = new Logger(MemberSchedulerService.name);
 
   constructor(
     private prisma: PrismaService,
-    private systemUserService: SystemUserService
+    private systemUserService: SystemUserService,
+    private memberStatusService: MemberStatusService
   ) {}
+
+  /**
+   * On application startup, run the cancellation check to catch up
+   * on any cancellations that expired while the server was offline.
+   */
+  async onApplicationBootstrap() {
+    // Small delay to ensure all services are fully initialized
+    setTimeout(() => {
+      this.handleCancellationTransitions().catch((err) => {
+        this.logger.error(`Startup cancellation catch-up failed: ${err.message}`);
+      });
+    }, 5000);
+  }
 
   /**
    * Daily cron job: Auto-transition members with expired cancellation dates to LEFT.
    *
    * Finds all cancellable members (ACTIVE, PROBATION, DORMANT, SUSPENDED)
    * where cancellationDate <= today and transitions them to LEFT status.
-   * Creates MemberStatusTransition audit trail for each auto-transition.
+   * Uses MemberStatusService.changeStatus() for proper chain recalculation.
    */
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleCancellationTransitions() {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
-    this.logger.log('Starting daily cancellation auto-transition check...');
+    this.logger.log('Starting cancellation auto-transition check...');
 
     const members = await this.prisma.member.findMany({
       where: {
@@ -38,12 +57,11 @@ export class MemberSchedulerService {
         cancellationDate: { lte: today },
         deletedAt: null,
       },
-      include: {
-        membershipPeriods: {
-          where: { leaveDate: null },
-          orderBy: { joinDate: 'desc' },
-          take: 1,
-        },
+      select: {
+        id: true,
+        clubId: true,
+        memberNumber: true,
+        cancellationDate: true,
       },
     });
 
@@ -55,42 +73,33 @@ export class MemberSchedulerService {
     for (const member of members) {
       try {
         const systemUserId = this.systemUserService.getSystemUserId();
+        const cancellationDate = member.cancellationDate!;
+        const effectiveDate = `${cancellationDate.getUTCFullYear()}-${String(cancellationDate.getUTCMonth() + 1).padStart(2, '0')}-${String(cancellationDate.getUTCDate()).padStart(2, '0')}`;
 
-        await this.prisma.$transaction(async (tx) => {
-          // Create audit trail record
-          await tx.memberStatusTransition.create({
-            data: {
-              memberId: member.id,
-              clubId: member.clubId,
-              fromStatus: member.status,
-              toStatus: 'LEFT',
-              reason: 'Automatischer Austritt nach Ablauf der Kuendigungsfrist',
-              leftCategory: 'VOLUNTARY',
-              effectiveDate: member.cancellationDate!,
-              actorId: systemUserId,
-            },
-          });
-
-          // Update status to LEFT
-          await tx.member.update({
-            where: { id: member.id },
-            data: {
-              status: 'LEFT',
-              statusChangedAt: new Date(),
-              statusChangedBy: systemUserId,
-              statusChangeReason: 'Automatischer Austritt nach Ablauf der Kuendigungsfrist',
-            },
-          });
-
-          // Close active membership period
-          const activePeriod = member.membershipPeriods[0];
-          if (activePeriod) {
-            await tx.membershipPeriod.update({
-              where: { id: activePeriod.id },
-              data: { leaveDate: member.cancellationDate },
-            });
-          }
+        // Remove any self-transition audit entries on the cancellation date
+        // (created by setCancellation for future cancellations that have now arrived).
+        // This prevents the one-entry-per-day constraint from blocking the LEFT transition.
+        await this.prisma.memberStatusTransition.deleteMany({
+          where: {
+            memberId: member.id,
+            clubId: member.clubId,
+            effectiveDate: cancellationDate,
+            deletedAt: null,
+            // Only delete self-transitions (non-LEFT), not real status changes
+            toStatus: { not: 'LEFT' },
+          },
         });
+
+        // Use changeStatus for full chain validation and recalculation
+        await this.memberStatusService.changeStatus(
+          member.clubId,
+          member.id,
+          'LEFT' as MemberStatus,
+          'Automatischer Austritt nach Ablauf der Kündigungsfrist',
+          systemUserId,
+          effectiveDate,
+          'VOLUNTARY' as LeftCategory
+        );
 
         successCount++;
         this.logger.log(

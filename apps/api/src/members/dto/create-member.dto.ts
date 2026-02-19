@@ -185,7 +185,7 @@ export class CreateMemberDto {
   // --- Contact ---
 
   @ApiPropertyOptional({ description: 'Email for club communication', example: 'max@example.com' })
-  @IsEmail({}, { message: 'Ungueltige E-Mail-Adresse' })
+  @IsEmail({}, { message: 'Ungültige E-Mail-Adresse' })
   @IsOptional()
   email?: string;
 
