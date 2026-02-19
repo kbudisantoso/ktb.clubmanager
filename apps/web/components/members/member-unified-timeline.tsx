@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { ArrowRight, AlertTriangle, Circle, Edit, Trash2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { formatDate, formatDateTime, calculateDuration } from '@/lib/format-date';
 import { LEFT_CATEGORY_LABELS } from '@/lib/member-status-labels';
@@ -53,6 +54,8 @@ interface MemberUnifiedTimelineProps {
   memberStatus: string;
   /** Cancellation date if present (YYYY-MM-DD or ISO string) */
   cancellationDate?: string | null;
+  /** Whether this member has a formally received cancellation */
+  hasFormalCancellation?: boolean;
   /** Called when a period's edit button is clicked */
   onEditPeriod?: (period: TimelinePeriod) => void;
   /** Called when a period's close button is clicked */
@@ -82,6 +85,7 @@ export function MemberUnifiedTimeline({
   membershipTypes,
   memberStatus,
   cancellationDate,
+  hasFormalCancellation,
   onEditPeriod,
   onClosePeriod,
   onEditStatusEntry,
@@ -159,7 +163,14 @@ export function MemberUnifiedTimeline({
     return entries.sort((a, b) => b.date.localeCompare(a.date));
   }, [periods, statusHistory]);
 
-  const activePeriod = periods.find((p) => !p.leaveDate);
+  const activePeriod = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    // Period containing today: joinDate <= today AND (leaveDate > today OR open)
+    return (
+      periods.find((p) => (p.joinDate ?? '') <= today && (!p.leaveDate || p.leaveDate > today)) ??
+      null
+    );
+  }, [periods]);
   const hasActivePeriod = !!activePeriod;
   const showNoPeriodBanner = memberStatus === 'ACTIVE' && !hasActivePeriod;
 
@@ -187,14 +198,37 @@ export function MemberUnifiedTimeline({
     return oldest.fromStatus;
   }, [statusHistory, memberStatus]);
 
-  // ID of the earliest unlinked period (for "Beitritt" display)
+  // ID of the earliest unlinked period (for "Beitritt" display).
+  // Skip if a PENDING→non-PENDING transition exists — that transition IS the entry event.
+  const hasEntryTransition = useMemo(() => {
+    if (!statusHistory) return false;
+    return statusHistory.some((t) => t.fromStatus === 'PENDING' && t.toStatus !== 'PENDING');
+  }, [statusHistory]);
+
   const earliestUnlinkedPeriodId =
-    earliestPeriod && !earliestHasTransition ? earliestPeriod.id : null;
+    earliestPeriod && !earliestHasTransition && !hasEntryTransition ? earliestPeriod.id : null;
+
+  // For LEFT members: find the LEFT transition date to hide entries after it
+  const leftTransitionDate = useMemo(() => {
+    if (memberStatus !== 'LEFT' || !statusHistory?.length) return null;
+    const leftEntry = statusHistory.find((t) => t.toStatus === 'LEFT');
+    return leftEntry?.effectiveDate ?? null;
+  }, [memberStatus, statusHistory]);
 
   // Inject virtual entries: today card, exit card (cancellation)
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
   const timelineEntries = useMemo(() => {
-    const result = [...mergedEntries];
+    let result = [...mergedEntries];
+
+    // For LEFT members: hide entries after the LEFT transition date
+    if (leftTransitionDate) {
+      result = result.filter((e) => {
+        // Always keep the LEFT transition itself
+        if (e.statusEntry?.toStatus === 'LEFT') return true;
+        // Hide entries strictly after the LEFT date
+        return e.date <= leftTransitionDate;
+      });
+    }
 
     // Virtual exit card: current type → "Ehemaliges Mitglied" at cancellation date
     if (cancellationDate && memberStatus !== 'LEFT') {
@@ -227,7 +261,7 @@ export function MemberUnifiedTimeline({
     }
 
     return result;
-  }, [mergedEntries, today, cancellationDate, memberStatus, activePeriod]);
+  }, [mergedEntries, today, cancellationDate, memberStatus, activePeriod, leftTransitionDate]);
 
   // Loading state
   if (statusHistoryLoading && periods.length === 0) {
@@ -315,6 +349,7 @@ export function MemberUnifiedTimeline({
                     getTypeInfo={getTypeInfo}
                     onEdit={onEditStatusEntry}
                     onDelete={onDeleteStatusEntry}
+                    deleteGuarded={entry.statusEntry.toStatus === 'LEFT' && !!hasFormalCancellation}
                   />
                 ) : entry.type === 'exit' ? (
                   <ExitCard date={entry.date} fromTypeInfo={getTypeInfo(entry.virtualFromTypeId)} />
@@ -415,20 +450,20 @@ function PeriodEntry({
               </>
             )}
 
-            {/* Normal period: Type badge + active indicator */}
+            {/* Normal period: Type badge + current indicator */}
             {!isInitialEntry && (
               <div className="flex items-center gap-2 mb-1.5">
                 <span
                   className={cn(
                     'inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium',
-                    isActive
+                    isCurrent
                       ? 'bg-success/15 text-success border-success/25'
                       : `${typeInfo.color.bg} ${typeInfo.color.text} ${typeInfo.color.border}`
                   )}
                 >
                   {typeInfo.name}
                 </span>
-                {isActive && <span className="text-xs text-success font-medium">Aktiv</span>}
+                {isCurrent && <span className="text-xs text-success font-medium">Aktuell</span>}
               </div>
             )}
 
@@ -491,6 +526,8 @@ interface StatusEntryProps {
   };
   onEdit?: (entry: StatusHistoryEntry) => void;
   onDelete?: (entry: StatusHistoryEntry) => void;
+  /** When true, the delete button is disabled — user must use "Kuendigung widerrufen" */
+  deleteGuarded?: boolean;
 }
 
 function StatusEntry({
@@ -501,6 +538,7 @@ function StatusEntry({
   getTypeInfo,
   onEdit,
   onDelete,
+  deleteGuarded,
 }: StatusEntryProps) {
   const isSelfTransition = entry.fromStatus === entry.toStatus;
   const hasTypeChange =
@@ -597,18 +635,41 @@ function StatusEntry({
                   <span className="sr-only">Bearbeiten</span>
                 </Button>
               )}
-              {onDelete && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-destructive hover:text-destructive"
-                  onClick={() => onDelete(entry)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span className="sr-only">Loeschen</span>
-                </Button>
-              )}
+              {onDelete &&
+                (deleteGuarded ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span tabIndex={0}>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground"
+                            disabled
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span className="sr-only">Löschen</span>
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">
+                        Nutze &quot;Kündigung widerrufen&quot; um diesen Eintrag zu entfernen
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive hover:text-destructive"
+                    onClick={() => onDelete(entry)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span className="sr-only">Löschen</span>
+                  </Button>
+                ))}
             </div>
           )}
         </div>

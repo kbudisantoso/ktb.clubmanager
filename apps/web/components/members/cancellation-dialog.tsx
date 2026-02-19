@@ -74,7 +74,7 @@ export function CancellationDialog({ member, open, onOpenChange }: CancellationD
         reason: reason.trim(),
       });
 
-      toast({ title: 'Kuendigung erfasst' });
+      toast({ title: 'Kündigung erfasst' });
       handleClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ein unbekannter Fehler ist aufgetreten');
@@ -93,9 +93,9 @@ export function CancellationDialog({ member, open, onOpenChange }: CancellationD
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Kuendigung erfassen</DialogTitle>
+          <DialogTitle>Kündigung erfassen</DialogTitle>
           <DialogDescription>
-            Kuendigung fuer {member.firstName} {member.lastName} erfassen.
+            Kündigung für {member.firstName} {member.lastName} erfassen.
           </DialogDescription>
         </DialogHeader>
 
@@ -103,7 +103,7 @@ export function CancellationDialog({ member, open, onOpenChange }: CancellationD
           {/* Cancellation date — when the membership ends */}
           <div className="space-y-1.5">
             <Label>
-              Kuendigungsdatum <span className="text-destructive">*</span>
+              Kündigungsdatum <span className="text-destructive">*</span>
             </Label>
             <DateInput value={cancellationDate} onChange={(v) => setCancellationDate(v)} />
             <p className="text-xs text-muted-foreground">Wann endet die Mitgliedschaft?</p>
@@ -118,7 +118,7 @@ export function CancellationDialog({ member, open, onOpenChange }: CancellationD
               value={cancellationReceivedAt}
               onChange={(v) => setCancellationReceivedAt(v)}
             />
-            <p className="text-xs text-muted-foreground">Wann wurde die Kuendigung eingereicht?</p>
+            <p className="text-xs text-muted-foreground">Wann wurde die Kündigung eingereicht?</p>
           </div>
 
           {/* Reason */}
@@ -128,7 +128,7 @@ export function CancellationDialog({ member, open, onOpenChange }: CancellationD
             </Label>
             <Textarea
               id="cancellation-reason"
-              placeholder="Grund fuer die Kuendigung..."
+              placeholder="Grund für die Kündigung..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               maxLength={500}
@@ -157,7 +157,7 @@ export function CancellationDialog({ member, open, onOpenChange }: CancellationD
             disabled={!isValid || setCancellation.isPending}
           >
             {setCancellation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Kuendigung speichern
+            Kündigung speichern
           </Button>
         </DialogFooter>
       </DialogContent>

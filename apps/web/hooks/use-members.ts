@@ -162,6 +162,52 @@ export function useMemberStatusHistory(slug: string, memberId: string | undefine
   });
 }
 
+/**
+ * Chain recalculation preview result from the preview endpoint.
+ */
+export interface ChainRecalculationPreview {
+  removedTransitions: Array<{
+    id: string;
+    toStatus: string;
+    effectiveDate: string;
+    reason: string;
+  }>;
+  restoredTransitions: Array<{ id: string; toStatus: string; effectiveDate: string }>;
+  closedPeriods: Array<{ id: string; joinDate: string; closedAt: string }>;
+  reopenedPeriods: Array<{ id: string; joinDate: string }>;
+  finalMemberStatus: string;
+  hasChanges: boolean;
+}
+
+/**
+ * Preview the impact of a status change before committing.
+ * Calls the dry-run preview endpoint.
+ */
+export function usePreviewChangeStatus(slug: string) {
+  return useMutation<ChainRecalculationPreview, Error, Omit<ChangeStatusInput, 'membershipTypeId'>>(
+    {
+      mutationFn: async ({ id, newStatus, reason, effectiveDate, leftCategory }) => {
+        const res = await apiFetch(`/api/clubs/${slug}/members/${id}/change-status/preview`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            newStatus,
+            reason: reason || 'preview',
+            ...(effectiveDate && { effectiveDate }),
+            ...(leftCategory && { leftCategory }),
+          }),
+        });
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({}));
+          throw new Error(error.message || 'Vorschau fehlgeschlagen');
+        }
+        return res.json();
+      },
+      retry: 0,
+    }
+  );
+}
+
 // ============================================================================
 // Mutation Hooks
 // ============================================================================
@@ -365,7 +411,7 @@ export function useSetCancellation(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Fehler beim Erfassen der Kuendigung');
+        throw new Error(error.message || 'Fehler beim Erfassen der Kündigung');
       }
       return res.json();
     },
@@ -375,6 +421,9 @@ export function useSetCancellation(slug: string) {
       });
       queryClient.invalidateQueries({
         queryKey: memberKeys.statusHistory(slug, variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['membershipPeriods', slug, variables.id],
       });
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
     },
@@ -398,7 +447,7 @@ export function useRevokeCancellation(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Fehler beim Widerrufen der Kuendigung');
+        throw new Error(error.message || 'Fehler beim Widerrufen der Kündigung');
       }
       return res.json();
     },
@@ -408,6 +457,9 @@ export function useRevokeCancellation(slug: string) {
       });
       queryClient.invalidateQueries({
         queryKey: memberKeys.statusHistory(slug, variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['membershipPeriods', slug, variables.id],
       });
       queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
     },
@@ -453,6 +505,9 @@ export function useUpdateStatusHistory(slug: string, memberId: string) {
       queryClient.invalidateQueries({
         queryKey: memberKeys.detail(slug, memberId),
       });
+      queryClient.invalidateQueries({
+        queryKey: ['membershipPeriods', slug, memberId],
+      });
     },
     retry: 1,
   });
@@ -473,7 +528,7 @@ export function useDeleteStatusHistory(slug: string, memberId: string) {
       );
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Fehler beim Loeschen des Eintrags');
+        throw new Error(error.message || 'Fehler beim Löschen des Eintrags');
       }
       return res.json();
     },
@@ -483,6 +538,9 @@ export function useDeleteStatusHistory(slug: string, memberId: string) {
       });
       queryClient.invalidateQueries({
         queryKey: memberKeys.detail(slug, memberId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['membershipPeriods', slug, memberId],
       });
     },
   });
@@ -511,6 +569,69 @@ export function useAnonymizeMember(slug: string) {
     },
     onError: (error) => {
       throw error;
+    },
+  });
+}
+
+// ============================================================================
+// User Linking
+// ============================================================================
+
+export interface LinkableUser {
+  userId: string;
+  name: string;
+  email: string;
+  image: string | null;
+}
+
+interface LinkableUsersResponse {
+  users: LinkableUser[];
+  currentLink: string | null;
+  member: { email: string | null; firstName: string; lastName: string };
+}
+
+/**
+ * Fetch users that can be linked to a member.
+ * Returns club users not already linked to another member.
+ */
+export function useLinkableUsers(slug: string, memberId: string | undefined) {
+  return useQuery<LinkableUsersResponse>({
+    queryKey: [...memberKeys.detail(slug, memberId ?? ''), 'linkable-users'],
+    queryFn: async () => {
+      const res = await apiFetch(`/api/clubs/${slug}/members/${memberId}/linkable-users`);
+      if (!res.ok) {
+        throw new Error('Fehler beim Laden der Benutzer');
+      }
+      return res.json();
+    },
+    enabled: !!memberId,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Link or unlink a user account to a member.
+ * Pass userId = null to unlink.
+ */
+export function useLinkMember(slug: string, memberId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (userId: string | null) => {
+      const res = await apiFetch(`/api/clubs/${slug}/members/${memberId}/link-user`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || 'Fehler beim Verknuepfen');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: memberKeys.detail(slug, memberId) });
+      queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
     },
   });
 }

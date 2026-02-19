@@ -107,7 +107,7 @@ export function StatusHistoryEditDialog({
         <DialogHeader>
           <DialogTitle>Statuseintrag bearbeiten</DialogTitle>
           <DialogDescription>
-            Aendern Sie Grund, Datum oder Kategorie des Eintrags.
+            Ändern Sie Grund, Datum oder Kategorie des Eintrags.
           </DialogDescription>
         </DialogHeader>
 
@@ -119,7 +119,7 @@ export function StatusHistoryEditDialog({
             </Label>
             <Textarea
               id="status-history-reason"
-              placeholder="Grund fuer die Statusaenderung..."
+              placeholder="Grund für die Statusänderung..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               maxLength={500}
@@ -133,7 +133,7 @@ export function StatusHistoryEditDialog({
           {/* Effective date */}
           <div className="space-y-1.5">
             <Label>
-              Gueltig ab <span className="text-destructive">*</span>
+              Gültig ab <span className="text-destructive">*</span>
             </Label>
             <DateInput value={effectiveDate} onChange={(v) => setEffectiveDate(v)} />
           </div>

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react';
 import type { MemberStatus, NamedTransition } from '@ktb/shared';
 import {
   Dialog,
@@ -25,7 +25,8 @@ import {
 } from '@/components/ui/select';
 import { DateInput } from '@/components/ui/date-input';
 import { MemberStatusBadge } from './member-status-badge';
-import { useChangeStatus } from '@/hooks/use-members';
+import { useChangeStatus, usePreviewChangeStatus } from '@/hooks/use-members';
+import type { ChainRecalculationPreview } from '@/hooks/use-members';
 import { useMembershipTypes } from '@/hooks/use-membership-types';
 import { useToast } from '@/hooks/use-toast';
 import { STATUS_LABELS, LEFT_CATEGORY_OPTIONS } from '@/lib/member-status-labels';
@@ -71,6 +72,7 @@ export function StatusTransitionDialog({
   const slug = params.slug;
   const { toast } = useToast();
   const changeStatus = useChangeStatus(slug);
+  const previewMutation = usePreviewChangeStatus(slug);
   const { data: membershipTypes } = useMembershipTypes(slug);
 
   const [reason, setReason] = useState('');
@@ -78,6 +80,44 @@ export function StatusTransitionDialog({
   const [leftCategory, setLeftCategory] = useState<string | null>(null);
   const [membershipTypeId, setMembershipTypeId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<ChainRecalculationPreview | null>(null);
+  const [previewExpanded, setPreviewExpanded] = useState(false);
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounced preview call when effectiveDate changes
+  const triggerPreview = useCallback(
+    (date: string | undefined) => {
+      if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+      setPreview(null);
+
+      if (!date) return;
+
+      previewTimerRef.current = setTimeout(() => {
+        previewMutation.mutate(
+          {
+            id: member.id,
+            newStatus: targetStatus,
+            reason: reason || 'preview',
+            effectiveDate: date,
+            ...(targetStatus === 'LEFT' && leftCategory ? { leftCategory } : {}),
+          },
+          {
+            onSuccess: (data) => setPreview(data),
+            onError: () => setPreview(null),
+          }
+        );
+      }, 500);
+    },
+    [member.id, targetStatus, reason, leftCategory, previewMutation]
+  );
+
+  // Trigger preview when effectiveDate changes
+  useEffect(() => {
+    triggerPreview(effectiveDate);
+    return () => {
+      if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+    };
+  }, [effectiveDate]);
 
   const isToLeft = targetStatus === 'LEFT';
   const isSelfTransition = member.status === targetStatus;
@@ -113,8 +153,12 @@ export function StatusTransitionDialog({
     if (!open || !membershipTypes?.length) return;
 
     if (isSelfTransition) {
-      // Self-transition: pre-select current type
-      const activePeriod = member.membershipPeriods?.find((p) => !p.leaveDate);
+      // Self-transition: pre-select current type (period containing today)
+      const today = new Date().toISOString().slice(0, 10);
+      const allPeriods = member.membershipPeriods ?? [];
+      const activePeriod = allPeriods.find(
+        (p) => (p.joinDate ?? '') <= today && (!p.leaveDate || p.leaveDate > today)
+      );
       setMembershipTypeId(activePeriod?.membershipTypeId ?? '');
     } else if (member.status === 'PENDING') {
       // PENDING activation: pre-select default type
@@ -149,8 +193,8 @@ export function StatusTransitionDialog({
 
       toast({
         title: isSelfTransition
-          ? 'Mitgliedsart geaendert'
-          : `Status auf "${STATUS_LABELS[targetStatus]}" geaendert`,
+          ? 'Mitgliedsart geändert'
+          : `Status auf "${STATUS_LABELS[targetStatus]}" geändert`,
       });
       handleClose();
     } catch (err) {
@@ -164,6 +208,9 @@ export function StatusTransitionDialog({
     setLeftCategory(null);
     setMembershipTypeId('');
     setError(null);
+    setPreview(null);
+    setPreviewExpanded(false);
+    if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
     onOpenChange(false);
   };
 
@@ -235,7 +282,7 @@ export function StatusTransitionDialog({
               </Label>
               <Select value={membershipTypeId} onValueChange={setMembershipTypeId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Mitgliedsart waehlen" />
+                  <SelectValue placeholder="Mitgliedsart wählen" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableTypes.map((t) => (
@@ -260,7 +307,7 @@ export function StatusTransitionDialog({
             </Label>
             <Textarea
               id="transition-reason"
-              placeholder="Grund fuer die Statusaenderung..."
+              placeholder="Grund für die Statusänderung..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               maxLength={500}
@@ -273,12 +320,76 @@ export function StatusTransitionDialog({
 
           {/* Effective date — defaults to today */}
           <div className="space-y-1.5">
-            <Label>Gueltig ab</Label>
+            <Label>Gültig ab</Label>
             <DateInput
               value={effectiveDate ?? getTodayISO()}
               onChange={(v) => setEffectiveDate(v)}
             />
           </div>
+
+          {/* Chain recalculation preview */}
+          {preview?.hasChanges && (
+            <div className="rounded-md border border-amber-500/25 bg-amber-500/10 p-3 space-y-2">
+              <button
+                type="button"
+                onClick={() => setPreviewExpanded((v) => !v)}
+                className="flex w-full items-center gap-2 text-left"
+              >
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                  Diese Änderung beeinflusst bestehende Einträge
+                </span>
+                {previewExpanded ? (
+                  <ChevronDown className="ml-auto h-4 w-4 text-amber-600 dark:text-amber-400" />
+                ) : (
+                  <ChevronRight className="ml-auto h-4 w-4 text-amber-600 dark:text-amber-400" />
+                )}
+              </button>
+              {previewExpanded && (
+                <div className="space-y-1.5 pt-1 text-sm text-amber-700 dark:text-amber-300">
+                  {preview.removedTransitions.length > 0 && (
+                    <div>
+                      <p className="font-medium">
+                        {preview.removedTransitions.length} Eintrag/Einträge werden entfernt:
+                      </p>
+                      <ul className="ml-4 list-disc">
+                        {preview.removedTransitions.map((t) => (
+                          <li key={t.id}>
+                            {STATUS_LABELS[t.toStatus as MemberStatus] ?? t.toStatus} (
+                            {t.effectiveDate}) &mdash; {t.reason}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {preview.closedPeriods.length > 0 && (
+                    <p>{preview.closedPeriods.length} Mitgliedschaft(en) werden geschlossen</p>
+                  )}
+                  {preview.restoredTransitions.length > 0 && (
+                    <p>
+                      {preview.restoredTransitions.length} Eintrag/Einträge werden wiederhergestellt
+                    </p>
+                  )}
+                  {preview.reopenedPeriods.length > 0 && (
+                    <p>{preview.reopenedPeriods.length} Mitgliedschaft(en) werden wiedereröffnet</p>
+                  )}
+                  <p className="pt-1 font-medium">
+                    Neuer Status:{' '}
+                    {STATUS_LABELS[preview.finalMemberStatus as MemberStatus] ??
+                      preview.finalMemberStatus}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Preview loading indicator */}
+          {previewMutation.isPending && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Vorschau wird berechnet...
+            </div>
+          )}
 
           {/* Error display */}
           {error && (

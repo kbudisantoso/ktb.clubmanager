@@ -28,9 +28,9 @@ interface MemberStatusActionsProps {
   member: MemberDetail;
   /** Called when a status transition is selected */
   onTransition: (targetStatus: MemberStatus, namedTransition: NamedTransition) => void;
-  /** Called when "Kuendigung erfassen" is selected */
+  /** Called when "Kündigung erfassen" is selected */
   onRecordCancellation?: () => void;
-  /** Called when "Kuendigung widerrufen" is selected */
+  /** Called when "Kündigung widerrufen" is selected */
   onRevokeCancellation?: () => void;
 }
 
@@ -39,13 +39,18 @@ interface MemberStatusActionsProps {
 // ============================================================================
 
 /** Statuses that support recording a cancellation (not a status change) */
-const CANCELLATION_STATUSES: readonly string[] = ['ACTIVE', 'PROBATION', 'DORMANT', 'SUSPENDED'];
+export const CANCELLATION_STATUSES: readonly string[] = [
+  'ACTIVE',
+  'PROBATION',
+  'DORMANT',
+  'SUSPENDED',
+];
 
 /**
  * Build the list of available transitions for a given status,
  * split into primary, self-transition, non-destructive secondary, and destructive secondary.
  */
-function buildTransitionActions(currentStatus: MemberStatus) {
+export function buildTransitionActions(currentStatus: MemberStatus) {
   const allTargets = VALID_TRANSITIONS[currentStatus] ?? [];
   const primaryTarget = PRIMARY_STATUS_ACTION[currentStatus];
 
@@ -101,7 +106,7 @@ export function MemberStatusActions({
 }: MemberStatusActionsProps) {
   const currentStatus = member.status as MemberStatus;
   const { primary, selfTransition, secondary, destructive } = buildTransitionActions(currentStatus);
-  const hasCancellation = !!member.cancellationDate && member.status !== 'LEFT';
+  const hasCancellation = !!member.cancellationDate;
   const canRecordCancellation = CANCELLATION_STATUSES.includes(member.status);
   const hasActivePeriod = member.membershipPeriods?.some((p) => !p.leaveDate) ?? false;
   // Only show "Mitgliedsart aendern" when member has an active period
@@ -142,7 +147,7 @@ export function MemberStatusActions({
       {canRecordCancellation && !hasCancellation && onRecordCancellation && (
         <>
           {(secondary.length > 0 || showSelfTransition) && <DropdownMenuSeparator />}
-          <DropdownMenuItem onClick={onRecordCancellation}>Kuendigung erfassen</DropdownMenuItem>
+          <DropdownMenuItem onClick={onRecordCancellation}>Kündigung erfassen</DropdownMenuItem>
         </>
       )}
 
@@ -151,12 +156,10 @@ export function MemberStatusActions({
         <>
           <DropdownMenuSeparator />
           <div className="px-2 py-1.5 text-xs text-warning-foreground">
-            Kuendigung zum {formatDate(member.cancellationDate!)}
+            Kündigung zum {formatDate(member.cancellationDate!)}
           </div>
           {onRevokeCancellation && (
-            <DropdownMenuItem onClick={onRevokeCancellation}>
-              Kuendigung widerrufen
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onRevokeCancellation}>Kündigung widerrufen</DropdownMenuItem>
           )}
         </>
       )}

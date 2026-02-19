@@ -2,7 +2,8 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { ChevronDown, ChevronUp, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, X } from 'lucide-react';
+import type { MemberStatus, NamedTransition } from '@ktb/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,10 +18,16 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMember } from '@/hooks/use-member-detail';
+import { useRevokeCancellation } from '@/hooks/use-members';
+import { useToast } from '@/hooks/use-toast';
+import { formatDate } from '@/lib/format-date';
 import { MemberDetailHeader } from './member-detail-header';
 import { MemberForm } from './member-form/member-form';
 import { MemberDeleteDialog } from './member-delete-dialog';
 import { MemberAnonymizeDialog } from './member-anonymize-dialog';
+import { MemberLinkUserDialog } from './member-link-user-dialog';
+import { StatusTransitionDialog } from './status-transition-dialog';
+import { CancellationDialog } from './cancellation-dialog';
 
 // ============================================================================
 // Types
@@ -70,9 +77,55 @@ function DetailContent({
 }: DetailContentProps) {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
+  const { toast } = useToast();
   const { data: member, isLoading, isError } = useMember(slug, memberId);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [anonymizeDialogOpen, setAnonymizeDialogOpen] = useState(false);
+  const [linkUserDialogOpen, setLinkUserDialogOpen] = useState(false);
+
+  // Status transition dialog state
+  const [transitionDialogOpen, setTransitionDialogOpen] = useState(false);
+  const [selectedTarget, setSelectedTarget] = useState<MemberStatus | null>(null);
+  const [selectedTransition, setSelectedTransition] = useState<NamedTransition | null>(null);
+
+  // Cancellation dialog state
+  const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
+
+  // Revoke cancellation state
+  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
+  const revokeCancellation = useRevokeCancellation(slug);
+
+  const handleTransition = useCallback(
+    (targetStatus: MemberStatus, namedTransition: NamedTransition) => {
+      setSelectedTarget(targetStatus);
+      setSelectedTransition(namedTransition);
+      setTransitionDialogOpen(true);
+    },
+    []
+  );
+
+  const handleRecordCancellation = useCallback(() => {
+    setCancellationDialogOpen(true);
+  }, []);
+
+  const handleRevokeCancellation = useCallback(() => {
+    setRevokeDialogOpen(true);
+  }, []);
+
+  const handleConfirmRevoke = useCallback(async () => {
+    if (!member) return;
+    try {
+      await revokeCancellation.mutateAsync({ id: member.id });
+      toast({ title: 'Kündigung widerrufen' });
+    } catch {
+      toast({
+        title: 'Fehler',
+        description: 'Die Kündigung konnte nicht widerrufen werden.',
+        variant: 'destructive',
+      });
+    }
+    setRevokeDialogOpen(false);
+  }, [member, revokeCancellation, toast]);
 
   const handleDirtyChange = useCallback(
     (dirty: boolean) => {
@@ -132,6 +185,10 @@ function DetailContent({
       <div className="p-4 border-b">
         <MemberDetailHeader
           member={member}
+          onTransition={handleTransition}
+          onRecordCancellation={handleRecordCancellation}
+          onRevokeCancellation={handleRevokeCancellation}
+          onLinkUser={() => setLinkUserDialogOpen(true)}
           onDelete={() => setDeleteDialogOpen(true)}
           onAnonymize={() => setAnonymizeDialogOpen(true)}
         />
@@ -156,6 +213,54 @@ function DetailContent({
         open={anonymizeDialogOpen}
         onOpenChange={setAnonymizeDialogOpen}
       />
+
+      {/* Link user dialog */}
+      <MemberLinkUserDialog
+        member={member}
+        open={linkUserDialogOpen}
+        onOpenChange={setLinkUserDialogOpen}
+      />
+
+      {/* Status transition dialog */}
+      {selectedTarget && selectedTransition && (
+        <StatusTransitionDialog
+          member={member}
+          targetStatus={selectedTarget}
+          namedTransition={selectedTransition}
+          open={transitionDialogOpen}
+          onOpenChange={setTransitionDialogOpen}
+        />
+      )}
+
+      {/* Cancellation dialog */}
+      <CancellationDialog
+        member={member}
+        open={cancellationDialogOpen}
+        onOpenChange={setCancellationDialogOpen}
+      />
+
+      {/* Revoke cancellation confirmation */}
+      <AlertDialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kündigung widerrufen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Die Kündigung zum {member.cancellationDate ? formatDate(member.cancellationDate) : ''}{' '}
+              wird aufgehoben. Das Mitglied bleibt im aktuellen Status.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmRevoke}
+              disabled={revokeCancellation.isPending}
+            >
+              {revokeCancellation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Widerrufen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

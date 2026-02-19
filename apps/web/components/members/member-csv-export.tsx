@@ -33,13 +33,19 @@ interface ExportColumn {
 
 /**
  * Get the active membership period for a member.
+ * Uses date-range logic: joinDate <= today AND (leaveDate > today OR open).
  */
 function getActivePeriod(
   periods: MemberListItem['membershipPeriods']
 ): MemberListItem['membershipPeriods'][number] | null {
   if (periods.length === 0) return null;
-  const current = periods.find((p) => !p.leaveDate);
+  const today = new Date().toISOString().slice(0, 10);
+  // Period containing today: joinDate <= today AND (leaveDate > today OR open)
+  const current = periods.find(
+    (p) => (p.joinDate ?? '') <= today && (!p.leaveDate || p.leaveDate > today)
+  );
   if (current) return current;
+  // Fall back to most recent (e.g. LEFT members)
   return [...periods].sort((a, b) => {
     const dateA = a.joinDate ?? '';
     const dateB = b.joinDate ?? '';

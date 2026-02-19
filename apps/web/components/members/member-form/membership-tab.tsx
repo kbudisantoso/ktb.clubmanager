@@ -3,7 +3,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { AlertTriangle, Loader2, ShieldAlert } from 'lucide-react';
-import type { MemberStatus, NamedTransition } from '@ktb/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,10 +14,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { MemberStatusBadge } from '@/components/members/member-status-badge';
-import { MemberStatusActions } from '@/components/members/member-status-actions';
-import { StatusTransitionDialog } from '@/components/members/status-transition-dialog';
-import { CancellationDialog } from '@/components/members/cancellation-dialog';
 import { StatusHistoryEditDialog } from '@/components/members/status-history-edit-dialog';
 import { MemberAnonymizeDialog } from '@/components/members/member-anonymize-dialog';
 import { MemberUnifiedTimeline } from '@/components/members/member-unified-timeline';
@@ -27,11 +22,7 @@ import { MembershipPeriodDialog } from '@/components/members/membership-period-d
 import type { DialogMode } from '@/components/members/membership-period-dialog';
 import { useMemberPeriods } from '@/hooks/use-membership-periods';
 import { useMembershipTypes } from '@/hooks/use-membership-types';
-import {
-  useMemberStatusHistory,
-  useDeleteStatusHistory,
-  useRevokeCancellation,
-} from '@/hooks/use-members';
+import { useMemberStatusHistory, useDeleteStatusHistory } from '@/hooks/use-members';
 import type { StatusHistoryEntry } from '@/hooks/use-members';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/format-date';
@@ -80,18 +71,6 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
   const [periodDialogMode, setPeriodDialogMode] = useState<DialogMode>('edit');
   const [selectedPeriod, setSelectedPeriod] = useState<TimelinePeriod | null>(null);
 
-  // Status transition dialog state (Variante C)
-  const [transitionDialogOpen, setTransitionDialogOpen] = useState(false);
-  const [selectedTarget, setSelectedTarget] = useState<MemberStatus | null>(null);
-  const [selectedTransition, setSelectedTransition] = useState<NamedTransition | null>(null);
-
-  // Cancellation dialog state
-  const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
-
-  // Revoke cancellation state
-  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
-  const revokeCancellation = useRevokeCancellation(clubSlug);
-
   // Status history edit/delete state
   const [editingStatusEntry, setEditingStatusEntry] = useState<StatusHistoryEntry | null>(null);
   const [deletingStatusEntry, setDeletingStatusEntry] = useState<StatusHistoryEntry | null>(null);
@@ -99,27 +78,6 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
 
   // Anonymization dialog state (DSGVO reminder)
   const [anonymizeDialogOpen, setAnonymizeDialogOpen] = useState(false);
-
-  // Derive active membership type name for the top section
-  const activeTypeName = useMemo(() => {
-    const activePeriod = displayPeriods.find((p) => !p.leaveDate);
-    if (!activePeriod?.membershipTypeId || !membershipTypes) return null;
-    const type = membershipTypes.find((t) => t.id === activePeriod.membershipTypeId);
-    return type?.name ?? null;
-  }, [displayPeriods, membershipTypes]);
-
-  // Derive "seit" date from the last status transition into current status
-  const activeSinceDate = useMemo(() => {
-    if (statusHistory?.length) {
-      const entry = statusHistory.find(
-        (t) => t.toStatus === member.status && t.fromStatus !== t.toStatus
-      );
-      if (entry) return entry.effectiveDate;
-    }
-    // Fallback for migrated data: active period joinDate
-    const activePeriod = displayPeriods.find((p) => !p.leaveDate);
-    return activePeriod?.joinDate ?? null;
-  }, [statusHistory, member.status, displayPeriods]);
 
   // DSGVO anonymization reminder: show 30 days after exit for LEFT members
   const anonymizationReminder = useMemo(() => {
@@ -156,40 +114,6 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
     setPeriodDialogOpen(true);
   }, []);
 
-  // Handle transition selection from MemberStatusActions
-  const handleTransition = useCallback(
-    (targetStatus: MemberStatus, namedTransition: NamedTransition) => {
-      setSelectedTarget(targetStatus);
-      setSelectedTransition(namedTransition);
-      setTransitionDialogOpen(true);
-    },
-    []
-  );
-
-  // Handle cancellation recording
-  const handleRecordCancellation = useCallback(() => {
-    setCancellationDialogOpen(true);
-  }, []);
-
-  // Handle cancellation revocation
-  const handleRevokeCancellation = useCallback(() => {
-    setRevokeDialogOpen(true);
-  }, []);
-
-  const handleConfirmRevoke = useCallback(async () => {
-    try {
-      await revokeCancellation.mutateAsync({ id: member.id });
-      toast({ title: 'Kuendigung widerrufen' });
-    } catch {
-      toast({
-        title: 'Fehler',
-        description: 'Die Kuendigung konnte nicht widerrufen werden.',
-        variant: 'destructive',
-      });
-    }
-    setRevokeDialogOpen(false);
-  }, [member.id, revokeCancellation, toast]);
-
   // Handle status history edit
   const handleEditStatusEntry = useCallback((entry: StatusHistoryEntry) => {
     setEditingStatusEntry(entry);
@@ -205,11 +129,11 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
     if (!deletingStatusEntry) return;
     try {
       await deleteStatusHistory.mutateAsync(deletingStatusEntry.id);
-      toast({ title: 'Eintrag geloescht' });
+      toast({ title: 'Eintrag gelöscht' });
     } catch {
       toast({
-        title: 'Fehler beim Loeschen',
-        description: 'Der Eintrag konnte nicht geloescht werden.',
+        title: 'Fehler beim Löschen',
+        description: 'Der Eintrag konnte nicht gelöscht werden.',
         variant: 'destructive',
       });
     }
@@ -219,43 +143,30 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
   return (
     <>
       <div className="space-y-6">
-        {/* R4: Inline status summary */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <MemberStatusBadge status={member.status} />
-          {activeTypeName && (
-            <span className="text-sm text-muted-foreground">{activeTypeName}</span>
-          )}
-          {activeSinceDate && (
-            <span className="text-sm text-muted-foreground">
-              seit {formatDate(activeSinceDate)}
-            </span>
-          )}
-          <div className="ml-auto">
-            <MemberStatusActions
-              member={member}
-              onTransition={handleTransition}
-              onRecordCancellation={handleRecordCancellation}
-              onRevokeCancellation={handleRevokeCancellation}
-            />
-          </div>
-        </div>
-
-        {/* Cancellation notice */}
-        {hasCancellation && (
-          <div className="flex items-start gap-2 rounded-md border border-amber-500/25 bg-amber-500/10 p-3">
-            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-medium text-amber-600 dark:text-amber-400">
-                Kuendigung zum {formatDate(member.cancellationDate!)}
-              </p>
-              {member.cancellationReceivedAt && (
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Eingegangen am {formatDate(member.cancellationReceivedAt)}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
+        {/* Cancellation / exit notice */}
+        {hasCancellation &&
+          (() => {
+            const isLeft = member.status === 'LEFT';
+            const dateStr = member.cancellationDate!;
+            const today = new Date().toISOString().slice(0, 10);
+            const prep = dateStr <= today ? 'am' : 'zum';
+            const label = isLeft
+              ? `Austritt ${prep} ${formatDate(dateStr)}`
+              : `Kuendigung zum ${formatDate(dateStr)}`;
+            return (
+              <div className="flex items-start gap-2 rounded-md border border-amber-500/25 bg-amber-500/10 p-3">
+                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-amber-600 dark:text-amber-400">{label}</p>
+                  {member.cancellationReceivedAt && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Eingegangen am {formatDate(member.cancellationReceivedAt)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
         {/* DSGVO anonymization reminder */}
         {anonymizationReminder && (
@@ -263,11 +174,11 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
             <ShieldAlert className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
             <div className="flex-1 text-sm">
               <p className="font-medium text-destructive">
-                Personenbezogene Daten muessen geloescht werden
+                Personenbezogene Daten müssen gelöscht werden
               </p>
               <p className="text-muted-foreground mt-0.5">
                 Dieses Mitglied ist seit {formatDate(anonymizationReminder)} ausgetreten.
-                Personenbezogene Daten sollten gemaess DSGVO geloescht werden.
+                Personenbezogene Daten sollten gemäß DSGVO gelöscht werden.
               </p>
               <Button
                 type="button"
@@ -290,6 +201,7 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
           membershipTypes={membershipTypes}
           memberStatus={member.status}
           cancellationDate={member.cancellationDate}
+          hasFormalCancellation={!!member.cancellationDate && !!member.cancellationReceivedAt}
           onEditPeriod={handleEditPeriod}
           onClosePeriod={handleClosePeriod}
           onEditStatusEntry={handleEditStatusEntry}
@@ -306,24 +218,6 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
         mode={periodDialogMode}
         period={selectedPeriod}
         existingPeriods={displayPeriods}
-      />
-
-      {/* Status transition dialog (Variante C) */}
-      {selectedTarget && selectedTransition && (
-        <StatusTransitionDialog
-          member={member}
-          targetStatus={selectedTarget}
-          namedTransition={selectedTransition}
-          open={transitionDialogOpen}
-          onOpenChange={setTransitionDialogOpen}
-        />
-      )}
-
-      {/* Cancellation dialog */}
-      <CancellationDialog
-        member={member}
-        open={cancellationDialogOpen}
-        onOpenChange={setCancellationDialogOpen}
       />
 
       {/* Status history edit dialog */}
@@ -347,30 +241,6 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
         onOpenChange={setAnonymizeDialogOpen}
       />
 
-      {/* Revoke cancellation confirmation */}
-      <AlertDialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Kuendigung widerrufen?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Die Kuendigung zum{' '}
-              {member.cancellationDate ? formatDate(member.cancellationDate) : ''} wird aufgehoben.
-              Das Mitglied bleibt im aktuellen Status.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmRevoke}
-              disabled={revokeCancellation.isPending}
-            >
-              {revokeCancellation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Widerrufen
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Status history delete confirmation */}
       <AlertDialog
         open={!!deletingStatusEntry}
@@ -380,9 +250,9 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Statuseintrag loeschen?</AlertDialogTitle>
+            <AlertDialogTitle>Statuseintrag löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Dieser Eintrag wird unwiderruflich entfernt. Moechten Sie fortfahren?
+              Dieser Eintrag wird unwiderruflich entfernt. Möchten Sie fortfahren?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -393,7 +263,7 @@ export function MembershipTab({ member, slug }: MembershipTabProps) {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteStatusHistory.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Loeschen
+              Löschen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

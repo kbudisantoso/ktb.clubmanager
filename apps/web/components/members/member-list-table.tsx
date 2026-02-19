@@ -407,7 +407,7 @@ function getDisplayName(member: MemberListItem): string {
 
 /**
  * Get the current (active) membership period.
- * Active period has no leaveDate (null = current).
+ * Uses date-range logic: joinDate <= today AND (leaveDate > today OR open).
  * Falls back to the most recent period.
  */
 function getActivePeriod(
@@ -415,12 +415,16 @@ function getActivePeriod(
 ): MemberListItem['membershipPeriods'][number] | null {
   if (periods.length === 0) return null;
 
-  // Find period with no leaveDate (current/active period)
-  const current = periods.find((p) => !p.leaveDate);
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Period containing today: joinDate <= today AND (leaveDate > today OR open)
+  const current = periods.find(
+    (p) => (p.joinDate ?? '') <= today && (!p.leaveDate || p.leaveDate > today)
+  );
   if (current) return current;
 
-  // Fall back to most recent by joinDate
-  return periods.sort((a, b) => {
+  // Fall back to most recent by joinDate (e.g. LEFT members where all periods are closed)
+  return [...periods].sort((a, b) => {
     const dateA = a.joinDate ?? '';
     const dateB = b.joinDate ?? '';
     return dateB.localeCompare(dateA);
