@@ -412,12 +412,14 @@ describe('MembersService', () => {
       expect(result.deletionReason).toBe('AUSTRITT');
     });
 
-    it('should throw when status is not LEFT', async () => {
+    it('should allow soft delete regardless of status', async () => {
       mockDb.member.findFirst.mockResolvedValue(makeMember({ status: 'ACTIVE' }));
-
-      await expect(service.softDelete('club-1', 'member-1', 'user-1', 'AUSTRITT')).rejects.toThrow(
-        BadRequestException
+      mockDb.member.update.mockResolvedValue(
+        makeMember({ status: 'ACTIVE', deletedAt: new Date(), deletionReason: 'SONSTIGES' })
       );
+
+      const result = await service.softDelete('club-1', 'member-1', 'user-1', 'SONSTIGES');
+      expect(result.deletedAt).toBeTruthy();
     });
   });
 

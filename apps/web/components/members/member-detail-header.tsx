@@ -327,7 +327,7 @@ export function MemberDetailHeader({
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" disabled={!isLeft} onClick={onDelete}>
+            <DropdownMenuItem variant="destructive" onClick={onDelete}>
               <Trash2 className="h-4 w-4" />
               Löschen
             </DropdownMenuItem>

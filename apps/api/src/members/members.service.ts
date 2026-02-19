@@ -368,12 +368,6 @@ export class MembersService {
       throw new NotFoundException('Mitglied nicht gefunden');
     }
 
-    if (member.status !== 'LEFT') {
-      throw new BadRequestException(
-        'Mitglied kann nur gelöscht werden, wenn der Status "Ausgetreten" ist'
-      );
-    }
-
     const updated = await db.member.update({
       where: { id },
       data: {
