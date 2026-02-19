@@ -942,9 +942,10 @@ export class MemberStatusService {
     leftCategory?: LeftCategory
   ): Promise<ChainRecalculationResult> {
     const effectiveDateValue = effectiveDate || toDateString(new Date());
+    let previewResult: ChainRecalculationResult | null = null;
 
-    return this.prisma
-      .$transaction(async (tx) => {
+    try {
+      await this.prisma.$transaction(async (tx) => {
         const member = await tx.member.findFirst({
           where: { id: memberId, clubId, deletedAt: null },
         });
@@ -953,7 +954,7 @@ export class MemberStatusService {
           throw new NotFoundException('Mitglied nicht gefunden');
         }
 
-        // Create a temporary transition (will be rolled back)
+        // Create a temporary transition (rolled back with the transaction)
         const tempTransition = await tx.memberStatusTransition.create({
           data: {
             memberId,
@@ -967,7 +968,7 @@ export class MemberStatusService {
         });
 
         // Run chain recalculation in dry-run mode
-        const result = await this.recalculateChain(
+        previewResult = await this.recalculateChain(
           tx,
           clubId,
           memberId,
@@ -976,25 +977,27 @@ export class MemberStatusService {
           true // dryRun
         );
 
-        // Transaction will be rolled back since we throw after getting the result
-        // Actually, we need a different approach — use a nested savepoint or just compute
-        // Instead, let's abort the transaction to roll back the temp transition
-        throw new PreviewResultError(result);
-      })
-      .catch((error) => {
-        if (error instanceof PreviewResultError) {
-          return error.result;
-        }
-        throw error;
+        // Abort transaction to roll back all writes (temp transition + any dry-run side effects)
+        throw new RollbackTransaction();
       });
+    } catch (error) {
+      if (error instanceof RollbackTransaction && previewResult) {
+        return previewResult;
+      }
+      throw error;
+    }
+
+    // Unreachable — satisfies TypeScript return type
+    throw new Error('Preview failed unexpectedly');
   }
 }
 
 /**
- * Internal error used to abort the preview transaction and return the dry-run result.
+ * Sentinel error thrown to intentionally abort a Prisma interactive transaction.
+ * Used by previewChangeStatus to roll back temporary writes after computing the result.
  */
-class PreviewResultError extends Error {
-  constructor(public readonly result: ChainRecalculationResult) {
-    super('Preview result');
+class RollbackTransaction extends Error {
+  constructor() {
+    super('Intentional rollback');
   }
 }
