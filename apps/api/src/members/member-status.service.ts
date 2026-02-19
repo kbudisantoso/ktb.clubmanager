@@ -449,6 +449,19 @@ export class MemberStatusService {
       throw new BadRequestException('Mitgliedsart ist erforderlich bei Änderung der Mitgliedsart');
     }
 
+    // Self-transitions must actually change the membership type — reject no-ops
+    if (isSelfTransition && membershipTypeId) {
+      const activePeriod = await tx.membershipPeriod.findFirst({
+        where: { memberId, leaveDate: null },
+        orderBy: { joinDate: 'desc' },
+      });
+      if (activePeriod?.membershipTypeId === membershipTypeId) {
+        throw new BadRequestException(
+          'Die gewählte Mitgliedsart entspricht der aktuellen — keine Änderung erforderlich'
+        );
+      }
+    }
+
     // Create audit trail record (no fromStatus — computed on read)
     const newTransition = await tx.memberStatusTransition.create({
       data: {
