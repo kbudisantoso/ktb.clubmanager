@@ -134,6 +134,25 @@ export class MembersController {
     return this.membersService.create(ctx.clubId, dto, userId);
   }
 
+  @Post('bulk/change-status')
+  @RequirePermission(Permission.MEMBER_UPDATE)
+  @ApiOperation({ summary: 'Bulk status change for multiple members' })
+  @ApiResponse({ status: 200, description: 'Bulk status change result' })
+  async bulkChangeStatus(
+    @GetClubContext() ctx: ClubContext,
+    @Body() dto: BulkChangeStatusDto,
+    @CurrentUser('id') userId: string
+  ) {
+    return this.memberStatusService.bulkChangeStatus(
+      ctx.clubId,
+      dto.memberIds,
+      dto.newStatus,
+      dto.reason,
+      userId,
+      dto.leftCategory
+    );
+  }
+
   @Patch(':id')
   @RequirePermission(Permission.MEMBER_UPDATE)
   @ApiOperation({ summary: 'Update a member' })
@@ -288,25 +307,6 @@ export class MembersController {
     @CurrentUser('id') userId: string
   ) {
     return this.memberStatusService.revokeCancellation(ctx.clubId, id, userId, dto.reason ?? '');
-  }
-
-  @Post('bulk/change-status')
-  @RequirePermission(Permission.MEMBER_UPDATE)
-  @ApiOperation({ summary: 'Bulk status change for multiple members' })
-  @ApiResponse({ status: 200, description: 'Bulk status change result' })
-  async bulkChangeStatus(
-    @GetClubContext() ctx: ClubContext,
-    @Body() dto: BulkChangeStatusDto,
-    @CurrentUser('id') userId: string
-  ) {
-    return this.memberStatusService.bulkChangeStatus(
-      ctx.clubId,
-      dto.memberIds,
-      dto.newStatus,
-      dto.reason,
-      userId,
-      dto.leftCategory
-    );
   }
 
   @Get(':id/linkable-users')
