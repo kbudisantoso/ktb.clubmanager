@@ -21,16 +21,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -124,6 +114,7 @@ export function MemberBulkActions({
     open: boolean;
     targetStatus: string;
   }>({ open: false, targetStatus: '' });
+  const [statusReason, setStatusReason] = useState('');
 
   // Bulk edit state
   const [editField, setEditField] = useState<string>('');
@@ -146,11 +137,15 @@ export function MemberBulkActions({
       return new Set(transitions);
     });
 
-    // Find intersection of all transition sets
+    // Find intersection of all transition sets (exclude self-transitions and LEFT which needs leftCategory)
     const first = transitionSets[0];
     if (!first) return [];
 
-    return [...first].filter((status) => transitionSets.every((set) => set.has(status)));
+    const statuses = new Set(selectedMembers.map((m) => m.status));
+    return [...first].filter(
+      (status) =>
+        transitionSets.every((set) => set.has(status)) && !statuses.has(status) && status !== 'LEFT'
+    );
   }, [selectedMembers]);
 
   // ---- Action: Bulk Status Change ----
@@ -165,33 +160,52 @@ export function MemberBulkActions({
       }));
 
       try {
-        await bulkChangeStatus.mutateAsync({
+        const result = await bulkChangeStatus.mutateAsync({
           memberIds,
           newStatus: targetStatus,
-          reason: 'Sammeländerung',
+          reason: statusReason.trim() || 'Sammeländerung',
         });
 
-        toast({
-          title: `Status für ${memberIds.length} Mitglieder geändert`,
-          action: {
-            label: 'Rückgängig',
-            onClick: async () => {
-              // Undo: restore original statuses individually
-              for (const orig of originalStatuses) {
-                try {
-                  await bulkChangeStatus.mutateAsync({
-                    memberIds: [orig.id],
-                    newStatus: orig.status,
-                    reason: 'Sammeländerung rückgängig gemacht',
-                  });
-                } catch {
-                  // Best effort undo
+        const updatedCount = result.updated?.length ?? 0;
+        const skippedCount = result.skipped?.length ?? 0;
+
+        if (updatedCount === 0 && skippedCount > 0) {
+          const firstReason = result.skipped[0]?.reason ?? 'Unbekannter Fehler';
+          toast({
+            title: 'Statusänderung fehlgeschlagen',
+            description:
+              skippedCount === 1
+                ? firstReason
+                : `${skippedCount} Mitglieder übersprungen: ${firstReason}`,
+            variant: 'destructive',
+          });
+        } else if (skippedCount > 0) {
+          toast({
+            title: `${updatedCount} geändert, ${skippedCount} übersprungen`,
+            description: result.skipped[0]?.reason,
+          });
+        } else {
+          toast({
+            title: `Status für ${updatedCount} Mitglieder geändert`,
+            action: {
+              label: 'Rückgängig',
+              onClick: async () => {
+                for (const orig of originalStatuses) {
+                  try {
+                    await bulkChangeStatus.mutateAsync({
+                      memberIds: [orig.id],
+                      newStatus: orig.status,
+                      reason: 'Sammeländerung rückgängig gemacht',
+                    });
+                  } catch {
+                    // Best effort undo
+                  }
                 }
-              }
-              toast({ title: 'Statusänderung rückgängig gemacht' });
+                toast({ title: 'Statusänderung rückgängig gemacht' });
+              },
             },
-          },
-        });
+          });
+        }
 
         onClearSelection();
       } catch (err) {
@@ -434,38 +448,62 @@ export function MemberBulkActions({
         </Button>
       </div>
 
-      {/* Status Change Confirmation AlertDialog (CONV-010) */}
-      <AlertDialog
+      {/* Status Change Dialog with reason input (CONV-010) */}
+      <Dialog
         open={statusConfirmState.open}
         onOpenChange={(open) => {
-          if (!open) setStatusConfirmState({ open: false, targetStatus: '' });
+          if (!open) {
+            setStatusConfirmState({ open: false, targetStatus: '' });
+            setStatusReason('');
+          }
         }}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Status für {count} {count === 1 ? 'Mitglied' : 'Mitglieder'} ändern?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Status für {count} {count === 1 ? 'Mitglied' : 'Mitglieder'} ändern
+            </DialogTitle>
+            <DialogDescription>
               Der Status wird auf &ldquo;
               {STATUS_LABELS[statusConfirmState.targetStatus as keyof typeof STATUS_LABELS] ??
                 statusConfirmState.targetStatus}
               &rdquo; geändert.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="bulk-status-reason">Begründung</Label>
+            <Input
+              id="bulk-status-reason"
+              value={statusReason}
+              onChange={(e) => setStatusReason(e.target.value)}
+              placeholder="z.B. Vorstandsbeschluss vom ..."
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setStatusConfirmState({ open: false, targetStatus: '' });
+                setStatusReason('');
+              }}
+            >
+              Abbrechen
+            </Button>
+            <Button
               onClick={() => {
                 handleBulkStatusChange(statusConfirmState.targetStatus);
                 setStatusConfirmState({ open: false, targetStatus: '' });
+                setStatusReason('');
               }}
+              disabled={!statusReason.trim()}
             >
               Status ändern
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* CSV Export Dialog */}
       <MemberCsvExportDialog

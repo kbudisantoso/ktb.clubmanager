@@ -426,7 +426,10 @@ export class MemberStatusService {
       }
     }
 
-    const statusAtDate = this.getStatusAtDate(chain, effectiveDateValue);
+    const statusAtDate =
+      chain.length > 0
+        ? this.getStatusAtDate(chain, effectiveDateValue)
+        : (member.status as MemberStatus);
     const isSelfTransition = statusAtDate === newStatus;
     const allowedTransitions: readonly MemberStatus[] = VALID_TRANSITIONS[statusAtDate];
 
