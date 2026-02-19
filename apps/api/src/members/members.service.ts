@@ -466,9 +466,9 @@ export class MembersService {
       throw new NotFoundException('Mitglied nicht gefunden');
     }
 
-    if (member.status !== 'LEFT') {
+    if (member.status !== 'LEFT' && !member.deletedAt) {
       throw new BadRequestException(
-        'Anonymisierung ist nur moeglich, wenn der Status "Ausgetreten" ist'
+        'Anonymisierung ist nur moeglich, wenn der Status "Ausgetreten" oder das Mitglied geloescht ist'
       );
     }
 

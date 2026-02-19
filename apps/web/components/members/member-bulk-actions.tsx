@@ -232,9 +232,17 @@ export function MemberBulkActions({
     if (!householdName.trim()) return;
 
     try {
+      const memberIdList = [...selectedIds];
+      // Auto-assign roles: first member = HEAD, rest = OTHER
+      const roles: Record<string, string> = {};
+      memberIdList.forEach((id, i) => {
+        roles[id] = i === 0 ? 'HEAD' : 'OTHER';
+      });
+
       await createHousehold.mutateAsync({
         name: householdName.trim(),
-        memberIds: [...selectedIds],
+        memberIds: memberIdList,
+        roles,
       });
 
       toast({

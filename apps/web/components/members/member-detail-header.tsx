@@ -331,7 +331,11 @@ export function MemberDetailHeader({
               <Trash2 className="h-4 w-4" />
               Löschen
             </DropdownMenuItem>
-            <DropdownMenuItem variant="destructive" disabled={!isLeft} onClick={onAnonymize}>
+            <DropdownMenuItem
+              variant="destructive"
+              disabled={!isLeft && !member.deletedAt}
+              onClick={onAnonymize}
+            >
               <ShieldAlert className="h-4 w-4" />
               Anonymisieren
             </DropdownMenuItem>

@@ -14,13 +14,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useDeleteMember } from '@/hooks/use-members';
 import { useToast } from '@/hooks/use-toast';
 import { MemberStatusBadge } from './member-status-badge';
@@ -29,14 +22,6 @@ import type { MemberDetail } from '@/hooks/use-member-detail';
 // ============================================================================
 // Constants
 // ============================================================================
-
-/** Deletion reason options with German labels */
-const DELETION_REASONS = [
-  { value: 'AUSTRITT', label: 'Ordentlicher Austritt' },
-  { value: 'AUSSCHLUSS', label: 'Vereinsausschluss' },
-  { value: 'DATENSCHUTZ', label: 'DSGVO-Löschantrag' },
-  { value: 'SONSTIGES', label: 'Sonstiges' },
-] as const;
 
 const CONFIRM_WORD = 'LÖSCHEN';
 
@@ -63,7 +48,7 @@ interface MemberDeleteDialogProps {
 
 /**
  * AlertDialog for member deletion (soft delete / archive).
- * Requires a deletion reason and typing "LÖSCHEN" to confirm.
+ * Requires typing "LÖSCHEN" to confirm.
  */
 export function MemberDeleteDialog({
   member,
@@ -74,7 +59,6 @@ export function MemberDeleteDialog({
 }: MemberDeleteDialogProps) {
   const { toast } = useToast();
   const deleteMember = useDeleteMember(slug);
-  const [reason, setReason] = useState<string>('');
   const [confirmation, setConfirmation] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -84,14 +68,13 @@ export function MemberDeleteDialog({
       : `${member.lastName}, ${member.firstName}`;
 
   const isConfirmed = confirmation === CONFIRM_WORD;
-  const canDelete = reason && isConfirmed;
 
   const handleDelete = async () => {
-    if (!canDelete) return;
+    if (!isConfirmed) return;
     setError(null);
 
     try {
-      await deleteMember.mutateAsync({ id: member.id, reason });
+      await deleteMember.mutateAsync({ id: member.id, reason: 'SONSTIGES' });
       toast({ title: 'Mitglied archiviert' });
       onOpenChange(false);
       resetState();
@@ -102,7 +85,6 @@ export function MemberDeleteDialog({
   };
 
   const resetState = () => {
-    setReason('');
     setConfirmation('');
     setError(null);
   };
@@ -141,25 +123,6 @@ export function MemberDeleteDialog({
             </div>
           </div>
 
-          {/* Deletion reason */}
-          <div className="space-y-1.5">
-            <Label>
-              Grund <span className="text-destructive">*</span>
-            </Label>
-            <Select value={reason} onValueChange={setReason}>
-              <SelectTrigger>
-                <SelectValue placeholder="Grund auswählen..." />
-              </SelectTrigger>
-              <SelectContent>
-                {DELETION_REASONS.map((r) => (
-                  <SelectItem key={r.value} value={r.value}>
-                    {r.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Type to confirm */}
           <div className="space-y-1.5">
             <Label htmlFor="delete-confirm">
@@ -187,7 +150,7 @@ export function MemberDeleteDialog({
           <Button
             variant="destructive"
             onClick={handleDelete}
-            disabled={!canDelete || deleteMember.isPending}
+            disabled={!isConfirmed || deleteMember.isPending}
           >
             {deleteMember.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Endgültig löschen
