@@ -633,6 +633,8 @@ model Member {
   // --- User linking ---
   /// Link to application User account (nullable, set by OWNER/SECRETARY)
   userId String?
+  /// Relation to the linked user (for avatar image, etc.)
+  user   User?   @relation(fields: [userId], references: [id])
 
   // --- Household ---
   /// Household this member belongs to
@@ -895,6 +897,9 @@ model User {
   /// Multi-tenancy relations
   clubUsers      ClubUser[]
   accessRequests AccessRequest[]
+
+  /// Member linking (a user can be linked to members in different clubs)
+  members Member[]
 
   /// File management relations
   userFiles UserFile[]
