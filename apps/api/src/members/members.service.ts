@@ -118,6 +118,7 @@ export class MembersService {
             take: 1,
             orderBy: { joinDate: 'desc' },
           },
+          user: { select: { image: true } },
         },
       }),
       db.member.count({ where }),
@@ -169,6 +170,7 @@ export class MembersService {
           orderBy: { createdAt: 'desc' },
           take: 20,
         },
+        user: { select: { image: true } },
       },
     });
 
@@ -255,6 +257,7 @@ export class MembersService {
         membershipPeriods: {
           orderBy: { joinDate: 'desc' },
         },
+        user: { select: { image: true } },
       },
     });
 
@@ -335,6 +338,7 @@ export class MembersService {
           membershipPeriods: {
             orderBy: { joinDate: 'desc' },
           },
+          user: { select: { image: true } },
         },
       });
 
@@ -382,6 +386,7 @@ export class MembersService {
         membershipPeriods: {
           orderBy: { joinDate: 'desc' },
         },
+        user: { select: { image: true } },
       },
     });
 
@@ -414,6 +419,7 @@ export class MembersService {
         membershipPeriods: {
           orderBy: { joinDate: 'desc' },
         },
+        user: { select: { image: true } },
       },
     });
 
@@ -515,6 +521,7 @@ export class MembersService {
         membershipPeriods: {
           orderBy: { joinDate: 'desc' },
         },
+        user: { select: { image: true } },
       },
     });
 
@@ -642,6 +649,7 @@ export class MembersService {
           },
         },
         membershipPeriods: { orderBy: { joinDate: 'desc' } },
+        user: { select: { image: true } },
       },
     });
 
@@ -714,6 +722,7 @@ export class MembersService {
       anonymizedAt: toISOStringOrNull(member.anonymizedAt),
       anonymizedBy: member.anonymizedBy ?? null,
       userId: member.userId ?? null,
+      userImage: member.user?.image ?? null,
       householdId: member.householdId ?? null,
       householdRole: member.householdRole ?? null,
       household: member.household ?? null,
