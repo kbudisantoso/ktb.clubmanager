@@ -169,7 +169,7 @@ export function MemberDetailHeader({
             <MemberStatusBadge status={member.status} />
             {hasCancellation && (
               <Badge variant="outline" className="border-warning/25 text-warning-foreground">
-                Gekündigt zum {formatDate(member.cancellationDate!)}
+                Gekündigt zum {formatDate(member.cancellationDate ?? '')}
               </Badge>
             )}
             <span className="text-sm text-muted-foreground font-mono">{member.memberNumber}</span>
@@ -287,7 +287,7 @@ export function MemberDetailHeader({
                   <DropdownMenuSeparator />
                 )}
                 <div className="px-2 py-1.5 text-xs text-warning-foreground">
-                  Kündigung zum {formatDate(member.cancellationDate!)}
+                  Kündigung zum {formatDate(member.cancellationDate ?? '')}
                 </div>
                 {onRevokeCancellation && (
                   <DropdownMenuItem onClick={onRevokeCancellation}>

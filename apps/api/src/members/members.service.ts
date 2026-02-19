@@ -589,6 +589,7 @@ export class MembersService {
   async linkUser(clubId: string, memberId: string, userId: string | null) {
     const db = this.prisma.forClub(clubId);
 
+    // Member lookup is automatically scoped to clubId via forClub() tenant extension
     const member = await db.member.findFirst({
       where: { id: memberId, deletedAt: null },
     });

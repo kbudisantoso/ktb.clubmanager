@@ -117,7 +117,7 @@ export function StatusTransitionDialog({
     return () => {
       if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
     };
-  }, [effectiveDate]);
+  }, [effectiveDate, triggerPreview]);
 
   const isToLeft = targetStatus === 'LEFT';
   const isSelfTransition = member.status === targetStatus;
