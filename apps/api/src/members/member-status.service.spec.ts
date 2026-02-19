@@ -332,10 +332,8 @@ describe('MemberStatusService', () => {
           cancellationDate: new Date('2026-06-30'),
         })
       );
-      // After the transaction, setCancellation returns prisma.member.findFirstOrThrow for future dates
-      (
-        mockPrisma.member as unknown as { findFirstOrThrow: ReturnType<typeof vi.fn> }
-      ).findFirstOrThrow.mockResolvedValueOnce(
+      // Future dates return tx.member.findFirstOrThrow within the same transaction
+      mockTx.member.findFirstOrThrow.mockResolvedValueOnce(
         makeMember({ status: 'ACTIVE', cancellationDate: new Date('2026-06-30') })
       );
 
@@ -498,45 +496,49 @@ describe('MemberStatusService', () => {
   });
 
   describe('bulkChangeStatus()', () => {
-    it('should skip invalid transitions and return summary', async () => {
-      // First call: valid ACTIVE->DORMANT
-      mockTx.member.findFirst.mockResolvedValueOnce(
-        makeMember({ id: 'member-1', status: 'ACTIVE' })
-      );
+    /** Helper: set up mocks for a single valid ACTIVE→DORMANT transition within bulk */
+    function setupValidBulkMember(id: string) {
+      mockTx.member.findFirst.mockResolvedValueOnce(makeMember({ id, status: 'ACTIVE' }));
       mockTx.memberStatusTransition.findMany.mockResolvedValueOnce([
         { effectiveDate: new Date('2024-01-01'), toStatus: 'ACTIVE' },
       ]);
-      mockTx.memberStatusTransition.create.mockResolvedValueOnce({ id: 'trans-new' });
-      // period lookup: all periods for finding period containing effective date
-      const existingPeriod = {
-        id: 'period-1',
-        memberId: 'member-1',
+      mockTx.memberStatusTransition.create.mockResolvedValueOnce({ id: `trans-${id}` });
+      const period = {
+        id: `period-${id}`,
+        memberId: id,
         joinDate: new Date('2024-01-01'),
         leaveDate: null,
         membershipTypeId: null,
       };
-      mockTx.membershipPeriod.findMany.mockResolvedValueOnce([existingPeriod]);
+      mockTx.membershipPeriod.findMany.mockResolvedValueOnce([period]);
       setupChainMocks(
         [],
         [
           {
-            id: 'trans-new',
+            id: `trans-${id}`,
             toStatus: 'DORMANT',
             effectiveDate: new Date(),
             reason: 'Test',
             createdAt: new Date(),
           },
         ],
-        [existingPeriod], // all periods for autoMaintainPeriodLeaveDates
-        makeMember({ status: 'ACTIVE' })
+        [period],
+        makeMember({ id, status: 'ACTIVE' })
       );
-      mockTx.member.findFirstOrThrow.mockResolvedValueOnce(makeMember({ status: 'DORMANT' }));
+      mockTx.member.findFirstOrThrow.mockResolvedValueOnce(makeMember({ id, status: 'DORMANT' }));
+    }
 
-      // Second call: invalid LEFT->DORMANT
-      mockTx.member.findFirst.mockResolvedValueOnce(makeMember({ id: 'member-2', status: 'LEFT' }));
+    /** Helper: set up mocks for an invalid LEFT member within bulk */
+    function setupInvalidBulkMember(id: string) {
+      mockTx.member.findFirst.mockResolvedValueOnce(makeMember({ id, status: 'LEFT' }));
       mockTx.memberStatusTransition.findMany.mockResolvedValueOnce([
         { effectiveDate: new Date('2024-01-01'), toStatus: 'LEFT' },
       ]);
+    }
+
+    it('should skip invalid transitions and return summary', async () => {
+      setupValidBulkMember('member-1');
+      setupInvalidBulkMember('member-2');
 
       const result = await service.bulkChangeStatus(
         'club-1',
@@ -549,6 +551,67 @@ describe('MemberStatusService', () => {
       expect(result.updated).toContain('member-1');
       expect(result.skipped).toHaveLength(1);
       expect(result.skipped[0]?.id).toBe('member-2');
+    });
+
+    it('should update all members when all transitions are valid', async () => {
+      setupValidBulkMember('member-1');
+      setupValidBulkMember('member-2');
+      setupValidBulkMember('member-3');
+
+      const result = await service.bulkChangeStatus(
+        'club-1',
+        ['member-1', 'member-2', 'member-3'],
+        'DORMANT',
+        'Alle ruhend',
+        'user-1'
+      );
+
+      expect(result.updated).toEqual(['member-1', 'member-2', 'member-3']);
+      expect(result.skipped).toHaveLength(0);
+    });
+
+    it('should skip all members when all transitions are invalid', async () => {
+      setupInvalidBulkMember('member-1');
+      setupInvalidBulkMember('member-2');
+
+      const result = await service.bulkChangeStatus(
+        'club-1',
+        ['member-1', 'member-2'],
+        'DORMANT',
+        'Alle ruhend',
+        'user-1'
+      );
+
+      expect(result.updated).toHaveLength(0);
+      expect(result.skipped).toHaveLength(2);
+      expect(result.skipped.map((s) => s.id)).toEqual(['member-1', 'member-2']);
+    });
+
+    it('should return empty arrays for empty input', async () => {
+      const result = await service.bulkChangeStatus('club-1', [], 'DORMANT', 'Leer', 'user-1');
+
+      expect(result.updated).toHaveLength(0);
+      expect(result.skipped).toHaveLength(0);
+    });
+
+    it('should skip member when changeStatus throws unexpected error', async () => {
+      // First member: valid
+      setupValidBulkMember('member-1');
+      // Second member: throw during findFirst
+      mockTx.member.findFirst.mockResolvedValueOnce(null); // member not found
+
+      const result = await service.bulkChangeStatus(
+        'club-1',
+        ['member-1', 'member-2'],
+        'DORMANT',
+        'Bulk',
+        'user-1'
+      );
+
+      expect(result.updated).toEqual(['member-1']);
+      expect(result.skipped).toHaveLength(1);
+      expect(result.skipped[0]?.id).toBe('member-2');
+      expect(result.skipped[0]?.reason).toContain('nicht gefunden');
     });
   });
 
