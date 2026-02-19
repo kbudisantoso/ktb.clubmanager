@@ -59,7 +59,9 @@ export function MembersClient() {
   // --- Column visibility (localStorage per club) ---
   const {
     columns: columnVisibility,
+    order: columnOrder,
     toggleColumn,
+    reorderColumns,
     resetColumns,
     isDefault: isColumnsDefault,
   } = useColumnVisibility(slug);
@@ -236,7 +238,9 @@ export function MembersClient() {
           <MemberSearch value={searchInput} onChange={setSearchInput} className="flex-1" />
           <MemberColumnPicker
             columns={columnVisibility}
+            order={columnOrder}
             onToggle={toggleColumn}
+            onReorder={reorderColumns}
             onReset={resetColumns}
             isDefault={isColumnsDefault}
           />
@@ -310,6 +314,7 @@ export function MembersClient() {
           onSelectionChange={setSelectedIds}
           onSelectMember={selectMember}
           columnVisibility={columnVisibility}
+          columnOrder={columnOrder}
           membershipTypes={membershipTypes}
         />
       )}

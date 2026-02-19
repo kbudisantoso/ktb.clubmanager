@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useCallback, useEffect } from 'react';
+import { type ReactNode, useRef, useCallback, useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 import {
   Table,
@@ -13,6 +13,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ColumnKey } from '@/hooks/use-column-visibility';
+import { DEFAULT_COLUMN_ORDER } from '@/hooks/use-column-visibility';
 import type { MembershipType } from '@/hooks/use-membership-types';
 import { MemberStatusBadge } from './member-status-badge';
 import { MemberAvatar } from './member-avatar';
@@ -69,16 +70,19 @@ interface MemberListTableProps {
   onSelectMember: (id: string) => void;
   /** Column visibility state from useColumnVisibility hook */
   columnVisibility?: Record<ColumnKey, boolean>;
+  /** Column display order from useColumnVisibility hook */
+  columnOrder?: ColumnKey[];
   /** Available membership types for label resolution */
   membershipTypes?: MembershipType[];
 }
 
-/**
- * Member list table with 9 responsive columns, checkbox selection,
- * column visibility control, and infinite scroll via intersection observer.
- */
-/** Responsive breakpoint classes for each toggleable column */
+// ============================================================================
+// Column Definitions
+// ============================================================================
+
+/** Responsive breakpoint classes for each column */
 const COLUMN_BREAKPOINTS: Record<ColumnKey, string> = {
+  name: '',
   memberNumber: 'hidden md:table-cell',
   status: 'hidden md:table-cell',
   email: 'hidden xl:table-cell',
@@ -88,6 +92,96 @@ const COLUMN_BREAKPOINTS: Record<ColumnKey, string> = {
   joinDate: 'hidden xl:table-cell',
   notes: 'hidden xl:table-cell',
 };
+
+interface ColumnDef {
+  label: string;
+  skeletonClass: string;
+  render: (
+    member: MemberListItem,
+    activePeriod: MemberListItem['membershipPeriods'][number] | null,
+    membershipTypes?: MembershipType[]
+  ) => ReactNode;
+}
+
+const COLUMN_DEFS: Record<ColumnKey, ColumnDef> = {
+  name: {
+    label: 'Name',
+    skeletonClass: '',
+    render: (m) => (
+      <div className="flex items-center gap-3">
+        <MemberAvatar
+          memberId={m.id}
+          firstName={m.firstName}
+          lastName={m.lastName}
+          organizationName={m.organizationName}
+          personType={m.personType}
+          size="sm"
+          imageUrl={m.userImage}
+        />
+        <div className="min-w-0">
+          <div className="font-medium truncate">{getDisplayName(m)}</div>
+          {/* Show status on mobile since status column is hidden */}
+          <div className="md:hidden mt-0.5">
+            <MemberStatusBadge status={m.status} />
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  memberNumber: {
+    label: 'Nr.',
+    skeletonClass: 'h-4 w-16',
+    render: (m) => <code className="text-sm font-mono">{m.memberNumber}</code>,
+  },
+  status: {
+    label: 'Status',
+    skeletonClass: 'h-5 w-16 rounded-md',
+    render: (m) => <MemberStatusBadge status={m.status} />,
+  },
+  email: {
+    label: 'E-Mail',
+    skeletonClass: 'h-4 w-40',
+    render: (m) => <span className="truncate block max-w-48">{m.email ?? '-'}</span>,
+  },
+  phone: {
+    label: 'Telefon',
+    skeletonClass: 'h-4 w-28',
+    render: (m) => (m.mobile || m.phone) ?? '-',
+  },
+  household: {
+    label: 'Haushalt',
+    skeletonClass: 'h-4 w-20',
+    render: (m) =>
+      m.household ? <HouseholdBadge name={m.household.name} householdId={m.household.id} /> : '-',
+  },
+  membershipType: {
+    label: 'Mitgliedschaft',
+    skeletonClass: 'h-4 w-20',
+    render: (_m, activePeriod, membershipTypes) =>
+      activePeriod?.membershipTypeId
+        ? (membershipTypes?.find((t) => t.id === activePeriod.membershipTypeId)?.name ?? '-')
+        : '-',
+  },
+  joinDate: {
+    label: 'Eintritt',
+    skeletonClass: 'h-4 w-20',
+    render: (_m, activePeriod) =>
+      activePeriod?.joinDate ? formatDate(activePeriod.joinDate) : '-',
+  },
+  notes: {
+    label: 'Notizen',
+    skeletonClass: 'h-4 w-24',
+    render: (m) => (
+      <span className="text-muted-foreground text-sm truncate block max-w-48">
+        {m.notes ? truncateText(m.notes, 30) : '-'}
+      </span>
+    ),
+  },
+};
+
+// ============================================================================
+// MemberListTable
+// ============================================================================
 
 export function MemberListTable({
   members,
@@ -99,9 +193,13 @@ export function MemberListTable({
   onSelectionChange,
   onSelectMember,
   columnVisibility,
+  columnOrder,
   membershipTypes,
 }: MemberListTableProps) {
   const lastShiftClickIndex = useRef<number | null>(null);
+
+  // Resolved column order: prop > default
+  const orderedColumns = columnOrder ?? DEFAULT_COLUMN_ORDER;
 
   /**
    * Get the CSS class for a column based on visibility and responsive breakpoints.
@@ -170,15 +268,11 @@ export function MemberListTable({
             <TableHead className="w-10">
               <Checkbox disabled />
             </TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead className={colClass('memberNumber')}>Nr.</TableHead>
-            <TableHead className={colClass('status')}>Status</TableHead>
-            <TableHead className={colClass('email')}>E-Mail</TableHead>
-            <TableHead className={colClass('phone')}>Telefon</TableHead>
-            <TableHead className={colClass('household')}>Haushalt</TableHead>
-            <TableHead className={colClass('membershipType')}>Mitgliedschaft</TableHead>
-            <TableHead className={colClass('joinDate')}>Eintritt</TableHead>
-            <TableHead className={colClass('notes')}>Notizen</TableHead>
+            {orderedColumns.map((key) => (
+              <TableHead key={key} className={colClass(key)}>
+                {COLUMN_DEFS[key].label}
+              </TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -187,36 +281,20 @@ export function MemberListTable({
               <TableCell>
                 <Skeleton className="h-4 w-4" />
               </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-7 w-7 rounded-full" />
-                  <Skeleton className="h-4 w-32" />
-                </div>
-              </TableCell>
-              <TableCell className={colClass('memberNumber')}>
-                <Skeleton className="h-4 w-16" />
-              </TableCell>
-              <TableCell className={colClass('status')}>
-                <Skeleton className="h-5 w-16 rounded-md" />
-              </TableCell>
-              <TableCell className={colClass('email')}>
-                <Skeleton className="h-4 w-40" />
-              </TableCell>
-              <TableCell className={colClass('phone')}>
-                <Skeleton className="h-4 w-28" />
-              </TableCell>
-              <TableCell className={colClass('household')}>
-                <Skeleton className="h-4 w-20" />
-              </TableCell>
-              <TableCell className={colClass('membershipType')}>
-                <Skeleton className="h-4 w-20" />
-              </TableCell>
-              <TableCell className={colClass('joinDate')}>
-                <Skeleton className="h-4 w-20" />
-              </TableCell>
-              <TableCell className={colClass('notes')}>
-                <Skeleton className="h-4 w-24" />
-              </TableCell>
+              {orderedColumns.map((key) =>
+                key === 'name' ? (
+                  <TableCell key={key} className={colClass(key)}>
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-7 w-7 rounded-full" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                  </TableCell>
+                ) : (
+                  <TableCell key={key} className={colClass(key)}>
+                    <Skeleton className={COLUMN_DEFS[key].skeletonClass} />
+                  </TableCell>
+                )
+              )}
             </TableRow>
           ))}
         </TableBody>
@@ -239,22 +317,17 @@ export function MemberListTable({
                 aria-label="Alle Mitglieder auswählen"
               />
             </TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead className={colClass('memberNumber')}>Nr.</TableHead>
-            <TableHead className={colClass('status')}>Status</TableHead>
-            <TableHead className={colClass('email')}>E-Mail</TableHead>
-            <TableHead className={colClass('phone')}>Telefon</TableHead>
-            <TableHead className={colClass('household')}>Haushalt</TableHead>
-            <TableHead className={colClass('membershipType')}>Mitgliedschaft</TableHead>
-            <TableHead className={colClass('joinDate')}>Eintritt</TableHead>
-            <TableHead className={colClass('notes')}>Notizen</TableHead>
+            {orderedColumns.map((key) => (
+              <TableHead key={key} className={colClass(key)}>
+                {COLUMN_DEFS[key].label}
+              </TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>
           {members.map((member, index) => {
             const isSelected = selectedIds.has(member.id);
             const activePeriod = getActivePeriod(member.membershipPeriods);
-            const displayPhone = member.mobile || member.phone;
             const displayName = getDisplayName(member);
 
             return (
@@ -288,77 +361,11 @@ export function MemberListTable({
                   />
                 </TableCell>
 
-                {/* Name - always visible */}
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <MemberAvatar
-                      memberId={member.id}
-                      firstName={member.firstName}
-                      lastName={member.lastName}
-                      organizationName={member.organizationName}
-                      personType={member.personType}
-                      size="sm"
-                      imageUrl={member.userImage}
-                    />
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">{displayName}</div>
-                      {/* Show status on mobile since column is hidden */}
-                      <div className="md:hidden mt-0.5">
-                        <MemberStatusBadge status={member.status} />
-                      </div>
-                    </div>
-                  </div>
-                </TableCell>
-
-                {/* Nr. */}
-                <TableCell className={colClass('memberNumber')}>
-                  <code className="text-sm font-mono">{member.memberNumber}</code>
-                </TableCell>
-
-                {/* Status */}
-                <TableCell className={colClass('status')}>
-                  <MemberStatusBadge status={member.status} />
-                </TableCell>
-
-                {/* E-Mail */}
-                <TableCell className={colClass('email')}>
-                  <span className="truncate block max-w-48">{member.email ?? '-'}</span>
-                </TableCell>
-
-                {/* Telefon */}
-                <TableCell className={colClass('phone')}>{displayPhone ?? '-'}</TableCell>
-
-                {/* Haushalt */}
-                <TableCell className={colClass('household')}>
-                  {member.household ? (
-                    <HouseholdBadge
-                      name={member.household.name}
-                      householdId={member.household.id}
-                    />
-                  ) : (
-                    '-'
-                  )}
-                </TableCell>
-
-                {/* Mitgliedschaft */}
-                <TableCell className={colClass('membershipType')}>
-                  {activePeriod?.membershipTypeId
-                    ? (membershipTypes?.find((t) => t.id === activePeriod.membershipTypeId)?.name ??
-                      '-')
-                    : '-'}
-                </TableCell>
-
-                {/* Eintritt */}
-                <TableCell className={colClass('joinDate')}>
-                  {activePeriod?.joinDate ? formatDate(activePeriod.joinDate) : '-'}
-                </TableCell>
-
-                {/* Notizen */}
-                <TableCell className={colClass('notes')}>
-                  <span className="text-muted-foreground text-sm truncate block max-w-48">
-                    {member.notes ? truncateText(member.notes, 30) : '-'}
-                  </span>
-                </TableCell>
+                {orderedColumns.map((key) => (
+                  <TableCell key={key} className={colClass(key)}>
+                    {COLUMN_DEFS[key].render(member, activePeriod, membershipTypes)}
+                  </TableCell>
+                ))}
               </TableRow>
             );
           })}
