@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 /**
  * Palette of avatar background colors.
@@ -39,11 +40,14 @@ interface MemberAvatarProps {
   size?: 'sm' | 'md' | 'lg';
   /** Additional CSS classes */
   className?: string;
+  /** URL of linked user's profile image */
+  imageUrl?: string | null;
 }
 
 /**
- * Member avatar with initials fallback.
- * Color is deterministically selected from member ID hash.
+ * Member avatar with image support and initials fallback.
+ * When imageUrl is provided, displays the user's profile image.
+ * Otherwise, shows colored initials based on member ID hash.
  */
 export function MemberAvatar({
   memberId,
@@ -53,10 +57,26 @@ export function MemberAvatar({
   personType = 'NATURAL',
   size = 'sm',
   className,
+  imageUrl,
 }: MemberAvatarProps) {
   const initials = getInitials(personType, firstName, lastName, organizationName);
   const colorIndex = hashToIndex(memberId, AVATAR_PALETTE.length);
   const bgColor = AVATAR_PALETTE[colorIndex];
+  const title =
+    personType === 'LEGAL_ENTITY'
+      ? (organizationName ?? '')
+      : `${firstName ?? ''} ${lastName ?? ''}`.trim();
+
+  if (imageUrl) {
+    return (
+      <Avatar className={cn(SIZE_CLASSES[size], 'shrink-0', className)}>
+        <AvatarImage src={imageUrl} alt={title} />
+        <AvatarFallback className={cn(bgColor, 'text-white font-medium')}>
+          {initials}
+        </AvatarFallback>
+      </Avatar>
+    );
+  }
 
   return (
     <div
@@ -66,11 +86,7 @@ export function MemberAvatar({
         bgColor,
         className
       )}
-      title={
-        personType === 'LEGAL_ENTITY'
-          ? (organizationName ?? '')
-          : `${firstName ?? ''} ${lastName ?? ''}`.trim()
-      }
+      title={title}
     >
       {initials}
     </div>

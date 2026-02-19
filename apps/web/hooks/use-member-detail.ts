@@ -42,6 +42,7 @@ interface MemberDetail {
   anonymizedAt: string | null;
   anonymizedBy: string | null;
   userId: string | null;
+  userImage: string | null;
   householdId: string | null;
   householdRole: string | null;
   household: {

@@ -34,6 +34,7 @@ interface MemberListItem {
   phone: string | null;
   mobile: string | null;
   status: string;
+  userImage: string | null;
   householdId: string | null;
   householdRole: string | null;
   household: { id: string; name: string } | null;
@@ -297,6 +298,7 @@ export function MemberListTable({
                       organizationName={member.organizationName}
                       personType={member.personType}
                       size="sm"
+                      imageUrl={member.userImage}
                     />
                     <div className="min-w-0">
                       <div className="font-medium truncate">{displayName}</div>

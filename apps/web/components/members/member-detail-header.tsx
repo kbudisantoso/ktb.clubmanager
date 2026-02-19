@@ -158,6 +158,7 @@ export function MemberDetailHeader({
           organizationName={member.organizationName}
           personType={member.personType}
           size="md"
+          imageUrl={member.userImage}
         />
 
         <div className="min-w-0 space-y-1">
