@@ -302,15 +302,6 @@ export function MemberListTable({
                     />
                     <div className="min-w-0">
                       <div className="font-medium truncate">{displayName}</div>
-                      {/* Household badge below name */}
-                      {member.household && (
-                        <div className="mt-0.5">
-                          <HouseholdBadge
-                            name={member.household.name}
-                            householdId={member.household.id}
-                          />
-                        </div>
-                      )}
                       {/* Show status on mobile since column is hidden */}
                       <div className="md:hidden mt-0.5">
                         <MemberStatusBadge status={member.status} />
