@@ -359,138 +359,157 @@ export class MemberStatusService {
     leftCategory?: LeftCategory,
     membershipTypeId?: string
   ) {
-    const effectiveDateValue = effectiveDate || toDateString(new Date());
-
     return this.prisma.$transaction(async (tx) => {
-      const member = await tx.member.findFirst({
-        where: { id: memberId, clubId, deletedAt: null },
-      });
-
-      if (!member) {
-        throw new NotFoundException('Mitglied nicht gefunden');
-      }
-
-      // Chain-aware validation: use chain status at the effective date for backdated entries
-      const chain = await tx.memberStatusTransition.findMany({
-        where: { memberId, clubId, deletedAt: null },
-        orderBy: [{ effectiveDate: 'asc' }, { createdAt: 'asc' }],
-      });
-
-      // One-entry-per-day validation (uses chain for self-transition detection)
-      const existingOnDate = chain.find(
-        (t) => toDateString(t.effectiveDate) === effectiveDateValue
-      );
-      if (existingOnDate) {
-        // Determine if the existing entry is a self-transition (no actual status change).
-        // Self-transitions are setCancellation audit markers that can be replaced.
-        const chainBeforeEntry = chain.filter((t) => t.id !== existingOnDate.id);
-        const statusBeforeEntry = this.getStatusAtDate(chainBeforeEntry, effectiveDateValue);
-        const isSelfTransitionAudit = existingOnDate.toStatus === statusBeforeEntry;
-        if (isSelfTransitionAudit) {
-          await tx.memberStatusTransition.update({
-            where: { id: existingOnDate.id },
-            data: { deletedAt: new Date(), deletedBy: userId },
-          });
-          // Remove from chain so subsequent logic uses the cleaned chain
-          chain.splice(chain.indexOf(existingOnDate), 1);
-        } else {
-          throw new BadRequestException('An diesem Datum existiert bereits ein Statuseintrag');
-        }
-      }
-
-      const statusAtDate = this.getStatusAtDate(chain, effectiveDateValue);
-      const isSelfTransition = statusAtDate === newStatus;
-      const allowedTransitions: readonly MemberStatus[] = VALID_TRANSITIONS[statusAtDate];
-
-      if (!allowedTransitions.includes(newStatus)) {
-        throw new BadRequestException(
-          `Ungültige Statusänderung: ${statusAtDate} -> ${newStatus} ist nicht erlaubt. ` +
-            `Erlaubte Übergänge: ${allowedTransitions.length > 0 ? allowedTransitions.join(', ') : 'keine (Endstatus)'}`
-        );
-      }
-
-      // Validate leftCategory is provided when transitioning to LEFT
-      if (newStatus === 'LEFT' && !leftCategory) {
-        throw new BadRequestException(
-          'Austrittsgrund (leftCategory) ist erforderlich bei Statuswechsel zu LEFT'
-        );
-      }
-
-      // Self-transitions require membershipTypeId (that's the whole point)
-      if (isSelfTransition && !membershipTypeId) {
-        throw new BadRequestException(
-          'Mitgliedsart ist erforderlich bei Änderung der Mitgliedsart'
-        );
-      }
-
-      // Create audit trail record (no fromStatus — computed on read)
-      const newTransition = await tx.memberStatusTransition.create({
-        data: {
-          memberId,
-          clubId,
-          toStatus: newStatus,
-          reason,
-          leftCategory: newStatus === 'LEFT' ? leftCategory : null,
-          effectiveDate: new Date(effectiveDateValue),
-          actorId: userId,
-        },
-      });
-
-      // Handle period management for non-LEFT transitions
-      if (newStatus !== 'LEFT') {
-        // Find the period containing the effective date (date-range, not just open)
-        const allPeriods = await tx.membershipPeriod.findMany({
-          where: { memberId },
-          orderBy: { joinDate: 'asc' },
-        });
-        const currentPeriod =
-          allPeriods.find(
-            (p) =>
-              toDateString(p.joinDate) <= effectiveDateValue &&
-              (!p.leaveDate || toDateString(p.leaveDate) > effectiveDateValue)
-          ) ?? null;
-
-        if (
-          currentPeriod &&
-          membershipTypeId &&
-          currentPeriod.membershipTypeId !== membershipTypeId
-        ) {
-          // Type change: create new period (leaveDate auto-derived by recalculateChain)
-          await tx.membershipPeriod.create({
-            data: {
-              memberId,
-              joinDate: new Date(effectiveDateValue),
-              membershipTypeId,
-            },
-          });
-        } else if (!currentPeriod) {
-          // No active period — create one (membershipTypeId may be null)
-          await tx.membershipPeriod.create({
-            data: {
-              memberId,
-              joinDate: new Date(effectiveDateValue),
-              ...(membershipTypeId ? { membershipTypeId } : {}),
-            },
-          });
-        }
-      }
-
-      // Run chain recalculation
-      const chainResult = await this.recalculateChain(
+      return this.changeStatusInTx(
         tx,
         clubId,
         memberId,
+        newStatus,
+        reason,
         userId,
-        newTransition.id
+        effectiveDate,
+        leftCategory,
+        membershipTypeId
       );
-
-      this.logger.log(
-        `Status change: Member ${memberId} → ${newStatus} by ${userId} (chain: ${chainResult.removedTransitions.length} removed, ${chainResult.closedPeriods.length} periods closed)`
-      );
-
-      // Return the updated member (recalculateChain already synced the status)
-      return tx.member.findFirstOrThrow({ where: { id: memberId } });
     });
+  }
+
+  /**
+   * Core status change logic that runs inside an existing transaction.
+   * Extracted so that setCancellation can call it within its own transaction
+   * (avoiding the race condition of two separate transactions).
+   */
+  private async changeStatusInTx(
+    tx: TxClient,
+    clubId: string,
+    memberId: string,
+    newStatus: MemberStatus,
+    reason: string,
+    userId: string,
+    effectiveDate?: string,
+    leftCategory?: LeftCategory,
+    membershipTypeId?: string
+  ) {
+    const effectiveDateValue = effectiveDate || toDateString(new Date());
+
+    const member = await tx.member.findFirst({
+      where: { id: memberId, clubId, deletedAt: null },
+    });
+
+    if (!member) {
+      throw new NotFoundException('Mitglied nicht gefunden');
+    }
+
+    // Chain-aware validation: use chain status at the effective date for backdated entries
+    const chain = await tx.memberStatusTransition.findMany({
+      where: { memberId, clubId, deletedAt: null },
+      orderBy: [{ effectiveDate: 'asc' }, { createdAt: 'asc' }],
+    });
+
+    // One-entry-per-day validation (uses chain for self-transition detection)
+    const existingOnDate = chain.find((t) => toDateString(t.effectiveDate) === effectiveDateValue);
+    if (existingOnDate) {
+      // Determine if the existing entry is a self-transition (no actual status change).
+      // Self-transitions are setCancellation audit markers that can be replaced.
+      const chainBeforeEntry = chain.filter((t) => t.id !== existingOnDate.id);
+      const statusBeforeEntry = this.getStatusAtDate(chainBeforeEntry, effectiveDateValue);
+      const isSelfTransitionAudit = existingOnDate.toStatus === statusBeforeEntry;
+      if (isSelfTransitionAudit) {
+        await tx.memberStatusTransition.update({
+          where: { id: existingOnDate.id },
+          data: { deletedAt: new Date(), deletedBy: userId },
+        });
+        // Remove from chain so subsequent logic uses the cleaned chain
+        chain.splice(chain.indexOf(existingOnDate), 1);
+      } else {
+        throw new BadRequestException('An diesem Datum existiert bereits ein Statuseintrag');
+      }
+    }
+
+    const statusAtDate = this.getStatusAtDate(chain, effectiveDateValue);
+    const isSelfTransition = statusAtDate === newStatus;
+    const allowedTransitions: readonly MemberStatus[] = VALID_TRANSITIONS[statusAtDate];
+
+    if (!allowedTransitions.includes(newStatus)) {
+      throw new BadRequestException(
+        `Ungültige Statusänderung: ${statusAtDate} -> ${newStatus} ist nicht erlaubt. ` +
+          `Erlaubte Übergänge: ${allowedTransitions.length > 0 ? allowedTransitions.join(', ') : 'keine (Endstatus)'}`
+      );
+    }
+
+    // Validate leftCategory is provided when transitioning to LEFT
+    if (newStatus === 'LEFT' && !leftCategory) {
+      throw new BadRequestException(
+        'Austrittsgrund (leftCategory) ist erforderlich bei Statuswechsel zu LEFT'
+      );
+    }
+
+    // Self-transitions require membershipTypeId (that's the whole point)
+    if (isSelfTransition && !membershipTypeId) {
+      throw new BadRequestException('Mitgliedsart ist erforderlich bei Änderung der Mitgliedsart');
+    }
+
+    // Create audit trail record (no fromStatus — computed on read)
+    const newTransition = await tx.memberStatusTransition.create({
+      data: {
+        memberId,
+        clubId,
+        toStatus: newStatus,
+        reason,
+        leftCategory: newStatus === 'LEFT' ? leftCategory : null,
+        effectiveDate: new Date(effectiveDateValue),
+        actorId: userId,
+      },
+    });
+
+    // Handle period management for non-LEFT transitions
+    if (newStatus !== 'LEFT') {
+      // Find the period containing the effective date (date-range, not just open)
+      const allPeriods = await tx.membershipPeriod.findMany({
+        where: { memberId },
+        orderBy: { joinDate: 'asc' },
+      });
+      const currentPeriod =
+        allPeriods.find(
+          (p) =>
+            toDateString(p.joinDate) <= effectiveDateValue &&
+            (!p.leaveDate || toDateString(p.leaveDate) > effectiveDateValue)
+        ) ?? null;
+
+      if (
+        currentPeriod &&
+        membershipTypeId &&
+        currentPeriod.membershipTypeId !== membershipTypeId
+      ) {
+        // Type change: create new period (leaveDate auto-derived by recalculateChain)
+        await tx.membershipPeriod.create({
+          data: {
+            memberId,
+            joinDate: new Date(effectiveDateValue),
+            membershipTypeId,
+          },
+        });
+      } else if (!currentPeriod) {
+        // No active period — create one (membershipTypeId may be null)
+        await tx.membershipPeriod.create({
+          data: {
+            memberId,
+            joinDate: new Date(effectiveDateValue),
+            ...(membershipTypeId ? { membershipTypeId } : {}),
+          },
+        });
+      }
+    }
+
+    // Run chain recalculation
+    const chainResult = await this.recalculateChain(tx, clubId, memberId, userId, newTransition.id);
+
+    this.logger.log(
+      `Status change: Member ${memberId} → ${newStatus} by ${userId} (chain: ${chainResult.removedTransitions.length} removed, ${chainResult.closedPeriods.length} periods closed)`
+    );
+
+    // Return the updated member (recalculateChain already synced the status)
+    return tx.member.findFirstOrThrow({ where: { id: memberId } });
   }
 
   /**
@@ -515,8 +534,9 @@ export class MemberStatusService {
     const today = toDateString(new Date());
     const isImmediate = cancellationDate <= today;
 
-    // Phase 1: Record the cancellation intent on the member record
-    await this.prisma.$transaction(async (tx) => {
+    // Single transaction for both cancellation recording and immediate LEFT transition.
+    // This eliminates the race condition where Phase 1 succeeds but Phase 2 fails.
+    return this.prisma.$transaction(async (tx) => {
       const member = await tx.member.findFirst({
         where: { id: memberId, clubId, deletedAt: null },
       });
@@ -541,7 +561,7 @@ export class MemberStatusService {
       }
 
       // Only create self-transition audit entry for future cancellations.
-      // Immediate cancellations get a proper LEFT transition via changeStatus below.
+      // Immediate cancellations get a proper LEFT transition via changeStatusInTx below.
       if (!isImmediate) {
         await tx.memberStatusTransition.create({
           data: {
@@ -570,26 +590,27 @@ export class MemberStatusService {
       this.logger.log(
         `Cancellation set: Member ${memberId} cancellation date ${cancellationDate} by ${userId}`
       );
-    });
 
-    // Phase 2: Immediate cancellation → transition to LEFT now
-    if (isImmediate) {
-      this.logger.log(
-        `Cancellation date ${cancellationDate} is today or past — immediately transitioning member ${memberId} to LEFT`
-      );
-      return this.changeStatus(
-        clubId,
-        memberId,
-        'LEFT' as MemberStatus,
-        reason || `Austritt zum ${cancellationDate} (Kündigung)`,
-        userId,
-        cancellationDate,
-        'VOLUNTARY' as LeftCategory
-      );
-    }
+      // Immediate cancellation → transition to LEFT within the same transaction
+      if (isImmediate) {
+        this.logger.log(
+          `Cancellation date ${cancellationDate} is today or past — immediately transitioning member ${memberId} to LEFT`
+        );
+        return this.changeStatusInTx(
+          tx,
+          clubId,
+          memberId,
+          'LEFT',
+          reason || `Austritt zum ${cancellationDate} (Kündigung)`,
+          userId,
+          cancellationDate,
+          'VOLUNTARY'
+        );
+      }
 
-    return this.prisma.member.findFirstOrThrow({
-      where: { id: memberId, clubId },
+      return tx.member.findFirstOrThrow({
+        where: { id: memberId, clubId },
+      });
     });
   }
 
