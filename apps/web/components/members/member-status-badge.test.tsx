@@ -40,7 +40,7 @@ describe('MemberStatusBadge', () => {
 
     const badge = screen.getByText('Mitgliedschaft beantragt');
     expect(badge).toBeInTheDocument();
-    expect(badge.className).toContain('text-accent-foreground');
+    expect(badge.className).toContain('text-foreground/70');
   });
 
   it('renders "Ausgetreten" with muted styling for LEFT', () => {

@@ -25,7 +25,7 @@ const STATUS_CONFIG: Record<MemberStatus, { label: string; className: string }> 
   },
   PENDING: {
     label: 'Mitgliedschaft beantragt',
-    className: 'bg-accent/15 text-accent-foreground border-accent/25',
+    className: 'bg-foreground/10 text-foreground/70 border-foreground/15',
   },
   LEFT: {
     label: 'Ausgetreten',
