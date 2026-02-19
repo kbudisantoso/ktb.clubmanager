@@ -61,7 +61,16 @@ import type { MembershipType } from '@/hooks/use-membership-types';
 // ============================================================================
 
 /** Fields available for bulk editing */
-const BULK_EDIT_FIELDS = [{ value: 'city', label: 'Ort' }] as const;
+const BULK_EDIT_FIELDS = [
+  { value: 'street', label: 'Straße' },
+  { value: 'houseNumber', label: 'Hausnummer' },
+  { value: 'addressExtra', label: 'Adresszusatz' },
+  { value: 'postalCode', label: 'PLZ' },
+  { value: 'city', label: 'Ort' },
+  { value: 'country', label: 'Land' },
+  { value: 'phone', label: 'Telefon' },
+  { value: 'mobile', label: 'Mobil' },
+] as const;
 
 // ============================================================================
 // Types
@@ -499,13 +508,13 @@ export function MemberBulkActions({
               </Select>
             </div>
 
-            {editField === 'city' && (
+            {editField && (
               <div className="space-y-1.5">
                 <Label>Neuer Wert</Label>
                 <Input
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  placeholder="Ort eingeben..."
+                  placeholder={`${BULK_EDIT_FIELDS.find((f) => f.value === editField)?.label ?? 'Wert'} eingeben...`}
                 />
               </div>
             )}
