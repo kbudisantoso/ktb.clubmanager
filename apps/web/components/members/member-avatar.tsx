@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { UserCheck } from 'lucide-react';
 
 /**
  * Palette of avatar background colors.
@@ -25,6 +26,20 @@ const SIZE_CLASSES = {
   lg: 'h-14 w-14 text-sm',
 } as const;
 
+/** Overlay badge position/size per avatar size */
+const OVERLAY_SIZES = {
+  sm: 'h-3 w-3 -bottom-0.5 -right-0.5',
+  md: 'h-3.5 w-3.5 -bottom-0.5 -right-0.5',
+  lg: 'h-4 w-4 -bottom-0.5 -right-0.5',
+} as const;
+
+/** Overlay icon size per avatar size */
+const OVERLAY_ICON_SIZES = {
+  sm: 'h-2 w-2',
+  md: 'h-2.5 w-2.5',
+  lg: 'h-3 w-3',
+} as const;
+
 interface MemberAvatarProps {
   /** Member ID for deterministic color selection */
   memberId: string;
@@ -42,12 +57,30 @@ interface MemberAvatarProps {
   className?: string;
   /** URL of linked user's profile image */
   imageUrl?: string | null;
+  /** Whether this member is linked to a user account */
+  hasLinkedUser?: boolean;
+}
+
+/** Small overlay badge indicating the member is linked to a user account */
+function LinkedUserOverlay({ size }: { size: 'sm' | 'md' | 'lg' }) {
+  return (
+    <span
+      className={cn(
+        'absolute flex items-center justify-center rounded-full bg-success text-success-foreground ring-2 ring-background',
+        OVERLAY_SIZES[size]
+      )}
+      title="Mit Benutzerkonto verknüpft"
+    >
+      <UserCheck className={OVERLAY_ICON_SIZES[size]} />
+    </span>
+  );
 }
 
 /**
  * Member avatar with image support and initials fallback.
  * When imageUrl is provided, displays the user's profile image.
  * Otherwise, shows colored initials based on member ID hash.
+ * When hasLinkedUser is true, a small green badge is overlaid at the bottom-right corner.
  */
 export function MemberAvatar({
   memberId,
@@ -58,6 +91,7 @@ export function MemberAvatar({
   size = 'sm',
   className,
   imageUrl,
+  hasLinkedUser,
 }: MemberAvatarProps) {
   const initials = getInitials(personType, firstName, lastName, organizationName);
   const colorIndex = hashToIndex(memberId, AVATAR_PALETTE.length);
@@ -68,7 +102,7 @@ export function MemberAvatar({
       : `${firstName ?? ''} ${lastName ?? ''}`.trim();
 
   if (imageUrl) {
-    return (
+    const avatar = (
       <Avatar className={cn(SIZE_CLASSES[size], 'shrink-0', className)}>
         <AvatarImage src={imageUrl} alt={title} />
         <AvatarFallback className={cn(bgColor, 'text-white font-medium')}>
@@ -76,12 +110,23 @@ export function MemberAvatar({
         </AvatarFallback>
       </Avatar>
     );
+
+    if (hasLinkedUser) {
+      return (
+        <div className="relative inline-flex">
+          {avatar}
+          <LinkedUserOverlay size={size} />
+        </div>
+      );
+    }
+
+    return avatar;
   }
 
   return (
     <div
       className={cn(
-        'flex items-center justify-center rounded-full text-white font-medium shrink-0',
+        'relative flex items-center justify-center rounded-full text-white font-medium shrink-0',
         SIZE_CLASSES[size],
         bgColor,
         className
@@ -89,6 +134,7 @@ export function MemberAvatar({
       title={title}
     >
       {initials}
+      {hasLinkedUser && <LinkedUserOverlay size={size} />}
     </div>
   );
 }
