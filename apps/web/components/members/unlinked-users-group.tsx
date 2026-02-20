@@ -136,7 +136,7 @@ export function UnlinkedUsersGroup({ slug, onCreateMember }: UnlinkedUsersGroupP
       <button
         type="button"
         onClick={() => toggleExpanded(true)}
-        className="flex w-full items-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+        className="flex w-full items-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
       >
         <ChevronRight className="h-4 w-4 shrink-0" />
         <span className="font-medium">Benutzer ohne Mitgliedsprofil</span>
