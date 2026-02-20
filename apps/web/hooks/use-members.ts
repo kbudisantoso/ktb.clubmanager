@@ -71,6 +71,7 @@ interface CreateMemberInput {
   status?: string;
   joinDate?: string;
   membershipType?: string;
+  userId?: string;
 }
 
 interface UpdateMemberInput extends Partial<CreateMemberInput> {
