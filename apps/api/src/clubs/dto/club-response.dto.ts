@@ -117,6 +117,22 @@ export class ClubResponseDto {
   @ApiPropertyOptional({ description: 'Logo file ID' })
   logoFileId?: string;
 
+  // --- Deactivation ---
+
+  @ApiPropertyOptional({ description: 'When the club was deactivated (ISO 8601)' })
+  deactivatedAt?: string | null;
+
+  @ApiPropertyOptional({ description: 'User ID who initiated the deactivation' })
+  deactivatedBy?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'When the club is scheduled for permanent deletion (ISO 8601)',
+  })
+  scheduledDeletionAt?: string | null;
+
+  @ApiPropertyOptional({ description: 'Grace period in days before deletion' })
+  gracePeriodDays?: number | null;
+
   // --- Relations & Meta ---
 
   @ApiPropertyOptional()

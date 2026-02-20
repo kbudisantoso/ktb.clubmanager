@@ -492,6 +492,11 @@ export class ClubsService {
       probationPeriodDays: number | null;
       // Logo
       logoFileId: string | null;
+      // Deactivation
+      deactivatedAt: Date | null;
+      deactivatedBy: string | null;
+      scheduledDeletionAt: Date | null;
+      gracePeriodDays: number | null;
       // Relations
       tierId: string | null;
       tier?: { id: string; name: string } | null;
@@ -544,6 +549,11 @@ export class ClubsService {
       probationPeriodDays: club.probationPeriodDays ?? undefined,
       // Logo
       logoFileId: club.logoFileId ?? undefined,
+      // Deactivation
+      deactivatedAt: club.deactivatedAt?.toISOString() ?? null,
+      deactivatedBy: club.deactivatedBy ?? null,
+      scheduledDeletionAt: club.scheduledDeletionAt?.toISOString() ?? null,
+      gracePeriodDays: club.gracePeriodDays ?? null,
       // Relations & meta
       tierId: club.tierId ?? undefined,
       tier: club.tier ?? undefined,
