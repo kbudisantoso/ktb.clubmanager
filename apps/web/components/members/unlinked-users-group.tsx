@@ -139,12 +139,11 @@ export function UnlinkedUsersGroup({ slug, onCreateMember }: UnlinkedUsersGroupP
         className="flex w-full items-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
       >
         <ChevronRight className="h-4 w-4 shrink-0" />
-        <span>
-          {activeUsers.length} Benutzer ohne Mitgliedsprofil
-          {externalUsers.length > 0 && (
-            <span className="ml-1 text-xs">({externalUsers.length} extern)</span>
-          )}
-        </span>
+        <span className="font-medium">Benutzer ohne Mitgliedsprofil</span>
+        <Badge variant="secondary" className="text-xs">
+          {activeUsers.length}
+          {externalUsers.length > 0 && ` + ${externalUsers.length} extern`}
+        </Badge>
       </button>
     );
   }
@@ -153,25 +152,18 @@ export function UnlinkedUsersGroup({ slug, onCreateMember }: UnlinkedUsersGroupP
   return (
     <>
       <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 space-y-3">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <UserPlus className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-medium">Benutzer ohne Mitgliedsprofil</h3>
-            <Badge variant="secondary" className="text-xs">
-              {activeUsers.length}
-            </Badge>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs"
-            onClick={() => toggleExpanded(false)}
-          >
-            <ChevronDown className="mr-1 h-3.5 w-3.5" />
-            Einklappen
-          </Button>
-        </div>
+        {/* Header — clickable to collapse */}
+        <button
+          type="button"
+          onClick={() => toggleExpanded(false)}
+          className="flex w-full items-center gap-2 text-left hover:opacity-70 transition-opacity"
+        >
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <h3 className="text-sm font-medium">Benutzer ohne Mitgliedsprofil</h3>
+          <Badge variant="secondary" className="text-xs">
+            {activeUsers.length}
+          </Badge>
+        </button>
 
         {/* Active users */}
         {activeUsers.length > 0 && (
