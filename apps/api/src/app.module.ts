@@ -20,6 +20,7 @@ import { ClubContextGuard } from './common/guards/club-context.guard.js';
 import { TierGuard } from './common/guards/tier.guard.js';
 import { PermissionGuard } from './common/guards/permission.guard.js';
 import { DeactivatedClubGuard } from './common/guards/deactivated-club.guard.js';
+import { ClubDeletionModule } from './club-deletion/club-deletion.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { DeactivatedClubGuard } from './common/guards/deactivated-club.guard.js'
     MembersModule,
     MembershipTypesModule,
     FilesModule,
+    ClubDeletionModule,
     HealthModule,
   ],
   providers: [

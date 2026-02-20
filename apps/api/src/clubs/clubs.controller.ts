@@ -16,8 +16,10 @@ import { Request } from 'express';
 import { ClubsService } from './clubs.service.js';
 import { CreateClubDto } from './dto/create-club.dto.js';
 import { UpdateClubDto } from './dto/update-club.dto.js';
+import { DeactivateClubDto } from './dto/deactivate-club.dto.js';
 import { ClubResponseDto } from './dto/club-response.dto.js';
 import { SuperAdminOnly } from '../common/decorators/super-admin.decorator.js';
+import { DeactivationExempt } from '../common/decorators/deactivation-exempt.decorator.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 interface AuthenticatedRequest extends Request {
@@ -107,6 +109,33 @@ export class ClubsController {
   async regenerateInviteCode(@Param('slug') slug: string, @Req() req: AuthenticatedRequest) {
     const isSuperAdmin = await this.isSuperAdmin(req.user.id);
     return this.clubsService.regenerateInviteCode(slug, req.user.id, isSuperAdmin);
+  }
+
+  @Post(':slug/deactivate')
+  @ApiOperation({ summary: 'Deactivate club (initiate grace period before deletion)' })
+  @ApiResponse({ status: 200, description: 'Club deactivated', type: ClubResponseDto })
+  @ApiResponse({ status: 400, description: 'Confirmation name mismatch or already deactivated' })
+  @ApiResponse({ status: 403, description: 'Not club owner' })
+  @ApiResponse({ status: 404, description: 'Club not found' })
+  async deactivate(
+    @Param('slug') slug: string,
+    @Body() dto: DeactivateClubDto,
+    @Req() req: AuthenticatedRequest
+  ) {
+    const isSuperAdmin = await this.isSuperAdmin(req.user.id);
+    return this.clubsService.deactivate(slug, dto, req.user.id, isSuperAdmin);
+  }
+
+  @Post(':slug/reactivate')
+  @DeactivationExempt()
+  @ApiOperation({ summary: 'Reactivate a deactivated club (cancel deletion)' })
+  @ApiResponse({ status: 200, description: 'Club reactivated', type: ClubResponseDto })
+  @ApiResponse({ status: 400, description: 'Club is not deactivated' })
+  @ApiResponse({ status: 403, description: 'Not club owner' })
+  @ApiResponse({ status: 404, description: 'Club not found' })
+  async reactivate(@Param('slug') slug: string, @Req() req: AuthenticatedRequest) {
+    const isSuperAdmin = await this.isSuperAdmin(req.user.id);
+    return this.clubsService.reactivate(slug, req.user.id, isSuperAdmin);
   }
 
   // Super Admin only endpoints
