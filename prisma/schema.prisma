@@ -102,6 +102,16 @@ model Club {
   logoFileId String? @unique
   logoFile   File?   @relation(fields: [logoFileId], references: [id])
 
+  // --- Deactivation / Deletion Grace Period ---
+  /// When the club was deactivated (initiates grace period)
+  deactivatedAt       DateTime?
+  /// Who initiated the deactivation (userId)
+  deactivatedBy       String?
+  /// When the club is scheduled for permanent deletion
+  scheduledDeletionAt DateTime?
+  /// Grace period in days (stored for reference after deactivation)
+  gracePeriodDays     Int?
+
   /// Tier for feature limits (optional)
   tierId String?
   tier   Tier?   @relation(fields: [tierId], references: [id])
@@ -1089,4 +1099,44 @@ model UserFile {
   @@unique([userId, fileId])
   @@index([userId])
   @@map("user_files")
+}
+
+// =============================================================================
+// Club Deletion Audit Log
+// =============================================================================
+// Separate from AuditLog which is CASCADE-deleted with club data.
+// Purpose: GDPR Art. 30 compliance — proves erasure happened.
+
+/// Audit trail for club deletions (survives club data deletion).
+model ClubDeletionLog {
+  id String @id @default(cuid())
+
+  /// Club organizational name (not personal data)
+  clubName String
+  /// Club URL slug
+  clubSlug String
+  /// User who initiated the deletion
+  initiatedBy String
+  /// When the club was deactivated
+  deactivatedAt DateTime
+  /// When permanent deletion was scheduled
+  scheduledDeletionAt DateTime
+  /// When permanent deletion actually occurred (null if still pending)
+  deletedAt DateTime?
+  /// Member count at time of deletion (aggregate, not personal data)
+  memberCount Int
+  /// JSON array of notification event timestamps
+  notificationEvents Json @default("[]")
+  /// Whether deletion was cancelled (reactivated) before completion
+  cancelled Boolean @default(false)
+  /// When cancellation occurred
+  cancelledAt DateTime?
+  /// Who cancelled the deletion
+  cancelledBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clubSlug])
+  @@map("club_deletion_logs")
 }
