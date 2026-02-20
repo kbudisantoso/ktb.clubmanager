@@ -250,6 +250,37 @@ export class MembersService {
       };
     }
 
+    // Pre-link to a user account if userId provided
+    if (dto.userId) {
+      // Validate user is an active ClubUser
+      const clubUser = await this.prisma.clubUser.findFirst({
+        where: { clubId, userId: dto.userId, status: 'ACTIVE' },
+      });
+      if (!clubUser) {
+        throw new BadRequestException('Benutzer ist kein aktives Mitglied dieses Vereins');
+      }
+
+      // Validate no other member is linked to this user
+      const existingLink = await db.member.findFirst({
+        where: { userId: dto.userId, deletedAt: null },
+      });
+      if (existingLink) {
+        throw new ConflictException(
+          `Benutzer ist bereits mit Mitglied ${existingLink.memberNumber} verknüpft`
+        );
+      }
+
+      createData.userId = dto.userId;
+
+      // Auto-clear isExternal on the ClubUser in the same operation
+      if (clubUser.isExternal) {
+        await this.prisma.clubUser.update({
+          where: { id: clubUser.id },
+          data: { isExternal: false },
+        });
+      }
+    }
+
     const member = await db.member.create({
       data: createData as Prisma.MemberUncheckedCreateInput,
       include: {

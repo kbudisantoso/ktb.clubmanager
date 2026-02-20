@@ -243,4 +243,9 @@ export class CreateMemberDto {
   @IsString()
   @IsOptional()
   membershipTypeId?: string;
+
+  @ApiPropertyOptional({ description: 'User ID to link on creation' })
+  @IsString()
+  @IsOptional()
+  userId?: string;
 }
