@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import type {
   Control,
   FieldErrors,
@@ -7,7 +8,8 @@ import type {
   UseFormSetValue,
   UseFormWatch,
 } from 'react-hook-form';
-import { Info, User, Building2 } from 'lucide-react';
+import { Info, User, Building2, UserCheck } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -149,7 +151,13 @@ function BasicInfoReadMode({ member }: { member: MemberDetail }) {
         <ReadField label="Mitgliedsnummer" value={member.memberNumber} mono />
 
         {/* User link */}
-        {member.userId && <ReadField label="Benutzerkonto" value="Verknüpft mit Benutzer" />}
+        {member.userId && (
+          <ReadField
+            label="Benutzerkonto"
+            value="Verknüpft"
+            icon={<UserCheck className="h-3.5 w-3.5 text-success" />}
+          />
+        )}
       </dl>
     </div>
   );
@@ -159,15 +167,18 @@ function ReadField({
   label,
   value,
   mono = false,
+  icon,
 }: {
   label: string;
   value: string | null | undefined;
   mono?: boolean;
+  icon?: ReactNode;
 }) {
   return (
     <>
       <dt className="text-muted-foreground whitespace-nowrap">{label}</dt>
-      <dd className={mono ? 'font-mono' : ''}>
+      <dd className={cn(mono && 'font-mono', icon && 'flex items-center gap-1.5')}>
+        {icon}
         {value || <span className="text-muted-foreground/50">Nicht angegeben</span>}
       </dd>
     </>
