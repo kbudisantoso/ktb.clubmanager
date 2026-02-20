@@ -22,6 +22,11 @@ const mockDb = {
 
 const mockPrisma = {
   forClub: vi.fn(() => mockDb),
+  clubUser: {
+    findMany: vi.fn(),
+    findFirst: vi.fn(),
+    update: vi.fn(),
+  },
 } as unknown as PrismaService;
 
 const mockNumberRanges = {
@@ -523,6 +528,176 @@ describe('MembersService', () => {
 
       await expect(service.anonymize('club-1', 'member-1', 'user-1')).rejects.toThrow(
         BadRequestException
+      );
+    });
+  });
+
+  describe('getLinkableUsers()', () => {
+    function makeClubUser(overrides: Record<string, unknown> = {}) {
+      return {
+        id: 'cu-1',
+        userId: 'user-1',
+        clubId: 'club-1',
+        status: 'ACTIVE',
+        roles: ['MEMBER'],
+        user: { id: 'user-1', name: 'Max Muster', email: 'max@test.com', image: null },
+        ...overrides,
+      };
+    }
+
+    it('should return ClubUsers not linked to other members (happy path)', async () => {
+      const member = makeMember({ id: 'member-1', userId: null });
+      mockDb.member.findFirst.mockResolvedValue(member);
+
+      const cu1 = makeClubUser({ userId: 'user-1' });
+      const cu2 = makeClubUser({
+        id: 'cu-2',
+        userId: 'user-2',
+        user: { id: 'user-2', name: 'Erika', email: 'erika@test.com', image: null },
+      });
+      (
+        mockPrisma.clubUser as unknown as { findMany: ReturnType<typeof vi.fn> }
+      ).findMany.mockResolvedValue([cu1, cu2]);
+
+      // user-1 is linked to another member
+      mockDb.member.findMany.mockResolvedValue([{ userId: 'user-1' }]);
+
+      const result = await service.getLinkableUsers('club-1', 'member-1');
+
+      expect(result.users).toHaveLength(1);
+      expect(result.users[0]!.userId).toBe('user-2');
+      expect(result.users[0]!.name).toBe('Erika');
+    });
+
+    it('should exclude users linked to other members in same club', async () => {
+      mockDb.member.findFirst.mockResolvedValue(makeMember({ id: 'member-1' }));
+      (
+        mockPrisma.clubUser as unknown as { findMany: ReturnType<typeof vi.fn> }
+      ).findMany.mockResolvedValue([
+        makeClubUser({ userId: 'user-1' }),
+        makeClubUser({
+          id: 'cu-2',
+          userId: 'user-2',
+          user: { id: 'user-2', name: 'Erika', email: 'e@t.com', image: null },
+        }),
+      ]);
+      // Both users linked to other members
+      mockDb.member.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
+
+      const result = await service.getLinkableUsers('club-1', 'member-1');
+
+      expect(result.users).toHaveLength(0);
+    });
+
+    it('should return member context (email, firstName, lastName)', async () => {
+      mockDb.member.findFirst.mockResolvedValue(
+        makeMember({
+          id: 'member-1',
+          email: 'max@example.com',
+          firstName: 'Max',
+          lastName: 'Mustermann',
+        })
+      );
+      (
+        mockPrisma.clubUser as unknown as { findMany: ReturnType<typeof vi.fn> }
+      ).findMany.mockResolvedValue([]);
+      mockDb.member.findMany.mockResolvedValue([]);
+
+      const result = await service.getLinkableUsers('club-1', 'member-1');
+
+      expect(result.member).toEqual({
+        email: 'max@example.com',
+        firstName: 'Max',
+        lastName: 'Mustermann',
+      });
+    });
+
+    it('should throw NotFoundException if member not found', async () => {
+      mockDb.member.findFirst.mockResolvedValue(null);
+
+      await expect(service.getLinkableUsers('club-1', 'nonexistent')).rejects.toThrow(
+        NotFoundException
+      );
+    });
+  });
+
+  describe('linkUser()', () => {
+    it('should link member to user (sets userId)', async () => {
+      mockDb.member.findFirst.mockResolvedValue(makeMember({ userId: null }));
+      (
+        mockPrisma.clubUser as unknown as { findFirst: ReturnType<typeof vi.fn> }
+      ).findFirst.mockResolvedValue({
+        id: 'cu-1',
+        userId: 'user-1',
+        clubId: 'club-1',
+        status: 'ACTIVE',
+      });
+      // No other member linked to this user
+      mockDb.member.findFirst.mockResolvedValueOnce(makeMember({ userId: null })); // first call: member lookup
+      mockDb.member.findFirst.mockResolvedValueOnce(null); // second call: duplicate check
+      mockDb.member.update.mockResolvedValue(makeMember({ userId: 'user-1' }));
+
+      const result = await service.linkUser('club-1', 'member-1', 'user-1');
+
+      expect(result.userId).toBe('user-1');
+      expect(mockDb.member.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { userId: 'user-1' },
+        })
+      );
+    });
+
+    it('should throw BadRequestException if user is not a ClubUser in this club', async () => {
+      mockDb.member.findFirst.mockResolvedValue(makeMember());
+      (
+        mockPrisma.clubUser as unknown as { findFirst: ReturnType<typeof vi.fn> }
+      ).findFirst.mockResolvedValue(null);
+
+      await expect(service.linkUser('club-1', 'member-1', 'user-999')).rejects.toThrow(
+        BadRequestException
+      );
+    });
+
+    it('should throw ConflictException if user already linked to another member', async () => {
+      mockDb.member.findFirst
+        .mockResolvedValueOnce(makeMember({ id: 'member-1' })) // member lookup
+        .mockResolvedValueOnce(
+          makeMember({ id: 'member-other', memberNumber: 'M-0099', userId: 'user-1' })
+        ); // duplicate check
+
+      (
+        mockPrisma.clubUser as unknown as { findFirst: ReturnType<typeof vi.fn> }
+      ).findFirst.mockResolvedValue({
+        id: 'cu-1',
+        userId: 'user-1',
+        clubId: 'club-1',
+        status: 'ACTIVE',
+      });
+
+      await expect(service.linkUser('club-1', 'member-1', 'user-1')).rejects.toThrow(
+        ConflictException
+      );
+    });
+
+    it('should unlink member when userId is null', async () => {
+      mockDb.member.findFirst.mockResolvedValue(makeMember({ userId: 'user-1' }));
+      mockDb.member.update.mockResolvedValue(makeMember({ userId: null }));
+
+      const result = await service.linkUser('club-1', 'member-1', null);
+
+      expect(result.userId).toBeNull();
+      expect(mockDb.member.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { userId: null },
+        })
+      );
+    });
+
+    it('should throw NotFoundException if member not found', async () => {
+      mockDb.member.findFirst.mockResolvedValue(null);
+
+      await expect(service.linkUser('club-1', 'nonexistent', 'user-1')).rejects.toThrow(
+        NotFoundException
       );
     });
   });
