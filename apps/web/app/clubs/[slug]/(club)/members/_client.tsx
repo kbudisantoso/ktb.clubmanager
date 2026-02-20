@@ -14,6 +14,7 @@ import { useColumnVisibility } from '@/hooks/use-column-visibility';
 import { useMembersInfinite } from '@/hooks/use-members';
 import { useNumberRanges } from '@/hooks/use-number-ranges';
 import { useMembershipTypes } from '@/hooks/use-membership-types';
+import { useHouseholds } from '@/hooks/use-households';
 import { MemberSearch } from '@/components/members/member-search';
 import { MemberEmptyState } from '@/components/members/member-empty-state';
 import { MemberListTable } from '@/components/members/member-list-table';
@@ -90,6 +91,13 @@ export function MembersClient() {
 
   const { data: numberRanges, isLoading: isNumberRangesLoading } = useNumberRanges(slug);
   const { data: membershipTypes } = useMembershipTypes(slug);
+  const { data: households } = useHouseholds(slug);
+
+  // Build household ID → name map for filter chips
+  const householdNames = useMemo(
+    () => new Map(households?.map((h) => [h.id, h.name]) ?? []),
+    [households]
+  );
 
   // Flatten pages into a single array
   const members = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
@@ -282,7 +290,11 @@ export function MembersClient() {
           </div>
 
           {/* Active filter chips */}
-          <MemberFilterChips filters={filters} setFilters={setFilters} />
+          <MemberFilterChips
+            filters={filters}
+            setFilters={setFilters}
+            householdNames={householdNames}
+          />
         </div>
       )}
 
