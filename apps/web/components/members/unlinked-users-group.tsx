@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronRight, ExternalLink, UserPlus, Link2, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -47,11 +47,34 @@ export function UnlinkedUsersGroup({ slug, onCreateMember }: UnlinkedUsersGroupP
   const { data: unlinkedUsers, isLoading } = useUnlinkedUsers(slug);
   const toggleExternal = useToggleExternal(slug);
 
+  const storageKey = `unlinked-users-expanded:${slug}`;
   const [isExpanded, setIsExpanded] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerUserId, setPickerUserId] = useState('');
   const [pickerUserName, setPickerUserName] = useState('');
   const [pickerUserEmail, setPickerUserEmail] = useState('');
+
+  // Hydrate collapsed state from localStorage (SSR-safe)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored === 'false') setIsExpanded(false);
+    } catch {
+      // Ignore — fall back to default (expanded)
+    }
+  }, [storageKey]);
+
+  const toggleExpanded = useCallback(
+    (expanded: boolean) => {
+      setIsExpanded(expanded);
+      try {
+        localStorage.setItem(storageKey, String(expanded));
+      } catch {
+        // Storage full or unavailable — ignore
+      }
+    },
+    [storageKey]
+  );
 
   // Split into active and external users
   const activeUsers = useMemo(
@@ -112,7 +135,7 @@ export function UnlinkedUsersGroup({ slug, onCreateMember }: UnlinkedUsersGroupP
     return (
       <button
         type="button"
-        onClick={() => setIsExpanded(true)}
+        onClick={() => toggleExpanded(true)}
         className="flex w-full items-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
       >
         <ChevronRight className="h-4 w-4 shrink-0" />
@@ -143,7 +166,7 @@ export function UnlinkedUsersGroup({ slug, onCreateMember }: UnlinkedUsersGroupP
             variant="ghost"
             size="sm"
             className="h-7 text-xs"
-            onClick={() => setIsExpanded(false)}
+            onClick={() => toggleExpanded(false)}
           >
             <ChevronDown className="mr-1 h-3.5 w-3.5" />
             Einklappen
