@@ -7,6 +7,7 @@ import {
   type ClubContext,
 } from '../common/decorators/club-context.decorator.js';
 import { RequirePermission } from '../common/decorators/permissions.decorator.js';
+import { DeactivationExempt } from '../common/decorators/deactivation-exempt.decorator.js';
 import { Permission } from '../common/permissions/permissions.enum.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { MembersService } from './members.service.js';
@@ -208,6 +209,7 @@ export class MembersController {
   }
 
   @Post(':id/anonymize')
+  @DeactivationExempt()
   @RequirePermission(Permission.MEMBER_DELETE)
   @ApiOperation({ summary: 'DSGVO anonymization (irreversible, requires status LEFT)' })
   @ApiParam({ name: 'id', description: 'Member ID' })
