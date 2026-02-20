@@ -147,7 +147,7 @@ describe('ClubDeletionSchedulerService', () => {
         mockClubDeletionLogService.updateNotificationEvents as ReturnType<typeof vi.fn>
       ).mock.calls;
       if (calls.length > 0) {
-        const events = calls[0][1] as Array<{ type: string }>;
+        const events = calls[0]![1] as Array<{ type: string }>;
         expect(events.every((e) => e.type !== 'T-7')).toBe(true);
       }
     });
