@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Loader2, Search, Users } from 'lucide-react';
 import {
   Dialog,
@@ -28,6 +28,7 @@ interface MemberPickerDialogProps {
   slug: string;
   userId: string;
   userName: string;
+  userEmail: string;
 }
 
 interface PickableMember {
@@ -41,6 +42,35 @@ interface PickableMember {
 }
 
 // ============================================================================
+// Match Scoring
+// ============================================================================
+
+function computeMatchScore(member: PickableMember, userEmail: string, userName: string): number {
+  // Exact email match
+  if (member.email && userEmail && member.email.toLowerCase() === userEmail.toLowerCase()) {
+    return 100;
+  }
+
+  // Name matching against userName
+  const uName = (userName ?? '').toLowerCase();
+  const first = member.firstName.toLowerCase();
+  const last = member.lastName.toLowerCase();
+  const fullName = `${first} ${last}`;
+  const fullNameReversed = `${last} ${first}`;
+  const lastCommaFirst = `${last}, ${first}`;
+
+  if (uName === fullName || uName === fullNameReversed || uName === lastCommaFirst) {
+    return 50;
+  }
+
+  if (uName.includes(first) || uName.includes(last)) {
+    return 25;
+  }
+
+  return 0;
+}
+
+// ============================================================================
 // Component
 // ============================================================================
 
@@ -50,6 +80,7 @@ export function MemberPickerDialog({
   slug,
   userId,
   userName,
+  userEmail,
 }: MemberPickerDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -62,33 +93,52 @@ export function MemberPickerDialog({
   const { data: members, isLoading } = useQuery<PickableMember[]>({
     queryKey: [...memberKeys.all(slug), 'pickable-members'],
     queryFn: async () => {
-      // Fetch all members, we'll filter client-side for unlinked ones
       const res = await apiFetch(`/api/clubs/${slug}/members?limit=100`);
       if (!res.ok) {
         throw new Error('Fehler beim Laden der Mitglieder');
       }
       const data = await res.json();
-      // Filter to only unlinked members
       return (data.items ?? []).filter((m: PickableMember) => !m.userId);
     },
     enabled: open,
     staleTime: 15_000,
   });
 
+  // Score and sort members
+  const scoredMembers = useMemo(() => {
+    if (!members) return [];
+    return members
+      .map((member) => ({
+        ...member,
+        matchScore: computeMatchScore(member, userEmail, userName),
+      }))
+      .sort((a, b) => b.matchScore - a.matchScore);
+  }, [members, userEmail, userName]);
+
   // Filter by search
   const filteredMembers = useMemo(() => {
-    if (!members) return [];
-    if (!search.trim()) return members;
+    if (!search.trim()) return scoredMembers;
     const q = search.toLowerCase();
-    return members.filter(
+    return scoredMembers.filter(
       (m) =>
         `${m.firstName} ${m.lastName}`.toLowerCase().includes(q) ||
         m.memberNumber.toLowerCase().includes(q) ||
         (m.email && m.email.toLowerCase().includes(q))
     );
-  }, [members, search]);
+  }, [scoredMembers, search]);
 
-  // Reset state when dialog closes
+  // Auto-select best match on open, reset on close
+  useEffect(() => {
+    if (!open) {
+      setSelectedMemberId(null);
+      setSearch('');
+      return;
+    }
+    if (scoredMembers.length > 0 && scoredMembers[0].matchScore >= 100) {
+      setSelectedMemberId(scoredMembers[0].id);
+    }
+  }, [open, scoredMembers]);
+
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
       if (!newOpen) {
@@ -192,6 +242,12 @@ export function MemberPickerDialog({
                       {member.email && ` · ${member.email}`}
                     </p>
                   </div>
+                  {member.matchScore >= 100 && (
+                    <span className="text-xs text-success font-medium shrink-0">E-Mail Match</span>
+                  )}
+                  {member.matchScore >= 25 && member.matchScore < 100 && (
+                    <span className="text-xs text-muted-foreground shrink-0">Name ähnlich</span>
+                  )}
                 </button>
               ))}
             </div>

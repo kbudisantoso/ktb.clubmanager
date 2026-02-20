@@ -51,6 +51,7 @@ export function UnlinkedUsersGroup({ slug, onCreateMember }: UnlinkedUsersGroupP
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerUserId, setPickerUserId] = useState('');
   const [pickerUserName, setPickerUserName] = useState('');
+  const [pickerUserEmail, setPickerUserEmail] = useState('');
 
   // Split into active and external users
   const activeUsers = useMemo(
@@ -102,6 +103,7 @@ export function UnlinkedUsersGroup({ slug, onCreateMember }: UnlinkedUsersGroupP
   const handleLinkUser = (user: (typeof activeUsers)[0]) => {
     setPickerUserId(user.userId);
     setPickerUserName(user.name);
+    setPickerUserEmail(user.email);
     setPickerOpen(true);
   };
 
@@ -263,6 +265,7 @@ export function UnlinkedUsersGroup({ slug, onCreateMember }: UnlinkedUsersGroupP
         slug={slug}
         userId={pickerUserId}
         userName={pickerUserName}
+        userEmail={pickerUserEmail}
       />
     </>
   );
