@@ -19,6 +19,7 @@ interface ClubUser {
   image?: string;
   roles: string[];
   joinedAt: string;
+  isExternal: boolean;
 }
 
 export function UsersSettingsClient() {

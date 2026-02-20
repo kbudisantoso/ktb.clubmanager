@@ -18,9 +18,13 @@ import { useHouseholds } from '@/hooks/use-households';
 import { MemberSearch } from '@/components/members/member-search';
 import { MemberEmptyState } from '@/components/members/member-empty-state';
 import { MemberListTable } from '@/components/members/member-list-table';
-import { MemberCreateSheet } from '@/components/members/member-create-sheet';
+import {
+  MemberCreateSheet,
+  type MemberCreateSheetPrefillData,
+} from '@/components/members/member-create-sheet';
 import { MemberDetailPanel } from '@/components/members/member-detail-panel';
 import { MemberBulkActions } from '@/components/members/member-bulk-actions';
+import { UnlinkedUsersGroup } from '@/components/members/unlinked-users-group';
 import { MemberFilterStatus } from '@/components/members/member-filter-status';
 import { MemberFilterHousehold } from '@/components/members/member-filter-household';
 import { MemberFilterPeriod } from '@/components/members/member-filter-period';
@@ -69,6 +73,9 @@ export function MembersClient() {
 
   // --- UI state ---
   const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
+  const [createSheetPrefill, setCreateSheetPrefill] = useState<MemberCreateSheetPrefillData | null>(
+    null
+  );
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [activeRowIndex, setActiveRowIndex] = useState<number>(-1);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -298,6 +305,15 @@ export function MembersClient() {
         </div>
       )}
 
+      {/* Unlinked users suggestion group */}
+      <UnlinkedUsersGroup
+        slug={slug}
+        onCreateMember={(prefill) => {
+          setCreateSheetPrefill(prefill);
+          setIsCreateSheetOpen(true);
+        }}
+      />
+
       {/* Empty button for pages without Row 1 (no number ranges, no members) */}
       {!hasMemberNumberRange && members.length === 0 && !isLoading && (
         <div className="flex justify-end">
@@ -348,7 +364,15 @@ export function MembersClient() {
       <div className="container mx-auto">{listContent}</div>
 
       {/* Overlays */}
-      <MemberCreateSheet slug={slug} open={isCreateSheetOpen} onOpenChange={setIsCreateSheetOpen} />
+      <MemberCreateSheet
+        slug={slug}
+        open={isCreateSheetOpen}
+        onOpenChange={(open) => {
+          setIsCreateSheetOpen(open);
+          if (!open) setCreateSheetPrefill(null);
+        }}
+        prefillData={createSheetPrefill}
+      />
       <MemberDetailPanel
         selectedMemberId={selectedMemberId}
         onClose={closePanel}

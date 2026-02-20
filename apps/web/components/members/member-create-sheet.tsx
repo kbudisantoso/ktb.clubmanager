@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, UserPlus } from 'lucide-react';
 import { CreateMemberSchema } from '@ktb/shared';
 import {
   Sheet,
@@ -48,6 +48,14 @@ const SALUTATION_OPTIONS = [
 /** Status options derived from shared labels */
 const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }));
 
+export interface MemberCreateSheetPrefillData {
+  userId: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  displayName?: string;
+}
+
 interface MemberCreateSheetProps {
   /** Club slug for API calls */
   slug: string;
@@ -55,6 +63,8 @@ interface MemberCreateSheetProps {
   open: boolean;
   /** Callback when sheet should close */
   onOpenChange: (open: boolean) => void;
+  /** Pre-fill data from unlinked user for linked creation */
+  prefillData?: MemberCreateSheetPrefillData | null;
 }
 
 /**
@@ -62,7 +72,12 @@ interface MemberCreateSheetProps {
  * Uses react-hook-form with zodResolver for validation.
  * Supports person type toggle, OpenPLZ address autocomplete, and auto member number.
  */
-export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateSheetProps) {
+export function MemberCreateSheet({
+  slug,
+  open,
+  onOpenChange,
+  prefillData,
+}: MemberCreateSheetProps) {
   const { toast } = useToast();
   const createMember = useCreateMember(slug);
   const { data: numberRanges } = useNumberRanges(slug);
@@ -109,19 +124,20 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
   const personType = watch('personType');
   const joinDate = watch('joinDate');
 
-  // Reset form when sheet opens
+  // Reset form when sheet opens, applying prefill data if provided
   useEffect(() => {
     if (open) {
       reset({
         personType: 'NATURAL',
-        firstName: '',
-        lastName: '',
+        firstName: prefillData?.firstName ?? '',
+        lastName: prefillData?.lastName ?? '',
+        email: prefillData?.email ?? '',
         status: 'PENDING',
         country: 'DE',
         joinDate: getTodayISO(),
       });
     }
-  }, [open, reset]);
+  }, [open, reset, prefillData]);
 
   // Auto-set membershipTypeId when joinDate is entered and a default type exists
   useEffect(() => {
@@ -136,6 +152,11 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
       const cleaned = Object.fromEntries(
         Object.entries(data).filter(([, v]) => v !== '' && v !== undefined)
       ) as FormValues;
+
+      // Include userId for pre-linked creation
+      if (prefillData?.userId) {
+        (cleaned as Record<string, unknown>).userId = prefillData.userId;
+      }
 
       await createMember.mutateAsync(cleaned);
 
@@ -172,6 +193,23 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
           {/* Scrollable fields */}
           <div className="flex-1 overflow-y-auto px-4 pb-4">
             <div className="flex flex-col gap-6">
+              {/* Linking context banner */}
+              {prefillData && (
+                <div className="rounded-md bg-muted p-3 flex items-center gap-3">
+                  <UserPlus className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">
+                      Mitgliedsprofil erstellen für{' '}
+                      {prefillData.displayName ??
+                        `${prefillData.firstName} ${prefillData.lastName}`}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Benutzerkonto wird automatisch verknüpft.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Section 1: Person Type Toggle */}
               <div className="space-y-2">
                 <Label>Personenart</Label>

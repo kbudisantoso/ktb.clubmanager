@@ -36,6 +36,7 @@ interface MemberListItem {
   mobile: string | null;
   status: string;
   userImage: string | null;
+  userId: string | null;
   householdId: string | null;
   householdRole: string | null;
   household: { id: string; name: string } | null;
@@ -117,6 +118,7 @@ const COLUMN_DEFS: Record<ColumnKey, ColumnDef> = {
           personType={m.personType}
           size="sm"
           imageUrl={m.userImage}
+          hasLinkedUser={!!m.userId}
         />
         <div className="min-w-0">
           <div className="font-medium truncate">{getDisplayName(m)}</div>

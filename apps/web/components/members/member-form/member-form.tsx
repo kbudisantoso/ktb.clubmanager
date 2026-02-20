@@ -10,10 +10,10 @@ import { Separator } from '@/components/ui/separator';
 import { useUpdateMember } from '@/hooks/use-members';
 import { useToast } from '@/hooks/use-toast';
 import type { MemberDetail } from '@/hooks/use-member-detail';
-import { BasicInfoTab } from './basic-info-tab';
-import { AddressContactTab } from './address-contact-tab';
-import { MembershipTab } from './membership-tab';
-import { NotesTab } from './notes-tab';
+import { BasicInfoSection } from './basic-info-section';
+import { AddressContactSection } from './address-contact-section';
+import { MembershipSection } from './membership-section';
+import { NotesSection } from './notes-section';
 
 // ============================================================================
 // Types
@@ -153,7 +153,7 @@ export function MemberForm({ member, slug, onDirtyChange }: MemberFormProps) {
         <div className="flex flex-col gap-6">
           {/* Section: Stammdaten */}
           <SectionHeader title="Stammdaten" />
-          <BasicInfoTab
+          <BasicInfoSection
             member={member}
             isEditing={true}
             register={register}
@@ -168,7 +168,7 @@ export function MemberForm({ member, slug, onDirtyChange }: MemberFormProps) {
 
           {/* Section: Adresse & Kontakt */}
           <SectionHeader title="Adresse & Kontakt" />
-          <AddressContactTab
+          <AddressContactSection
             member={member}
             isEditing={true}
             register={register}
@@ -182,13 +182,13 @@ export function MemberForm({ member, slug, onDirtyChange }: MemberFormProps) {
 
           {/* Section: Mitgliedschaft */}
           <SectionHeader title="Mitgliedschaft" />
-          <MembershipTab member={member} slug={slug} />
+          <MembershipSection member={member} slug={slug} />
 
           <Separator />
 
           {/* Section: Notizen */}
           <SectionHeader title="Notizen" />
-          <NotesTab
+          <NotesSection
             member={member}
             isEditing={true}
             register={register}

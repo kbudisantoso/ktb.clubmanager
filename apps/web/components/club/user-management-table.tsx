@@ -30,6 +30,7 @@ interface ClubUser {
   image?: string;
   roles: string[];
   joinedAt: string;
+  isExternal: boolean;
 }
 
 interface UserManagementTableProps {
@@ -134,6 +135,37 @@ export function UserManagementTable({
     }
   };
 
+  const handleToggleExternal = async (user: ClubUser) => {
+    try {
+      const response = await fetch(`/api/clubs/${clubSlug}/users/${user.id}/external`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isExternal: !user.isExternal }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        toast({
+          title: 'Fehler',
+          description: error.message || 'Status konnte nicht aktualisiert werden.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: user.isExternal ? 'Markierung aufgehoben' : 'Als extern markiert',
+      });
+      onRefresh();
+    } catch {
+      toast({
+        title: 'Fehler',
+        description: 'Status konnte nicht aktualisiert werden.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <>
       <Table>
@@ -154,6 +186,11 @@ export function UserManagementTable({
                 <TableCell className="font-medium">
                   {user.name}
                   {isSelf && <span className="ml-2 text-xs text-muted-foreground">(Du)</span>}
+                  {user.isExternal && (
+                    <Badge variant="outline" className="ml-2 text-xs">
+                      Extern
+                    </Badge>
+                  )}
                 </TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
@@ -176,6 +213,9 @@ export function UserManagementTable({
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => handleEditRoles(user)}>
                         Rollen bearbeiten
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleToggleExternal(user)}>
+                        {user.isExternal ? 'Extern-Markierung aufheben' : 'Als extern markieren'}
                       </DropdownMenuItem>
                       {!isSelf && (
                         <DropdownMenuItem

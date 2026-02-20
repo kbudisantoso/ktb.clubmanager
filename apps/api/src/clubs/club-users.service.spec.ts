@@ -12,6 +12,9 @@ const mockPrisma = {
     update: vi.fn(),
     delete: vi.fn(),
   },
+  member: {
+    findMany: vi.fn(),
+  },
 };
 
 describe('ClubUsersService', () => {
@@ -384,6 +387,169 @@ describe('ClubUsersService', () => {
       expect(mockPrisma.clubUser.delete).toHaveBeenCalledWith({
         where: { id: targetClubUserId },
       });
+    });
+  });
+
+  describe('getUnlinkedUsers()', () => {
+    const clubId = 'club-1';
+
+    function makeClubUser(overrides: Record<string, unknown> = {}) {
+      return {
+        id: 'cu-1',
+        userId: 'user-1',
+        clubId,
+        status: 'ACTIVE',
+        roles: [ClubRole.MEMBER],
+        isExternal: false,
+        joinedAt: new Date('2025-01-01'),
+        user: { id: 'user-1', name: 'Max Muster', email: 'max@test.com', image: null },
+        ...overrides,
+      };
+    }
+
+    it('should return ClubUsers who have NO linked member (happy path)', async () => {
+      const cu1 = makeClubUser({ id: 'cu-1', userId: 'user-1' });
+      const cu2 = makeClubUser({
+        id: 'cu-2',
+        userId: 'user-2',
+        user: { id: 'user-2', name: 'Erika', email: 'erika@test.com', image: null },
+      });
+      mockPrisma.clubUser.findMany.mockResolvedValue([cu1, cu2]);
+      // user-1 is linked to a member, user-2 is not
+      mockPrisma.member.findMany.mockResolvedValue([{ userId: 'user-1' }]);
+
+      const result = await service.getUnlinkedUsers(clubId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.userId).toBe('user-2');
+      expect(result[0]!.name).toBe('Erika');
+    });
+
+    it('should exclude ClubUsers who have a linked member', async () => {
+      const cu = makeClubUser();
+      mockPrisma.clubUser.findMany.mockResolvedValue([cu]);
+      mockPrisma.member.findMany.mockResolvedValue([{ userId: 'user-1' }]);
+
+      const result = await service.getUnlinkedUsers(clubId);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should include isExternal field in response', async () => {
+      const cu = makeClubUser({ isExternal: true });
+      mockPrisma.clubUser.findMany.mockResolvedValue([cu]);
+      mockPrisma.member.findMany.mockResolvedValue([]);
+
+      const result = await service.getUnlinkedUsers(clubId);
+
+      expect(result[0]!.isExternal).toBe(true);
+    });
+
+    it('should return empty array when all users are linked', async () => {
+      const cu1 = makeClubUser({ id: 'cu-1', userId: 'user-1' });
+      const cu2 = makeClubUser({ id: 'cu-2', userId: 'user-2' });
+      mockPrisma.clubUser.findMany.mockResolvedValue([cu1, cu2]);
+      mockPrisma.member.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
+
+      const result = await service.getUnlinkedUsers(clubId);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should only query ACTIVE ClubUsers', async () => {
+      mockPrisma.clubUser.findMany.mockResolvedValue([]);
+      mockPrisma.member.findMany.mockResolvedValue([]);
+
+      await service.getUnlinkedUsers(clubId);
+
+      expect(mockPrisma.clubUser.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { clubId, status: 'ACTIVE' },
+        })
+      );
+    });
+
+    it('should only consider non-deleted members when filtering linked users', async () => {
+      mockPrisma.clubUser.findMany.mockResolvedValue([]);
+      mockPrisma.member.findMany.mockResolvedValue([]);
+
+      await service.getUnlinkedUsers(clubId);
+
+      expect(mockPrisma.member.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { clubId, userId: { not: null }, deletedAt: null },
+        })
+      );
+    });
+
+    it('should fall back to email when user.name is null', async () => {
+      const cu = makeClubUser({
+        user: { id: 'user-1', name: null, email: 'fallback@test.com', image: null },
+      });
+      mockPrisma.clubUser.findMany.mockResolvedValue([cu]);
+      mockPrisma.member.findMany.mockResolvedValue([]);
+
+      const result = await service.getUnlinkedUsers(clubId);
+
+      expect(result[0]!.name).toBe('fallback@test.com');
+    });
+  });
+
+  describe('toggleExternal()', () => {
+    const clubId = 'club-1';
+    const clubUserId = 'cu-1';
+
+    function makeClubUser(overrides: Record<string, unknown> = {}) {
+      return {
+        id: clubUserId,
+        userId: 'user-1',
+        clubId,
+        status: 'ACTIVE',
+        roles: [ClubRole.MEMBER],
+        isExternal: false,
+        joinedAt: new Date('2025-01-01'),
+        user: { id: 'user-1', name: 'Max', email: 'max@test.com', image: null },
+        ...overrides,
+      };
+    }
+
+    it('should set isExternal to true', async () => {
+      mockPrisma.clubUser.findUnique.mockResolvedValue(makeClubUser());
+      mockPrisma.clubUser.update.mockResolvedValue(makeClubUser({ isExternal: true }));
+
+      const result = await service.toggleExternal(clubId, clubUserId, true);
+
+      expect(result.isExternal).toBe(true);
+      expect(mockPrisma.clubUser.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { isExternal: true },
+        })
+      );
+    });
+
+    it('should set isExternal to false (unmark)', async () => {
+      mockPrisma.clubUser.findUnique.mockResolvedValue(makeClubUser({ isExternal: true }));
+      mockPrisma.clubUser.update.mockResolvedValue(makeClubUser({ isExternal: false }));
+
+      const result = await service.toggleExternal(clubId, clubUserId, false);
+
+      expect(result.isExternal).toBe(false);
+    });
+
+    it('should throw NotFoundException if ClubUser not found', async () => {
+      mockPrisma.clubUser.findUnique.mockResolvedValue(null);
+
+      await expect(service.toggleExternal(clubId, clubUserId, true)).rejects.toThrow(
+        NotFoundException
+      );
+    });
+
+    it('should throw NotFoundException if ClubUser belongs to different club', async () => {
+      mockPrisma.clubUser.findUnique.mockResolvedValue(makeClubUser({ clubId: 'other-club' }));
+
+      await expect(service.toggleExternal(clubId, clubUserId, true)).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 });

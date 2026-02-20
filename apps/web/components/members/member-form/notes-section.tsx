@@ -16,7 +16,7 @@ const MAX_NOTES_LENGTH = 5000;
 // ============================================================================
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-interface NotesTabProps {
+interface NotesSectionProps {
   /** Full member data for read mode */
   member: MemberDetail;
   /** Whether the tab is in edit mode */
@@ -39,7 +39,7 @@ interface NotesTabProps {
  * Read mode preserves whitespace and shows last edit timestamp.
  * Edit mode shows a textarea with character counter and auto-resize.
  */
-export function NotesTab({ member, isEditing, register, watch, disabled }: NotesTabProps) {
+export function NotesSection({ member, isEditing, register, watch, disabled }: NotesSectionProps) {
   if (!isEditing) {
     return <NotesReadMode member={member} />;
   }

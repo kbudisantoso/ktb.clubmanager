@@ -9,6 +9,17 @@ import { ClubRole } from '../../../../prisma/generated/client/index.js';
 import { isOwner, getAssignableRoles } from '../common/permissions/club-permissions.js';
 import type { ClubUserDto, UpdateClubUserRolesDto } from './dto/update-club-user-roles.dto.js';
 
+export interface UnlinkedUserDto {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  image: string | null;
+  roles: ClubRole[];
+  isExternal: boolean;
+  joinedAt: Date;
+}
+
 @Injectable()
 export class ClubUsersService {
   constructor(private prisma: PrismaService) {}
@@ -35,6 +46,7 @@ export class ClubUsersService {
       image: cu.user.image ?? undefined,
       roles: cu.roles,
       joinedAt: cu.joinedAt,
+      isExternal: cu.isExternal,
     }));
   }
 
@@ -143,6 +155,7 @@ export class ClubUsersService {
       image: updated.user.image ?? undefined,
       roles: updated.roles,
       joinedAt: updated.joinedAt,
+      isExternal: updated.isExternal,
     };
   }
 
@@ -187,5 +200,80 @@ export class ClubUsersService {
     await this.prisma.clubUser.delete({
       where: { id: targetClubUserId },
     });
+  }
+
+  /**
+   * Get all active ClubUsers who do NOT have a linked Member.
+   * Two-step approach: get all active ClubUsers, then filter out those with a linked member.
+   */
+  async getUnlinkedUsers(clubId: string): Promise<UnlinkedUserDto[]> {
+    // Step 1: Get all active ClubUsers
+    const clubUsers = await this.prisma.clubUser.findMany({
+      where: { clubId, status: 'ACTIVE' },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+      orderBy: { joinedAt: 'asc' },
+    });
+
+    // Step 2: Get all userIds linked to active members in this club
+    const linkedMembers = await this.prisma.member.findMany({
+      where: { clubId, userId: { not: null }, deletedAt: null },
+      select: { userId: true },
+    });
+    const linkedUserIds = new Set(linkedMembers.map((m) => m.userId));
+
+    // Step 3: Filter to unlinked users
+    return clubUsers
+      .filter((cu) => !linkedUserIds.has(cu.userId))
+      .map((cu) => ({
+        id: cu.id,
+        userId: cu.userId,
+        name: cu.user.name ?? cu.user.email,
+        email: cu.user.email,
+        image: cu.user.image ?? null,
+        roles: cu.roles,
+        isExternal: cu.isExternal,
+        joinedAt: cu.joinedAt,
+      }));
+  }
+
+  /**
+   * Toggle the isExternal flag on a ClubUser.
+   */
+  async toggleExternal(
+    clubId: string,
+    clubUserId: string,
+    isExternal: boolean
+  ): Promise<UnlinkedUserDto> {
+    const clubUser = await this.prisma.clubUser.findUnique({
+      where: { id: clubUserId },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    });
+
+    if (!clubUser || clubUser.clubId !== clubId) {
+      throw new NotFoundException('Benutzer nicht gefunden');
+    }
+
+    const updated = await this.prisma.clubUser.update({
+      where: { id: clubUserId },
+      data: { isExternal },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    });
+
+    return {
+      id: updated.id,
+      userId: updated.userId,
+      name: updated.user.name ?? updated.user.email,
+      email: updated.user.email,
+      image: updated.user.image ?? null,
+      roles: updated.roles,
+      isExternal: updated.isExternal,
+      joinedAt: updated.joinedAt,
+    };
   }
 }

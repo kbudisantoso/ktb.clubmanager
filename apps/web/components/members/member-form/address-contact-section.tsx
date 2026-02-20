@@ -24,7 +24,7 @@ const COUNTRY_LABELS: Record<string, string> = {
 // ============================================================================
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-interface AddressContactTabProps {
+interface AddressContactSectionProps {
   /** Full member data for read mode */
   member: MemberDetail;
   /** Whether the tab is in edit mode */
@@ -51,7 +51,7 @@ interface AddressContactTabProps {
  * Read mode shows formatted address block with clickable contact links.
  * Edit mode shows AddressAutocomplete with OpenPLZ integration and contact inputs.
  */
-export function AddressContactTab({
+export function AddressContactSection({
   member,
   isEditing,
   register,
@@ -59,7 +59,7 @@ export function AddressContactTab({
   watch,
   errors,
   disabled,
-}: AddressContactTabProps) {
+}: AddressContactSectionProps) {
   if (!isEditing) {
     return <AddressContactReadMode member={member} />;
   }
