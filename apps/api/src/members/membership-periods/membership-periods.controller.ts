@@ -7,6 +7,7 @@ import {
 } from '../../common/decorators/club-context.decorator.js';
 import { RequirePermission } from '../../common/decorators/permissions.decorator.js';
 import { Permission } from '../../common/permissions/permissions.enum.js';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import { MembershipPeriodsService } from './membership-periods.service.js';
 import { CreatePeriodDto, UpdatePeriodDto, ClosePeriodDto } from './dto/index.js';
 
@@ -53,9 +54,10 @@ export class MembershipPeriodsController {
   async update(
     @GetClubContext() ctx: ClubContext,
     @Param('periodId') periodId: string,
-    @Body() dto: UpdatePeriodDto
+    @Body() dto: UpdatePeriodDto,
+    @CurrentUser('id') userId: string
   ) {
-    return this.membershipPeriodsService.update(ctx.clubId, periodId, dto);
+    return this.membershipPeriodsService.update(ctx.clubId, periodId, dto, userId);
   }
 
   @Post(':periodId/close')

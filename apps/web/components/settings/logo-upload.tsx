@@ -184,10 +184,8 @@ export function LogoUpload({
     if (!selectedImage || !croppedAreaPixels) return;
 
     try {
-      const croppedBlob = await getCroppedImg(selectedImage, croppedAreaPixels);
-      // Create a new blob with correct type since canvas.toBlob may lose it
-      const pngBlob = new Blob([croppedBlob], { type: 'image/png' });
-      await upload(pngBlob, 'club-logo.png');
+      const croppedBlob = await getCroppedImg(selectedImage, croppedAreaPixels, 'image/png');
+      await upload(croppedBlob, 'club-logo.png');
     } catch {
       // Error handled by useFileUpload hook
     }

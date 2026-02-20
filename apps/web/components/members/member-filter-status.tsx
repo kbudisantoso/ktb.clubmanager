@@ -8,14 +8,7 @@ import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { type MemberStatus, MEMBER_STATUSES } from '@/hooks/use-member-filters';
-
-/** German labels for each status value */
-const STATUS_LABELS: Record<MemberStatus, string> = {
-  ACTIVE: 'Aktiv',
-  INACTIVE: 'Inaktiv',
-  PENDING: 'Ausstehend',
-  LEFT: 'Ausgetreten',
-};
+import { STATUS_LABELS } from '@/lib/member-status-labels';
 
 interface MemberFilterStatusProps {
   selected: MemberStatus[];

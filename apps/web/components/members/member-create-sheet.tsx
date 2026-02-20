@@ -25,7 +25,10 @@ import {
 import { DateInput } from '@/components/ui/date-input';
 import { useCreateMember } from '@/hooks/use-members';
 import { useNumberRanges } from '@/hooks/use-number-ranges';
+import { useMembershipTypes } from '@/hooks/use-membership-types';
 import { useToast } from '@/hooks/use-toast';
+import { getTodayISO } from '@/lib/format-date';
+import { STATUS_LABELS } from '@/lib/member-status-labels';
 import { PersonTypeToggle } from './person-type-toggle';
 import { AddressAutocomplete } from './address-autocomplete';
 
@@ -42,22 +45,8 @@ const SALUTATION_OPTIONS = [
   { value: 'DIVERS', label: 'Divers' },
 ] as const;
 
-/** German labels for member status */
-const STATUS_OPTIONS = [
-  { value: 'PENDING', label: 'Ausstehend' },
-  { value: 'ACTIVE', label: 'Aktiv' },
-  { value: 'INACTIVE', label: 'Inaktiv' },
-  { value: 'LEFT', label: 'Ausgetreten' },
-] as const;
-
-/** German labels for membership type */
-const MEMBERSHIP_TYPE_OPTIONS = [
-  { value: 'ORDENTLICH', label: 'Ordentlich' },
-  { value: 'PASSIV', label: 'Passiv' },
-  { value: 'EHREN', label: 'Ehren' },
-  { value: 'FOERDER', label: 'Förder' },
-  { value: 'JUGEND', label: 'Jugend' },
-] as const;
+/** Status options derived from shared labels */
+const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }));
 
 interface MemberCreateSheetProps {
   /** Club slug for API calls */
@@ -77,12 +66,24 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
   const { toast } = useToast();
   const createMember = useCreateMember(slug);
   const { data: numberRanges } = useNumberRanges(slug);
+  const { data: membershipTypes } = useMembershipTypes(slug);
 
   // Check if auto-generation is available
   const memberNumberRange = useMemo(
     () => (numberRanges ?? []).find((r) => r.entityType === 'MEMBER'),
     [numberRanges]
   );
+
+  // Only show active membership types, pre-select default
+  const activeTypes = useMemo(() => {
+    if (!membershipTypes) return [];
+    return membershipTypes.filter((t) => t.isActive);
+  }, [membershipTypes]);
+
+  const defaultTypeId = useMemo(() => {
+    const defaultType = activeTypes.find((t) => t.isDefault);
+    return defaultType?.id ?? activeTypes[0]?.id ?? undefined;
+  }, [activeTypes]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(CreateMemberSchema),
@@ -92,6 +93,7 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
       lastName: '',
       status: 'PENDING',
       country: 'DE',
+      joinDate: getTodayISO(),
     },
   });
 
@@ -116,9 +118,17 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
         lastName: '',
         status: 'PENDING',
         country: 'DE',
+        joinDate: getTodayISO(),
       });
     }
   }, [open, reset]);
+
+  // Auto-set membershipTypeId when joinDate is entered and a default type exists
+  useEffect(() => {
+    if (joinDate && defaultTypeId) {
+      setValue('membershipTypeId', defaultTypeId);
+    }
+  }, [joinDate, defaultTypeId, setValue]);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -379,64 +389,73 @@ export function MemberCreateSheet({ slug, open, onOpenChange }: MemberCreateShee
                 )}
               </div>
 
-              {/* Section 5: Status */}
-              <div className="space-y-1.5">
-                <Label>Status</Label>
-                <Select
-                  defaultValue="PENDING"
-                  disabled={isSubmitting}
-                  onValueChange={(val) => setValue('status', val as FormValues['status'])}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Status wählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Section 5: Mitgliedschaft (grouped: Status + Eintrittsdatum + Mitgliedsart) */}
+              <div className="space-y-3 rounded-md border bg-muted/30 p-4">
+                <div>
+                  <p className="text-sm font-medium">Mitgliedschaft</p>
+                  <p className="text-xs text-muted-foreground">
+                    Mit Eintrittsdatum und Mitgliedsart wird die Mitgliedschaft direkt erstellt.
+                  </p>
+                </div>
 
-              {/* Section 6: Join Date */}
-              <div className="space-y-1.5">
-                <Label>Eintrittsdatum</Label>
-                <DateInput
-                  value={joinDate}
-                  onChange={(date) => setValue('joinDate', date, { shouldValidate: true })}
-                  disabled={isSubmitting}
-                  hasError={!!errors.joinDate}
-                />
-                {errors.joinDate?.message && (
-                  <p className="text-xs text-destructive">{errors.joinDate.message}</p>
-                )}
-              </div>
-
-              {/* Section 7: Membership Type (only shown when joinDate is set) */}
-              {joinDate && (
+                {/* Status */}
                 <div className="space-y-1.5">
-                  <Label>Mitgliedsart</Label>
+                  <Label>Status</Label>
                   <Select
+                    defaultValue="PENDING"
                     disabled={isSubmitting}
-                    onValueChange={(val) =>
-                      setValue('membershipType', val as FormValues['membershipType'])
-                    }
+                    onValueChange={(val) => setValue('status', val as FormValues['status'])}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Mitgliedsart wählen" />
+                      <SelectValue placeholder="Status waehlen" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MEMBERSHIP_TYPE_OPTIONS.map((m) => (
-                        <SelectItem key={m.value} value={m.value}>
-                          {m.label}
+                      {STATUS_OPTIONS.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>
+                          {s.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
+
+                {/* Join Date (pre-filled with today) */}
+                <div className="space-y-1.5">
+                  <Label>Eintrittsdatum</Label>
+                  <DateInput
+                    value={joinDate}
+                    onChange={(date) => setValue('joinDate', date, { shouldValidate: true })}
+                    disabled={isSubmitting}
+                    hasError={!!errors.joinDate}
+                  />
+                  {errors.joinDate?.message && (
+                    <p className="text-xs text-destructive">{errors.joinDate.message}</p>
+                  )}
+                </div>
+
+                {/* Membership Type (only shown when joinDate is set) */}
+                {joinDate && activeTypes.length > 0 && (
+                  <div className="space-y-1.5">
+                    <Label>Mitgliedsart</Label>
+                    <Select
+                      defaultValue={defaultTypeId}
+                      disabled={isSubmitting}
+                      onValueChange={(val) => setValue('membershipTypeId', val)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Mitgliedsart waehlen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {activeTypes.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
 
               {/* Section 8: Address */}
               <div className="space-y-2">

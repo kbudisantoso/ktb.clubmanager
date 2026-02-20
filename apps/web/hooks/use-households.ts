@@ -28,6 +28,7 @@ interface CreateHouseholdInput {
   name: string;
   primaryContactId?: string;
   memberIds?: string[];
+  roles?: Record<string, string>;
 }
 
 /** Update household input (re-exported from @ktb/shared) */

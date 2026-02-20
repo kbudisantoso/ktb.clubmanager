@@ -1,6 +1,7 @@
 'use client';
 
 import { Controller, type UseFormReturn } from 'react-hook-form';
+import { useParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useMembershipTypes } from '@/hooks/use-membership-types';
 import type { SettingsFormValues } from '../club-settings-form';
 
 interface OperationalSectionProps {
@@ -21,7 +23,7 @@ interface OperationalSectionProps {
 const MONTH_OPTIONS = [
   { value: '1', label: 'Januar' },
   { value: '2', label: 'Februar' },
-  { value: '3', label: 'März' },
+  { value: '3', label: 'Maerz' },
   { value: '4', label: 'April' },
   { value: '5', label: 'Mai' },
   { value: '6', label: 'Juni' },
@@ -33,18 +35,13 @@ const MONTH_OPTIONS = [
   { value: '12', label: 'Dezember' },
 ] as const;
 
-const MEMBERSHIP_TYPE_OPTIONS = [
-  { value: 'ORDENTLICH', label: 'Ordentliches Mitglied' },
-  { value: 'PASSIV', label: 'Passives Mitglied' },
-  { value: 'EHREN', label: 'Ehrenmitglied' },
-  { value: 'FOERDER', label: 'Fördermitglied' },
-  { value: 'JUGEND', label: 'Jugendmitglied' },
-] as const;
-
 /**
  * Betriebseinstellungen section: Geschäftsjahrbeginn, Standard-Mitgliedschaftstyp, Probezeitraum.
  */
 export function OperationalSection({ form, disabled }: OperationalSectionProps) {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
+  const { data: membershipTypes } = useMembershipTypes(slug);
   const {
     register,
     control,
@@ -87,9 +84,9 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
 
         {/* Standard-Mitgliedschaftstyp */}
         <div className="space-y-1.5">
-          <Label htmlFor="settings-defaultMembershipType">Standard-Mitgliedschaftstyp</Label>
+          <Label htmlFor="settings-defaultMembershipTypeId">Standard-Mitgliedschaftstyp</Label>
           <Controller
-            name="defaultMembershipType"
+            name="defaultMembershipTypeId"
             control={control}
             render={({ field }) => (
               <Select
@@ -97,13 +94,13 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
                 onValueChange={field.onChange}
                 disabled={disabled}
               >
-                <SelectTrigger id="settings-defaultMembershipType" className="w-full">
-                  <SelectValue placeholder="Typ wählen" />
+                <SelectTrigger id="settings-defaultMembershipTypeId" className="w-full">
+                  <SelectValue placeholder="Typ waehlen" />
                 </SelectTrigger>
                 <SelectContent>
-                  {MEMBERSHIP_TYPE_OPTIONS.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
+                  {(membershipTypes ?? []).map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

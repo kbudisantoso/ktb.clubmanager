@@ -111,10 +111,14 @@ export class MembersService {
         include: {
           household: { select: { id: true, name: true } },
           membershipPeriods: {
-            where: { leaveDate: null },
+            where: {
+              joinDate: { lte: new Date() },
+              OR: [{ leaveDate: null }, { leaveDate: { gt: new Date() } }],
+            },
             take: 1,
             orderBy: { joinDate: 'desc' },
           },
+          user: { select: { image: true } },
         },
       }),
       db.member.count({ where }),
@@ -162,6 +166,11 @@ export class MembersService {
         membershipPeriods: {
           orderBy: { joinDate: 'desc' },
         },
+        statusTransitions: {
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+        },
+        user: { select: { image: true } },
       },
     });
 
@@ -231,12 +240,12 @@ export class MembersService {
       statusChangedBy: userId,
     };
 
-    // Auto-create first membership period if joinDate and membershipType provided
-    if (dto.joinDate && dto.membershipType) {
+    // Auto-create first membership period if joinDate and membershipTypeId provided
+    if (dto.joinDate && dto.membershipTypeId) {
       (createData as Record<string, unknown>).membershipPeriods = {
         create: {
           joinDate: new Date(dto.joinDate),
-          membershipType: dto.membershipType,
+          membershipTypeId: dto.membershipTypeId,
         },
       };
     }
@@ -248,6 +257,7 @@ export class MembersService {
         membershipPeriods: {
           orderBy: { joinDate: 'desc' },
         },
+        user: { select: { image: true } },
       },
     });
 
@@ -328,6 +338,7 @@ export class MembersService {
           membershipPeriods: {
             orderBy: { joinDate: 'desc' },
           },
+          user: { select: { image: true } },
         },
       });
 
@@ -335,7 +346,7 @@ export class MembersService {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         throw new ConflictException(
-          'Der Datensatz wurde zwischenzeitlich geaendert. Bitte lade die Daten neu und versuche es erneut.'
+          'Der Datensatz wurde zwischenzeitlich geändert. Bitte lade die Daten neu und versuche es erneut.'
         );
       }
       throw error;
@@ -357,12 +368,6 @@ export class MembersService {
       throw new NotFoundException('Mitglied nicht gefunden');
     }
 
-    if (member.status !== 'LEFT') {
-      throw new BadRequestException(
-        'Mitglied kann nur geloescht werden, wenn der Status "Ausgetreten" ist'
-      );
-    }
-
     const updated = await db.member.update({
       where: { id },
       data: {
@@ -375,6 +380,7 @@ export class MembersService {
         membershipPeriods: {
           orderBy: { joinDate: 'desc' },
         },
+        user: { select: { image: true } },
       },
     });
 
@@ -392,7 +398,7 @@ export class MembersService {
     });
 
     if (!member) {
-      throw new NotFoundException('Geloeschtes Mitglied nicht gefunden');
+      throw new NotFoundException('Gelöschtes Mitglied nicht gefunden');
     }
 
     const updated = await db.member.update({
@@ -407,6 +413,7 @@ export class MembersService {
         membershipPeriods: {
           orderBy: { joinDate: 'desc' },
         },
+        user: { select: { image: true } },
       },
     });
 
@@ -433,7 +440,7 @@ export class MembersService {
 
     if (member.membershipPeriods.length > 0) {
       throw new BadRequestException(
-        'Mitglied kann nicht endgueltig geloescht werden, da Mitgliedschaftszeitraeume existieren'
+        'Mitglied kann nicht endgültig gelöscht werden, da Mitgliedschaftszeiträume existieren'
       );
     }
 
@@ -459,9 +466,9 @@ export class MembersService {
       throw new NotFoundException('Mitglied nicht gefunden');
     }
 
-    if (member.status !== 'LEFT') {
+    if (member.status !== 'LEFT' && !member.deletedAt) {
       throw new BadRequestException(
-        'Anonymisierung ist nur moeglich, wenn der Status "Ausgetreten" ist'
+        'Anonymisierung ist nur moeglich, wenn der Status "Ausgetreten" oder das Mitglied geloescht ist'
       );
     }
 
@@ -508,6 +515,7 @@ export class MembersService {
         membershipPeriods: {
           orderBy: { joinDate: 'desc' },
         },
+        user: { select: { image: true } },
       },
     });
 
@@ -524,6 +532,125 @@ export class MembersService {
   }
 
   /**
+   * Get users that can be linked to a member.
+   * Returns club users not yet linked to another member, with match info.
+   */
+  async getLinkableUsers(clubId: string, memberId: string) {
+    const db = this.prisma.forClub(clubId);
+
+    const member = await db.member.findFirst({
+      where: { id: memberId, deletedAt: null },
+      select: { id: true, email: true, firstName: true, lastName: true, userId: true },
+    });
+
+    if (!member) {
+      throw new NotFoundException('Mitglied nicht gefunden');
+    }
+
+    // Get all active club users
+    const clubUsers = await this.prisma.clubUser.findMany({
+      where: { clubId, status: 'ACTIVE' },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    });
+
+    // Get userIds already linked to other members in this club
+    const linkedMembers = await db.member.findMany({
+      where: { userId: { not: null }, id: { not: memberId }, deletedAt: null },
+      select: { userId: true },
+    });
+    const linkedUserIds = new Set(linkedMembers.map((m) => m.userId));
+
+    // Filter to unlinked users
+    const linkableUsers = clubUsers
+      .filter((cu) => !linkedUserIds.has(cu.userId))
+      .map((cu) => ({
+        userId: cu.userId,
+        name: cu.user.name ?? cu.user.email,
+        email: cu.user.email,
+        image: cu.user.image ?? null,
+      }));
+
+    return {
+      users: linkableUsers,
+      currentLink: member.userId ?? null,
+      member: {
+        email: member.email,
+        firstName: member.firstName,
+        lastName: member.lastName,
+      },
+    };
+  }
+
+  /**
+   * Link or unlink a user account to a member.
+   * Pass userId = null to unlink.
+   */
+  async linkUser(clubId: string, memberId: string, userId: string | null) {
+    const db = this.prisma.forClub(clubId);
+
+    // Member lookup is automatically scoped to clubId via forClub() tenant extension
+    const member = await db.member.findFirst({
+      where: { id: memberId, deletedAt: null },
+    });
+
+    if (!member) {
+      throw new NotFoundException('Mitglied nicht gefunden');
+    }
+
+    if (userId !== null) {
+      // Verify user is a club user
+      const clubUser = await this.prisma.clubUser.findFirst({
+        where: { clubId, userId, status: 'ACTIVE' },
+      });
+
+      if (!clubUser) {
+        throw new BadRequestException('Benutzer ist kein Mitglied dieses Vereins');
+      }
+
+      // Verify no other member is linked to this user
+      const existingLink = await db.member.findFirst({
+        where: { userId, id: { not: memberId }, deletedAt: null },
+      });
+
+      if (existingLink) {
+        throw new ConflictException(
+          `Benutzer ist bereits mit Mitglied ${existingLink.memberNumber} verknüpft`
+        );
+      }
+    }
+
+    const updated = await db.member.update({
+      where: { id: memberId },
+      data: { userId },
+      include: {
+        household: {
+          select: {
+            id: true,
+            name: true,
+            primaryContactId: true,
+            members: {
+              where: { deletedAt: null },
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                householdRole: true,
+                memberNumber: true,
+              },
+            },
+          },
+        },
+        membershipPeriods: { orderBy: { joinDate: 'desc' } },
+        user: { select: { image: true } },
+      },
+    });
+
+    return this.formatMemberResponse(updated);
+  }
+
+  /**
    * Format a member record for API response.
    * Converts Date objects to strings per RESEARCH.md Pitfall 2.
    */
@@ -535,10 +662,22 @@ export class MembersService {
       id: p.id,
       joinDate: toDateString(p.joinDate),
       leaveDate: toDateString(p.leaveDate),
-      membershipType: p.membershipType,
+      membershipTypeId: p.membershipTypeId ?? null,
       notes: p.notes ?? null,
       createdAt: toISOStringOrNull(p.createdAt),
       updatedAt: toISOStringOrNull(p.updatedAt),
+    }));
+
+    // Format status transitions (if included)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const transitions = member.statusTransitions?.map((t: any) => ({
+      id: t.id,
+      toStatus: t.toStatus,
+      reason: t.reason,
+      leftCategory: t.leftCategory,
+      effectiveDate: toDateString(t.effectiveDate),
+      actorId: t.actorId,
+      createdAt: toISOStringOrNull(t.createdAt),
     }));
 
     return {
@@ -577,10 +716,12 @@ export class MembersService {
       anonymizedAt: toISOStringOrNull(member.anonymizedAt),
       anonymizedBy: member.anonymizedBy ?? null,
       userId: member.userId ?? null,
+      userImage: member.user?.image ?? null,
       householdId: member.householdId ?? null,
       householdRole: member.householdRole ?? null,
       household: member.household ?? null,
       membershipPeriods: periods ?? [],
+      statusTransitions: transitions ?? undefined,
       deletedAt: toISOStringOrNull(member.deletedAt),
       deletedBy: member.deletedBy ?? null,
       deletionReason: member.deletionReason ?? null,

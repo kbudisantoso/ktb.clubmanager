@@ -1,18 +1,12 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { type ReactNode } from 'react';
+import { CalendarIcon, HomeIcon, X } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { MemberFilters, SetMemberFilters, MemberStatus } from '@/hooks/use-member-filters';
-
-/** German labels for member status values */
-const STATUS_LABELS: Record<MemberStatus, string> = {
-  ACTIVE: 'Aktiv',
-  INACTIVE: 'Inaktiv',
-  PENDING: 'Ausstehend',
-  LEFT: 'Ausgetreten',
-};
+import type { MemberFilters, SetMemberFilters } from '@/hooks/use-member-filters';
+import { STATUS_LABELS } from '@/lib/member-status-labels';
 
 /** Labels for household meta-options */
 const HOUSEHOLD_META_LABELS: Record<string, string> = {
@@ -83,7 +77,8 @@ export function MemberFilterChips({ filters, setFilters, householdNames }: Membe
       )}
       {hasHousehold && (
         <FilterChip
-          label={`Haushalt: ${getHouseholdLabel(filters.household)}`}
+          icon={<HomeIcon className="size-3" />}
+          label={getHouseholdLabel(filters.household)}
           onRemove={(e) => {
             e.stopPropagation();
             setFilters({ household: '' });
@@ -92,7 +87,8 @@ export function MemberFilterChips({ filters, setFilters, householdNames }: Membe
       )}
       {hasPeriod && (
         <FilterChip
-          label={`Zeitraum: ${filters.period}`}
+          icon={<CalendarIcon className="size-3" />}
+          label={filters.period}
           onRemove={(e) => {
             e.stopPropagation();
             setFilters({ period: '' });
@@ -108,14 +104,17 @@ export function MemberFilterChips({ filters, setFilters, householdNames }: Membe
 
 /** Individual filter chip with label and remove button */
 function FilterChip({
+  icon,
   label,
   onRemove,
 }: {
+  icon?: ReactNode;
   label: string;
   onRemove: (e: React.MouseEvent) => void;
 }) {
   return (
     <Badge variant="secondary" className="gap-1 pr-1">
+      {icon}
       <span className="max-w-[200px] truncate">{label}</span>
       <button
         type="button"

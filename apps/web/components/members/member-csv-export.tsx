@@ -12,7 +12,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { STATUS_LABELS } from '@/lib/member-status-labels';
 import type { MemberListItem } from './member-list-table';
+import type { MembershipType } from '@/hooks/use-membership-types';
 
 // ============================================================================
 // Column Configuration
@@ -25,36 +27,25 @@ interface ExportColumn {
   csvHeader: string;
   /** Whether this column is included by default */
   defaultSelected: boolean;
-  /** Extract value from a member */
-  getValue: (member: MemberListItem) => string;
+  /** Extract value from a member, optionally using membership types for lookup */
+  getValue: (member: MemberListItem, membershipTypes?: MembershipType[]) => string;
 }
-
-/** Membership type German labels */
-const MEMBERSHIP_TYPE_LABELS: Record<string, string> = {
-  ORDENTLICH: 'Ordentlich',
-  PASSIV: 'Passiv',
-  EHREN: 'Ehren',
-  FOERDER: 'Förder',
-  JUGEND: 'Jugend',
-};
-
-/** Status German labels */
-const STATUS_LABELS: Record<string, string> = {
-  ACTIVE: 'Aktiv',
-  INACTIVE: 'Inaktiv',
-  PENDING: 'Ausstehend',
-  LEFT: 'Ausgetreten',
-};
 
 /**
  * Get the active membership period for a member.
+ * Uses date-range logic: joinDate <= today AND (leaveDate > today OR open).
  */
 function getActivePeriod(
   periods: MemberListItem['membershipPeriods']
 ): MemberListItem['membershipPeriods'][number] | null {
   if (periods.length === 0) return null;
-  const current = periods.find((p) => !p.leaveDate);
+  const today = new Date().toISOString().slice(0, 10);
+  // Period containing today: joinDate <= today AND (leaveDate > today OR open)
+  const current = periods.find(
+    (p) => (p.joinDate ?? '') <= today && (!p.leaveDate || p.leaveDate > today)
+  );
   if (current) return current;
+  // Fall back to most recent (e.g. LEFT members)
   return [...periods].sort((a, b) => {
     const dateA = a.joinDate ?? '';
     const dateB = b.joinDate ?? '';
@@ -96,7 +87,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
     label: 'Status',
     csvHeader: 'Status',
     defaultSelected: true,
-    getValue: (m) => STATUS_LABELS[m.status] ?? m.status,
+    getValue: (m) => STATUS_LABELS[m.status as keyof typeof STATUS_LABELS] ?? m.status,
   },
   {
     key: 'email',
@@ -114,13 +105,14 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   },
   {
     key: 'membershipType',
-    label: 'Beitragsart',
-    csvHeader: 'Beitragsart',
+    label: 'Mitgliedschaft',
+    csvHeader: 'Mitgliedschaft',
     defaultSelected: true,
-    getValue: (m) => {
+    getValue: (m, types) => {
       const period = getActivePeriod(m.membershipPeriods);
-      if (!period) return '';
-      return MEMBERSHIP_TYPE_LABELS[period.membershipType] ?? period.membershipType;
+      if (!period?.membershipTypeId) return '';
+      const found = types?.find((t) => t.id === period.membershipTypeId);
+      return found?.name ?? '';
     },
   },
   {
@@ -167,7 +159,11 @@ function escapeCsvField(value: string): string {
  * Generate a CSV string from member data and selected columns.
  * Includes UTF-8 BOM for Excel compatibility.
  */
-function generateCsv(members: MemberListItem[], selectedColumns: ExportColumn[]): string {
+function generateCsv(
+  members: MemberListItem[],
+  selectedColumns: ExportColumn[],
+  membershipTypes?: MembershipType[]
+): string {
   // UTF-8 BOM
   const bom = '\uFEFF';
 
@@ -176,7 +172,7 @@ function generateCsv(members: MemberListItem[], selectedColumns: ExportColumn[])
 
   // Data rows
   const rows = members.map((member) =>
-    selectedColumns.map((col) => escapeCsvField(col.getValue(member))).join(';')
+    selectedColumns.map((col) => escapeCsvField(col.getValue(member, membershipTypes))).join(';')
   );
 
   return bom + [header, ...rows].join('\r\n');
@@ -209,13 +205,20 @@ interface MemberCsvExportDialogProps {
   open: boolean;
   /** Called when dialog should close */
   onOpenChange: (open: boolean) => void;
+  /** Available membership types for label resolution */
+  membershipTypes?: MembershipType[];
 }
 
 /**
  * Dialog for configuring and exporting selected members as CSV.
  * Allows choosing which columns to include in the export.
  */
-export function MemberCsvExportDialog({ members, open, onOpenChange }: MemberCsvExportDialogProps) {
+export function MemberCsvExportDialog({
+  members,
+  open,
+  onOpenChange,
+  membershipTypes,
+}: MemberCsvExportDialogProps) {
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(
     new Set(EXPORT_COLUMNS.filter((c) => c.defaultSelected).map((c) => c.key))
   );
@@ -238,7 +241,7 @@ export function MemberCsvExportDialog({ members, open, onOpenChange }: MemberCsv
 
     const today = new Date().toISOString().split('T')[0];
     const filename = `mitglieder-export-${today}.csv`;
-    const csv = generateCsv(members, selectedColumns);
+    const csv = generateCsv(members, selectedColumns, membershipTypes);
     downloadCsv(csv, filename);
     onOpenChange(false);
   };

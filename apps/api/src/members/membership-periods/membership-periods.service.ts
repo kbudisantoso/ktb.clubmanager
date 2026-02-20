@@ -78,7 +78,7 @@ export class MembershipPeriodsService {
         memberId,
         joinDate: new Date(dto.joinDate),
         leaveDate: dto.leaveDate ? new Date(dto.leaveDate) : null,
-        membershipType: dto.membershipType,
+        membershipTypeId: dto.membershipTypeId,
         notes: dto.notes,
       },
     });
@@ -92,8 +92,10 @@ export class MembershipPeriodsService {
 
   /**
    * Update a membership period. Re-validates no overlap.
+   * When editing the earliest period and no ACTIVE status transition exists,
+   * auto-creates one to keep periods and status history consistent.
    */
-  async update(clubId: string, periodId: string, dto: UpdatePeriodDto) {
+  async update(clubId: string, periodId: string, dto: UpdatePeriodDto, userId?: string) {
     const db = this.prisma.forClub(clubId);
 
     const period = await db.membershipPeriod.findUnique({
@@ -123,13 +125,16 @@ export class MembershipPeriodsService {
     const updateData: Record<string, unknown> = {};
     if (dto.joinDate !== undefined) updateData.joinDate = new Date(dto.joinDate);
     if (dto.leaveDate !== undefined) updateData.leaveDate = new Date(dto.leaveDate);
-    if (dto.membershipType !== undefined) updateData.membershipType = dto.membershipType;
+    if (dto.membershipTypeId !== undefined) updateData.membershipTypeId = dto.membershipTypeId;
     if (dto.notes !== undefined) updateData.notes = dto.notes;
 
     const updated = await db.membershipPeriod.update({
       where: { id: periodId },
       data: updateData,
     });
+
+    // Auto-create ACTIVE status transition for the earliest period if none exists
+    await this.ensureInitialTransition(db, period.memberId, clubId, updated, userId);
 
     return this.formatPeriodResponse(updated);
   }
@@ -217,6 +222,54 @@ export class MembershipPeriodsService {
   }
 
   /**
+   * Auto-create an ACTIVE status transition for the earliest period if none exists.
+   * This fixes legacy data where members were created with a period but no transition.
+   */
+  private async ensureInitialTransition(
+    db: ReturnType<PrismaService['forClub']>,
+    memberId: string,
+    clubId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    updatedPeriod: any,
+    userId?: string
+  ) {
+    if (!userId) return;
+
+    // Find the earliest period for this member
+    const earliestPeriod = await db.membershipPeriod.findFirst({
+      where: { memberId },
+      orderBy: { joinDate: 'asc' },
+    });
+
+    // Only act if the updated period IS the earliest one
+    if (!earliestPeriod || earliestPeriod.id !== updatedPeriod.id) return;
+
+    // Check if any ACTIVE transition already exists
+    const activeTransition = await db.memberStatusTransition.findFirst({
+      where: { memberId, clubId, toStatus: 'ACTIVE', deletedAt: null },
+    });
+
+    if (activeTransition) return;
+
+    // Auto-create the initial ACTIVE transition at the period's joinDate
+    const joinDate = updatedPeriod.joinDate;
+    await db.memberStatusTransition.create({
+      data: {
+        memberId,
+        clubId,
+        toStatus: 'ACTIVE',
+        reason: 'Automatisch erstellt bei Bearbeitung des Eintrittsdatums',
+        effectiveDate: joinDate,
+        actorId: userId,
+      },
+    });
+
+    this.logger.log(
+      `Auto-created ACTIVE transition for member ${memberId} at ${toDateString(joinDate)}`
+    );
+  }
+
+  /**
    * Format a period record for API response.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -226,7 +279,7 @@ export class MembershipPeriodsService {
       memberId: period.memberId,
       joinDate: toDateString(period.joinDate),
       leaveDate: toDateString(period.leaveDate),
-      membershipType: period.membershipType,
+      membershipTypeId: period.membershipTypeId ?? null,
       notes: period.notes ?? null,
       createdAt: period.createdAt?.toISOString() ?? null,
       updatedAt: period.updatedAt?.toISOString() ?? null,

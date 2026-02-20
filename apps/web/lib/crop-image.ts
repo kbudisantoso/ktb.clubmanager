@@ -4,9 +4,15 @@ import type { Area } from 'react-easy-crop';
  * Shared canvas crop helper for image upload components.
  *
  * Draws the selected crop area onto an offscreen canvas and returns
- * the result as a JPEG Blob (quality 0.9).
+ * the result as a Blob.
+ *
+ * @param format - 'image/jpeg' (default, quality 0.9) or 'image/png' (lossless, preserves transparency)
  */
-export async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+export async function getCroppedImg(
+  imageSrc: string,
+  pixelCrop: Area,
+  format: 'image/jpeg' | 'image/png' = 'image/jpeg'
+): Promise<Blob> {
   const image = new Image();
   image.crossOrigin = 'anonymous';
   await new Promise<void>((resolve, reject) => {
@@ -38,8 +44,8 @@ export async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<
         if (blob) resolve(blob);
         else reject(new Error('Canvas to Blob fehlgeschlagen'));
       },
-      'image/jpeg',
-      0.9
+      format,
+      format === 'image/jpeg' ? 0.9 : undefined
     );
   });
 }

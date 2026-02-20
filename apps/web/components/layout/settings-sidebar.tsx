@@ -2,7 +2,18 @@
 
 import Link from 'next/link';
 import { useParams, usePathname } from 'next/navigation';
-import { ArrowLeft, Bell, Building2, Hash, Key, Settings, Shield, User, Users } from 'lucide-react';
+import {
+  ArrowLeft,
+  Bell,
+  Building2,
+  Hash,
+  IdCard,
+  Key,
+  Settings,
+  Shield,
+  User,
+  Users,
+} from 'lucide-react';
 
 import { useActiveClub } from '@/lib/club-store';
 import { useCanManageSettings } from '@/lib/club-permissions';
@@ -28,7 +39,7 @@ import { SidebarUserMenu } from './sidebar-user-menu';
  *
  * Navigation:
  * - "Persönlich" group: Profil, Meine Vereine, Benachrichtigungen
- * - Club group (if activeClub + canManageSettings): Allgemein, Benutzer, Einladungen, Nummernkreise
+ * - Club group (if activeClub + canManageSettings): Allgemein, Benutzer, Einladungen, Nummernkreise, Mitgliedsarten
  *
  * The club section uses activeClub from Zustand (not URL slug), so it
  * appears in both personal and club settings contexts.
@@ -64,6 +75,7 @@ export function SettingsSidebar() {
           { href: `${clubBasePath}/users`, title: 'Benutzer', icon: Users },
           { href: `${clubBasePath}/invites`, title: 'Einladungen', icon: Key },
           { href: `${clubBasePath}/number-ranges`, title: 'Nummernkreise', icon: Hash },
+          { href: `${clubBasePath}/membership-types`, title: 'Mitgliedsarten', icon: IdCard },
         ]
       : [];
 

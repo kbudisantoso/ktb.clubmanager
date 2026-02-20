@@ -2,9 +2,17 @@ import { z } from 'zod';
 
 /**
  * Member status enum - tracks lifecycle of club membership.
- * Used across API and frontend for consistent status handling.
+ * 6-state machine with 22 transitions (18 cross-status + 4 self-loops).
+ * LEFT is terminal - re-entry means creating a new member record.
  */
-export const MemberStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'PENDING', 'LEFT']);
+export const MemberStatusSchema = z.enum([
+  'PENDING',
+  'PROBATION',
+  'ACTIVE',
+  'DORMANT',
+  'SUSPENDED',
+  'LEFT',
+]);
 
 /**
  * TypeScript type inferred from Zod schema.
@@ -19,14 +27,95 @@ export const DEFAULT_MEMBER_STATUS: MemberStatus = 'PENDING';
 
 /**
  * Valid status transitions for the member lifecycle state machine.
- * LEFT is terminal - no transitions out of LEFT.
+ * 22 transitions total: 18 cross-status + 4 self-loops (for membership type changes).
+ * LEFT is terminal - no outgoing transitions.
+ *
+ * State machine (22 transitions):
+ *   PENDING    -> PROBATION, ACTIVE, LEFT                                    (3)
+ *   PROBATION  -> PROBATION, ACTIVE, DORMANT, SUSPENDED, LEFT               (5, incl. self)
+ *   ACTIVE     -> ACTIVE, DORMANT, SUSPENDED, LEFT                          (4, incl. self)
+ *   DORMANT    -> DORMANT, ACTIVE, PROBATION, SUSPENDED, LEFT               (5, incl. self)
+ *   SUSPENDED  -> SUSPENDED, ACTIVE, DORMANT, PROBATION, LEFT               (5, incl. self)
+ *   LEFT       -> (terminal)                                                 (0)
  */
 export const VALID_TRANSITIONS: Record<MemberStatus, readonly MemberStatus[]> = {
-  PENDING: ['ACTIVE', 'LEFT'],
-  ACTIVE: ['INACTIVE', 'LEFT'],
-  INACTIVE: ['ACTIVE', 'LEFT'],
+  PENDING: ['PROBATION', 'ACTIVE', 'LEFT'],
+  PROBATION: ['PROBATION', 'ACTIVE', 'DORMANT', 'SUSPENDED', 'LEFT'],
+  ACTIVE: ['ACTIVE', 'DORMANT', 'SUSPENDED', 'LEFT'],
+  DORMANT: ['DORMANT', 'ACTIVE', 'PROBATION', 'SUSPENDED', 'LEFT'],
+  SUSPENDED: ['SUSPENDED', 'ACTIVE', 'DORMANT', 'PROBATION', 'LEFT'],
   LEFT: [],
 } as const;
+
+/**
+ * Category for why a member left the club.
+ * Required when transitioning to LEFT status.
+ * REJECTED is used when a pending application is denied.
+ */
+export const LeftCategorySchema = z.enum(['VOLUNTARY', 'EXCLUSION', 'REJECTED', 'DEATH', 'OTHER']);
+export type LeftCategory = z.infer<typeof LeftCategorySchema>;
+
+/**
+ * Metadata for a named status transition - human-readable action label,
+ * destructiveness flag, and optional auto-assigned left category.
+ */
+export interface NamedTransition {
+  /** German action label for UI display */
+  action: string;
+  /** Whether this transition is destructive (requires confirmation) */
+  destructive: boolean;
+  /** Auto-assigned left category when transitioning to LEFT */
+  autoLeftCategory?: LeftCategory;
+}
+
+/**
+ * Named transitions map. Key format: "FROM-TO".
+ * Provides German action labels, destructiveness flags,
+ * and optional auto-assigned left categories for the 22 valid transitions.
+ * Self-transitions (FROM === TO) are used for membership type changes.
+ */
+export const NAMED_TRANSITIONS: Record<string, NamedTransition> = {
+  // PENDING transitions (3)
+  'PENDING-ACTIVE': { action: 'Annehmen', destructive: false },
+  'PENDING-PROBATION': { action: 'Auf Probe aufnehmen', destructive: false },
+  'PENDING-LEFT': { action: 'Ablehnen', destructive: true, autoLeftCategory: 'REJECTED' },
+  // PROBATION transitions (5, incl. self)
+  'PROBATION-PROBATION': { action: 'Mitgliedsart aendern', destructive: false },
+  'PROBATION-ACTIVE': { action: 'Probezeit bestaetigen', destructive: false },
+  'PROBATION-DORMANT': { action: 'Ruhend stellen', destructive: false },
+  'PROBATION-SUSPENDED': { action: 'Sperren', destructive: false },
+  'PROBATION-LEFT': { action: 'Probezeit beenden', destructive: true },
+  // ACTIVE transitions (4, incl. self)
+  'ACTIVE-ACTIVE': { action: 'Mitgliedsart aendern', destructive: false },
+  'ACTIVE-DORMANT': { action: 'Ruhend stellen', destructive: false },
+  'ACTIVE-SUSPENDED': { action: 'Sperren', destructive: false },
+  'ACTIVE-LEFT': { action: 'Austritt erfassen', destructive: true },
+  // DORMANT transitions (5, incl. self)
+  'DORMANT-DORMANT': { action: 'Mitgliedsart aendern', destructive: false },
+  'DORMANT-ACTIVE': { action: 'Reaktivieren', destructive: false },
+  'DORMANT-PROBATION': { action: 'Probezeit fortsetzen', destructive: false },
+  'DORMANT-SUSPENDED': { action: 'Sperren', destructive: false },
+  'DORMANT-LEFT': { action: 'Austritt erfassen', destructive: true },
+  // SUSPENDED transitions (5, incl. self)
+  'SUSPENDED-SUSPENDED': { action: 'Mitgliedsart aendern', destructive: false },
+  'SUSPENDED-ACTIVE': { action: 'Sperre aufheben', destructive: false },
+  'SUSPENDED-DORMANT': { action: 'Ruhend stellen', destructive: false },
+  'SUSPENDED-PROBATION': { action: 'Probezeit fortsetzen', destructive: false },
+  'SUSPENDED-LEFT': { action: 'Ausschliessen', destructive: true, autoLeftCategory: 'EXCLUSION' },
+};
+
+/**
+ * Primary (default/recommended) action for each status.
+ * Used by UI to highlight the most common transition.
+ */
+export const PRIMARY_STATUS_ACTION: Partial<Record<MemberStatus, MemberStatus>> = {
+  PENDING: 'ACTIVE',
+  PROBATION: 'ACTIVE',
+  DORMANT: 'ACTIVE',
+  SUSPENDED: 'ACTIVE',
+  // LEFT: no primary action (terminal status)
+  // ACTIVE: no primary action (dropdown only)
+};
 
 /**
  * Person type - distinguishes natural persons from legal entities (e.g., companies, associations).
@@ -39,12 +128,6 @@ export type PersonType = z.infer<typeof PersonTypeSchema>;
  */
 export const SalutationSchema = z.enum(['HERR', 'FRAU', 'DIVERS']);
 export type Salutation = z.infer<typeof SalutationSchema>;
-
-/**
- * Membership type - defines the kind of membership (on MembershipPeriod, not Member).
- */
-export const MembershipTypeSchema = z.enum(['ORDENTLICH', 'PASSIV', 'EHREN', 'FOERDER', 'JUGEND']);
-export type MembershipType = z.infer<typeof MembershipTypeSchema>;
 
 /**
  * Household role - role of a member within a household group.

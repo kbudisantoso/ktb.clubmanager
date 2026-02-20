@@ -2,8 +2,8 @@
 
 import { cn } from '@/lib/utils';
 
-/** Member status values matching the backend enum */
-type MemberStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'LEFT';
+/** Member status values matching the backend enum (6-state lifecycle) */
+type MemberStatus = 'ACTIVE' | 'PROBATION' | 'DORMANT' | 'SUSPENDED' | 'PENDING' | 'LEFT';
 
 /** Status configuration with German labels and semantic styling */
 const STATUS_CONFIG: Record<MemberStatus, { label: string; className: string }> = {
@@ -11,13 +11,21 @@ const STATUS_CONFIG: Record<MemberStatus, { label: string; className: string }> 
     label: 'Aktiv',
     className: 'bg-success/15 text-success border-success/25',
   },
-  INACTIVE: {
-    label: 'Inaktiv',
+  PROBATION: {
+    label: 'Probezeit',
+    className: 'bg-primary/15 text-primary border-primary/25',
+  },
+  DORMANT: {
+    label: 'Ruhend',
     className: 'bg-warning/15 text-warning-foreground border-warning/25',
   },
+  SUSPENDED: {
+    label: 'Gesperrt',
+    className: 'bg-destructive/15 text-destructive border-destructive/25',
+  },
   PENDING: {
-    label: 'Ausstehend',
-    className: 'bg-accent/15 text-accent-foreground border-accent/25',
+    label: 'Mitgliedschaft beantragt',
+    className: 'bg-foreground/10 text-foreground/70 border-foreground/15',
   },
   LEFT: {
     label: 'Ausgetreten',

@@ -42,6 +42,7 @@ interface MemberDetail {
   anonymizedAt: string | null;
   anonymizedBy: string | null;
   userId: string | null;
+  userImage: string | null;
   householdId: string | null;
   householdRole: string | null;
   household: {
@@ -60,7 +61,7 @@ interface MemberDetail {
     id: string;
     joinDate: string | null;
     leaveDate: string | null;
-    membershipType: string;
+    membershipTypeId: string | null;
     notes: string | null;
     createdAt: string | null;
     updatedAt: string | null;

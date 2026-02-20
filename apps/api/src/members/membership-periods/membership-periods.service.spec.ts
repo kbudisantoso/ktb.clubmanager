@@ -27,7 +27,7 @@ function makePeriod(overrides: Record<string, unknown> = {}) {
     memberId: 'member-1',
     joinDate: new Date('2025-01-01'),
     leaveDate: null,
-    membershipType: 'FULL',
+    membershipTypeId: 'type-1',
     notes: null,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -52,11 +52,11 @@ describe('MembershipPeriodsService', () => {
 
       const result = await service.create('club-1', 'member-1', {
         joinDate: '2025-01-01',
-        membershipType: 'FULL',
+        membershipTypeId: 'type-1',
       } as never);
 
       expect(result.joinDate).toBe('2025-01-01');
-      expect(result.membershipType).toBe('FULL');
+      expect(result.membershipTypeId).toBe('type-1');
     });
 
     it('should throw when open period exists', async () => {
@@ -68,7 +68,7 @@ describe('MembershipPeriodsService', () => {
       await expect(
         service.create('club-1', 'member-1', {
           joinDate: '2025-06-01',
-          membershipType: 'FULL',
+          membershipTypeId: 'type-1',
         } as never)
       ).rejects.toThrow(BadRequestException);
     });
@@ -86,7 +86,7 @@ describe('MembershipPeriodsService', () => {
       await expect(
         service.create('club-1', 'member-1', {
           joinDate: '2025-01-01',
-          membershipType: 'FULL',
+          membershipTypeId: 'type-1',
           leaveDate: '2025-12-31',
         } as never)
       ).rejects.toThrow(BadRequestException);
@@ -107,7 +107,7 @@ describe('MembershipPeriodsService', () => {
 
       const result = await service.create('club-1', 'member-1', {
         joinDate: '2025-06-01',
-        membershipType: 'FULL',
+        membershipTypeId: 'type-1',
       } as never);
 
       expect(result.joinDate).toBe('2025-06-01');
@@ -119,7 +119,7 @@ describe('MembershipPeriodsService', () => {
       await expect(
         service.create('club-1', 'member-99', {
           joinDate: '2025-01-01',
-          membershipType: 'FULL',
+          membershipTypeId: 'type-1',
         } as never)
       ).rejects.toThrow(NotFoundException);
     });

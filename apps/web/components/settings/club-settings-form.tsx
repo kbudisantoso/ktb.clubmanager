@@ -71,8 +71,8 @@ function clubToFormValues(club: ClubSettingsResponse): SettingsFormValues {
     accountHolder: club.accountHolder ?? '',
     // Betriebseinstellungen
     fiscalYearStartMonth: club.fiscalYearStartMonth ?? undefined,
-    defaultMembershipType:
-      (club.defaultMembershipType as SettingsFormValues['defaultMembershipType']) ?? undefined,
+    defaultMembershipTypeId:
+      (club.defaultMembershipTypeId as SettingsFormValues['defaultMembershipTypeId']) ?? undefined,
     probationPeriodDays: club.probationPeriodDays ?? undefined,
     // Sichtbarkeit
     visibility: club.visibility,

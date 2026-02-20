@@ -10,7 +10,7 @@ import {
   MaxLength,
   Matches,
 } from 'class-validator';
-import { MemberStatusDto } from './create-member.dto.js';
+import { MemberStatusDto, LeftCategoryDto } from './create-member.dto.js';
 
 export class ChangeStatusDto {
   @ApiProperty({
@@ -41,6 +41,22 @@ export class ChangeStatusDto {
     message: 'Datum muss im Format YYYY-MM-DD sein',
   })
   effectiveDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Category for LEFT transitions (required when newStatus is LEFT)',
+    enum: LeftCategoryDto,
+  })
+  @IsEnum(LeftCategoryDto)
+  @IsOptional()
+  leftCategory?: LeftCategoryDto;
+
+  @ApiPropertyOptional({
+    description:
+      'Membership type ID for period management (type change during transition or auto-create on activation)',
+  })
+  @IsString()
+  @IsOptional()
+  membershipTypeId?: string;
 }
 
 export class SetCancellationDto {
@@ -63,6 +79,29 @@ export class SetCancellationDto {
     message: 'Datum muss im Format YYYY-MM-DD sein',
   })
   cancellationReceivedAt!: string;
+
+  @ApiProperty({
+    description: 'Reason for the cancellation',
+    example: 'Kündigung per Brief',
+    minLength: 1,
+    maxLength: 500,
+  })
+  @IsString()
+  @MinLength(1, { message: 'Begruendung ist erforderlich' })
+  @MaxLength(500, { message: 'Begruendung darf maximal 500 Zeichen lang sein' })
+  reason!: string;
+}
+
+export class RevokeCancellationDto {
+  @ApiPropertyOptional({
+    description: 'Reason for revoking the cancellation',
+    example: 'Mitglied hat Kündigung zurückgezogen',
+    maxLength: 500,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(500, { message: 'Begruendung darf maximal 500 Zeichen lang sein' })
+  reason?: string;
 }
 
 export class BulkChangeStatusDto {
@@ -92,4 +131,12 @@ export class BulkChangeStatusDto {
   @MinLength(1, { message: 'Begruendung ist erforderlich' })
   @MaxLength(500, { message: 'Begruendung darf maximal 500 Zeichen lang sein' })
   reason!: string;
+
+  @ApiPropertyOptional({
+    description: 'Category for LEFT transitions (required when newStatus is LEFT)',
+    enum: LeftCategoryDto,
+  })
+  @IsEnum(LeftCategoryDto)
+  @IsOptional()
+  leftCategory?: LeftCategoryDto;
 }

@@ -194,7 +194,7 @@ function checkBank(v: SettingsFormValues): SectionCompleteness {
 
 function checkDefaults(v: SettingsFormValues): SectionCompleteness {
   const hasMonth = v.fiscalYearStartMonth != null;
-  const hasType = !!v.defaultMembershipType;
+  const hasType = !!v.defaultMembershipTypeId;
   const count = (hasMonth ? 1 : 0) + (hasType ? 1 : 0);
   const total = 2;
 

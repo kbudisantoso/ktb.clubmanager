@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClubsService } from './clubs.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import type { AppSettingsService } from '../settings/app-settings.service.js';
+import type { MembershipTypesService } from '../membership-types/membership-types.service.js';
 import { ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
 
 // Mock PrismaService
@@ -27,6 +28,11 @@ const mockAppSettings = {
   getDefaultVisibility: vi.fn(),
 };
 
+// Mock MembershipTypesService
+const mockMembershipTypes = {
+  seedDefaults: vi.fn(),
+};
+
 describe('ClubsService', () => {
   let service: ClubsService;
 
@@ -34,7 +40,8 @@ describe('ClubsService', () => {
     vi.clearAllMocks();
     service = new ClubsService(
       mockPrisma as unknown as PrismaService,
-      mockAppSettings as unknown as AppSettingsService
+      mockAppSettings as unknown as AppSettingsService,
+      mockMembershipTypes as unknown as MembershipTypesService
     );
   });
 
@@ -575,7 +582,7 @@ describe('ClubsService', () => {
         bankName: 'Commerzbank',
         accountHolder: 'Test Club e.V.',
         fiscalYearStartMonth: null,
-        defaultMembershipType: null,
+        defaultMembershipTypeId: null,
         probationPeriodDays: null,
         logoFileId: null,
         createdAt: new Date(),
@@ -656,7 +663,7 @@ describe('ClubsService', () => {
         bankName: null,
         accountHolder: null,
         fiscalYearStartMonth: null,
-        defaultMembershipType: null,
+        defaultMembershipTypeId: null,
         probationPeriodDays: null,
         logoFileId: null,
         createdAt: new Date(),
@@ -729,7 +736,7 @@ describe('ClubsService', () => {
         bankName: null,
         accountHolder: null,
         fiscalYearStartMonth: null,
-        defaultMembershipType: null,
+        defaultMembershipTypeId: null,
         probationPeriodDays: null,
         logoFileId: null,
         createdAt: new Date(),
@@ -789,7 +796,7 @@ describe('ClubsService', () => {
         bankName: 'Commerzbank',
         accountHolder: 'Test Club e.V.',
         fiscalYearStartMonth: 1,
-        defaultMembershipType: 'FULL',
+        defaultMembershipTypeId: 'mt-1',
         probationPeriodDays: 90,
         logoFileId: 'file-1',
         createdAt: new Date(),
@@ -810,7 +817,7 @@ describe('ClubsService', () => {
       expect(result.isNonProfit).toBe(true);
       expect(result.iban).toBe('DE89370400440532013000');
       expect(result.fiscalYearStartMonth).toBe(1);
-      expect(result.defaultMembershipType).toBe('FULL');
+      expect(result.defaultMembershipTypeId).toBe('mt-1');
       expect(result.probationPeriodDays).toBe(90);
       expect(result.logoFileId).toBe('file-1');
       // Null fields converted to undefined

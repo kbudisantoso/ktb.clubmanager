@@ -1,13 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEnum, Matches, MaxLength } from 'class-validator';
-
-export enum MembershipTypePeriodDto {
-  ORDENTLICH = 'ORDENTLICH',
-  PASSIV = 'PASSIV',
-  EHREN = 'EHREN',
-  FOERDER = 'FOERDER',
-  JUGEND = 'JUGEND',
-}
+import { IsString, IsOptional, Matches, MaxLength } from 'class-validator';
 
 export class CreatePeriodDto {
   @ApiProperty({
@@ -31,12 +23,13 @@ export class CreatePeriodDto {
   })
   leaveDate?: string;
 
-  @ApiProperty({
-    description: 'Membership type for this period',
-    enum: MembershipTypePeriodDto,
+  @ApiPropertyOptional({
+    description: 'Membership type ID (FK to MembershipType entity)',
+    example: 'clxyz...',
   })
-  @IsEnum(MembershipTypePeriodDto)
-  membershipType!: MembershipTypePeriodDto;
+  @IsString()
+  @IsOptional()
+  membershipTypeId?: string;
 
   @ApiPropertyOptional({
     description: 'Optional notes about this period',
@@ -71,12 +64,12 @@ export class UpdatePeriodDto {
   leaveDate?: string;
 
   @ApiPropertyOptional({
-    description: 'Membership type for this period',
-    enum: MembershipTypePeriodDto,
+    description: 'Membership type ID (FK to MembershipType entity)',
+    example: 'clxyz...',
   })
-  @IsEnum(MembershipTypePeriodDto)
+  @IsString()
   @IsOptional()
-  membershipType?: MembershipTypePeriodDto;
+  membershipTypeId?: string;
 
   @ApiPropertyOptional({ description: 'Notes about this period' })
   @IsString()

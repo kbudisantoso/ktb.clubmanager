@@ -7,8 +7,10 @@ import { MyPermissionsController } from './my-permissions.controller.js';
 import { MyPermissionsService } from './my-permissions.service.js';
 import { ClubUsersController } from './club-users.controller.js';
 import { ClubUsersService } from './club-users.service.js';
+import { MembershipTypesModule } from '../membership-types/membership-types.module.js';
 
 @Module({
+  imports: [MembershipTypesModule],
   controllers: [
     ClubsController,
     AccessRequestsController,

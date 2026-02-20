@@ -21,16 +21,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -51,35 +41,26 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useBulkChangeStatus, useUpdateMember } from '@/hooks/use-members';
 import { useCreateHousehold } from '@/hooks/use-households';
 import { useToast } from '@/hooks/use-toast';
+import { STATUS_LABELS } from '@/lib/member-status-labels';
 import { MemberCsvExportDialog } from './member-csv-export';
 import type { MemberListItem } from './member-list-table';
+import type { MembershipType } from '@/hooks/use-membership-types';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-/** German labels for status values */
-const STATUS_LABELS: Record<string, string> = {
-  ACTIVE: 'Aktiv',
-  INACTIVE: 'Inaktiv',
-  PENDING: 'Ausstehend',
-  LEFT: 'Ausgetreten',
-};
-
 /** Fields available for bulk editing */
 const BULK_EDIT_FIELDS = [
-  { value: 'membershipType', label: 'Mitgliedsart' },
+  { value: 'street', label: 'Straße' },
+  { value: 'houseNumber', label: 'Hausnummer' },
+  { value: 'addressExtra', label: 'Adresszusatz' },
+  { value: 'postalCode', label: 'PLZ' },
   { value: 'city', label: 'Ort' },
+  { value: 'country', label: 'Land' },
+  { value: 'phone', label: 'Telefon' },
+  { value: 'mobile', label: 'Mobil' },
 ] as const;
-
-/** Membership type options for bulk edit */
-const MEMBERSHIP_TYPE_OPTIONS = [
-  { value: 'ORDENTLICH', label: 'Ordentlich' },
-  { value: 'PASSIV', label: 'Passiv' },
-  { value: 'EHREN', label: 'Ehren' },
-  { value: 'FOERDER', label: 'Förder' },
-  { value: 'JUGEND', label: 'Jugend' },
-];
 
 // ============================================================================
 // Types
@@ -96,6 +77,8 @@ interface MemberBulkActionsProps {
   onClearSelection: () => void;
   /** Called when household creation dialog should open with pre-selected member IDs */
   onCreateHousehold?: (memberIds: string[]) => void;
+  /** Available membership types for label resolution */
+  membershipTypes?: MembershipType[];
 }
 
 // ============================================================================
@@ -113,6 +96,7 @@ export function MemberBulkActions({
   totalCount,
   onClearSelection,
   onCreateHousehold,
+  membershipTypes,
 }: MemberBulkActionsProps) {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
@@ -130,6 +114,7 @@ export function MemberBulkActions({
     open: boolean;
     targetStatus: string;
   }>({ open: false, targetStatus: '' });
+  const [statusReason, setStatusReason] = useState('');
 
   // Bulk edit state
   const [editField, setEditField] = useState<string>('');
@@ -152,11 +137,15 @@ export function MemberBulkActions({
       return new Set(transitions);
     });
 
-    // Find intersection of all transition sets
+    // Find intersection of all transition sets (exclude self-transitions and LEFT which needs leftCategory)
     const first = transitionSets[0];
     if (!first) return [];
 
-    return [...first].filter((status) => transitionSets.every((set) => set.has(status)));
+    const statuses = new Set(selectedMembers.map((m) => m.status));
+    return [...first].filter(
+      (status) =>
+        transitionSets.every((set) => set.has(status)) && !statuses.has(status) && status !== 'LEFT'
+    );
   }, [selectedMembers]);
 
   // ---- Action: Bulk Status Change ----
@@ -171,33 +160,52 @@ export function MemberBulkActions({
       }));
 
       try {
-        await bulkChangeStatus.mutateAsync({
+        const result = await bulkChangeStatus.mutateAsync({
           memberIds,
           newStatus: targetStatus,
-          reason: 'Sammeländerung',
+          reason: statusReason.trim() || 'Sammeländerung',
         });
 
-        toast({
-          title: `Status für ${memberIds.length} Mitglieder geändert`,
-          action: {
-            label: 'Rückgängig',
-            onClick: async () => {
-              // Undo: restore original statuses individually
-              for (const orig of originalStatuses) {
-                try {
-                  await bulkChangeStatus.mutateAsync({
-                    memberIds: [orig.id],
-                    newStatus: orig.status,
-                    reason: 'Sammeländerung rückgängig gemacht',
-                  });
-                } catch {
-                  // Best effort undo
+        const updatedCount = result.updated?.length ?? 0;
+        const skippedCount = result.skipped?.length ?? 0;
+
+        if (updatedCount === 0 && skippedCount > 0) {
+          const firstReason = result.skipped[0]?.reason ?? 'Unbekannter Fehler';
+          toast({
+            title: 'Statusänderung fehlgeschlagen',
+            description:
+              skippedCount === 1
+                ? firstReason
+                : `${skippedCount} Mitglieder übersprungen: ${firstReason}`,
+            variant: 'destructive',
+          });
+        } else if (skippedCount > 0) {
+          toast({
+            title: `${updatedCount} geändert, ${skippedCount} übersprungen`,
+            description: result.skipped[0]?.reason,
+          });
+        } else {
+          toast({
+            title: `Status für ${updatedCount} Mitglieder geändert`,
+            action: {
+              label: 'Rückgängig',
+              onClick: async () => {
+                for (const orig of originalStatuses) {
+                  try {
+                    await bulkChangeStatus.mutateAsync({
+                      memberIds: [orig.id],
+                      newStatus: orig.status,
+                      reason: 'Sammeländerung rückgängig gemacht',
+                    });
+                  } catch {
+                    // Best effort undo
+                  }
                 }
-              }
-              toast({ title: 'Statusänderung rückgängig gemacht' });
+                toast({ title: 'Statusänderung rückgängig gemacht' });
+              },
             },
-          },
-        });
+          });
+        }
 
         onClearSelection();
       } catch (err) {
@@ -224,9 +232,17 @@ export function MemberBulkActions({
     if (!householdName.trim()) return;
 
     try {
+      const memberIdList = [...selectedIds];
+      // Auto-assign roles: first member = HEAD, rest = OTHER
+      const roles: Record<string, string> = {};
+      memberIdList.forEach((id, i) => {
+        roles[id] = i === 0 ? 'HEAD' : 'OTHER';
+      });
+
       await createHousehold.mutateAsync({
         name: householdName.trim(),
-        memberIds: [...selectedIds],
+        memberIds: memberIdList,
+        roles,
       });
 
       toast({
@@ -440,43 +456,69 @@ export function MemberBulkActions({
         </Button>
       </div>
 
-      {/* Status Change Confirmation AlertDialog (CONV-010) */}
-      <AlertDialog
+      {/* Status Change Dialog with reason input (CONV-010) */}
+      <Dialog
         open={statusConfirmState.open}
         onOpenChange={(open) => {
-          if (!open) setStatusConfirmState({ open: false, targetStatus: '' });
+          if (!open) {
+            setStatusConfirmState({ open: false, targetStatus: '' });
+            setStatusReason('');
+          }
         }}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Status für {count} {count === 1 ? 'Mitglied' : 'Mitglieder'} ändern?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Status für {count} {count === 1 ? 'Mitglied' : 'Mitglieder'} ändern
+            </DialogTitle>
+            <DialogDescription>
               Der Status wird auf &ldquo;
-              {STATUS_LABELS[statusConfirmState.targetStatus] ?? statusConfirmState.targetStatus}
+              {STATUS_LABELS[statusConfirmState.targetStatus as keyof typeof STATUS_LABELS] ??
+                statusConfirmState.targetStatus}
               &rdquo; geändert.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="bulk-status-reason">Begründung</Label>
+            <Input
+              id="bulk-status-reason"
+              value={statusReason}
+              onChange={(e) => setStatusReason(e.target.value)}
+              placeholder="z.B. Vorstandsbeschluss vom ..."
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setStatusConfirmState({ open: false, targetStatus: '' });
+                setStatusReason('');
+              }}
+            >
+              Abbrechen
+            </Button>
+            <Button
               onClick={() => {
                 handleBulkStatusChange(statusConfirmState.targetStatus);
                 setStatusConfirmState({ open: false, targetStatus: '' });
+                setStatusReason('');
               }}
+              disabled={!statusReason.trim()}
             >
               Status ändern
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* CSV Export Dialog */}
       <MemberCsvExportDialog
         members={selectedMembers}
         open={csvDialogOpen}
         onOpenChange={setCsvDialogOpen}
+        membershipTypes={membershipTypes}
       />
 
       {/* Bulk Edit Dialog */}
@@ -512,31 +554,13 @@ export function MemberBulkActions({
               </Select>
             </div>
 
-            {editField === 'membershipType' && (
-              <div className="space-y-1.5">
-                <Label>Neuer Wert</Label>
-                <Select value={editValue} onValueChange={setEditValue}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Mitgliedsart auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MEMBERSHIP_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {editField === 'city' && (
+            {editField && (
               <div className="space-y-1.5">
                 <Label>Neuer Wert</Label>
                 <Input
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  placeholder="Ort eingeben..."
+                  placeholder={`${BULK_EDIT_FIELDS.find((f) => f.value === editField)?.label ?? 'Wert'} eingeben...`}
                 />
               </div>
             )}

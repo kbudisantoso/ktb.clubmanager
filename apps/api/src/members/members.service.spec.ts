@@ -126,7 +126,7 @@ describe('MembersService', () => {
               id: 'period-1',
               joinDate: new Date('2025-01-01'),
               leaveDate: null,
-              membershipType: 'FULL',
+              membershipTypeId: 'type-1',
               notes: null,
               createdAt: new Date(),
               updatedAt: new Date(),
@@ -141,7 +141,7 @@ describe('MembersService', () => {
           firstName: 'Max',
           lastName: 'Mustermann',
           joinDate: '2025-01-01',
-          membershipType: 'FULL',
+          membershipTypeId: 'type-1',
         } as never,
         'user-1'
       );
@@ -412,12 +412,14 @@ describe('MembersService', () => {
       expect(result.deletionReason).toBe('AUSTRITT');
     });
 
-    it('should throw when status is not LEFT', async () => {
+    it('should allow soft delete regardless of status', async () => {
       mockDb.member.findFirst.mockResolvedValue(makeMember({ status: 'ACTIVE' }));
-
-      await expect(service.softDelete('club-1', 'member-1', 'user-1', 'AUSTRITT')).rejects.toThrow(
-        BadRequestException
+      mockDb.member.update.mockResolvedValue(
+        makeMember({ status: 'ACTIVE', deletedAt: new Date(), deletionReason: 'SONSTIGES' })
       );
+
+      const result = await service.softDelete('club-1', 'member-1', 'user-1', 'SONSTIGES');
+      expect(result.deletedAt).toBeTruthy();
     });
   });
 
@@ -488,12 +490,30 @@ describe('MembersService', () => {
       expect(result.email).toBeNull();
     });
 
-    it('should throw when status is not LEFT', async () => {
-      mockDb.member.findFirst.mockResolvedValue(makeMember({ status: 'ACTIVE' }));
+    it('should throw when status is not LEFT and not deleted', async () => {
+      mockDb.member.findFirst.mockResolvedValue(makeMember({ status: 'ACTIVE', deletedAt: null }));
 
       await expect(service.anonymize('club-1', 'member-1', 'user-1')).rejects.toThrow(
         BadRequestException
       );
+    });
+
+    it('should allow anonymize when member is deleted', async () => {
+      const deletedMember = makeMember({ status: 'ACTIVE', deletedAt: new Date() });
+      mockDb.member.findFirst.mockResolvedValue(deletedMember);
+      mockDb.member.update.mockResolvedValue(
+        makeMember({
+          status: 'ACTIVE',
+          deletedAt: new Date(),
+          firstName: 'Anonymisiert',
+          lastName: 'Anonymisiert',
+          anonymizedAt: new Date(),
+        })
+      );
+      mockDb.membershipPeriod.updateMany.mockResolvedValue({ count: 0 });
+
+      const result = await service.anonymize('club-1', 'member-1', 'user-1');
+      expect(result.firstName).toBe('Anonymisiert');
     });
 
     it('should throw when already anonymized', async () => {
