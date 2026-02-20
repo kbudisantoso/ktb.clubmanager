@@ -32,7 +32,7 @@ import type { MemberDetail } from '@/hooks/use-member-detail';
 // Types
 // ============================================================================
 
-interface MembershipTabProps {
+interface MembershipSectionProps {
   /** Full member data */
   member: MemberDetail;
   /** Club slug for API calls */
@@ -47,7 +47,7 @@ interface MembershipTabProps {
  * Mitgliedschaft tab: Shows inline status summary, cancellation info,
  * and a unified timeline merging membership periods + status transitions.
  */
-export function MembershipTab({ member, slug }: MembershipTabProps) {
+export function MembershipSection({ member, slug }: MembershipSectionProps) {
   const params = useParams<{ slug: string }>();
   const clubSlug = params.slug;
   const { toast } = useToast();

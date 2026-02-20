@@ -45,7 +45,7 @@ const SALUTATION_OPTIONS = [
 // ============================================================================
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-interface BasicInfoTabProps {
+interface BasicInfoSectionProps {
   /** Full member data for read mode */
   member: MemberDetail;
   /** Whether the tab is in edit mode */
@@ -73,7 +73,7 @@ interface BasicInfoTabProps {
  * Stammdaten tab: Displays and edits basic member information.
  * In read mode, shows data in a clean grid. In edit mode, shows form fields.
  */
-export function BasicInfoTab({
+export function BasicInfoSection({
   member,
   isEditing,
   register,
@@ -82,7 +82,7 @@ export function BasicInfoTab({
   watch,
   errors,
   disabled,
-}: BasicInfoTabProps) {
+}: BasicInfoSectionProps) {
   if (!isEditing) {
     return <BasicInfoReadMode member={member} />;
   }
