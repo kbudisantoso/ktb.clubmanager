@@ -635,3 +635,62 @@ export function useLinkMember(slug: string, memberId: string) {
     },
   });
 }
+
+// ============================================================================
+// Unlinked Users (Club-wide)
+// ============================================================================
+
+export interface UnlinkedUser {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  image: string | null;
+  roles: string[];
+  isExternal: boolean;
+  joinedAt: string;
+}
+
+/**
+ * Fetch club users that have no linked member profile.
+ * Used by the suggestion group above the member table.
+ */
+export function useUnlinkedUsers(slug: string) {
+  return useQuery<UnlinkedUser[]>({
+    queryKey: [...memberKeys.all(slug), 'unlinked-users'],
+    queryFn: async () => {
+      const res = await apiFetch(`/api/clubs/${slug}/users/unlinked`);
+      if (!res.ok) {
+        throw new Error('Fehler beim Laden der Benutzer');
+      }
+      return res.json();
+    },
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Toggle the isExternal flag on a club user.
+ * Invalidates unlinked-users query on success.
+ */
+export function useToggleExternal(slug: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ clubUserId, isExternal }: { clubUserId: string; isExternal: boolean }) => {
+      const res = await apiFetch(`/api/clubs/${slug}/users/${clubUserId}/external`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isExternal }),
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || 'Fehler beim Aktualisieren');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: memberKeys.all(slug) });
+    },
+  });
+}
