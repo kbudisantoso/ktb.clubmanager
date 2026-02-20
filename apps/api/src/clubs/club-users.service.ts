@@ -46,6 +46,7 @@ export class ClubUsersService {
       image: cu.user.image ?? undefined,
       roles: cu.roles,
       joinedAt: cu.joinedAt,
+      isExternal: cu.isExternal,
     }));
   }
 
@@ -154,6 +155,7 @@ export class ClubUsersService {
       image: updated.user.image ?? undefined,
       roles: updated.roles,
       joinedAt: updated.joinedAt,
+      isExternal: updated.isExternal,
     };
   }
 

@@ -23,6 +23,9 @@ export class ClubUserDto {
 
   @ApiProperty()
   joinedAt!: Date;
+
+  @ApiProperty({ description: 'Whether the user is marked as external (no member profile needed)' })
+  isExternal!: boolean;
 }
 
 export class UpdateClubUserRolesDto {
