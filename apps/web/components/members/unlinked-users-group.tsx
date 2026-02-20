@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronRight, ExternalLink, UserPlus, Link2, UserX } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, UserPlus, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -82,13 +82,8 @@ export function UnlinkedUsersGroup({ slug, onCreateMember }: UnlinkedUsersGroupP
     [unlinkedUsers]
   );
 
-  const externalUsers = useMemo(
-    () => (unlinkedUsers ?? []).filter((u) => u.isExternal),
-    [unlinkedUsers]
-  );
-
-  // Don't render if loading or no unlinked users
-  if (isLoading || !unlinkedUsers || unlinkedUsers.length === 0) {
+  // Don't render if loading or no active (non-external) unlinked users
+  if (isLoading || activeUsers.length === 0) {
     return null;
   }
 
@@ -142,7 +137,6 @@ export function UnlinkedUsersGroup({ slug, onCreateMember }: UnlinkedUsersGroupP
         <span className="font-medium">Benutzer ohne Mitgliedsprofil</span>
         <Badge variant="secondary" className="text-xs">
           {activeUsers.length}
-          {externalUsers.length > 0 && ` + ${externalUsers.length} extern`}
         </Badge>
       </button>
     );
@@ -165,112 +159,64 @@ export function UnlinkedUsersGroup({ slug, onCreateMember }: UnlinkedUsersGroupP
           </Badge>
         </button>
 
-        {/* Active users */}
-        {activeUsers.length > 0 && (
-          <div className="space-y-2">
-            {activeUsers.map((user) => (
-              <div
-                key={user.id}
-                className="flex items-center gap-3 rounded-md bg-background/60 p-2.5"
-              >
-                <Avatar className="h-8 w-8 shrink-0">
-                  {user.image && <AvatarImage src={user.image} />}
-                  <AvatarFallback className="text-xs">
-                    {(user.name ?? '?').slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+        {/* Users */}
+        <div className="space-y-2">
+          {activeUsers.map((user) => (
+            <div
+              key={user.id}
+              className="flex items-center gap-3 rounded-md bg-background/60 p-2.5"
+            >
+              <Avatar className="h-8 w-8 shrink-0">
+                {user.image && <AvatarImage src={user.image} />}
+                <AvatarFallback className="text-xs">
+                  {(user.name ?? '?').slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
 
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{user.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                </div>
-
-                {/* Role badges */}
-                <div className="hidden sm:flex items-center gap-1 shrink-0">
-                  {user.roles.map((role) => (
-                    <Badge key={role} variant="outline" className="text-xs px-1.5 py-0">
-                      {ROLE_LABELS[role] ?? role}
-                    </Badge>
-                  ))}
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-1 shrink-0">
-                  <Button
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => handleCreateMember(user)}
-                  >
-                    <UserPlus className="mr-1 h-3 w-3" />
-                    <span className="hidden sm:inline">Mitglied anlegen</span>
-                    <span className="sm:hidden">Anlegen</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => handleLinkUser(user)}
-                  >
-                    <Link2 className="mr-1 h-3 w-3" />
-                    <span className="hidden sm:inline">Verknüpfen</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => handleToggleExternal(user.id, true)}
-                    disabled={toggleExternal.isPending}
-                  >
-                    <ExternalLink className="mr-1 h-3 w-3" />
-                    <span className="hidden lg:inline">Als extern markieren</span>
-                  </Button>
-                </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{user.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
               </div>
-            ))}
-          </div>
-        )}
 
-        {/* External users subsection */}
-        {externalUsers.length > 0 && (
-          <>
-            {activeUsers.length > 0 && (
-              <div className="border-t border-border/50 pt-3">
-                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                  <UserX className="h-3.5 w-3.5" />
-                  Externe Benutzer ({externalUsers.length})
-                </p>
+              {/* Role badges */}
+              <div className="hidden sm:flex items-center gap-1 shrink-0">
+                {user.roles.map((role) => (
+                  <Badge key={role} variant="outline" className="text-xs px-1.5 py-0">
+                    {ROLE_LABELS[role] ?? role}
+                  </Badge>
+                ))}
               </div>
-            )}
-            <div className="space-y-1.5">
-              {externalUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center gap-3 rounded-md p-2 opacity-60 hover:opacity-80 transition-opacity"
+
+              {/* Actions */}
+              <div className="flex items-center gap-1 shrink-0">
+                <Button size="sm" className="h-7 text-xs" onClick={() => handleCreateMember(user)}>
+                  <UserPlus className="mr-1 h-3 w-3" />
+                  <span className="hidden sm:inline">Mitglied anlegen</span>
+                  <span className="sm:hidden">Anlegen</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => handleLinkUser(user)}
                 >
-                  <Avatar className="h-7 w-7 shrink-0">
-                    {user.image && <AvatarImage src={user.image} />}
-                    <AvatarFallback className="text-xs">
-                      {(user.name ?? '?').slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate">{user.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => handleToggleExternal(user.id, false)}
-                    disabled={toggleExternal.isPending}
-                  >
-                    Markierung aufheben
-                  </Button>
-                </div>
-              ))}
+                  <Link2 className="mr-1 h-3 w-3" />
+                  <span className="hidden sm:inline">Verknüpfen</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => handleToggleExternal(user.id, true)}
+                  disabled={toggleExternal.isPending}
+                >
+                  <ExternalLink className="mr-1 h-3 w-3" />
+                  <span className="hidden lg:inline">Als extern markieren</span>
+                </Button>
+              </div>
             </div>
-          </>
-        )}
+          ))}
+        </div>
       </div>
 
       {/* Member Picker Dialog */}
