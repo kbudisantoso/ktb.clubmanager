@@ -159,6 +159,7 @@ export function MemberDetailHeader({
           personType={member.personType}
           size="md"
           imageUrl={member.userImage}
+          hasLinkedUser={!!member.userId}
         />
 
         <div className="min-w-0 space-y-1">
