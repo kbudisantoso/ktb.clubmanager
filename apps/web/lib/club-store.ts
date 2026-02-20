@@ -28,6 +28,12 @@ export interface ClubContext {
   shortCode?: string;
   avatarColor?: string;
   logoUrl?: string;
+  /** ISO 8601 timestamp when the club was deactivated, null if active */
+  deactivatedAt?: string | null;
+  /** ISO 8601 timestamp when the club is scheduled for permanent deletion */
+  scheduledDeletionAt?: string | null;
+  /** Grace period in days before deletion */
+  gracePeriodDays?: number | null;
 }
 
 interface ClubState {
