@@ -95,7 +95,7 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
                 disabled={disabled}
               >
                 <SelectTrigger id="settings-defaultMembershipTypeId" className="w-full">
-                  <SelectValue placeholder="Typ waehlen" />
+                  <SelectValue placeholder="Typ wählen" />
                 </SelectTrigger>
                 <SelectContent>
                   {(membershipTypes ?? []).map((type) => (

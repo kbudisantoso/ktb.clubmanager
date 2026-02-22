@@ -170,11 +170,11 @@ export function useChangePassword() {
         if (msg?.includes('Invalid password') || msg?.includes('INVALID_PASSWORD')) {
           throw new Error('Aktuelles Passwort ist falsch');
         }
-        throw new Error(msg || 'Passwort konnte nicht geaendert werden');
+        throw new Error(msg || 'Passwort konnte nicht geändert werden');
       }
     },
     onSuccess: (_data, variables) => {
-      toast({ title: 'Passwort geaendert' });
+      toast({ title: 'Passwort geändert' });
       if (variables.revokeOtherSessions) {
         queryClient.invalidateQueries({ queryKey: securityKeys.sessions() });
       }
@@ -194,7 +194,7 @@ export function useAccountDeletionCheck() {
     queryKey: securityKeys.deletionCheck(),
     queryFn: async (): Promise<DeletionCheckResult> => {
       const res = await apiFetch('/api/me/account/deletion-check');
-      if (!res.ok) throw new Error('Pruefung fehlgeschlagen');
+      if (!res.ok) throw new Error('Prüfung fehlgeschlagen');
       return res.json();
     },
     enabled: false, // Only fetch on demand via refetch()
@@ -213,7 +213,7 @@ export function useDeleteAccount() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        throw new Error(body?.message || 'Konto konnte nicht geloescht werden');
+        throw new Error(body?.message || 'Konto konnte nicht gelöscht werden');
       }
     },
     onSuccess: () => {

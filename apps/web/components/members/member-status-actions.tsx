@@ -62,7 +62,7 @@ export function buildTransitionActions(currentStatus: MemberStatus) {
         }
       : null;
 
-  // Extract self-transition separately (for "Mitgliedsart aendern")
+  // Extract self-transition separately (for "Mitgliedsart ändern")
   const selfKey = `${currentStatus}-${currentStatus}`;
   const selfTransitionEntry = NAMED_TRANSITIONS[selfKey];
   const selfTransition =
@@ -109,7 +109,7 @@ export function MemberStatusActions({
   const hasCancellation = !!member.cancellationDate;
   const canRecordCancellation = CANCELLATION_STATUSES.includes(member.status);
   const hasActivePeriod = member.membershipPeriods?.some((p) => !p.leaveDate) ?? false;
-  // Only show "Mitgliedsart aendern" when member has an active period
+  // Only show "Mitgliedsart ändern" when member has an active period
   const showSelfTransition = selfTransition && hasActivePeriod;
 
   const hasDropdownItems =
@@ -126,7 +126,7 @@ export function MemberStatusActions({
 
   const dropdownContent = (
     <DropdownMenuContent align="end">
-      {/* Self-transition: "Mitgliedsart aendern" — first item */}
+      {/* Self-transition: "Mitgliedsart ändern" — first item */}
       {showSelfTransition && (
         <DropdownMenuItem
           onClick={() => onTransition(selfTransition.target, selfTransition.transition)}

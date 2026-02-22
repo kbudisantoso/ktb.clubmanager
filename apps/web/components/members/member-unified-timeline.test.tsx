@@ -48,7 +48,7 @@ const mockLeftEntry: StatusHistoryEntry = {
   clubId: 'club-1',
   fromStatus: 'ACTIVE',
   toStatus: 'LEFT',
-  reason: 'Kuendigung eingereicht',
+  reason: 'Kündigung eingereicht',
   leftCategory: 'VOLUNTARY',
   effectiveDate: '2025-01-01',
   actorId: 'user-1',
@@ -329,7 +329,7 @@ describe('MemberUnifiedTimeline', () => {
       ...mockStatusEntry,
       fromStatus: 'ACTIVE',
       toStatus: 'PENDING',
-      reason: 'Status zurueckgesetzt',
+      reason: 'Status zurückgesetzt',
       effectiveDate: '2024-01-15',
     };
 
@@ -357,7 +357,7 @@ describe('MemberUnifiedTimeline', () => {
       />
     );
 
-    expect(screen.getByText(/Gekuendigt zum/)).toBeInTheDocument();
+    expect(screen.getByText(/Gekündigt zum/)).toBeInTheDocument();
   });
 
   it('shows "Beitritt" entry display on earliest unlinked period card', () => {

@@ -526,7 +526,7 @@ interface StatusEntryProps {
   };
   onEdit?: (entry: StatusHistoryEntry) => void;
   onDelete?: (entry: StatusHistoryEntry) => void;
-  /** When true, the delete button is disabled — user must use "Kuendigung widerrufen" */
+  /** When true, the delete button is disabled — user must use "Kündigung widerrufen" */
   deleteGuarded?: boolean;
 }
 
@@ -724,7 +724,7 @@ function TodayCard({ memberStatus, typeInfo, hasActivePeriod, cancellationDate }
         </div>
         {cancellationDate && memberStatus !== 'LEFT' && (
           <p className="text-xs text-warning-foreground mt-1.5">
-            Gekuendigt zum {formatDate(cancellationDate)}
+            Gekündigt zum {formatDate(cancellationDate)}
           </p>
         )}
       </div>

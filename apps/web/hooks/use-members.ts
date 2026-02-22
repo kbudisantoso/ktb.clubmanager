@@ -626,7 +626,7 @@ export function useLinkMember(slug: string, memberId: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Fehler beim Verknuepfen');
+        throw new Error(error.message || 'Fehler beim Verknüpfen');
       }
       return res.json();
     },

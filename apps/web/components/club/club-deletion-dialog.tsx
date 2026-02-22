@@ -117,7 +117,7 @@ export function ClubDeletionDialog({
                 <div className="space-y-2 text-sm text-muted-foreground">
                   <p>
                     Durch die Löschung wird der Verein <strong>sofort deaktiviert</strong>. Während
-                    der Übergangsfrist haben Sie noch Zugriff auf Ihre Daten.
+                    der Übergangsfrist hast du noch Zugriff auf deine Daten.
                   </p>
                   <p>
                     Nach Ablauf der Übergangsfrist werden <strong>alle Vereinsdaten</strong>{' '}
@@ -169,8 +169,7 @@ export function ClubDeletionDialog({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="delete-club-confirm">
-                  Geben Sie den Vereinsnamen ein:{' '}
-                  <code className="font-mono font-bold">{clubName}</code>
+                  Gib den Vereinsnamen ein: <code className="font-mono font-bold">{clubName}</code>
                 </Label>
                 <Input
                   id="delete-club-confirm"
