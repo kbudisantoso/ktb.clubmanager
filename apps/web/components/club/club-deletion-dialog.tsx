@@ -132,7 +132,13 @@ export function ClubDeletionDialog({
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" onClick={() => setStep('confirm')}>
+              <AlertDialogAction
+                variant="destructive"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setStep('confirm');
+                }}
+              >
                 Weiter
               </AlertDialogAction>
             </AlertDialogFooter>
