@@ -105,10 +105,12 @@ describe('FileCleanupService', () => {
 
     await service.cleanupOrphanedUploads();
 
-    const call = mockPrisma.file.findMany.mock.calls[0]?.[0] as Record<string, any>;
+    const call = mockPrisma.file.findMany.mock.calls[0]?.[0] as {
+      where: { status: string; createdAt: { lt: Date } };
+    };
     expect(call.where.status).toBe('PENDING_UPLOAD');
     // Threshold should be ~24 hours ago
-    const threshold = call.where.createdAt.lt as Date;
+    const threshold = call.where.createdAt.lt;
     const hoursDiff = (Date.now() - threshold.getTime()) / (1000 * 60 * 60);
     expect(hoursDiff).toBeGreaterThanOrEqual(23.9);
     expect(hoursDiff).toBeLessThanOrEqual(24.1);

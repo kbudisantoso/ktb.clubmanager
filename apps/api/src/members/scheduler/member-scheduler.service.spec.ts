@@ -6,12 +6,14 @@ import type { MemberStatusService } from '../member-status.service.js';
 
 const SYSTEM_USER_ID = 'system-user-uuid-123';
 
+const mockTransitionDeleteMany = vi.fn();
+
 const mockPrisma = {
   member: {
     findMany: vi.fn(),
   },
   memberStatusTransition: {
-    deleteMany: vi.fn(),
+    deleteMany: mockTransitionDeleteMany,
   },
 } as unknown as PrismaService;
 
@@ -52,7 +54,7 @@ describe('MemberSchedulerService', () => {
       const member = makeMember();
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([member]);
       (mockMemberStatusService.changeStatus as ReturnType<typeof vi.fn>).mockResolvedValue({});
-      (mockPrisma.memberStatusTransition as any).deleteMany.mockResolvedValue({ count: 0 });
+      mockTransitionDeleteMany.mockResolvedValue({ count: 0 });
 
       await service.handleCancellationTransitions();
 
@@ -71,11 +73,11 @@ describe('MemberSchedulerService', () => {
       const member = makeMember();
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([member]);
       (mockMemberStatusService.changeStatus as ReturnType<typeof vi.fn>).mockResolvedValue({});
-      (mockPrisma.memberStatusTransition as any).deleteMany.mockResolvedValue({ count: 1 });
+      mockTransitionDeleteMany.mockResolvedValue({ count: 1 });
 
       await service.handleCancellationTransitions();
 
-      expect((mockPrisma.memberStatusTransition as any).deleteMany).toHaveBeenCalledWith(
+      expect(mockTransitionDeleteMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             memberId: 'member-1',
@@ -105,7 +107,7 @@ describe('MemberSchedulerService', () => {
       const member = makeMember({ status: 'DORMANT' });
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([member]);
       (mockMemberStatusService.changeStatus as ReturnType<typeof vi.fn>).mockResolvedValue({});
-      (mockPrisma.memberStatusTransition as any).deleteMany.mockResolvedValue({ count: 0 });
+      mockTransitionDeleteMany.mockResolvedValue({ count: 0 });
 
       await service.handleCancellationTransitions();
 
@@ -124,7 +126,7 @@ describe('MemberSchedulerService', () => {
       const member = makeMember({ status: 'SUSPENDED' });
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([member]);
       (mockMemberStatusService.changeStatus as ReturnType<typeof vi.fn>).mockResolvedValue({});
-      (mockPrisma.memberStatusTransition as any).deleteMany.mockResolvedValue({ count: 0 });
+      mockTransitionDeleteMany.mockResolvedValue({ count: 0 });
 
       await service.handleCancellationTransitions();
 
@@ -146,7 +148,7 @@ describe('MemberSchedulerService', () => {
         member1,
         member2,
       ]);
-      (mockPrisma.memberStatusTransition as any).deleteMany.mockResolvedValue({ count: 0 });
+      mockTransitionDeleteMany.mockResolvedValue({ count: 0 });
 
       // First call fails, second succeeds
       (mockMemberStatusService.changeStatus as ReturnType<typeof vi.fn>)
