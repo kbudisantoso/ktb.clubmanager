@@ -22,7 +22,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare-commit": "pnpm lint && pnpm format:check",
-    "prepare-push": "pnpm prepare-commit && pnpm typecheck && pnpm test",
+    "prepare-push": "pnpm install && pnpm prepare-commit && pnpm typecheck && pnpm test",
     "prepare": "simple-git-hooks",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
