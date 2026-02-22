@@ -1,0 +1,13 @@
+meta:
+  version: '1.0'
+  slug: test-minimal
+
+club:
+  name: Minimal Test Club
+  slug: test-minimal
+
+users:
+  - email: owner@test-minimal.example.com
+    name: Test Owner
+    password: test-password-123
+    clubRoles: [OWNER]
