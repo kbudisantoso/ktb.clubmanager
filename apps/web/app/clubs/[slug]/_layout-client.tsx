@@ -6,12 +6,11 @@ import { useClubStore } from '@/lib/club-store';
 import { useMyClubsQuery, useSyncClubsToStore } from '@/hooks/use-clubs';
 import { useClubPermissionsQuery } from '@/hooks/use-club-permissions';
 import { ClubDeactivationBanner } from '@/components/club/club-deactivation-banner';
-import { cn } from '@/lib/utils';
 
 /**
  * Client component for club layout effects.
  * Handles setting active club, syncing club data to Zustand, and pre-fetching permissions.
- * Shows deactivation banner and destructive border when club is deactivated.
+ * Provides deactivation banner via useClubDeactivationBanner for use inside SidebarInset.
  * Access control is handled server-side by checkClubAccess in page components.
  */
 export function ClubLayoutClient({ children }: { children: React.ReactNode }) {
@@ -22,7 +21,6 @@ export function ClubLayoutClient({ children }: { children: React.ReactNode }) {
 
   const slug = params.slug as string;
   const activeClub = clubs.find((c) => c.slug === slug);
-  const isDeactivated = !!activeClub?.deactivatedAt;
 
   // Keep Zustand store in sync with API data (name, logo, avatarColor changes)
   useSyncClubsToStore();
@@ -36,16 +34,31 @@ export function ClubLayoutClient({ children }: { children: React.ReactNode }) {
     }
   }, [activeClub, slug, setActiveClub]);
 
+  return <>{children}</>;
+}
+
+/**
+ * Hook that returns the deactivation banner element if the current club is deactivated.
+ * Used inside SidebarInset so the banner renders within the content area (not behind the sidebar).
+ */
+export function useClubDeactivationBanner(): React.ReactNode {
+  const params = useParams();
+  const { data } = useMyClubsQuery();
+  const { clubs = [] } = data ?? {};
+
+  const slug = params.slug as string;
+  const activeClub = clubs.find((c) => c.slug === slug);
+  const isDeactivated = !!activeClub?.deactivatedAt;
+
+  if (!isDeactivated || !activeClub.deactivatedAt || !activeClub.scheduledDeletionAt) {
+    return null;
+  }
+
   return (
-    <div className={cn(isDeactivated && 'border-t-2 border-destructive')}>
-      {isDeactivated && activeClub.deactivatedAt && activeClub.scheduledDeletionAt && (
-        <ClubDeactivationBanner
-          slug={slug}
-          deactivatedAt={activeClub.deactivatedAt}
-          scheduledDeletionAt={activeClub.scheduledDeletionAt}
-        />
-      )}
-      {children}
-    </div>
+    <ClubDeactivationBanner
+      slug={slug}
+      deactivatedAt={activeClub.deactivatedAt}
+      scheduledDeletionAt={activeClub.scheduledDeletionAt}
+    />
   );
 }

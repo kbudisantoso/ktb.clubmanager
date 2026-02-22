@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
+import { clubKeys } from '@/hooks/use-clubs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -81,6 +82,7 @@ function useCancelClubDeletion() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'deletion-logs'] });
+      queryClient.invalidateQueries({ queryKey: clubKeys.all });
       toast({ title: 'Löschung abgebrochen' });
     },
     onError: (error: Error) => {
