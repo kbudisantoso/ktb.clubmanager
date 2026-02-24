@@ -65,6 +65,52 @@ export class ClubsController {
     return this.clubsService.checkSlugAvailability(slug);
   }
 
+  @Get(':slug/export')
+  @DeactivationExempt()
+  @ApiOperation({ summary: 'Export club data as YAML (OWNER/ADMIN only)' })
+  @ApiResponse({ status: 200, description: 'Club data as YAML file' })
+  @ApiResponse({ status: 403, description: 'Not club owner or admin' })
+  @ApiResponse({ status: 404, description: 'Club not found' })
+  async exportClub(
+    @Param('slug') slug: string,
+    @Req() req: AuthenticatedRequest
+  ): Promise<StreamableFile> {
+    const isSuperAdmin = await this.isSuperAdmin(req.user.id);
+
+    // Verify OWNER or ADMIN role
+    const club = await this.prisma.club.findFirst({
+      where: { slug, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!club) {
+      throw new ForbiddenException('Kein Zugriff');
+    }
+
+    if (!isSuperAdmin) {
+      const membership = await this.prisma.clubUser.findFirst({
+        where: {
+          userId: req.user.id,
+          clubId: club.id,
+          status: 'ACTIVE',
+          roles: { hasSome: ['OWNER', 'ADMIN'] },
+        },
+      });
+
+      if (!membership) {
+        throw new ForbiddenException(
+          'Nur Inhaber und Administratoren können Vereinsdaten exportieren'
+        );
+      }
+    }
+
+    const yamlContent = await this.clubExportService.exportClub(club.id, slug);
+    return new StreamableFile(Buffer.from(yamlContent, 'utf-8'), {
+      type: 'application/x-yaml',
+      disposition: `attachment; filename="${slug}.yaml"`,
+    });
+  }
+
   @Get(':slug')
   @ApiOperation({ summary: 'Get club by slug' })
   @ApiResponse({ status: 200, type: ClubResponseDto })
@@ -140,52 +186,6 @@ export class ClubsController {
   async reactivate(@Param('slug') slug: string, @Req() req: AuthenticatedRequest) {
     const isSuperAdmin = await this.isSuperAdmin(req.user.id);
     return this.clubsService.reactivate(slug, req.user.id, isSuperAdmin);
-  }
-
-  @Get(':slug/export')
-  @DeactivationExempt()
-  @ApiOperation({ summary: 'Export club data as YAML (OWNER/ADMIN only)' })
-  @ApiResponse({ status: 200, description: 'Club data as YAML file' })
-  @ApiResponse({ status: 403, description: 'Not club owner or admin' })
-  @ApiResponse({ status: 404, description: 'Club not found' })
-  async exportClub(
-    @Param('slug') slug: string,
-    @Req() req: AuthenticatedRequest
-  ): Promise<StreamableFile> {
-    const isSuperAdmin = await this.isSuperAdmin(req.user.id);
-
-    // Verify OWNER or ADMIN role
-    const club = await this.prisma.club.findFirst({
-      where: { slug, deletedAt: null },
-      select: { id: true },
-    });
-
-    if (!club) {
-      throw new ForbiddenException('Kein Zugriff');
-    }
-
-    if (!isSuperAdmin) {
-      const membership = await this.prisma.clubUser.findFirst({
-        where: {
-          userId: req.user.id,
-          clubId: club.id,
-          status: 'ACTIVE',
-          roles: { hasSome: ['OWNER', 'ADMIN'] },
-        },
-      });
-
-      if (!membership) {
-        throw new ForbiddenException(
-          'Nur Inhaber und Administratoren können Vereinsdaten exportieren'
-        );
-      }
-    }
-
-    const yamlContent = await this.clubExportService.exportClub(club.id, slug);
-    return new StreamableFile(Buffer.from(yamlContent, 'utf-8'), {
-      type: 'application/x-yaml',
-      disposition: `attachment; filename="${slug}.yaml"`,
-    });
   }
 
   // Super Admin only endpoints
