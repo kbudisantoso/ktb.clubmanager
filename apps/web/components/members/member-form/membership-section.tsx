@@ -152,7 +152,7 @@ export function MembershipSection({ member, slug }: MembershipSectionProps) {
             const prep = dateStr <= today ? 'am' : 'zum';
             const label = isLeft
               ? `Austritt ${prep} ${formatDate(dateStr)}`
-              : `Kuendigung zum ${formatDate(dateStr)}`;
+              : `Kündigung zum ${formatDate(dateStr)}`;
             return (
               <div className="flex items-start gap-2 rounded-md border border-amber-500/25 bg-amber-500/10 p-3">
                 <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
@@ -187,7 +187,7 @@ export function MembershipSection({ member, slug }: MembershipSectionProps) {
                 className="mt-2"
                 onClick={() => setAnonymizeDialogOpen(true)}
               >
-                Daten loeschen
+                Daten löschen
               </Button>
             </div>
           </div>
@@ -252,7 +252,7 @@ export function MembershipSection({ member, slug }: MembershipSectionProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Statuseintrag löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Dieser Eintrag wird unwiderruflich entfernt. Möchten Sie fortfahren?
+              Dieser Eintrag wird unwiderruflich entfernt. Möchtest du fortfahren?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

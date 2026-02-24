@@ -184,14 +184,14 @@ export function MembershipTypesSettingsClient() {
     try {
       await deleteMutation.mutateAsync(deleteTarget.id);
       toast({
-        title: 'Mitgliedsart geloescht',
+        title: 'Mitgliedsart gelöscht',
         description: `"${deleteTarget.name}" wurde entfernt.`,
       });
       setDeleteTarget(null);
     } catch (err) {
       toast({
         title: 'Fehler',
-        description: err instanceof Error ? err.message : 'Fehler beim Loeschen der Mitgliedsart',
+        description: err instanceof Error ? err.message : 'Fehler beim Löschen der Mitgliedsart',
         variant: 'destructive',
       });
       setDeleteTarget(null);
@@ -204,7 +204,7 @@ export function MembershipTypesSettingsClient() {
       <AccessDenied
         feature="die Mitgliedsarten-Einstellungen"
         backHref={`/clubs/${params.slug}/dashboard`}
-        backLabel="Zurueck zum Verein"
+        backLabel="Zurück zum Verein"
       />
     );
   }
@@ -277,12 +277,12 @@ export function MembershipTypesSettingsClient() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-center w-24">Sortierung</TableHead>
-                    <TableHead>Kuerzel</TableHead>
+                    <TableHead>Kürzel</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead className="text-center">Standard</TableHead>
                     <TableHead className="text-center">Stimmrecht</TableHead>
                     <TableHead className="text-center">Versammlung</TableHead>
-                    <TableHead className="text-center">Waehlbar</TableHead>
+                    <TableHead className="text-center">Wählbar</TableHead>
                     <TableHead className="text-center">Aktiv</TableHead>
                     <TableHead className="w-25"></TableHead>
                   </TableRow>
@@ -330,7 +330,7 @@ export function MembershipTypesSettingsClient() {
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Loeschen</TooltipContent>
+                            <TooltipContent>Löschen</TooltipContent>
                           </Tooltip>
                         </div>
                       </TableCell>
@@ -352,7 +352,7 @@ export function MembershipTypesSettingsClient() {
             </DialogTitle>
             <DialogDescription>
               {editingType
-                ? 'Aendere die Konfiguration der Mitgliedsart.'
+                ? 'Ändere die Konfiguration der Mitgliedsart.'
                 : 'Erstelle eine neue Mitgliedsart mit Rechten und Eigenschaften.'}
             </DialogDescription>
           </DialogHeader>
@@ -372,7 +372,7 @@ export function MembershipTypesSettingsClient() {
 
             {/* Code */}
             <div className="space-y-2">
-              <Label htmlFor="code">Kuerzel</Label>
+              <Label htmlFor="code">Kürzel</Label>
               <Input
                 id="code"
                 value={formState.code}
@@ -386,7 +386,7 @@ export function MembershipTypesSettingsClient() {
                 maxLength={20}
               />
               <p className="text-xs text-muted-foreground">
-                Eindeutiger Code in Grossbuchstaben (A-Z, 0-9, _).
+                Eindeutiger Code in Großbuchstaben (A-Z, 0-9, _).
               </p>
             </div>
 
@@ -430,7 +430,7 @@ export function MembershipTypesSettingsClient() {
                   Standard-Mitgliedsart
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Wird bei neuen Mitgliedern automatisch vorausgewaehlt
+                  Wird bei neuen Mitgliedern automatisch vorausgewählt
                 </p>
               </div>
               <Switch
@@ -449,7 +449,7 @@ export function MembershipTypesSettingsClient() {
                   Aktiv
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Inaktive Mitgliedsarten sind nicht mehr auswaehlbar
+                  Inaktive Mitgliedsarten sind nicht mehr auswählbar
                 </p>
               </div>
               <Switch
@@ -485,7 +485,7 @@ export function MembershipTypesSettingsClient() {
                   Versammlungsteilnahme
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Mitglieder koennen an der Mitgliederversammlung teilnehmen
+                  Mitglieder können an der Mitgliederversammlung teilnehmen
                 </p>
               </div>
               <Switch
@@ -501,10 +501,10 @@ export function MembershipTypesSettingsClient() {
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
                 <Label htmlFor="eligibleForOffice" className="text-sm font-medium">
-                  Waehlbar
+                  Wählbar
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Mitglieder koennen fuer Vorstandsaemter kandidieren
+                  Mitglieder können für Vorstandsämter kandidieren
                 </p>
               </div>
               <Switch
@@ -547,10 +547,10 @@ export function MembershipTypesSettingsClient() {
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Mitgliedsart loeschen?</AlertDialogTitle>
+            <AlertDialogTitle>Mitgliedsart löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Moechtest du die Mitgliedsart &quot;{deleteTarget?.name}&quot; wirklich loeschen?
-              Diese Aktion kann nicht rueckgaengig gemacht werden.
+              Möchtest du die Mitgliedsart &quot;{deleteTarget?.name}&quot; wirklich löschen? Diese
+              Aktion kann nicht rückgängig gemacht werden.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -561,7 +561,7 @@ export function MembershipTypesSettingsClient() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Loeschen
+              Löschen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

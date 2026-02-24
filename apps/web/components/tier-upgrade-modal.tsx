@@ -58,7 +58,7 @@ export function TierUpgradeModal({
         <DialogFooter className="flex-col gap-2 sm:flex-col">
           <Button className="w-full">Tarif upgraden</Button>
           <Button variant="ghost" className="w-full" onClick={() => onOpenChange(false)}>
-            Spaeter
+            Später
           </Button>
         </DialogFooter>
       </DialogContent>

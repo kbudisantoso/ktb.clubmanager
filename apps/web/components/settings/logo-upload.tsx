@@ -307,7 +307,7 @@ export function LogoUpload({
           <DialogHeader>
             <DialogTitle>Logo zuschneiden</DialogTitle>
             <DialogDescription>
-              Verschieben und zoomen Sie das Bild, um den gewünschten Ausschnitt zu wählen.
+              Verschiebe und zoome das Bild, um den gewünschten Ausschnitt zu wählen.
             </DialogDescription>
           </DialogHeader>
 
@@ -363,7 +363,7 @@ export function LogoUpload({
           {/* Error message */}
           {status === 'error' && (
             <p className="text-center text-xs text-destructive">
-              Fehler beim Hochladen. Bitte versuchen Sie es erneut.
+              Fehler beim Hochladen. Bitte versuche es erneut.
             </p>
           )}
 

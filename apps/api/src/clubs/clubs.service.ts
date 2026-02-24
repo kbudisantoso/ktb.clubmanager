@@ -9,6 +9,7 @@ import { AppSettingsService } from '../settings/app-settings.service.js';
 import { MembershipTypesService } from '../membership-types/membership-types.service.js';
 import { CreateClubDto } from './dto/create-club.dto.js';
 import { UpdateClubDto } from './dto/update-club.dto.js';
+import { DeactivateClubDto } from './dto/deactivate-club.dto.js';
 import { generateSlug, validateSlug, formatInviteCode, generateInviteCode } from '@ktb/shared';
 
 @Injectable()
@@ -449,6 +450,168 @@ export class ClubsService {
     return clubs;
   }
 
+  /**
+   * Deactivate a club (initiates grace period before deletion).
+   * Only OWNER or Super Admin can deactivate.
+   */
+  async deactivate(slug: string, dto: DeactivateClubDto, userId: string, isSuperAdmin: boolean) {
+    const club = await this.prisma.club.findFirst({
+      where: { slug, deletedAt: null },
+    });
+
+    if (!club) {
+      throw new NotFoundException('Verein nicht gefunden');
+    }
+
+    // Only OWNER or Super Admin can deactivate
+    if (!isSuperAdmin) {
+      const membership = await this.prisma.clubUser.findFirst({
+        where: {
+          userId,
+          clubId: club.id,
+          status: 'ACTIVE',
+          roles: { has: 'OWNER' },
+        },
+      });
+
+      if (!membership) {
+        throw new ForbiddenException('Nur der Vereinsinhaber kann den Verein deaktivieren');
+      }
+    }
+
+    // Verify confirmation name matches
+    if (dto.confirmationName !== club.name) {
+      throw new BadRequestException('Der eingegebene Vereinsname stimmt nicht überein');
+    }
+
+    // Check not already deactivated
+    if (club.deactivatedAt) {
+      throw new BadRequestException('Verein ist bereits deaktiviert');
+    }
+
+    // Validate grace period >= SuperAdmin minimum
+    const minGraceDays = await this.appSettings.get('club.minDeletionGraceDays');
+    const effectiveGraceDays = Math.max(dto.gracePeriodDays, minGraceDays);
+
+    // Calculate scheduled deletion date
+    const now = new Date();
+    const scheduledDeletionAt = new Date(now);
+    scheduledDeletionAt.setDate(scheduledDeletionAt.getDate() + effectiveGraceDays);
+
+    // Count members for deletion log
+    const memberCount = await this.prisma.member.count({
+      where: { clubId: club.id, deletedAt: null },
+    });
+
+    // Transaction: update club + create deletion log
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.club.update({
+        where: { id: club.id },
+        data: {
+          deactivatedAt: now,
+          deactivatedBy: userId,
+          scheduledDeletionAt,
+          gracePeriodDays: effectiveGraceDays,
+        },
+        include: {
+          tier: true,
+          _count: {
+            select: { clubUsers: true, members: true },
+          },
+        },
+      }),
+      this.prisma.clubDeletionLog.create({
+        data: {
+          clubName: club.name,
+          clubSlug: club.slug,
+          initiatedBy: userId,
+          deactivatedAt: now,
+          scheduledDeletionAt,
+          memberCount,
+          notificationEvents: [
+            {
+              type: 'T_GRACE',
+              timestamp: now.toISOString(),
+              message: 'Verein deaktiviert, Schonfrist gestartet',
+            },
+          ],
+        },
+      }),
+    ]);
+
+    return this.formatClubResponse(updated);
+  }
+
+  /**
+   * Reactivate a deactivated club (cancel deletion).
+   * Only OWNER or Super Admin can reactivate.
+   */
+  async reactivate(slug: string, userId: string, isSuperAdmin: boolean) {
+    const club = await this.prisma.club.findFirst({
+      where: { slug, deletedAt: null },
+    });
+
+    if (!club) {
+      throw new NotFoundException('Verein nicht gefunden');
+    }
+
+    // Check it IS deactivated
+    if (!club.deactivatedAt) {
+      throw new BadRequestException('Verein ist nicht deaktiviert');
+    }
+
+    // Only OWNER or Super Admin can reactivate
+    if (!isSuperAdmin) {
+      const membership = await this.prisma.clubUser.findFirst({
+        where: {
+          userId,
+          clubId: club.id,
+          status: 'ACTIVE',
+          roles: { has: 'OWNER' },
+        },
+      });
+
+      if (!membership) {
+        throw new ForbiddenException('Nur der Vereinsinhaber kann den Verein reaktivieren');
+      }
+    }
+
+    const now = new Date();
+
+    // Transaction: clear deactivation fields + cancel deletion log
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.club.update({
+        where: { id: club.id },
+        data: {
+          deactivatedAt: null,
+          deactivatedBy: null,
+          scheduledDeletionAt: null,
+          gracePeriodDays: null,
+        },
+        include: {
+          tier: true,
+          _count: {
+            select: { clubUsers: true, members: true },
+          },
+        },
+      }),
+      this.prisma.clubDeletionLog.updateMany({
+        where: {
+          clubSlug: club.slug,
+          cancelled: false,
+          deletedAt: null,
+        },
+        data: {
+          cancelled: true,
+          cancelledAt: now,
+          cancelledBy: userId,
+        },
+      }),
+    ]);
+
+    return this.formatClubResponse(updated);
+  }
+
   private formatClubResponse(
     club: {
       id: string;
@@ -492,6 +655,11 @@ export class ClubsService {
       probationPeriodDays: number | null;
       // Logo
       logoFileId: string | null;
+      // Deactivation
+      deactivatedAt: Date | null;
+      deactivatedBy: string | null;
+      scheduledDeletionAt: Date | null;
+      gracePeriodDays: number | null;
       // Relations
       tierId: string | null;
       tier?: { id: string; name: string } | null;
@@ -544,6 +712,11 @@ export class ClubsService {
       probationPeriodDays: club.probationPeriodDays ?? undefined,
       // Logo
       logoFileId: club.logoFileId ?? undefined,
+      // Deactivation
+      deactivatedAt: club.deactivatedAt?.toISOString() ?? null,
+      deactivatedBy: club.deactivatedBy ?? null,
+      scheduledDeletionAt: club.scheduledDeletionAt?.toISOString() ?? null,
+      gracePeriodDays: club.gracePeriodDays ?? null,
       // Relations & meta
       tierId: club.tierId ?? undefined,
       tier: club.tier ?? undefined,

@@ -30,8 +30,6 @@ export default tseslint.config(
       'prisma/generated/**',
       // Compiled JS output in shared package
       'packages/shared/src/**/*.js',
-      // Prisma seed script (not in tsconfig)
-      'prisma/seed.ts',
       // Hidden directories (except .github, .devcontainer)
       '.*/**',
     ],
@@ -42,7 +40,7 @@ export default tseslint.config(
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parserOptions: {
-        project: ['./packages/*/tsconfig.json', './apps/*/tsconfig.json'],
+        project: ['./packages/*/tsconfig.json', './apps/*/tsconfig.json', './prisma/tsconfig.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },

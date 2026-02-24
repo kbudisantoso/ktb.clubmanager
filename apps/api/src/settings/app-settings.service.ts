@@ -10,6 +10,7 @@ export const APP_SETTING_DEFAULTS: AppSettingValues = {
   'club.defaultTierId': null,
   'tier.graceperiodDays': 14,
   'mode.saas': false, // true = SaaS mode (show upgrade prompts), false = OSS mode (hide disabled features)
+  'club.minDeletionGraceDays': 14,
 };
 
 /**
@@ -21,6 +22,7 @@ export interface AppSettingValues {
   'club.defaultTierId': string | null;
   'tier.graceperiodDays': number;
   'mode.saas': boolean;
+  'club.minDeletionGraceDays': number;
 }
 
 export type AppSettingKey = keyof AppSettingValues;

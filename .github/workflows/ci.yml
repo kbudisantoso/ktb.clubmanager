@@ -98,6 +98,11 @@ jobs:
       - name: Generate Prisma client
         run: pnpm db:generate
 
+      - name: Apply database migrations
+        run: pnpm prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+
       - name: Run tests
         run: pnpm test
         env:

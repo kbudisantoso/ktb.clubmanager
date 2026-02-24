@@ -1,0 +1,138 @@
+meta:
+  version: '1.0'
+  slug: test-complete
+
+club:
+  name: Test Verein Komplett e.V.
+  slug: test-complete
+  legalName: Test Verein Komplett e.V.
+  shortCode: TVK
+  description: Testverein mit allen Feldern
+  visibility: PRIVATE
+  avatarColor: green
+  foundedAt: '2020-01-01'
+  street: Teststraße
+  houseNumber: '1'
+  postalCode: '10115'
+  city: Berlin
+  phone: '+49 30 1234567'
+  email: info@test-complete.example.com
+  website: https://test-complete.example.com
+  isRegistered: true
+  registryCourt: Amtsgericht Berlin-Charlottenburg
+  registryNumber: VR 99999
+  clubPurpose: IDEALVEREIN
+  clubSpecialForm: KEINE
+  taxNumber: '27/123/45678'
+  taxOffice: Finanzamt für Körperschaften I
+  isNonProfit: true
+  iban: DE89370400440532013000
+  bic: COBADEFFXXX
+  bankName: Commerzbank
+  accountHolder: Test Verein Komplett e.V.
+  fiscalYearStartMonth: 1
+  probationPeriodDays: 90
+
+users:
+  - email: owner@test-complete.example.com
+    name: Anna Eigentümer
+    password: owner-pass-123
+    isSuperAdmin: false
+    locale: de
+    clubRoles: [OWNER]
+    clubStatus: ACTIVE
+    isExternal: false
+
+  - email: admin@test-complete.example.com
+    name: Bernd Verwalter
+    password: admin-pass-456
+    locale: de
+    clubRoles: [ADMIN, TREASURER]
+    clubStatus: ACTIVE
+    isExternal: false
+
+  - email: member@test-complete.example.com
+    name: Clara Mitglied
+    password: member-pass-789
+    locale: de
+    clubRoles: [MEMBER]
+    clubStatus: ACTIVE
+    isExternal: false
+
+membershipTypes:
+  - name: Ordentliches Mitglied
+    code: ORDENTLICH
+    isDefault: true
+    sortOrder: 0
+    isActive: true
+    vote: true
+    assemblyAttendance: true
+    eligibleForOffice: true
+    color: BLUE
+
+  - name: Jugendmitglied
+    code: JUGEND
+    sortOrder: 1
+    isActive: true
+    vote: false
+    assemblyAttendance: true
+    eligibleForOffice: false
+    color: GREEN
+
+  - name: Fördermitglied
+    code: FOERDER
+    sortOrder: 2
+    isActive: true
+    vote: false
+    assemblyAttendance: false
+    eligibleForOffice: false
+    color: PURPLE
+
+numberRanges:
+  - entityType: MEMBER
+    prefix: ''
+    currentValue: 3
+    padLength: 4
+    yearReset: false
+
+households:
+  - name: Familie Eigentümer
+    primaryContactMemberNumber: '0001'
+
+members:
+  - memberNumber: '0001'
+    firstName: Anna
+    lastName: Eigentümer
+    salutation: FRAU
+    status: ACTIVE
+    email: owner@test-complete.example.com
+    phone: '+49 30 1111111'
+    street: Teststraße
+    houseNumber: '1'
+    postalCode: '10115'
+    city: Berlin
+    joinDate: '2020-01-15'
+    membershipTypeCode: ORDENTLICH
+    userEmail: owner@test-complete.example.com
+    householdName: Familie Eigentümer
+    householdRole: HEAD
+
+  - memberNumber: '0002'
+    firstName: Bernd
+    lastName: Verwalter
+    salutation: HERR
+    status: ACTIVE
+    email: admin@test-complete.example.com
+    joinDate: '2020-03-01'
+    membershipTypeCode: ORDENTLICH
+    userEmail: admin@test-complete.example.com
+
+  - memberNumber: '0003'
+    firstName: Clara
+    lastName: Mitglied
+    status: ACTIVE
+    joinDate: '2022-09-01'
+    membershipTypeCode: JUGEND
+    userEmail: member@test-complete.example.com
+    householdName: Familie Eigentümer
+    householdRole: CHILD

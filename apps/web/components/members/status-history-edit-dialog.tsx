@@ -106,9 +106,7 @@ export function StatusHistoryEditDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Statuseintrag bearbeiten</DialogTitle>
-          <DialogDescription>
-            Ändern Sie Grund, Datum oder Kategorie des Eintrags.
-          </DialogDescription>
+          <DialogDescription>Ändere Grund, Datum oder Kategorie des Eintrags.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

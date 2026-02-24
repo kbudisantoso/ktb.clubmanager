@@ -8,6 +8,7 @@ import { ClubAvatar } from './club-avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface ClubSwitcherModalProps {
@@ -89,6 +90,11 @@ export function ClubSwitcherModal({
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{club.name}</div>
                   </div>
+                  {club.deactivatedAt && (
+                    <Badge variant="destructive" className="ml-auto shrink-0 text-xs">
+                      Wird gelöscht
+                    </Badge>
+                  )}
                   {isActive && <Check className="h-4 w-4 shrink-0" />}
                 </button>
               );

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ClubsController } from './clubs.controller.js';
 import { ClubsService } from './clubs.service.js';
+import { ClubExportService } from './club-export.service.js';
 import { AccessRequestsController } from './access-requests/access-requests.controller.js';
 import { AccessRequestsService } from './access-requests/access-requests.service.js';
 import { MyPermissionsController } from './my-permissions.controller.js';
@@ -17,7 +18,13 @@ import { MembershipTypesModule } from '../membership-types/membership-types.modu
     MyPermissionsController,
     ClubUsersController,
   ],
-  providers: [ClubsService, AccessRequestsService, MyPermissionsService, ClubUsersService],
+  providers: [
+    ClubsService,
+    ClubExportService,
+    AccessRequestsService,
+    MyPermissionsService,
+    ClubUsersService,
+  ],
   exports: [ClubsService, AccessRequestsService, MyPermissionsService, ClubUsersService],
 })
 export class ClubsModule {}

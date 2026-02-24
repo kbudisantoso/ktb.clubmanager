@@ -13,6 +13,7 @@ import {
   Building2,
   Layers,
   Settings,
+  Trash2,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -74,6 +75,7 @@ export function getAdminNavGroups(): NavGroup[] {
       items: [
         { title: 'Übersicht', url: '/admin', icon: LayoutDashboard },
         { title: 'Vereine', url: '/admin/clubs', icon: Building2 },
+        { title: 'Gelöschte Vereine', url: '/admin/deleted-clubs', icon: Trash2 },
         { title: 'Tarife', url: '/admin/tiers', icon: Layers },
         { title: 'Einstellungen', url: '/admin/settings', icon: Settings },
       ],

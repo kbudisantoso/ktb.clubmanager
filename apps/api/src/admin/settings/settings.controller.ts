@@ -9,6 +9,7 @@ class UpdateSettingsDto {
   'club.defaultTierId'?: string | null;
   'tier.graceperiodDays'?: number;
   'mode.saas'?: boolean;
+  'club.minDeletionGraceDays'?: number;
 }
 
 /**
@@ -51,6 +52,11 @@ export class AdminSettingsController {
     }
     if (dto['mode.saas'] !== undefined) {
       updates.push(this.appSettings.set('mode.saas', dto['mode.saas']));
+    }
+    if (dto['club.minDeletionGraceDays'] !== undefined) {
+      updates.push(
+        this.appSettings.set('club.minDeletionGraceDays', dto['club.minDeletionGraceDays'])
+      );
     }
 
     await Promise.all(updates);

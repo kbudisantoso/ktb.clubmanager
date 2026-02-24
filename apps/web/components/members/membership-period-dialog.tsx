@@ -339,7 +339,7 @@ export function MembershipPeriodDialog({
                 </Label>
                 <Select value={membershipTypeId} onValueChange={setMembershipTypeId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Mitgliedsart waehlen" />
+                    <SelectValue placeholder="Mitgliedsart wählen" />
                   </SelectTrigger>
                   <SelectContent>
                     {availableTypes.map((t) => (

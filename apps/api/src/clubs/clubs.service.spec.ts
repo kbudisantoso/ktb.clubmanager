@@ -19,6 +19,14 @@ const mockPrisma = {
     findMany: vi.fn(),
     delete: vi.fn(),
   },
+  member: {
+    count: vi.fn(),
+  },
+  clubDeletionLog: {
+    create: vi.fn(),
+    updateMany: vi.fn(),
+  },
+  $transaction: vi.fn(),
 };
 
 // Mock AppSettingsService
@@ -26,6 +34,7 @@ const mockAppSettings = {
   isSelfServiceEnabled: vi.fn(),
   getDefaultTierId: vi.fn(),
   getDefaultVisibility: vi.fn(),
+  get: vi.fn(),
 };
 
 // Mock MembershipTypesService
@@ -950,6 +959,274 @@ describe('ClubsService', () => {
       mockPrisma.club.findFirst.mockResolvedValue(null);
 
       await expect(service.leaveClub('nonexistent', userId)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('deactivate()', () => {
+    const userId = 'user-123';
+    const baseClub = {
+      id: 'club-1',
+      name: 'Test Club',
+      slug: 'test-club',
+      deactivatedAt: null,
+    };
+
+    const fullClubResponse = {
+      id: 'club-1',
+      name: 'Test Club',
+      slug: 'test-club',
+      legalName: null,
+      description: null,
+      visibility: 'PRIVATE',
+      inviteCode: null,
+      avatarColor: 'blue',
+      shortCode: null,
+      foundedAt: null,
+      street: null,
+      houseNumber: null,
+      postalCode: null,
+      city: null,
+      phone: null,
+      email: null,
+      website: null,
+      isRegistered: false,
+      registryCourt: null,
+      registryNumber: null,
+      clubPurpose: null,
+      clubSpecialForm: null,
+      taxNumber: null,
+      vatId: null,
+      taxOffice: null,
+      isNonProfit: false,
+      iban: null,
+      bic: null,
+      bankName: null,
+      accountHolder: null,
+      fiscalYearStartMonth: null,
+      defaultMembershipTypeId: null,
+      probationPeriodDays: null,
+      logoFileId: null,
+      deactivatedAt: new Date(),
+      deactivatedBy: userId,
+      scheduledDeletionAt: new Date(),
+      gracePeriodDays: 30,
+      tierId: null,
+      tier: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      _count: { clubUsers: 1, members: 5 },
+    };
+
+    it('should deactivate club with grace period and create deletion log', async () => {
+      mockPrisma.club.findFirst.mockResolvedValue(baseClub);
+      mockPrisma.clubUser.findFirst.mockResolvedValue({
+        roles: ['OWNER'],
+        status: 'ACTIVE',
+      });
+      mockAppSettings.get.mockResolvedValue(14);
+      mockPrisma.member.count.mockResolvedValue(5);
+      mockPrisma.$transaction.mockResolvedValue([fullClubResponse, {}]);
+
+      const result = await service.deactivate(
+        'test-club',
+        { confirmationName: 'Test Club', gracePeriodDays: 30 },
+        userId,
+        false
+      );
+
+      expect(result.deactivatedAt).toBeDefined();
+      expect(mockPrisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when confirmation name does not match', async () => {
+      mockPrisma.club.findFirst.mockResolvedValue(baseClub);
+
+      await expect(
+        service.deactivate(
+          'test-club',
+          { confirmationName: 'Wrong Name', gracePeriodDays: 30 },
+          userId,
+          true
+        )
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw ForbiddenException when non-OWNER tries to deactivate', async () => {
+      mockPrisma.club.findFirst.mockResolvedValue(baseClub);
+      mockPrisma.clubUser.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.deactivate(
+          'test-club',
+          { confirmationName: 'Test Club', gracePeriodDays: 30 },
+          userId,
+          false
+        )
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should allow SuperAdmin to deactivate without OWNER role', async () => {
+      mockPrisma.club.findFirst.mockResolvedValue(baseClub);
+      mockAppSettings.get.mockResolvedValue(14);
+      mockPrisma.member.count.mockResolvedValue(0);
+      mockPrisma.$transaction.mockResolvedValue([fullClubResponse, {}]);
+
+      const result = await service.deactivate(
+        'test-club',
+        { confirmationName: 'Test Club', gracePeriodDays: 30 },
+        userId,
+        true
+      );
+
+      expect(result.id).toBe('club-1');
+      expect(mockPrisma.clubUser.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when club is already deactivated', async () => {
+      mockPrisma.club.findFirst.mockResolvedValue({
+        ...baseClub,
+        deactivatedAt: new Date(),
+      });
+
+      await expect(
+        service.deactivate(
+          'test-club',
+          { confirmationName: 'Test Club', gracePeriodDays: 30 },
+          userId,
+          true
+        )
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should enforce minimum grace period from app settings', async () => {
+      mockPrisma.club.findFirst.mockResolvedValue(baseClub);
+      mockPrisma.clubUser.findFirst.mockResolvedValue({
+        roles: ['OWNER'],
+        status: 'ACTIVE',
+      });
+      // Min grace days is 14, user requests 7 — should use 14
+      mockAppSettings.get.mockResolvedValue(14);
+      mockPrisma.member.count.mockResolvedValue(0);
+      mockPrisma.$transaction.mockResolvedValue([fullClubResponse, {}]);
+
+      await service.deactivate(
+        'test-club',
+        { confirmationName: 'Test Club', gracePeriodDays: 7 },
+        userId,
+        false
+      );
+
+      // $transaction receives an array of promises, verify the club.update call
+      expect(mockPrisma.club.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            gracePeriodDays: 14,
+          }),
+        })
+      );
+    });
+  });
+
+  describe('reactivate()', () => {
+    const userId = 'user-123';
+    const deactivatedClub = {
+      id: 'club-1',
+      name: 'Test Club',
+      slug: 'test-club',
+      deactivatedAt: new Date(),
+      deactivatedBy: userId,
+      scheduledDeletionAt: new Date(),
+      gracePeriodDays: 30,
+    };
+
+    const reactivatedClubResponse = {
+      id: 'club-1',
+      name: 'Test Club',
+      slug: 'test-club',
+      legalName: null,
+      description: null,
+      visibility: 'PRIVATE',
+      inviteCode: null,
+      avatarColor: 'blue',
+      shortCode: null,
+      foundedAt: null,
+      street: null,
+      houseNumber: null,
+      postalCode: null,
+      city: null,
+      phone: null,
+      email: null,
+      website: null,
+      isRegistered: false,
+      registryCourt: null,
+      registryNumber: null,
+      clubPurpose: null,
+      clubSpecialForm: null,
+      taxNumber: null,
+      vatId: null,
+      taxOffice: null,
+      isNonProfit: false,
+      iban: null,
+      bic: null,
+      bankName: null,
+      accountHolder: null,
+      fiscalYearStartMonth: null,
+      defaultMembershipTypeId: null,
+      probationPeriodDays: null,
+      logoFileId: null,
+      deactivatedAt: null,
+      deactivatedBy: null,
+      scheduledDeletionAt: null,
+      gracePeriodDays: null,
+      tierId: null,
+      tier: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      _count: { clubUsers: 1, members: 5 },
+    };
+
+    it('should reactivate club and cancel deletion log', async () => {
+      mockPrisma.club.findFirst.mockResolvedValue(deactivatedClub);
+      mockPrisma.clubUser.findFirst.mockResolvedValue({
+        roles: ['OWNER'],
+        status: 'ACTIVE',
+      });
+      mockPrisma.$transaction.mockResolvedValue([reactivatedClubResponse, { count: 1 }]);
+
+      const result = await service.reactivate('test-club', userId, false);
+
+      expect(result.deactivatedAt).toBeNull();
+      expect(mockPrisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when club is not deactivated', async () => {
+      mockPrisma.club.findFirst.mockResolvedValue({
+        ...deactivatedClub,
+        deactivatedAt: null,
+      });
+
+      await expect(service.reactivate('test-club', userId, false)).rejects.toThrow(
+        BadRequestException
+      );
+    });
+
+    it('should throw ForbiddenException when non-OWNER tries to reactivate', async () => {
+      mockPrisma.club.findFirst.mockResolvedValue(deactivatedClub);
+      mockPrisma.clubUser.findFirst.mockResolvedValue(null);
+
+      await expect(service.reactivate('test-club', userId, false)).rejects.toThrow(
+        ForbiddenException
+      );
+    });
+
+    it('should allow SuperAdmin to reactivate without OWNER role', async () => {
+      mockPrisma.club.findFirst.mockResolvedValue(deactivatedClub);
+      mockPrisma.$transaction.mockResolvedValue([reactivatedClubResponse, { count: 1 }]);
+
+      const result = await service.reactivate('test-club', userId, true);
+
+      expect(result.id).toBe('club-1');
+      expect(mockPrisma.clubUser.findFirst).not.toHaveBeenCalled();
     });
   });
 });

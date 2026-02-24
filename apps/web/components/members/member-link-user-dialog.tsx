@@ -121,12 +121,12 @@ export function MemberLinkUserDialog({ open, onOpenChange, member }: MemberLinkU
     if (!selectedUserId) return;
     try {
       await linkMember.mutateAsync(selectedUserId);
-      toast({ title: 'Benutzerkonto verknuepft' });
+      toast({ title: 'Benutzerkonto verknüpft' });
       onOpenChange(false);
     } catch (err) {
       toast({
         title: 'Fehler',
-        description: err instanceof Error ? err.message : 'Verknuepfung fehlgeschlagen',
+        description: err instanceof Error ? err.message : 'Verknüpfung fehlgeschlagen',
         variant: 'destructive',
       });
     }
@@ -135,7 +135,7 @@ export function MemberLinkUserDialog({ open, onOpenChange, member }: MemberLinkU
   const handleUnlink = useCallback(async () => {
     try {
       await linkMember.mutateAsync(null);
-      toast({ title: 'Verknuepfung aufgehoben' });
+      toast({ title: 'Verknüpfung aufgehoben' });
       onOpenChange(false);
     } catch (err) {
       toast({
@@ -159,12 +159,12 @@ export function MemberLinkUserDialog({ open, onOpenChange, member }: MemberLinkU
       <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isLinked ? 'Benutzerkonto bearbeiten' : 'Benutzerkonto verknuepfen'}
+            {isLinked ? 'Benutzerkonto bearbeiten' : 'Benutzerkonto verknüpfen'}
           </DialogTitle>
           <DialogDescription>
             {isLinked
-              ? 'Aktuelle Verknuepfung bearbeiten oder aufheben.'
-              : 'Verknuepfe dieses Mitglied mit einem App-Benutzerkonto.'}
+              ? 'Aktuelle Verknüpfung bearbeiten oder aufheben.'
+              : 'Verknüpfe dieses Mitglied mit einem App-Benutzerkonto.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -174,7 +174,7 @@ export function MemberLinkUserDialog({ open, onOpenChange, member }: MemberLinkU
             <div className="flex items-center gap-3 rounded-md border border-success/25 bg-success/5 p-3">
               <UserCheck className="h-4 w-4 text-success shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{linkedUser?.name ?? 'Verknuepfter Benutzer'}</p>
+                <p className="text-sm font-medium">{linkedUser?.name ?? 'Verknüpfter Benutzer'}</p>
                 {linkedUser?.email && (
                   <p className="text-xs text-muted-foreground truncate">{linkedUser.email}</p>
                 )}
@@ -216,7 +216,7 @@ export function MemberLinkUserDialog({ open, onOpenChange, member }: MemberLinkU
             <div className="flex flex-col items-center gap-1 py-6 text-muted-foreground">
               <UserX className="h-8 w-8" />
               <p className="text-sm">
-                {search ? 'Keine Benutzer gefunden' : 'Keine verfuegbaren Benutzer'}
+                {search ? 'Keine Benutzer gefunden' : 'Keine verfügbaren Benutzer'}
               </p>
             </div>
           ) : (
@@ -246,7 +246,7 @@ export function MemberLinkUserDialog({ open, onOpenChange, member }: MemberLinkU
                     <span className="text-xs text-success font-medium shrink-0">E-Mail Match</span>
                   )}
                   {user.matchScore >= 25 && user.matchScore < 100 && (
-                    <span className="text-xs text-muted-foreground shrink-0">Name aehnlich</span>
+                    <span className="text-xs text-muted-foreground shrink-0">Name ähnlich</span>
                   )}
                 </button>
               ))}
@@ -264,7 +264,7 @@ export function MemberLinkUserDialog({ open, onOpenChange, member }: MemberLinkU
             disabled={!selectedUserId || linkMember.isPending}
           >
             {linkMember.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Verknuepfen
+            Verknüpfen
           </Button>
         </DialogFooter>
       </DialogContent>

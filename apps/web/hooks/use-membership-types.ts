@@ -139,7 +139,7 @@ export function useDeleteMembershipType(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Fehler beim Loeschen der Mitgliedsart');
+        throw new Error(error.message || 'Fehler beim Löschen der Mitgliedsart');
       }
     },
     onSuccess: () => {

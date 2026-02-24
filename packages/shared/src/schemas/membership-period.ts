@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * Schema for creating a new membership period.
  * Membership periods track when a member was active with which type.
- * Multiple periods per member support re-entry scenarios.
+ * Multiple periods per member support membership type changes.
  * Date fields use z.string().date() (YYYY-MM-DD) - no z.coerce.
  */
 export const CreateMembershipPeriodSchema = z

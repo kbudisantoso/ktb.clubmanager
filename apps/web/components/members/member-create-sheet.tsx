@@ -445,7 +445,7 @@ export function MemberCreateSheet({
                     onValueChange={(val) => setValue('status', val as FormValues['status'])}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Status waehlen" />
+                      <SelectValue placeholder="Status wählen" />
                     </SelectTrigger>
                     <SelectContent>
                       {STATUS_OPTIONS.map((s) => (
@@ -481,7 +481,7 @@ export function MemberCreateSheet({
                       onValueChange={(val) => setValue('membershipTypeId', val)}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Mitgliedsart waehlen" />
+                        <SelectValue placeholder="Mitgliedsart wählen" />
                       </SelectTrigger>
                       <SelectContent>
                         {activeTypes.map((t) => (

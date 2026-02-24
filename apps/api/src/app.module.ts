@@ -19,6 +19,8 @@ import { SuperAdminGuard } from './common/guards/super-admin.guard.js';
 import { ClubContextGuard } from './common/guards/club-context.guard.js';
 import { TierGuard } from './common/guards/tier.guard.js';
 import { PermissionGuard } from './common/guards/permission.guard.js';
+import { DeactivatedClubGuard } from './common/guards/deactivated-club.guard.js';
+import { ClubDeletionModule } from './club-deletion/club-deletion.module';
 
 @Module({
   imports: [
@@ -38,6 +40,7 @@ import { PermissionGuard } from './common/guards/permission.guard.js';
     MembersModule,
     MembershipTypesModule,
     FilesModule,
+    ClubDeletionModule,
     HealthModule,
   ],
   providers: [
@@ -52,6 +55,8 @@ import { PermissionGuard } from './common/guards/permission.guard.js';
     { provide: APP_GUARD, useClass: ClubContextGuard },
     { provide: APP_GUARD, useClass: TierGuard },
     { provide: APP_GUARD, useClass: PermissionGuard },
+    // 6. DeactivatedClubGuard - Is club deactivated? (blocks writes on deactivated clubs)
+    { provide: APP_GUARD, useClass: DeactivatedClubGuard },
   ],
 })
 export class AppModule {}

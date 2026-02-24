@@ -7,6 +7,7 @@ import { useSidebarStore } from '@/lib/sidebar-store';
 interface AppShellProps {
   children: React.ReactNode;
   sidebar: React.ReactNode;
+  banner?: React.ReactNode;
 }
 
 /**
@@ -18,13 +19,14 @@ interface AppShellProps {
  * Uses Zustand for sidebar open/closed persistence instead of cookies
  * to avoid Next.js 16 cookie-based SidebarProvider issues.
  */
-export function AppShell({ children, sidebar }: AppShellProps) {
+export function AppShell({ children, sidebar, banner }: AppShellProps) {
   const { isOpen, setOpen } = useSidebarStore();
 
   return (
     <SidebarProvider open={isOpen} onOpenChange={setOpen}>
       {sidebar}
       <SidebarInset>
+        {banner}
         <div className="flex flex-1 flex-col pb-16 md:pb-0">{children}</div>
       </SidebarInset>
       <MobileBottomBar />

@@ -28,6 +28,9 @@ interface ClubApiResponse {
   shortCode?: string;
   avatarColor?: string;
   logoFileId?: string;
+  deactivatedAt?: string | null;
+  scheduledDeletionAt?: string | null;
+  gracePeriodDays?: number | null;
 }
 
 interface MyClubsApiResponse {
@@ -60,6 +63,9 @@ async function fetchMyClubs(): Promise<MyClubsResult> {
       shortCode: club.shortCode,
       avatarColor: club.avatarColor,
       logoUrl: club.logoFileId ? `/api/clubs/${club.slug}/files/logo` : undefined,
+      deactivatedAt: club.deactivatedAt ?? null,
+      scheduledDeletionAt: club.scheduledDeletionAt ?? null,
+      gracePeriodDays: club.gracePeriodDays ?? null,
     })),
     canCreateClub: data.meta.canCreateClub,
   };
