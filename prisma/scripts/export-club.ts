@@ -74,6 +74,7 @@ async function main() {
           },
           household: true,
         },
+        orderBy: { memberNumber: 'asc' },
       }),
       prisma.household.findMany({
         where: { clubId: club.id, deletedAt: null },
@@ -108,7 +109,7 @@ async function main() {
       phone: club.phone ?? undefined,
       email: club.email ?? undefined,
       website: club.website ?? undefined,
-      isRegistered: club.isRegistered || undefined,
+      isRegistered: club.isRegistered,
       registryCourt: club.registryCourt ?? undefined,
       registryNumber: club.registryNumber ?? undefined,
       clubPurpose: club.clubPurpose ?? undefined,
@@ -116,11 +117,12 @@ async function main() {
       taxNumber: club.taxNumber ?? undefined,
       vatId: club.vatId ?? undefined,
       taxOffice: club.taxOffice ?? undefined,
-      isNonProfit: club.isNonProfit || undefined,
+      isNonProfit: club.isNonProfit,
       iban: club.iban ?? undefined,
       bic: club.bic ?? undefined,
       bankName: club.bankName ?? undefined,
       accountHolder: club.accountHolder ?? undefined,
+      inviteCode: club.inviteCode ?? undefined,
       fiscalYearStartMonth: club.fiscalYearStartMonth ?? undefined,
       probationPeriodDays: club.probationPeriodDays ?? undefined,
     });
@@ -132,38 +134,39 @@ async function main() {
         email: cu.user.email,
         name: cu.user.name ?? cu.user.email,
         passwordHash: credentialAccount?.password ?? undefined,
-        isSuperAdmin: cu.user.isSuperAdmin || undefined,
+        isSuperAdmin: cu.user.isSuperAdmin,
         locale: cu.user.locale ?? undefined,
         clubRoles: cu.roles,
         clubStatus: cu.status,
-        isExternal: cu.isExternal || undefined,
+        isExternal: cu.isExternal,
       });
     });
 
-    // Transform membership types
+    // Transform membership types (always include boolean fields for clarity)
     const exportMembershipTypes: ExportMembershipType[] = membershipTypes.map((mt) =>
       stripUndefined({
         name: mt.name,
         code: mt.code,
         description: mt.description ?? undefined,
-        isDefault: mt.isDefault || undefined,
+        isDefault: mt.isDefault,
         sortOrder: mt.sortOrder,
-        isActive: mt.isActive === false ? false : undefined,
-        vote: mt.vote === false ? false : undefined,
-        assemblyAttendance: mt.assemblyAttendance === false ? false : undefined,
-        eligibleForOffice: mt.eligibleForOffice === false ? false : undefined,
+        isActive: mt.isActive,
+        vote: mt.vote,
+        assemblyAttendance: mt.assemblyAttendance,
+        eligibleForOffice: mt.eligibleForOffice,
         color: mt.color,
       })
     );
 
-    // Transform number ranges
+    // Transform number ranges (always include all fields)
     const exportNumberRanges: ExportNumberRange[] = numberRanges.map((nr) =>
       stripUndefined({
         entityType: nr.entityType,
         prefix: nr.prefix || undefined,
         currentValue: nr.currentValue,
-        padLength: nr.padLength !== 4 ? nr.padLength : undefined,
-        yearReset: nr.yearReset || undefined,
+        padLength: nr.padLength,
+        yearReset: nr.yearReset,
+        lastResetYear: nr.lastResetYear ?? undefined,
       })
     );
 
@@ -209,6 +212,11 @@ async function main() {
         mobile: m.mobile ?? undefined,
         notes: m.notes ?? undefined,
         status: m.status,
+        cancellationDate: m.cancellationDate ? formatDate(m.cancellationDate) : undefined,
+        cancellationReceivedAt: m.cancellationReceivedAt
+          ? formatDate(m.cancellationReceivedAt)
+          : undefined,
+        statusChangeReason: m.statusChangeReason ?? undefined,
         joinDate: firstPeriod ? formatDate(firstPeriod.joinDate) : undefined,
         membershipTypeCode: membershipType?.code ?? undefined,
         userEmail: user?.email ?? undefined,

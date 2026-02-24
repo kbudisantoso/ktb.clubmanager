@@ -281,6 +281,7 @@ async function executeImport(
       bic: clubData.bic,
       bankName: clubData.bankName,
       accountHolder: clubData.accountHolder,
+      inviteCode: clubData.inviteCode,
       fiscalYearStartMonth: clubData.fiscalYearStartMonth,
       probationPeriodDays: clubData.probationPeriodDays,
       tierId: defaultTier?.id,
@@ -353,6 +354,7 @@ async function executeImport(
         currentValue: nrData.currentValue ?? 0,
         padLength: nrData.padLength ?? 4,
         yearReset: nrData.yearReset ?? false,
+        lastResetYear: nrData.lastResetYear,
       },
     });
     result.numberRangesCreated++;
@@ -392,6 +394,13 @@ async function executeImport(
         notes: memberData.notes,
         status: memberData.status ?? 'PENDING',
         statusChangedAt: new Date(),
+        statusChangeReason: memberData.statusChangeReason,
+        cancellationDate: memberData.cancellationDate
+          ? new Date(memberData.cancellationDate)
+          : undefined,
+        cancellationReceivedAt: memberData.cancellationReceivedAt
+          ? new Date(memberData.cancellationReceivedAt)
+          : undefined,
         userId,
       },
     });

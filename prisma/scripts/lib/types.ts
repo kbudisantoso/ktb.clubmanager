@@ -63,6 +63,7 @@ export interface ExportClub {
   bankName?: string;
   accountHolder?: string;
   // Operations
+  inviteCode?: string;
   fiscalYearStartMonth?: number;
   probationPeriodDays?: number;
 }
@@ -112,6 +113,7 @@ export interface ExportNumberRange {
   currentValue?: number;
   padLength?: number;
   yearReset?: boolean;
+  lastResetYear?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -158,6 +160,9 @@ export interface ExportMember {
   notes?: string;
   // Status
   status?: 'PENDING' | 'PROBATION' | 'ACTIVE' | 'DORMANT' | 'SUSPENDED' | 'LEFT';
+  cancellationDate?: string;
+  cancellationReceivedAt?: string;
+  statusChangeReason?: string;
   // Membership (both → first MembershipPeriod)
   joinDate?: string;
   membershipTypeCode?: string;
