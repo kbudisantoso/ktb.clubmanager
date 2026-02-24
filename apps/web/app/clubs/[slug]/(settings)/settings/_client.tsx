@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { MIN_GRACE_PERIOD_FLOOR } from '@ktb/shared';
 import { useClubSettings } from '@/hooks/use-club-settings';
 import { useActiveClub } from '@/lib/club-store';
@@ -10,6 +10,7 @@ import { useClubPermissions } from '@/lib/club-permissions';
 import { ClubSettingsForm } from '@/components/settings/club-settings-form';
 import { ClubDeletionDialog } from '@/components/club/club-deletion-dialog';
 import { ClubReactivationCard } from '@/components/club/club-reactivation-card';
+import { useClubExport } from '@/hooks/use-club-export';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -23,8 +24,9 @@ export function SettingsContent() {
   const slug = params.slug;
   const { data: club, isLoading, error } = useClubSettings(slug);
   const activeClub = useActiveClub();
-  const { isOwner } = useClubPermissions();
+  const { isOwner, canManageSettings } = useClubPermissions();
   const [deletionDialogOpen, setDeletionDialogOpen] = useState(false);
+  const { exportClub, isExporting } = useClubExport(slug);
 
   if (isLoading) {
     return (
@@ -47,6 +49,26 @@ export function SettingsContent() {
   return (
     <div className="space-y-8">
       <ClubSettingsForm club={club} slug={slug} />
+
+      {/* Data Export — visible to OWNER and ADMIN */}
+      {canManageSettings && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Datenexport</CardTitle>
+            <CardDescription>Lade alle Vereinsdaten als YAML-Datei herunter.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" onClick={exportClub} disabled={isExporting}>
+              {isExporting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              Daten exportieren
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Danger Zone — only visible to OWNER */}
       {isOwner && (
