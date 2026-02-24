@@ -1,15 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import yaml from 'js-yaml';
 import { PrismaService } from '../prisma/prisma.service.js';
-import type {
-  ClubExportData,
-  ExportClub,
-  ExportHousehold,
-  ExportMember,
-  ExportMembershipType,
-  ExportNumberRange,
-  ExportUser,
-} from '../../../../prisma/scripts/lib/types.js';
 
 @Injectable()
 export class ClubExportService {
@@ -68,7 +59,7 @@ export class ClubExportService {
     const membershipTypeById = new Map(membershipTypes.map((mt) => [mt.id, mt]));
 
     // Transform club
-    const exportClub: ExportClub = stripUndefined({
+    const exportClub = stripUndefined({
       name: club.name,
       slug: club.slug,
       legalName: club.legalName ?? undefined,
@@ -103,7 +94,7 @@ export class ClubExportService {
     });
 
     // Transform users (NO passwordHash for API security)
-    const exportUsers: ExportUser[] = clubUsers.map((cu) =>
+    const exportUsers = clubUsers.map((cu) =>
       stripUndefined({
         email: cu.user.email,
         name: cu.user.name ?? cu.user.email,
@@ -116,7 +107,7 @@ export class ClubExportService {
     );
 
     // Transform membership types (always include boolean fields for clarity)
-    const exportMembershipTypes: ExportMembershipType[] = membershipTypes.map((mt) =>
+    const exportMembershipTypes = membershipTypes.map((mt) =>
       stripUndefined({
         name: mt.name,
         code: mt.code,
@@ -132,7 +123,7 @@ export class ClubExportService {
     );
 
     // Transform number ranges (always include all fields)
-    const exportNumberRanges: ExportNumberRange[] = numberRanges.map((nr) =>
+    const exportNumberRanges = numberRanges.map((nr) =>
       stripUndefined({
         entityType: nr.entityType,
         prefix: nr.prefix || undefined,
@@ -144,7 +135,7 @@ export class ClubExportService {
     );
 
     // Transform households
-    const exportHouseholds: ExportHousehold[] = households.map((h) => {
+    const exportHouseholds = households.map((h) => {
       const primaryMember = h.primaryContactId ? memberById.get(h.primaryContactId) : undefined;
       return stripUndefined({
         name: h.name,
@@ -153,7 +144,7 @@ export class ClubExportService {
     });
 
     // Transform members
-    const exportMembers: ExportMember[] = members.map((m) => {
+    const exportMembers = members.map((m) => {
       const user = m.userId ? userById.get(m.userId) : undefined;
       const firstPeriod = m.membershipPeriods[0];
       const membershipType = firstPeriod?.membershipTypeId
@@ -199,7 +190,7 @@ export class ClubExportService {
     });
 
     // Assemble export data
-    const data: ClubExportData = {
+    const data = {
       meta: {
         version: '1.0',
         exportedAt: new Date().toISOString(),
