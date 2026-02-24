@@ -98,7 +98,6 @@ export class ClubExportService {
       stripUndefined({
         email: cu.user.email,
         name: cu.user.name ?? cu.user.email,
-        isSuperAdmin: cu.user.isSuperAdmin,
         locale: cu.user.locale ?? undefined,
         clubRoles: cu.roles,
         clubStatus: cu.status,
