@@ -672,7 +672,7 @@ model Member {
   version Int @default(0)
 
   // Relations
-  /// Membership periods (supports re-entry with multiple periods)
+  /// Membership periods (supports membership type changes with multiple consecutive periods)
   membershipPeriods  MembershipPeriod[]
   /// Status transition history
   statusTransitions  MemberStatusTransition[]
@@ -716,7 +716,7 @@ model Household {
 }
 
 /// A membership period represents a continuous span of membership.
-/// Supports re-entry: a member can have multiple non-overlapping periods.
+/// Supports membership type changes with multiple consecutive periods.
 /// Membership type (Mitgliedsart) lives here, not on Member, to allow type changes.
 model MembershipPeriod {
   /// Unique identifier (CUID format)
