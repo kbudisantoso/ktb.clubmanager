@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { ClubRole } from '../../../../prisma/generated/client/index.js';
+import { ClubRole, ClubUserStatus } from '../../../../prisma/generated/client/index.js';
 import { isOwner, getAssignableRoles } from '../common/permissions/club-permissions.js';
 import type { ClubUserDto, UpdateClubUserRolesDto } from './dto/update-club-user-roles.dto.js';
 
@@ -20,16 +20,82 @@ export interface UnlinkedUserDto {
   joinedAt: Date;
 }
 
+export interface ClubUserDetailDto extends ClubUserDto {
+  member: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    memberNumber: string | null;
+  } | null;
+}
+
+export interface ListClubUsersOptions {
+  search?: string;
+  status?: ClubUserStatus[];
+  roles?: ClubRole[];
+}
+
 @Injectable()
 export class ClubUsersService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * List all users in a club with their roles.
+   * Map a ClubUser with included user to ClubUserDto.
    */
-  async listClubUsers(clubId: string): Promise<ClubUserDto[]> {
+  private mapToDto(cu: {
+    id: string;
+    userId: string;
+    roles: ClubRole[];
+    status: ClubUserStatus;
+    joinedAt: Date;
+    isExternal: boolean;
+    user: { id: string; name: string | null; email: string; image: string | null };
+  }): ClubUserDto {
+    return {
+      id: cu.id,
+      userId: cu.userId,
+      name: cu.user.name ?? cu.user.email,
+      email: cu.user.email,
+      image: cu.user.image ?? undefined,
+      roles: cu.roles,
+      status: cu.status,
+      joinedAt: cu.joinedAt,
+      isExternal: cu.isExternal,
+    };
+  }
+
+  /**
+   * List all users in a club with their roles.
+   * Supports optional filters: search, status, roles.
+   */
+  async listClubUsers(clubId: string, options: ListClubUsersOptions = {}): Promise<ClubUserDto[]> {
+    const { search, status, roles } = options;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = { clubId };
+
+    // Filter by status (default: all non-deleted)
+    if (status && status.length > 0) {
+      where.status = { in: status };
+    }
+
+    // Filter by roles (has any of the specified roles)
+    if (roles && roles.length > 0) {
+      where.roles = { hasSome: roles };
+    }
+
+    // Search by name or email
+    if (search) {
+      where.user = {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+        ],
+      };
+    }
+
     const clubUsers = await this.prisma.clubUser.findMany({
-      where: { clubId, status: 'ACTIVE' },
+      where,
       include: {
         user: {
           select: { id: true, name: true, email: true, image: true },
@@ -38,16 +104,152 @@ export class ClubUsersService {
       orderBy: { joinedAt: 'asc' },
     });
 
-    return clubUsers.map((cu) => ({
-      id: cu.id,
-      userId: cu.userId,
-      name: cu.user.name ?? cu.user.email,
-      email: cu.user.email,
-      image: cu.user.image ?? undefined,
-      roles: cu.roles,
-      joinedAt: cu.joinedAt,
-      isExternal: cu.isExternal,
-    }));
+    return clubUsers.map((cu) => this.mapToDto(cu));
+  }
+
+  /**
+   * Get a single club user with detailed info including member-link.
+   */
+  async getClubUserDetail(clubId: string, clubUserId: string): Promise<ClubUserDetailDto> {
+    const clubUser = await this.prisma.clubUser.findUnique({
+      where: { id: clubUserId },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    });
+
+    if (!clubUser || clubUser.clubId !== clubId) {
+      throw new NotFoundException('Benutzer nicht gefunden');
+    }
+
+    // Look up linked member
+    const member = await this.prisma.member.findFirst({
+      where: { clubId, userId: clubUser.userId, deletedAt: null },
+      select: { id: true, firstName: true, lastName: true, memberNumber: true },
+    });
+
+    return {
+      ...this.mapToDto(clubUser),
+      member: member
+        ? {
+            id: member.id,
+            firstName: member.firstName,
+            lastName: member.lastName,
+            memberNumber: member.memberNumber,
+          }
+        : null,
+    };
+  }
+
+  /**
+   * Update a club user's status (suspend/reactivate).
+   * Enforces: self-action protection, last OWNER protection, valid transitions.
+   */
+  async updateClubUserStatus(
+    clubId: string,
+    targetClubUserId: string,
+    actorUserId: string,
+    newStatus: ClubUserStatus
+  ): Promise<ClubUserDto> {
+    // Only ACTIVE <-> SUSPENDED transitions allowed
+    if (newStatus === ClubUserStatus.PENDING) {
+      throw new BadRequestException('Status kann nicht auf PENDING gesetzt werden');
+    }
+
+    const targetClubUser = await this.prisma.clubUser.findUnique({
+      where: { id: targetClubUserId },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    });
+
+    if (!targetClubUser || targetClubUser.clubId !== clubId) {
+      throw new NotFoundException('Benutzer nicht gefunden');
+    }
+
+    // Self-action protection
+    if (targetClubUser.userId === actorUserId) {
+      throw new ForbiddenException('Du kannst deinen eigenen Status nicht ändern');
+    }
+
+    // Cannot change status of PENDING users (they need to accept invite)
+    if (targetClubUser.status === ClubUserStatus.PENDING) {
+      throw new BadRequestException(
+        'Der Status eines eingeladenen Benutzers kann nicht geändert werden'
+      );
+    }
+
+    // Last OWNER protection when suspending
+    if (newStatus === ClubUserStatus.SUSPENDED && targetClubUser.roles.includes(ClubRole.OWNER)) {
+      const ownerCount = await this.prisma.clubUser.count({
+        where: {
+          clubId,
+          roles: { has: ClubRole.OWNER },
+          status: 'ACTIVE',
+        },
+      });
+
+      if (ownerCount <= 1) {
+        throw new BadRequestException('Der letzte Verantwortliche kann nicht gesperrt werden');
+      }
+    }
+
+    const updated = await this.prisma.clubUser.update({
+      where: { id: targetClubUserId },
+      data: { status: newStatus },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    });
+
+    return this.mapToDto(updated);
+  }
+
+  /**
+   * Invite a user to a club by email.
+   * The user must already be registered. Creates a PENDING ClubUser.
+   */
+  async inviteUser(
+    clubId: string,
+    email: string,
+    roles: ClubRole[],
+    invitedById: string
+  ): Promise<ClubUserDto> {
+    // Look up user by email
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, name: true, email: true, image: true },
+    });
+
+    if (!user) {
+      throw new BadRequestException(
+        'Kein Benutzer mit dieser E-Mail-Adresse gefunden. Der Benutzer muss sich zuerst registrieren.'
+      );
+    }
+
+    // Check if user already has a ClubUser for this club
+    const existing = await this.prisma.clubUser.findUnique({
+      where: { userId_clubId: { userId: user.id, clubId } },
+    });
+
+    if (existing) {
+      throw new BadRequestException('Dieser Benutzer ist bereits Mitglied dieses Vereins.');
+    }
+
+    const clubUser = await this.prisma.clubUser.create({
+      data: {
+        userId: user.id,
+        clubId,
+        roles,
+        status: ClubUserStatus.PENDING,
+        invitedById,
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    });
+
+    return this.mapToDto(clubUser);
   }
 
   /**
@@ -147,16 +349,7 @@ export class ClubUsersService {
       },
     });
 
-    return {
-      id: updated.id,
-      userId: updated.userId,
-      name: updated.user.name ?? updated.user.email,
-      email: updated.user.email,
-      image: updated.user.image ?? undefined,
-      roles: updated.roles,
-      joinedAt: updated.joinedAt,
-      isExternal: updated.isExternal,
-    };
+    return this.mapToDto(updated);
   }
 
   /**
