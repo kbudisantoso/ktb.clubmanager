@@ -139,6 +139,9 @@ export function UsersSettingsClient() {
         case 'status':
           cmp = a.status.localeCompare(b.status, 'de');
           break;
+        case 'roles':
+          cmp = a.roles.join(',').localeCompare(b.roles.join(','), 'de');
+          break;
         case 'joinedAt':
           cmp = a.joinedAt.localeCompare(b.joinedAt);
           break;

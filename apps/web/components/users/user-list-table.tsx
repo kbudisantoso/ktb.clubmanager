@@ -23,7 +23,7 @@ import type { ClubUserListItem } from '@/hooks/use-club-users';
 // ============================================================================
 
 /** Sortable column keys */
-export type UserSortKey = 'name' | 'status' | 'joinedAt';
+export type UserSortKey = 'name' | 'roles' | 'status' | 'joinedAt';
 
 export interface UserSortState {
   key: UserSortKey;
@@ -78,7 +78,7 @@ const COLUMN_LABELS: Record<UserColumnKey, string> = {
 };
 
 /** Columns that support sorting */
-const SORTABLE_COLUMNS: Set<string> = new Set<string>(['name', 'status', 'joinedAt']);
+const SORTABLE_COLUMNS: Set<string> = new Set<string>(['name', 'roles', 'status', 'joinedAt']);
 
 // ============================================================================
 // UserListTable
