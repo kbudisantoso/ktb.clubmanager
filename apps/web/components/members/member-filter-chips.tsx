@@ -1,10 +1,9 @@
 'use client';
 
-import { type ReactNode } from 'react';
-import { CalendarIcon, HomeIcon, X } from 'lucide-react';
+import { CalendarIcon, HomeIcon } from 'lucide-react';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { FilterChip } from '@/components/shared/filter-chip';
 import type { MemberFilters, SetMemberFilters } from '@/hooks/use-member-filters';
 import { STATUS_LABELS } from '@/lib/member-status-labels';
 
@@ -99,31 +98,5 @@ export function MemberFilterChips({ filters, setFilters, householdNames }: Membe
         Alle Filter zurücksetzen
       </Button>
     </div>
-  );
-}
-
-/** Individual filter chip with label and remove button */
-function FilterChip({
-  icon,
-  label,
-  onRemove,
-}: {
-  icon?: ReactNode;
-  label: string;
-  onRemove: (e: React.MouseEvent) => void;
-}) {
-  return (
-    <Badge variant="secondary" className="gap-1 pr-1">
-      {icon}
-      <span className="max-w-[200px] truncate">{label}</span>
-      <button
-        type="button"
-        className="ring-offset-background focus:ring-ring hover:bg-muted-foreground/20 ml-0.5 rounded-full p-0.5 outline-none focus:ring-2 focus:ring-offset-1"
-        onClick={onRemove}
-        aria-label={`Filter entfernen: ${label}`}
-      >
-        <X className="size-3" />
-      </button>
-    </Badge>
   );
 }
