@@ -33,9 +33,9 @@ jobs:
       - name: Generate SBOM (CycloneDX)
         run: pnpm dlx @cyclonedx/cdxgen -o sbom.json --spec-version 1.6
 
-      - name: Install Grype
+      - name: Install Grype (pinned version)
         run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin v0.87.0
 
       - name: Generate VEX document
         run: grype sbom:sbom.json -o cyclonedx-json > vex.json || true
