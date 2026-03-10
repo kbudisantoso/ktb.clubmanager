@@ -26,6 +26,12 @@ import { PrismaModule } from '../prisma/prisma.module';
     PrismaModule,
 
     // Rate limiting per CONTEXT.md
+    // TODO: Rate limiting currently uses in-memory store (default).
+    // For production multi-instance deployment, configure Redis adapter:
+    // - Install @nestjs/throttler-storage-redis
+    // - Configure ThrottlerModule with ThrottlerStorageRedisService
+    // - Use REDIS_URL environment variable for connection
+    // See: https://docs.nestjs.com/security/rate-limiting#distributed-stores
     ThrottlerModule.forRoot([
       {
         name: 'short',
