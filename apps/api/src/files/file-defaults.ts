@@ -1,4 +1,4 @@
-import type { FilePurpose } from './dto/create-file.dto.js';
+import type { FilePurpose } from '@ktb/shared';
 
 /**
  * Presigned URL expiry durations per file purpose (in seconds).

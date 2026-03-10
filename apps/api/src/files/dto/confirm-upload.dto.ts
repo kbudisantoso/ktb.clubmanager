@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsIn } from 'class-validator';
-import { FILE_PURPOSES, type FilePurpose } from './create-file.dto.js';
+import { FILE_PURPOSES, type FilePurpose } from '@ktb/shared';
 
 /**
  * Confirm upload DTO.

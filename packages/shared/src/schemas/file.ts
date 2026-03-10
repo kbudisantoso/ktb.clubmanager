@@ -8,6 +8,14 @@ export const FileStatusSchema = z.enum(['PENDING_UPLOAD', 'UPLOADED', 'DELETED',
 export type FileStatus = z.infer<typeof FileStatusSchema>;
 
 /**
+ * All valid file purposes — single source of truth.
+ * Used by both Zod schemas (frontend) and class-validator DTOs (backend).
+ */
+export const FILE_PURPOSES = ['club-logo', 'user-avatar'] as const;
+export const FilePurposeSchema = z.enum(FILE_PURPOSES);
+export type FilePurpose = z.infer<typeof FilePurposeSchema>;
+
+/**
  * Schema for initiating a file upload (presigned URL request).
  * Client sends filename, type, size, and purpose to get a presigned PUT URL.
  */
@@ -15,8 +23,8 @@ export const CreateFileSchema = z.object({
   filename: z.string().min(1).max(255),
   contentType: z.string().min(1).max(100),
   size: z.number().int().positive(),
-  /** Upload purpose (e.g., "club-logo", "user-avatar", "receipt") */
-  purpose: z.string().min(1).max(50),
+  /** Upload purpose — must be one of FILE_PURPOSES */
+  purpose: FilePurposeSchema,
 });
 
 export type CreateFile = z.infer<typeof CreateFileSchema>;
