@@ -189,6 +189,8 @@ export class ClubsService {
    * Update club details.
    */
   async update(slug: string, dto: UpdateClubDto, userId: string, isSuperAdmin: boolean) {
+    await this.ensureClubNotDeactivated(slug);
+
     const club = await this.prisma.club.findFirst({
       where: { slug, deletedAt: null },
     });
@@ -314,6 +316,8 @@ export class ClubsService {
    * Regenerate invite code (ADMIN/OWNER only).
    */
   async regenerateInviteCode(slug: string, userId: string, isSuperAdmin: boolean) {
+    await this.ensureClubNotDeactivated(slug);
+
     const club = await this.prisma.club.findFirst({
       where: { slug, deletedAt: null },
     });
@@ -610,6 +614,25 @@ export class ClubsService {
     ]);
 
     return this.formatClubResponse(updated);
+  }
+
+  /**
+   * Ensure a club is not deactivated. Throws ForbiddenException if it is.
+   */
+  private async ensureClubNotDeactivated(slug: string): Promise<void> {
+    const club = await this.prisma.club.findUnique({
+      where: { slug },
+      select: { deactivatedAt: true },
+    });
+    if (!club) {
+      throw new NotFoundException('Club nicht gefunden');
+    }
+    if (club.deactivatedAt) {
+      throw new ForbiddenException({
+        message: 'Dieser Verein ist deaktiviert',
+        code: 'CLUB_DEACTIVATED',
+      });
+    }
   }
 
   private formatClubResponse(
