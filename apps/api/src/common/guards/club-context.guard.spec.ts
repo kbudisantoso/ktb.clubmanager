@@ -257,6 +257,19 @@ describe('ClubContextGuard', () => {
       );
     });
 
+    it('should reject soft-deleted ClubUser', async () => {
+      mockReflector.getAllAndOverride.mockReturnValueOnce(true).mockReturnValueOnce(null);
+
+      mockPrisma.clubUser.findFirst.mockResolvedValue(null);
+
+      const context = createMockContext({
+        userId: 'user-123',
+        params: { slug: 'test-club' },
+      });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(NotFoundException);
+    });
+
     it('should throw ForbiddenException when role not sufficient', async () => {
       mockReflector.getAllAndOverride
         .mockReturnValueOnce(true) // RequireClubContext

@@ -380,12 +380,13 @@ describe('ClubUsersService', () => {
         roles: [ClubRole.OWNER],
       });
       mockPrisma.clubUser.count.mockResolvedValue(2);
-      mockPrisma.clubUser.delete.mockResolvedValue({});
+      mockPrisma.clubUser.update.mockResolvedValue({});
 
       await service.removeClubUser(clubId, targetClubUserId, actorUserId);
 
-      expect(mockPrisma.clubUser.delete).toHaveBeenCalledWith({
+      expect(mockPrisma.clubUser.update).toHaveBeenCalledWith({
         where: { id: targetClubUserId },
+        data: { deletedAt: expect.any(Date), deletedBy: actorUserId },
       });
     });
   });
@@ -464,7 +465,7 @@ describe('ClubUsersService', () => {
 
       expect(mockPrisma.clubUser.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { clubId, status: 'ACTIVE' },
+          where: { clubId, status: 'ACTIVE', deletedAt: null },
         })
       );
     });

@@ -54,6 +54,7 @@ export class ClubContextGuard implements CanActivate {
           deletedAt: null,
         },
         status: 'ACTIVE',
+        deletedAt: null,
       },
       include: {
         club: {

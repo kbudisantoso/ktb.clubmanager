@@ -72,7 +72,7 @@ export class ClubUsersService {
     const { search, status, roles } = options;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { clubId };
+    const where: any = { clubId, deletedAt: null };
 
     // Filter by status (default: all non-deleted)
     if (status && status.length > 0) {
@@ -118,7 +118,7 @@ export class ClubUsersService {
       },
     });
 
-    if (!clubUser || clubUser.clubId !== clubId) {
+    if (!clubUser || clubUser.clubId !== clubId || clubUser.deletedAt) {
       throw new NotFoundException('Benutzer nicht gefunden');
     }
 
@@ -163,7 +163,7 @@ export class ClubUsersService {
       },
     });
 
-    if (!targetClubUser || targetClubUser.clubId !== clubId) {
+    if (!targetClubUser || targetClubUser.clubId !== clubId || targetClubUser.deletedAt) {
       throw new NotFoundException('Benutzer nicht gefunden');
     }
 
@@ -227,9 +227,9 @@ export class ClubUsersService {
       );
     }
 
-    // Check if user already has a ClubUser for this club
-    const existing = await this.prisma.clubUser.findUnique({
-      where: { userId_clubId: { userId: user.id, clubId } },
+    // Check if user already has an active ClubUser for this club
+    const existing = await this.prisma.clubUser.findFirst({
+      where: { userId: user.id, clubId, deletedAt: null },
     });
 
     if (existing) {
@@ -275,7 +275,7 @@ export class ClubUsersService {
       },
     });
 
-    if (!targetClubUser || targetClubUser.clubId !== clubId) {
+    if (!targetClubUser || targetClubUser.clubId !== clubId || targetClubUser.deletedAt) {
       throw new NotFoundException('Benutzer nicht gefunden');
     }
 
@@ -389,9 +389,10 @@ export class ClubUsersService {
       }
     }
 
-    // Delete the ClubUser record (user remains in system)
-    await this.prisma.clubUser.delete({
+    // Soft-delete the ClubUser record (user remains in system)
+    await this.prisma.clubUser.update({
       where: { id: targetClubUserId },
+      data: { deletedAt: new Date(), deletedBy: actorUserId },
     });
   }
 
@@ -402,7 +403,7 @@ export class ClubUsersService {
   async getUnlinkedUsers(clubId: string): Promise<UnlinkedUserDto[]> {
     // Step 1: Get all active ClubUsers
     const clubUsers = await this.prisma.clubUser.findMany({
-      where: { clubId, status: 'ACTIVE' },
+      where: { clubId, status: 'ACTIVE', deletedAt: null },
       include: {
         user: { select: { id: true, name: true, email: true, image: true } },
       },
