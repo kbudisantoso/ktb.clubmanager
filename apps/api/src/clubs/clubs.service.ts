@@ -279,6 +279,8 @@ export class ClubsService {
    * Soft delete a club.
    */
   async remove(slug: string, userId: string, isSuperAdmin: boolean) {
+    await this.ensureClubNotDeactivated(slug);
+
     const club = await this.prisma.club.findFirst({
       where: { slug, deletedAt: null },
     });
@@ -402,9 +404,10 @@ export class ClubsService {
       );
     }
 
-    // Delete the membership
-    await this.prisma.clubUser.delete({
+    // Soft-delete the membership
+    await this.prisma.clubUser.update({
       where: { id: membership.id },
+      data: { deletedAt: new Date(), deletedBy: userId },
     });
 
     return { message: 'Du hast den Verein verlassen' };
