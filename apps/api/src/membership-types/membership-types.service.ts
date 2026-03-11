@@ -16,8 +16,8 @@ export class MembershipTypesService {
    * List all membership types for a club, ordered by sortOrder then name.
    */
   async findAll(clubId: string) {
-    const db = this.prisma.forClub(clubId);
-    return db.membershipType.findMany({
+    return this.prisma.membershipType.findMany({
+      where: { clubId },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });
   }
@@ -26,9 +26,8 @@ export class MembershipTypesService {
    * Get a single membership type by ID within club scope.
    */
   async findOne(clubId: string, id: string) {
-    const db = this.prisma.forClub(clubId);
-    const type = await db.membershipType.findFirst({
-      where: { id },
+    const type = await this.prisma.membershipType.findFirst({
+      where: { id, clubId },
     });
 
     if (!type) {
@@ -44,9 +43,8 @@ export class MembershipTypesService {
    */
   async create(clubId: string, dto: CreateMembershipTypeDto) {
     // Check for duplicate code within club
-    const db = this.prisma.forClub(clubId);
-    const existing = await db.membershipType.findFirst({
-      where: { code: dto.code },
+    const existing = await this.prisma.membershipType.findFirst({
+      where: { code: dto.code, clubId },
     });
 
     if (existing) {
@@ -83,10 +81,8 @@ export class MembershipTypesService {
    * If setting isDefault=true, unsets existing default in a transaction.
    */
   async update(clubId: string, id: string, dto: UpdateMembershipTypeDto) {
-    const db = this.prisma.forClub(clubId);
-
-    const existing = await db.membershipType.findFirst({
-      where: { id },
+    const existing = await this.prisma.membershipType.findFirst({
+      where: { id, clubId },
     });
 
     if (!existing) {
@@ -95,8 +91,8 @@ export class MembershipTypesService {
 
     // If updating code, check for duplicate
     if (dto.code && dto.code !== existing.code) {
-      const duplicate = await db.membershipType.findFirst({
-        where: { code: dto.code },
+      const duplicate = await this.prisma.membershipType.findFirst({
+        where: { code: dto.code, clubId },
       });
       if (duplicate) {
         throw new ConflictException(`Mitgliedsart mit Code "${dto.code}" existiert bereits`);
@@ -133,7 +129,7 @@ export class MembershipTypesService {
       });
     }
 
-    return db.membershipType.update({
+    return this.prisma.membershipType.update({
       where: { id },
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -157,10 +153,8 @@ export class MembershipTypesService {
    * Throws BadRequestException if any MembershipPeriod references this type.
    */
   async remove(clubId: string, id: string) {
-    const db = this.prisma.forClub(clubId);
-
-    const existing = await db.membershipType.findFirst({
-      where: { id },
+    const existing = await this.prisma.membershipType.findFirst({
+      where: { id, clubId },
     });
 
     if (!existing) {
@@ -178,7 +172,7 @@ export class MembershipTypesService {
       );
     }
 
-    await db.membershipType.delete({
+    await this.prisma.membershipType.delete({
       where: { id },
     });
   }

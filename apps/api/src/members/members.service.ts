@@ -242,6 +242,13 @@ export class MembersService {
 
     // Auto-create first membership period if joinDate and membershipTypeId provided
     if (dto.joinDate && dto.membershipTypeId) {
+      const membershipType = await this.prisma.membershipType.findFirst({
+        where: { id: dto.membershipTypeId, clubId },
+      });
+      if (!membershipType) {
+        throw new BadRequestException('Die gewählte Mitgliedsart gehört nicht zu diesem Verein');
+      }
+
       (createData as Record<string, unknown>).membershipPeriods = {
         create: {
           joinDate: new Date(dto.joinDate),

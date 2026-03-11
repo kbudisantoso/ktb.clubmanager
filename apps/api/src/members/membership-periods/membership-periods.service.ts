@@ -73,6 +73,11 @@ export class MembershipPeriodsService {
     // Validate no overlap with existing periods
     await this.validateNoOverlap(db, memberId, dto.joinDate, dto.leaveDate);
 
+    // Cross-club validation: ensure membershipType belongs to this club
+    if (dto.membershipTypeId) {
+      await this.ensureMembershipTypeBelongsToClub(clubId, dto.membershipTypeId);
+    }
+
     const period = await db.membershipPeriod.create({
       data: {
         memberId,
@@ -121,6 +126,11 @@ export class MembershipPeriodsService {
 
     // Validate no overlap (exclude current period)
     await this.validateNoOverlap(db, period.memberId, newJoinDate, newLeaveDate, periodId);
+
+    // Cross-club validation: ensure membershipType belongs to this club
+    if (dto.membershipTypeId !== undefined && dto.membershipTypeId !== null) {
+      await this.ensureMembershipTypeBelongsToClub(clubId, dto.membershipTypeId);
+    }
 
     const updateData: Record<string, unknown> = {};
     if (dto.joinDate !== undefined) updateData.joinDate = new Date(dto.joinDate);
@@ -180,6 +190,21 @@ export class MembershipPeriodsService {
     this.logger.log(`MembershipPeriod ${periodId} closed with leaveDate ${leaveDate}`);
 
     return this.formatPeriodResponse(updated);
+  }
+
+  /**
+   * Ensure that a MembershipType belongs to the given club (cross-club validation).
+   */
+  private async ensureMembershipTypeBelongsToClub(
+    clubId: string,
+    membershipTypeId: string
+  ): Promise<void> {
+    const type = await this.prisma.membershipType.findFirst({
+      where: { id: membershipTypeId, clubId },
+    });
+    if (!type) {
+      throw new BadRequestException('Die gewählte Mitgliedsart gehört nicht zu diesem Verein');
+    }
   }
 
   /**

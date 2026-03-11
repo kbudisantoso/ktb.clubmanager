@@ -753,8 +753,6 @@ model MembershipPeriod {
   joinDate           DateTime        @db.Date
   /// Date when this membership period ended (date-only, inclusive, null = current)
   leaveDate          DateTime?       @db.Date
-  // TODO: Application-level validation needed — ensure MembershipPeriod's MembershipType
-  // belongs to the same club as the Member. Cannot be enforced via FK constraint.
   /// FK to MembershipType entity (replaces former enum column)
   membershipTypeId   String?
   membershipType     MembershipType? @relation(fields: [membershipTypeId], references: [id])
