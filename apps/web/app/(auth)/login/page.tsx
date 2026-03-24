@@ -118,7 +118,13 @@ function LoginContent() {
       });
 
       if (signInError) {
-        setError('E-Mail oder Passwort ist falsch');
+        if (signInError.status === 429) {
+          setError(
+            signInError.message || 'Zu viele Anmeldeversuche. Bitte versuche es später erneut.'
+          );
+        } else {
+          setError('E-Mail oder Passwort ist falsch');
+        }
         setCaptchaToken(null);
         setIsLoading(false);
         return;
