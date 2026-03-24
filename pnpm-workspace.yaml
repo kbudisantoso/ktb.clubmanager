@@ -2,6 +2,11 @@ packages:
   - apps/*
   - packages/*
 
+overrides:
+  # @prisma/adapter-pg pins @types/pg@8.11.11, incompatible with pg@8.20+
+  # Remove when prisma/prisma#29356 is resolved
+  '@types/pg': '8.20.0'
+
 onlyBuiltDependencies:
   - '@nestjs/core'
   - '@prisma/engines'

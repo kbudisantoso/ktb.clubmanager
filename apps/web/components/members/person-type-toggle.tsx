@@ -1,12 +1,12 @@
 'use client';
 
 import { User, Building2 } from 'lucide-react';
-import { type Control, useController } from 'react-hook-form';
+import { type Control, type FieldValues, useController } from 'react-hook-form';
 import { cn } from '@/lib/utils';
 
 interface PersonTypeToggleProps {
   /** react-hook-form control from parent form */
-  control: Control<{ personType: string; [key: string]: unknown }>;
+  control: Control<FieldValues>;
   /** Field name in the form (default: 'personType') */
   name?: string;
   /** Whether the toggle is disabled */

@@ -1,21 +1,19 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Controller, type Control, type UseFormSetValue } from 'react-hook-form';
+import { Controller, type Control, type FieldValues, type UseFormSetValue } from 'react-hook-form';
 import { CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { validateAndLookupIBAN, formatIBAN } from '@/lib/iban-utils';
 import type { IBANValidationResult } from '@/lib/iban-utils';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 interface IbanFieldProps {
-  control: Control<any>;
-  setValue: UseFormSetValue<any>;
+  control: Control<FieldValues>;
+  setValue: UseFormSetValue<FieldValues>;
   disabled?: boolean;
   error?: string;
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 /**
  * IBAN input field with debounced real-time validation and German bank name display.

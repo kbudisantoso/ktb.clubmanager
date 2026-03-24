@@ -33,7 +33,7 @@ export function BankSection({ form, disabled }: BankSectionProps) {
         {/* IBAN + BIC (2-col) */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <IbanField
-            control={control}
+            control={control as never}
             setValue={setValue}
             disabled={disabled}
             error={errors.iban?.message ? String(errors.iban.message) : undefined}

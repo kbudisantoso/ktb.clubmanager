@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import type {
   Control,
   FieldErrors,
+  FieldValues,
   UseFormRegister,
   UseFormSetValue,
   UseFormWatch,
@@ -44,26 +45,24 @@ const SALUTATION_OPTIONS = [
 // Types
 // ============================================================================
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 interface BasicInfoSectionProps {
   /** Full member data for read mode */
   member: MemberDetail;
   /** Whether the tab is in edit mode */
   isEditing: boolean;
   /** react-hook-form register */
-  register: UseFormRegister<any>;
+  register: UseFormRegister<FieldValues>;
   /** react-hook-form control for Controller-based fields */
-  control: Control<any>;
+  control: Control<FieldValues>;
   /** react-hook-form setValue */
-  setValue: UseFormSetValue<any>;
+  setValue: UseFormSetValue<FieldValues>;
   /** react-hook-form watch */
-  watch: UseFormWatch<any>;
+  watch: UseFormWatch<FieldValues>;
   /** Form validation errors */
   errors: FieldErrors;
   /** Whether the form is submitting */
   disabled: boolean;
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // ============================================================================
 // Component
@@ -194,17 +193,15 @@ function formatContactPerson(member: MemberDetail): string | null {
 // Edit Mode
 // ============================================================================
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 interface EditModeProps {
-  register: UseFormRegister<any>;
-  control: Control<any>;
-  setValue: UseFormSetValue<any>;
-  watch: UseFormWatch<any>;
+  register: UseFormRegister<FieldValues>;
+  control: Control<FieldValues>;
+  setValue: UseFormSetValue<FieldValues>;
+  watch: UseFormWatch<FieldValues>;
   errors: FieldErrors;
   disabled: boolean;
   memberNumber: string;
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 function BasicInfoEditMode({
   register,
