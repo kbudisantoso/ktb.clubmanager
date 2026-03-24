@@ -157,7 +157,7 @@ export function MemberForm({ member, slug, onDirtyChange }: MemberFormProps) {
             member={member}
             isEditing={true}
             register={register}
-            control={control}
+            control={control as never}
             setValue={setValue}
             watch={watch}
             errors={errors}
