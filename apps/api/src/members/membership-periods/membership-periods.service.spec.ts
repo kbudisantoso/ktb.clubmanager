@@ -52,7 +52,7 @@ describe('MembershipPeriodsService', () => {
       mockDb.membershipPeriod.findFirst.mockResolvedValue(null); // no open period
       mockDb.membershipPeriod.findMany.mockResolvedValue([]); // no overlap
       (
-        mockPrisma as { membershipType: { findFirst: ReturnType<typeof vi.fn> } }
+        mockPrisma as unknown as { membershipType: { findFirst: ReturnType<typeof vi.fn> } }
       ).membershipType.findFirst.mockResolvedValue({ id: 'type-1', clubId: 'club-1' });
       mockDb.membershipPeriod.create.mockResolvedValue(makePeriod());
 
@@ -108,7 +108,7 @@ describe('MembershipPeriodsService', () => {
         }),
       ]);
       (
-        mockPrisma as { membershipType: { findFirst: ReturnType<typeof vi.fn> } }
+        mockPrisma as unknown as { membershipType: { findFirst: ReturnType<typeof vi.fn> } }
       ).membershipType.findFirst.mockResolvedValue({ id: 'type-1', clubId: 'club-1' });
       mockDb.membershipPeriod.create.mockResolvedValue(
         makePeriod({ id: 'period-2', joinDate: new Date('2025-06-01') })
@@ -138,7 +138,7 @@ describe('MembershipPeriodsService', () => {
       mockDb.membershipPeriod.findFirst.mockResolvedValue(null);
       mockDb.membershipPeriod.findMany.mockResolvedValue([]);
       (
-        mockPrisma as { membershipType: { findFirst: ReturnType<typeof vi.fn> } }
+        mockPrisma as unknown as { membershipType: { findFirst: ReturnType<typeof vi.fn> } }
       ).membershipType.findFirst.mockResolvedValue(null);
 
       await expect(

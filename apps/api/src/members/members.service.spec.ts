@@ -128,7 +128,7 @@ describe('MembersService', () => {
     it('should create first membership period when joinDate provided', async () => {
       (mockNumberRanges.generateNext as ReturnType<typeof vi.fn>).mockResolvedValue('M-0001');
       (
-        mockPrisma as { membershipType: { findFirst: ReturnType<typeof vi.fn> } }
+        mockPrisma as unknown as { membershipType: { findFirst: ReturnType<typeof vi.fn> } }
       ).membershipType.findFirst.mockResolvedValue({ id: 'type-1', clubId: 'club-1' });
       mockDb.member.create.mockResolvedValue(
         makeMember({
