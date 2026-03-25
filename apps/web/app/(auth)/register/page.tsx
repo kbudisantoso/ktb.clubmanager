@@ -370,8 +370,8 @@ function RegisterContent() {
 
             <p className="text-xs text-center text-muted-foreground mt-6">
               Mit der Registrierung akzeptierst du unsere{' '}
-              <NutzungsbedingungenLink className="text-accent hover:underline" /> und{' '}
-              <DatenschutzLink className="text-accent hover:underline" />
+              <NutzungsbedingungenLink className="text-primary hover:underline" /> und{' '}
+              <DatenschutzLink className="text-primary hover:underline" />
             </p>
           </div>
         </div>

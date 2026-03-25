@@ -27,6 +27,9 @@ const mockPrisma = {
     findFirst: vi.fn(),
     update: vi.fn(),
   },
+  membershipType: {
+    findFirst: vi.fn(),
+  },
 } as unknown as PrismaService;
 
 const mockNumberRanges = {
@@ -124,6 +127,9 @@ describe('MembersService', () => {
 
     it('should create first membership period when joinDate provided', async () => {
       (mockNumberRanges.generateNext as ReturnType<typeof vi.fn>).mockResolvedValue('M-0001');
+      (
+        mockPrisma as unknown as { membershipType: { findFirst: ReturnType<typeof vi.fn> } }
+      ).membershipType.findFirst.mockResolvedValue({ id: 'type-1', clubId: 'club-1' });
       mockDb.member.create.mockResolvedValue(
         makeMember({
           membershipPeriods: [

@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useCanManageSettings } from '@/lib/club-permissions';
+import { useClubPermissions } from '@/lib/club-permissions';
 import { apiFetch } from '@/lib/api';
-import { Users, BookOpen, Copy, Check } from 'lucide-react';
+import { Users, BookOpen, Settings, Copy, Check } from 'lucide-react';
 import { AccessRequestsCard } from '@/components/club/access-requests-card';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,7 +26,7 @@ interface ClubDetails {
 
 export function ClubDashboardClient() {
   const params = useParams();
-  const canManageSettings = useCanManageSettings();
+  const { isClubMember, canManageFinances, canManageSettings } = useClubPermissions();
   const [club, setClub] = useState<ClubDetails | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -66,8 +66,13 @@ export function ClubDashboardClient() {
   }
 
   const quickActions = [
-    { href: `/clubs/${slug}/members`, label: 'Mitglieder', icon: Users },
-    { href: `/clubs/${slug}/accounting`, label: 'Buchhaltung', icon: BookOpen },
+    ...(isClubMember ? [{ href: `/clubs/${slug}/members`, label: 'Mitglieder', icon: Users }] : []),
+    ...(canManageFinances
+      ? [{ href: `/clubs/${slug}/accounting`, label: 'Buchhaltung', icon: BookOpen }]
+      : []),
+    ...(canManageSettings
+      ? [{ href: `/clubs/${slug}/settings`, label: 'Vereinseinstellungen', icon: Settings }]
+      : []),
   ];
 
   return (

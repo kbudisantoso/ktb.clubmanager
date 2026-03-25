@@ -465,6 +465,16 @@ export class MemberStatusService {
       }
     }
 
+    // Cross-club validation: ensure membershipType belongs to this club
+    if (membershipTypeId) {
+      const type = await tx.membershipType.findFirst({
+        where: { id: membershipTypeId, clubId },
+      });
+      if (!type) {
+        throw new BadRequestException('Die gewählte Mitgliedsart gehört nicht zu diesem Verein');
+      }
+    }
+
     // Create audit trail record (no fromStatus — computed on read)
     const newTransition = await tx.memberStatusTransition.create({
       data: {

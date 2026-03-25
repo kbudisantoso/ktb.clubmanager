@@ -33,8 +33,22 @@ interface ClubApiResponse {
   gracePeriodDays?: number | null;
 }
 
+export interface PendingInvitation {
+  id: string;
+  club: {
+    id: string;
+    name: string;
+    slug: string;
+    avatarColor?: string;
+    logoFileId?: string;
+  };
+  roles: string[];
+  createdAt: string;
+}
+
 interface MyClubsApiResponse {
   clubs: ClubApiResponse[];
+  pendingInvitations?: PendingInvitation[];
   meta: {
     canCreateClub: boolean;
   };
@@ -42,6 +56,7 @@ interface MyClubsApiResponse {
 
 interface MyClubsResult {
   clubs: ClubContext[];
+  pendingInvitations: PendingInvitation[];
   canCreateClub: boolean;
 }
 
@@ -67,6 +82,7 @@ async function fetchMyClubs(): Promise<MyClubsResult> {
       scheduledDeletionAt: club.scheduledDeletionAt ?? null,
       gracePeriodDays: club.gracePeriodDays ?? null,
     })),
+    pendingInvitations: data.pendingInvitations ?? [],
     canCreateClub: data.meta.canCreateClub,
   };
 }
@@ -85,6 +101,52 @@ export function useMyClubsQuery() {
     queryFn: fetchMyClubs,
     staleTime: 5 * 60 * 1000, // 5 Minuten - Clubs ändern sich selten
     gcTime: 10 * 60 * 1000, // 10 Minuten im Cache halten
+  });
+}
+
+/**
+ * Hook for accepting a club invitation.
+ */
+export function useAcceptInvitationMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (clubUserId: string): Promise<{ message: string }> => {
+      const res = await apiFetch(`/api/me/invitations/${clubUserId}/accept`, {
+        method: 'POST',
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Unbekannter Fehler' }));
+        throw new Error(error.message || 'Fehler beim Annehmen der Einladung');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: clubKeys.my() });
+    },
+  });
+}
+
+/**
+ * Hook for declining a club invitation.
+ */
+export function useDeclineInvitationMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (clubUserId: string): Promise<{ message: string }> => {
+      const res = await apiFetch(`/api/me/invitations/${clubUserId}/decline`, {
+        method: 'POST',
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Unbekannter Fehler' }));
+        throw new Error(error.message || 'Fehler beim Ablehnen der Einladung');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: clubKeys.my() });
+    },
   });
 }
 

@@ -248,6 +248,17 @@ describe('AccessRequestsService', () => {
 
         await expect(service.joinWithCode(userId, validCode)).rejects.toThrow(NotFoundException);
       });
+
+      it('should block joinWithCode for deactivated club', async () => {
+        mockPrisma.club.findFirst.mockResolvedValue({
+          id: 'club-1',
+          name: 'Test Club',
+          slug: 'test-club',
+          deactivatedAt: new Date(),
+        });
+
+        await expect(service.joinWithCode(userId, validCode)).rejects.toThrow(ForbiddenException);
+      });
     });
   });
 
@@ -484,6 +495,16 @@ describe('AccessRequestsService', () => {
 
         await expect(service.requestAccess(userId, clubSlug)).rejects.toThrow(NotFoundException);
       });
+
+      it('should block requestAccess for deactivated club', async () => {
+        mockPrisma.club.findFirst.mockResolvedValue({
+          id: 'club-1',
+          visibility: 'PUBLIC',
+          deactivatedAt: new Date(),
+        });
+
+        await expect(service.requestAccess(userId, clubSlug)).rejects.toThrow(ForbiddenException);
+      });
     });
   });
 
@@ -537,6 +558,7 @@ describe('AccessRequestsService', () => {
         mockPrisma.accessRequest.findUnique.mockResolvedValue({
           id: requestId,
           status: 'APPROVED',
+          club: { id: 'club-1', deactivatedAt: null },
         });
 
         await expect(service.approve(requestId, ['MEMBER'], adminUserId)).rejects.toThrow(
@@ -566,6 +588,20 @@ describe('AccessRequestsService', () => {
           NotFoundException
         );
       });
+
+      it('should block approve for deactivated club', async () => {
+        mockPrisma.accessRequest.findUnique.mockResolvedValue({
+          id: requestId,
+          userId: 'user-123',
+          clubId: 'club-1',
+          status: 'PENDING',
+          club: { id: 'club-1', deactivatedAt: new Date() },
+        });
+
+        await expect(service.approve(requestId, ['MEMBER'], adminUserId)).rejects.toThrow(
+          ForbiddenException
+        );
+      });
     });
   });
 
@@ -579,6 +615,7 @@ describe('AccessRequestsService', () => {
           id: requestId,
           clubId: 'club-1',
           status: 'PENDING',
+          club: { deactivatedAt: null },
         });
         mockPrisma.clubUser.findFirst.mockResolvedValue({
           roles: ['ADMIN'],
@@ -597,6 +634,7 @@ describe('AccessRequestsService', () => {
           id: requestId,
           clubId: 'club-1',
           status: 'PENDING',
+          club: { deactivatedAt: null },
         });
         mockPrisma.clubUser.findFirst.mockResolvedValue({
           roles: ['ADMIN'],
@@ -624,6 +662,7 @@ describe('AccessRequestsService', () => {
           id: requestId,
           clubId: 'club-1',
           status: 'PENDING',
+          club: { deactivatedAt: null },
         });
         mockPrisma.clubUser.findFirst.mockResolvedValue({
           roles: ['ADMIN'],
@@ -639,6 +678,7 @@ describe('AccessRequestsService', () => {
         mockPrisma.accessRequest.findUnique.mockResolvedValue({
           id: requestId,
           status: 'REJECTED',
+          club: { deactivatedAt: null },
         });
 
         await expect(
@@ -651,8 +691,22 @@ describe('AccessRequestsService', () => {
           id: requestId,
           clubId: 'club-1',
           status: 'PENDING',
+          club: { deactivatedAt: null },
         });
         mockPrisma.clubUser.findFirst.mockResolvedValue(null);
+
+        await expect(
+          service.reject(requestId, 'BOARD_ONLY', undefined, adminUserId)
+        ).rejects.toThrow(ForbiddenException);
+      });
+
+      it('should block reject for deactivated club', async () => {
+        mockPrisma.accessRequest.findUnique.mockResolvedValue({
+          id: requestId,
+          clubId: 'club-1',
+          status: 'PENDING',
+          club: { deactivatedAt: new Date() },
+        });
 
         await expect(
           service.reject(requestId, 'BOARD_ONLY', undefined, adminUserId)
@@ -671,13 +725,14 @@ describe('AccessRequestsService', () => {
         userId,
         status: 'PENDING',
       });
-      mockPrisma.accessRequest.delete.mockResolvedValue({});
+      mockPrisma.accessRequest.update.mockResolvedValue({});
 
       const result = await service.cancelRequest(requestId, userId);
 
       expect(result.message).toBe('Anfrage zuruckgezogen');
-      expect(mockPrisma.accessRequest.delete).toHaveBeenCalledWith({
+      expect(mockPrisma.accessRequest.update).toHaveBeenCalledWith({
         where: { id: requestId },
+        data: { deletedAt: expect.any(Date), deletedBy: userId },
       });
     });
 
@@ -730,7 +785,7 @@ describe('AccessRequestsService', () => {
       expect(result).toHaveLength(2);
       expect(mockPrisma.accessRequest.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { userId },
+          where: { userId, deletedAt: null },
           orderBy: { createdAt: 'desc' },
           take: 20,
         })

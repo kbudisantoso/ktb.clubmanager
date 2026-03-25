@@ -305,6 +305,33 @@ describe('LoginPage', () => {
       });
     });
 
+    it('shows rate limit message on 429 error', async () => {
+      const user = userEvent.setup();
+      mockSignInEmail.mockResolvedValue({
+        data: null,
+        error: {
+          status: 429,
+          message: 'Zu viele Anmeldeversuche. Bitte versuche es in 15 Minuten erneut.',
+        },
+      });
+
+      render(<LoginPage />);
+
+      const emailInput = await screen.findByLabelText(/e-mail-adresse/i);
+      await user.type(emailInput, 'test@example.de');
+      await user.click(screen.getByRole('button', { name: /weiter/i }));
+
+      const passwordInput = await screen.findByLabelText(/passwort/i);
+      await user.type(passwordInput, 'password123');
+      await user.click(screen.getByRole('button', { name: /anmelden/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/zu viele anmeldeversuche/i)).toBeInTheDocument();
+      });
+      // Should NOT show the generic "falsch" message
+      expect(screen.queryByText(/falsch/i)).not.toBeInTheDocument();
+    });
+
     it('handles API errors gracefully', async () => {
       const user = userEvent.setup();
       mockSignInEmail.mockRejectedValue(new Error('Network error'));

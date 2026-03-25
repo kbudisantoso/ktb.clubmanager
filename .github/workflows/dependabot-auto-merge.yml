@@ -17,6 +17,15 @@ jobs:
         with:
           github-token: '${{ secrets.GITHUB_TOKEN }}'
 
+      - name: Wait for CI checks to pass
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        run: gh pr checks "$PR_URL" --watch --fail-fast
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --auto waits for required status checks (branch protection),
+      # the explicit checks wait above adds defense-in-depth
       - name: Enable auto-merge for minor/patch updates
         if: steps.metadata.outputs.update-type != 'version-update:semver-major'
         run: gh pr merge --auto --squash "$PR_URL"

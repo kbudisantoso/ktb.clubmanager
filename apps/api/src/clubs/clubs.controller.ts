@@ -161,6 +161,15 @@ export class ClubsController {
     return this.clubsService.regenerateInviteCode(slug, req.user.id, isSuperAdmin);
   }
 
+  @Delete(':slug/invite-code')
+  @ApiOperation({ summary: 'Remove club invite code' })
+  @ApiResponse({ status: 200, description: 'Invite code removed' })
+  @ApiResponse({ status: 403, description: 'Not club admin' })
+  async clearInviteCode(@Param('slug') slug: string, @Req() req: AuthenticatedRequest) {
+    const isSuperAdmin = await this.isSuperAdmin(req.user.id);
+    return this.clubsService.clearInviteCode(slug, req.user.id, isSuperAdmin);
+  }
+
   @Post(':slug/deactivate')
   @ApiOperation({ summary: 'Deactivate club (initiate grace period before deletion)' })
   @ApiResponse({ status: 200, description: 'Club deactivated', type: ClubResponseDto })

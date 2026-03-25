@@ -46,11 +46,19 @@ export class AccessRequestsService {
       throw new NotFoundException('Einladungscode nicht gefunden oder abgelaufen');
     }
 
+    if (club.deactivatedAt) {
+      throw new ForbiddenException({
+        code: 'CLUB_DEACTIVATED',
+        message: 'Dieser Verein wurde deaktiviert',
+      });
+    }
+
     // Check if already a member
     const existingMembership = await this.prisma.clubUser.findFirst({
       where: {
         userId,
         clubId: club.id,
+        deletedAt: null,
       },
     });
 
@@ -75,6 +83,7 @@ export class AccessRequestsService {
       where: {
         userId,
         clubId: club.id,
+        deletedAt: null,
       },
     });
 
@@ -171,6 +180,13 @@ export class AccessRequestsService {
       throw new NotFoundException('Verein nicht gefunden');
     }
 
+    if (club.deactivatedAt) {
+      throw new ForbiddenException({
+        code: 'CLUB_DEACTIVATED',
+        message: 'Dieser Verein wurde deaktiviert',
+      });
+    }
+
     // Check visibility
     if (club.visibility !== 'PUBLIC') {
       throw new BadRequestException(
@@ -180,7 +196,7 @@ export class AccessRequestsService {
 
     // Check if already a member
     const existingMembership = await this.prisma.clubUser.findFirst({
-      where: { userId, clubId: club.id, status: 'ACTIVE' },
+      where: { userId, clubId: club.id, status: 'ACTIVE', deletedAt: null },
     });
 
     if (existingMembership) {
@@ -203,6 +219,7 @@ export class AccessRequestsService {
       where: {
         userId,
         clubId: club.id,
+        deletedAt: null,
       },
     });
 
@@ -319,6 +336,13 @@ export class AccessRequestsService {
       throw new NotFoundException('Anfrage nicht gefunden');
     }
 
+    if (request.club.deactivatedAt) {
+      throw new ForbiddenException({
+        code: 'CLUB_DEACTIVATED',
+        message: 'Dieser Verein wurde deaktiviert',
+      });
+    }
+
     if (request.status !== 'PENDING') {
       throw new BadRequestException('Anfrage wurde bereits bearbeitet');
     }
@@ -361,10 +385,18 @@ export class AccessRequestsService {
   async reject(requestId: string, reason: string, note: string | undefined, adminUserId: string) {
     const request = await this.prisma.accessRequest.findUnique({
       where: { id: requestId },
+      include: { club: { select: { deactivatedAt: true } } },
     });
 
     if (!request) {
       throw new NotFoundException('Anfrage nicht gefunden');
+    }
+
+    if (request.club.deactivatedAt) {
+      throw new ForbiddenException({
+        code: 'CLUB_DEACTIVATED',
+        message: 'Dieser Verein wurde deaktiviert',
+      });
     }
 
     if (request.status !== 'PENDING') {
@@ -406,7 +438,7 @@ export class AccessRequestsService {
    */
   async getMyRequests(userId: string) {
     return this.prisma.accessRequest.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       include: {
         club: {
           select: {
@@ -443,8 +475,9 @@ export class AccessRequestsService {
       throw new BadRequestException('Anfrage kann nicht mehr abgebrochen werden');
     }
 
-    await this.prisma.accessRequest.delete({
+    await this.prisma.accessRequest.update({
       where: { id: requestId },
+      data: { deletedAt: new Date(), deletedBy: userId },
     });
 
     return { message: 'Anfrage zuruckgezogen' };
@@ -484,6 +517,7 @@ export class AccessRequestsService {
         userId,
         clubId,
         status: 'ACTIVE',
+        deletedAt: null,
         roles: { hasSome: ['OWNER', 'ADMIN'] },
       },
     });

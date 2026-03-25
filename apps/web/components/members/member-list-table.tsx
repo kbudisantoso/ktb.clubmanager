@@ -75,6 +75,8 @@ interface MemberListTableProps {
   columnOrder?: ColumnKey[];
   /** Available membership types for label resolution */
   membershipTypes?: MembershipType[];
+  /** Club slug for tenant-scoped avatar URLs */
+  slug: string;
 }
 
 // ============================================================================
@@ -100,7 +102,8 @@ interface ColumnDef {
   render: (
     member: MemberListItem,
     activePeriod: MemberListItem['membershipPeriods'][number] | null,
-    membershipTypes?: MembershipType[]
+    membershipTypes?: MembershipType[],
+    slug?: string
   ) => ReactNode;
 }
 
@@ -108,7 +111,7 @@ const COLUMN_DEFS: Record<ColumnKey, ColumnDef> = {
   name: {
     label: 'Name',
     skeletonClass: '',
-    render: (m) => (
+    render: (m, _period, _types, slug) => (
       <div className="flex items-center gap-3">
         <MemberAvatar
           memberId={m.id}
@@ -117,7 +120,7 @@ const COLUMN_DEFS: Record<ColumnKey, ColumnDef> = {
           organizationName={m.organizationName}
           personType={m.personType}
           size="sm"
-          imageUrl={m.userImage}
+          imageUrl={m.userId && slug ? `/api/clubs/${slug}/users/${m.userId}/avatar` : undefined}
           hasLinkedUser={!!m.userId}
         />
         <div className="min-w-0">
@@ -197,6 +200,7 @@ export function MemberListTable({
   columnVisibility,
   columnOrder,
   membershipTypes,
+  slug,
 }: MemberListTableProps) {
   const lastShiftClickIndex = useRef<number | null>(null);
 
@@ -365,7 +369,7 @@ export function MemberListTable({
 
                 {orderedColumns.map((key) => (
                   <TableCell key={key} className={colClass(key)}>
-                    {COLUMN_DEFS[key].render(member, activePeriod, membershipTypes)}
+                    {COLUMN_DEFS[key].render(member, activePeriod, membershipTypes, slug)}
                   </TableCell>
                 ))}
               </TableRow>

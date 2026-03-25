@@ -118,7 +118,13 @@ function LoginContent() {
       });
 
       if (signInError) {
-        setError('E-Mail oder Passwort ist falsch');
+        if (signInError.status === 429) {
+          setError(
+            signInError.message || 'Zu viele Anmeldeversuche. Bitte versuche es später erneut.'
+          );
+        } else {
+          setError('E-Mail oder Passwort ist falsch');
+        }
         setCaptchaToken(null);
         setIsLoading(false);
         return;
@@ -272,7 +278,7 @@ function LoginContent() {
                         ? `/register?callbackUrl=${encodeURIComponent(callbackUrl)}`
                         : '/register'
                     }
-                    className="text-accent hover:underline font-medium"
+                    className="text-primary hover:underline font-medium"
                   >
                     Jetzt registrieren
                   </Link>

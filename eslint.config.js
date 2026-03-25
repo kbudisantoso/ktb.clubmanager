@@ -32,6 +32,8 @@ export default tseslint.config(
       'packages/shared/src/**/*.js',
       // Hidden directories (except .github, .devcontainer)
       '.*/**',
+      // Archived worktree directories (*.gitignore pattern from .gitignore)
+      '*.gitignore/**',
     ],
   },
 

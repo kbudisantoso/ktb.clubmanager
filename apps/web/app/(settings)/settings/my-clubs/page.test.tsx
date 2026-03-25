@@ -53,9 +53,12 @@ let mockRequestsLoading = false;
 const mockLeaveMutate = vi.fn();
 let mockLeaveIsPending = false;
 
+const mockAcceptMutate = vi.fn();
+const mockDeclineMutate = vi.fn();
+
 vi.mock('@/hooks/use-clubs', () => ({
   useMyClubsQuery: () => ({
-    data: { clubs: mockClubs, canCreateClub: mockCanCreateClub },
+    data: { clubs: mockClubs, pendingInvitations: [], canCreateClub: mockCanCreateClub },
     isLoading: mockClubsLoading,
   }),
   useMyAccessRequestsQuery: () => ({
@@ -65,6 +68,14 @@ vi.mock('@/hooks/use-clubs', () => ({
   useLeaveClubMutation: () => ({
     mutate: mockLeaveMutate,
     isPending: mockLeaveIsPending,
+  }),
+  useAcceptInvitationMutation: () => ({
+    mutate: mockAcceptMutate,
+    isPending: false,
+  }),
+  useDeclineInvitationMutation: () => ({
+    mutate: mockDeclineMutate,
+    isPending: false,
   }),
 }));
 
@@ -129,7 +140,8 @@ describe('MyClubsPage', () => {
       render(<MyClubsPage />);
 
       expect(screen.getByText(/einladungscode eingeben/i)).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('XXXX-XXXX')).toBeInTheDocument();
+      const inputs = screen.getAllByPlaceholderText('XXXX');
+      expect(inputs).toHaveLength(2);
     });
 
     it('enables button when invite code is entered', async () => {
@@ -137,12 +149,13 @@ describe('MyClubsPage', () => {
 
       render(<MyClubsPage />);
 
-      const input = screen.getByPlaceholderText('XXXX-XXXX');
+      const inputs = screen.getAllByPlaceholderText('XXXX');
       const button = screen.getByRole('button', { name: /einlösen/i });
 
       expect(button).toBeDisabled();
 
-      await user.type(input, 'ABCD1234');
+      await user.type(inputs[0], 'ABCD');
+      await user.type(inputs[1], '1234');
 
       expect(button).not.toBeDisabled();
     });
@@ -152,8 +165,9 @@ describe('MyClubsPage', () => {
 
       render(<MyClubsPage />);
 
-      const input = screen.getByPlaceholderText('XXXX-XXXX');
-      await user.type(input, 'HXNK4P9M');
+      const inputs = screen.getAllByPlaceholderText('XXXX');
+      await user.type(inputs[0], 'HXNK');
+      await user.type(inputs[1], '4P9M');
       await user.click(screen.getByRole('button', { name: /einlösen/i }));
 
       expect(mockPush).toHaveBeenCalledWith('/join/HXNK-4P9M');
@@ -186,28 +200,30 @@ describe('MyClubsPage', () => {
       expect(leaveButton).toBeDisabled();
     });
 
-    it('normalizes invite code input (lowercase, spaces, hyphens)', async () => {
+    it('normalizes invite code input (lowercase to uppercase)', async () => {
       const user = userEvent.setup();
 
       render(<MyClubsPage />);
 
-      const input = screen.getByPlaceholderText('XXXX-XXXX');
-      await user.type(input, 'hxnk4p9m');
+      const inputs = screen.getAllByPlaceholderText('XXXX');
+      await user.type(inputs[0], 'hxnk');
+      await user.type(inputs[1], '4p9m');
       await user.click(screen.getByRole('button', { name: /einlösen/i }));
 
       expect(mockPush).toHaveBeenCalledWith('/join/HXNK-4P9M');
     });
 
-    it('auto-inserts hyphen after 4th character', async () => {
+    it('auto-advances to second field after 4 characters', async () => {
       const user = userEvent.setup();
 
       render(<MyClubsPage />);
 
-      const input = screen.getByPlaceholderText('XXXX-XXXX') as HTMLInputElement;
-      await user.type(input, 'ABCDE');
+      const inputs = screen.getAllByPlaceholderText('XXXX') as HTMLInputElement[];
+      await user.type(inputs[0], 'ABCDE');
 
-      // Should be formatted as "ABCD-E"
-      expect(input.value).toBe('ABCD-E');
+      // First field should have 4 chars, second should have the overflow
+      expect(inputs[0].value).toBe('ABCD');
+      expect(inputs[1].value).toBe('E');
     });
   });
 

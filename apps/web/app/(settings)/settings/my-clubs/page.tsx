@@ -3,7 +3,18 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, LogOut, Clock, CheckCircle, XCircle, ExternalLink, Key } from 'lucide-react';
+import { InviteCodeInput } from '@/components/club/invite-code-input';
+import {
+  Plus,
+  LogOut,
+  Clock,
+  CheckCircle,
+  XCircle,
+  ExternalLink,
+  Key,
+  Mail,
+  Loader2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +32,13 @@ import { ClubAvatar } from '@/components/club-switcher/club-avatar';
 import { RejectionNotice } from '@/components/club/rejection-notice';
 import { useClubStore, type ClubContext } from '@/lib/club-store';
 import { useToast } from '@/hooks/use-toast';
-import { useMyClubsQuery, useMyAccessRequestsQuery, useLeaveClubMutation } from '@/hooks/use-clubs';
+import {
+  useMyClubsQuery,
+  useMyAccessRequestsQuery,
+  useLeaveClubMutation,
+  useAcceptInvitationMutation,
+  useDeclineInvitationMutation,
+} from '@/hooks/use-clubs';
 
 const ROLE_LABELS: Record<string, string> = {
   OWNER: 'Verantwortlicher',
@@ -42,11 +59,12 @@ export default function MyClubsPage() {
   const { activeClubSlug, setActiveClub, clearActiveClub } = useClubStore();
 
   const { data, isLoading: clubsLoading } = useMyClubsQuery();
-  const { clubs = [], canCreateClub = false } = data ?? {};
+  const { clubs = [], pendingInvitations = [], canCreateClub = false } = data ?? {};
   const { data: requests = [], isLoading: requestsLoading } = useMyAccessRequestsQuery();
   const leaveClub = useLeaveClubMutation();
+  const acceptInvitation = useAcceptInvitationMutation();
+  const declineInvitation = useDeclineInvitationMutation();
 
-  const [inviteCode, setInviteCode] = useState('');
   const [leaveConfirmClub, setLeaveConfirmClub] = useState<ClubContext | null>(null);
   const [leaveConfirmInput, setLeaveConfirmInput] = useState('');
 
@@ -102,25 +120,6 @@ export default function MyClubsPage() {
     toast({ title: 'Anfrage zurückgezogen' });
   }
 
-  function handleInviteCodeChange(value: string) {
-    // Remove non-alphanumeric characters and convert to uppercase
-    const cleaned = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-
-    // Auto-insert hyphen after 4th character
-    if (cleaned.length <= 4) {
-      setInviteCode(cleaned);
-    } else {
-      setInviteCode(`${cleaned.slice(0, 4)}-${cleaned.slice(4, 8)}`);
-    }
-  }
-
-  function handleJoinWithCode() {
-    if (inviteCode.trim()) {
-      const normalized = inviteCode.replace(/[\s-]/g, '').toUpperCase();
-      router.push(`/join/${normalized.slice(0, 4)}-${normalized.slice(4)}`);
-    }
-  }
-
   function handleSwitchToClub(club: ClubContext) {
     setActiveClub(club.slug);
     router.push(`/clubs/${club.slug}/dashboard`);
@@ -143,6 +142,93 @@ export default function MyClubsPage() {
             <RejectionNotice key={request.id} request={request} />
           ))}
         </div>
+      )}
+
+      {/* Pending Invitations */}
+      {pendingInvitations.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Einladungen
+            </CardTitle>
+            <CardDescription>Du wurdest in folgende Vereine eingeladen</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="divide-y border rounded-lg">
+              {pendingInvitations.map((invitation) => (
+                <div key={invitation.id} className="flex items-center gap-3 p-3">
+                  <ClubAvatar
+                    name={invitation.club.name}
+                    avatarColor={invitation.club.avatarColor}
+                    size="md"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{invitation.club.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatRoles(invitation.roles)} &middot; Eingeladen am{' '}
+                      {new Date(invitation.createdAt).toLocaleDateString('de-DE')}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={declineInvitation.isPending || acceptInvitation.isPending}
+                      onClick={() => {
+                        declineInvitation.mutate(invitation.id, {
+                          onSuccess: () => {
+                            toast({ title: 'Einladung abgelehnt' });
+                          },
+                          onError: (error) => {
+                            toast({
+                              title: 'Fehler',
+                              description: error.message,
+                              variant: 'destructive',
+                            });
+                          },
+                        });
+                      }}
+                    >
+                      {declineInvitation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Ablehnen'
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={acceptInvitation.isPending || declineInvitation.isPending}
+                      onClick={() => {
+                        acceptInvitation.mutate(invitation.id, {
+                          onSuccess: () => {
+                            toast({
+                              title: 'Einladung angenommen',
+                              description: `Du bist "${invitation.club.name}" beigetreten.`,
+                            });
+                          },
+                          onError: (error) => {
+                            toast({
+                              title: 'Fehler',
+                              description: error.message,
+                              variant: 'destructive',
+                            });
+                          },
+                        });
+                      }}
+                    >
+                      {acceptInvitation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Annehmen'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* My Clubs */}
@@ -168,7 +254,9 @@ export default function MyClubsPage() {
             <ClubListSkeleton />
           ) : clubs.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">
-              Du bist noch keinem Verein zugeordnet.
+              {pendingInvitations.length > 0
+                ? 'Du bist noch keinem Verein beigetreten. Nimm eine Einladung oben an oder tritt mit einem Code bei.'
+                : 'Du bist noch keinem Verein zugeordnet.'}
             </div>
           ) : (
             <div className="divide-y border rounded-lg">
@@ -244,21 +332,7 @@ export default function MyClubsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2">
-            <Input
-              placeholder="XXXX-XXXX"
-              value={inviteCode}
-              onChange={(e) => handleInviteCodeChange(e.target.value)}
-              className="font-mono text-center tracking-wider max-w-[200px]"
-              maxLength={9}
-            />
-            <Button
-              onClick={handleJoinWithCode}
-              disabled={inviteCode.replace(/[\s-]/g, '').length < 8}
-            >
-              Einlösen
-            </Button>
-          </div>
+          <InviteCodeInput />
         </CardContent>
       </Card>
 

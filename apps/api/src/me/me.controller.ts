@@ -75,6 +75,26 @@ export class MeController {
     return this.accessRequestsService.markAsSeen(id, req.user.id);
   }
 
+  @Post('invitations/:id/accept')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Accept a club invitation' })
+  @ApiResponse({ status: 200, description: 'Invitation accepted' })
+  @ApiResponse({ status: 403, description: 'Not your invitation' })
+  @ApiResponse({ status: 404, description: 'Invitation not found' })
+  async acceptInvitation(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    return this.meService.acceptInvitation(req.user.id, id);
+  }
+
+  @Post('invitations/:id/decline')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Decline a club invitation' })
+  @ApiResponse({ status: 200, description: 'Invitation declined' })
+  @ApiResponse({ status: 403, description: 'Not your invitation' })
+  @ApiResponse({ status: 404, description: 'Invitation not found' })
+  async declineInvitation(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    return this.meService.declineInvitation(req.user.id, id);
+  }
+
   // ── Profile ──────────────────────────────────────────────────────
 
   @Patch('profile')

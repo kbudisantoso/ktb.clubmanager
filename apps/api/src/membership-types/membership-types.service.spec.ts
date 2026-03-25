@@ -3,23 +3,15 @@ import { MembershipTypesService } from './membership-types.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 
-// Mock forClub() scoped DB
-const mockDb = {
+const mockPrisma = {
   membershipType: {
     findMany: vi.fn(),
     findFirst: vi.fn(),
     create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  },
-};
-
-const mockPrisma = {
-  forClub: vi.fn(() => mockDb),
-  membershipType: {
-    create: vi.fn(),
     createMany: vi.fn(),
+    update: vi.fn(),
     updateMany: vi.fn(),
+    delete: vi.fn(),
   },
   membershipPeriod: {
     count: vi.fn(),
@@ -43,15 +35,15 @@ describe('MembershipTypesService', () => {
         { id: 'mt-1', name: 'Ordentliches Mitglied', code: 'ORDENTLICH', sortOrder: 0 },
         { id: 'mt-2', name: 'Passives Mitglied', code: 'PASSIV', sortOrder: 1 },
       ];
-      mockDb.membershipType.findMany.mockResolvedValue(mockTypes);
+      (mockPrisma.membershipType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockTypes);
 
       const result = await service.findAll(CLUB_ID);
 
       expect(result).toEqual(mockTypes);
-      expect(mockDb.membershipType.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.membershipType.findMany).toHaveBeenCalledWith({
+        where: { clubId: CLUB_ID },
         orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
       });
-      expect(mockPrisma.forClub).toHaveBeenCalledWith(CLUB_ID);
     });
   });
 
@@ -62,18 +54,18 @@ describe('MembershipTypesService', () => {
         name: 'Ordentliches Mitglied',
         code: 'ORDENTLICH',
       };
-      mockDb.membershipType.findFirst.mockResolvedValue(mockType);
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockType);
 
       const result = await service.findOne(CLUB_ID, 'mt-1');
 
       expect(result).toEqual(mockType);
-      expect(mockDb.membershipType.findFirst).toHaveBeenCalledWith({
-        where: { id: 'mt-1' },
+      expect(mockPrisma.membershipType.findFirst).toHaveBeenCalledWith({
+        where: { id: 'mt-1', clubId: CLUB_ID },
       });
     });
 
     it('should throw NotFoundException for non-existent type', async () => {
-      mockDb.membershipType.findFirst.mockResolvedValue(null);
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       await expect(service.findOne(CLUB_ID, 'nonexistent')).rejects.toThrow(NotFoundException);
     });
@@ -81,7 +73,7 @@ describe('MembershipTypesService', () => {
 
   describe('create()', () => {
     it('should create a new membership type with explicit clubId', async () => {
-      mockDb.membershipType.findFirst.mockResolvedValue(null); // no duplicate
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
       (mockPrisma.membershipType.create as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'mt-new',
         clubId: CLUB_ID,
@@ -112,7 +104,7 @@ describe('MembershipTypesService', () => {
     });
 
     it('should throw ConflictException for duplicate code within club', async () => {
-      mockDb.membershipType.findFirst.mockResolvedValue({
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'mt-1',
         code: 'ORDENTLICH',
       });
@@ -123,7 +115,7 @@ describe('MembershipTypesService', () => {
     });
 
     it('should unset existing default when creating with isDefault=true', async () => {
-      mockDb.membershipType.findFirst.mockResolvedValue(null); // no duplicate
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
       (mockPrisma.membershipType.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({
         count: 1,
       });
@@ -148,7 +140,7 @@ describe('MembershipTypesService', () => {
     });
 
     it('should NOT unset existing default when creating with isDefault=false', async () => {
-      mockDb.membershipType.findFirst.mockResolvedValue(null);
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
       (mockPrisma.membershipType.create as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'mt-new',
         clubId: CLUB_ID,
@@ -169,13 +161,13 @@ describe('MembershipTypesService', () => {
 
   describe('update()', () => {
     it('should update fields', async () => {
-      mockDb.membershipType.findFirst.mockResolvedValue({
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'mt-1',
         name: 'Old Name',
         code: 'OLD',
         isDefault: false,
       });
-      mockDb.membershipType.update.mockResolvedValue({
+      (mockPrisma.membershipType.update as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'mt-1',
         name: 'New Name',
         code: 'OLD',
@@ -185,14 +177,14 @@ describe('MembershipTypesService', () => {
       const result = await service.update(CLUB_ID, 'mt-1', { name: 'New Name' });
 
       expect(result.name).toBe('New Name');
-      expect(mockDb.membershipType.update).toHaveBeenCalledWith({
+      expect(mockPrisma.membershipType.update).toHaveBeenCalledWith({
         where: { id: 'mt-1' },
         data: { name: 'New Name' },
       });
     });
 
     it('should throw NotFoundException for non-existent type', async () => {
-      mockDb.membershipType.findFirst.mockResolvedValue(null);
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       await expect(service.update(CLUB_ID, 'nonexistent', { name: 'X' })).rejects.toThrow(
         NotFoundException
@@ -201,7 +193,7 @@ describe('MembershipTypesService', () => {
 
     it('should throw ConflictException when updating code to existing value', async () => {
       // First call: find the entity being updated
-      mockDb.membershipType.findFirst
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({
           id: 'mt-1',
           name: 'Type A',
@@ -220,7 +212,7 @@ describe('MembershipTypesService', () => {
     });
 
     it('should use transaction when setting isDefault=true to unset existing default', async () => {
-      mockDb.membershipType.findFirst.mockResolvedValue({
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'mt-2',
         name: 'Passiv',
         code: 'PASSIV',
@@ -259,13 +251,13 @@ describe('MembershipTypesService', () => {
     });
 
     it('should NOT use transaction when isDefault is not being set to true', async () => {
-      mockDb.membershipType.findFirst.mockResolvedValue({
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'mt-1',
         name: 'Old',
         code: 'OLD',
         isDefault: true,
       });
-      mockDb.membershipType.update.mockResolvedValue({
+      (mockPrisma.membershipType.update as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'mt-1',
         name: 'Updated',
         code: 'OLD',
@@ -280,23 +272,23 @@ describe('MembershipTypesService', () => {
 
   describe('remove()', () => {
     it('should delete a type not in use', async () => {
-      mockDb.membershipType.findFirst.mockResolvedValue({
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'mt-1',
         name: 'Test',
         code: 'TEST',
       });
       (mockPrisma.membershipPeriod.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
-      mockDb.membershipType.delete.mockResolvedValue({});
+      (mockPrisma.membershipType.delete as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
       await service.remove(CLUB_ID, 'mt-1');
 
-      expect(mockDb.membershipType.delete).toHaveBeenCalledWith({
+      expect(mockPrisma.membershipType.delete).toHaveBeenCalledWith({
         where: { id: 'mt-1' },
       });
     });
 
     it('should throw BadRequestException when type has membership periods', async () => {
-      mockDb.membershipType.findFirst.mockResolvedValue({
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'mt-1',
         name: 'Test',
         code: 'TEST',
@@ -304,11 +296,11 @@ describe('MembershipTypesService', () => {
       (mockPrisma.membershipPeriod.count as ReturnType<typeof vi.fn>).mockResolvedValue(3);
 
       await expect(service.remove(CLUB_ID, 'mt-1')).rejects.toThrow(BadRequestException);
-      expect(mockDb.membershipType.delete).not.toHaveBeenCalled();
+      expect(mockPrisma.membershipType.delete).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException for non-existent type', async () => {
-      mockDb.membershipType.findFirst.mockResolvedValue(null);
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       await expect(service.remove(CLUB_ID, 'nonexistent')).rejects.toThrow(NotFoundException);
     });

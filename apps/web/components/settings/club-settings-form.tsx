@@ -126,7 +126,7 @@ export function ClubSettingsForm({ club, slug }: ClubSettingsFormProps) {
   const {
     handleSubmit,
     reset,
-    formState: { isDirty, isSubmitting },
+    formState: { isDirty, isSubmitting, errors: formErrors },
   } = form;
 
   const completeness = useSettingsCompleteness(form);
@@ -203,7 +203,16 @@ export function ClubSettingsForm({ club, slug }: ClubSettingsFormProps) {
   // ============================================================================
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col min-h-0">
+    <form
+      onSubmit={handleSubmit(onSubmit, () => {
+        toast({
+          title: 'Validierungsfehler',
+          description: 'Bitte überprüfe die markierten Felder.',
+          variant: 'destructive',
+        });
+      })}
+      className="flex flex-1 flex-col min-h-0"
+    >
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto pb-6">
         <div className="space-y-6">
@@ -255,6 +264,11 @@ export function ClubSettingsForm({ club, slug }: ClubSettingsFormProps) {
       {/* Sticky save bar */}
       {isDirty && (
         <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t bg-background px-4 py-3">
+          {Object.keys(formErrors).length > 0 && (
+            <p className="mr-auto text-sm text-destructive">
+              Bitte überprüfe die markierten Felder
+            </p>
+          )}
           <Button
             type="button"
             variant="outline"

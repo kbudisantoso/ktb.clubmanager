@@ -125,14 +125,16 @@ model Club {
   updatedAt DateTime @updatedAt
 
   // Relations
-  clubUsers       ClubUser[]
-  accessRequests  AccessRequest[]
-  members         Member[]
-  households      Household[]
-  numberRanges    NumberRange[]
-  ledgerAccounts  LedgerAccount[]
-  clubFiles       ClubFile[]
-  membershipTypes MembershipType[]
+  clubUsers          ClubUser[]
+  accessRequests     AccessRequest[]
+  members            Member[]
+  households         Household[]
+  numberRanges       NumberRange[]
+  ledgerAccounts     LedgerAccount[]
+  clubFiles          ClubFile[]
+  membershipTypes    MembershipType[]
+  statusTransitions  MemberStatusTransition[]
+  auditLogs          AuditLog[]
 
   @@map("clubs")
 }
@@ -200,9 +202,15 @@ model ClubUser {
   /// Whether this user is marked as "external" (no member profile needed)
   isExternal Boolean @default(false)
 
+  /// Soft deletion timestamp (CONV-006)
+  deletedAt DateTime?
+  /// User ID who performed the soft deletion
+  deletedBy String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// Uniqueness enforced via partial index (active records only) — see migration
   @@unique([userId, clubId])
   @@index([clubId])
   @@index([userId])
@@ -266,9 +274,15 @@ model AccessRequest {
   /// Request expires after 30 days
   expiresAt DateTime
 
+  /// Soft deletion timestamp (CONV-006)
+  deletedAt DateTime?
+  /// User ID who performed the soft deletion
+  deletedBy String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// Uniqueness enforced via partial index (active records only) — see migration
   @@unique([userId, clubId])
   @@index([clubId])
   @@index([userId])
@@ -387,9 +401,13 @@ model AuditLog {
 
   /// Who performed the action (null for system actions)
   userId String?
+  /// Relation to the user who performed the action
+  user   User?   @relation("AuditLogUser", fields: [userId], references: [id], onDelete: SetNull)
 
   /// Club context if applicable
   clubId String?
+  /// Relation to the club context
+  club   Club?   @relation(fields: [clubId], references: [id], onDelete: SetNull)
 
   /// What changed (before/after or input data)
   changes Json?
@@ -399,6 +417,11 @@ model AuditLog {
 
   /// Client user agent
   userAgent String?
+
+  /// Soft deletion timestamp (CONV-006)
+  deletedAt DateTime?
+  /// User ID who performed the soft deletion
+  deletedBy String?
 
   createdAt DateTime @default(now())
 
@@ -754,6 +777,8 @@ model MemberStatusTransition {
   member        Member        @relation(fields: [memberId], references: [id])
   /// Club context for efficient querying
   clubId        String
+  /// Relation to the club (FK constraint)
+  club          Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
   /// New status after this transition
   toStatus      MemberStatus
   /// Reason for the status change (visible in timeline)
@@ -916,6 +941,9 @@ model User {
 
   /// File management relations
   userFiles UserFile[]
+
+  /// Audit log entries created by this user
+  auditLogs AuditLog[] @relation("AuditLogUser")
 
   @@map("auth_users")
 }

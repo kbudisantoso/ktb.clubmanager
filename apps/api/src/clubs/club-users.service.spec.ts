@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClubUsersService } from './club-users.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
+import type { S3Service } from '../files/s3.service.js';
 import { ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ClubRole } from '../../../../prisma/generated/client/index.js';
 
@@ -17,12 +18,16 @@ const mockPrisma = {
   },
 };
 
+const mockS3 = {
+  presignedGetUrl: vi.fn(),
+} as unknown as S3Service;
+
 describe('ClubUsersService', () => {
   let service: ClubUsersService;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new ClubUsersService(mockPrisma as unknown as PrismaService);
+    service = new ClubUsersService(mockPrisma as unknown as PrismaService, mockS3);
   });
 
   describe('updateClubUserRoles()', () => {
@@ -380,12 +385,13 @@ describe('ClubUsersService', () => {
         roles: [ClubRole.OWNER],
       });
       mockPrisma.clubUser.count.mockResolvedValue(2);
-      mockPrisma.clubUser.delete.mockResolvedValue({});
+      mockPrisma.clubUser.update.mockResolvedValue({});
 
       await service.removeClubUser(clubId, targetClubUserId, actorUserId);
 
-      expect(mockPrisma.clubUser.delete).toHaveBeenCalledWith({
+      expect(mockPrisma.clubUser.update).toHaveBeenCalledWith({
         where: { id: targetClubUserId },
+        data: { deletedAt: expect.any(Date), deletedBy: actorUserId },
       });
     });
   });
@@ -464,7 +470,7 @@ describe('ClubUsersService', () => {
 
       expect(mockPrisma.clubUser.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { clubId, status: 'ACTIVE' },
+          where: { clubId, status: 'ACTIVE', deletedAt: null },
         })
       );
     });

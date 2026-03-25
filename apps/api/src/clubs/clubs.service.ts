@@ -116,28 +116,67 @@ export class ClubsService {
    * Returns clubs array and meta info (canCreateClub permission).
    */
   async findMyClubs(userId: string, isSuperAdmin: boolean) {
-    const clubUsers = await this.prisma.clubUser.findMany({
-      where: {
-        userId,
-        status: 'ACTIVE',
-        club: { deletedAt: null },
-      },
-      include: {
-        club: {
-          include: {
-            tier: true,
-            _count: {
-              select: { clubUsers: true, members: true },
+    const [activeClubUsers, pendingClubUsers] = await Promise.all([
+      this.prisma.clubUser.findMany({
+        where: {
+          userId,
+          status: 'ACTIVE',
+          club: { deletedAt: null },
+        },
+        include: {
+          club: {
+            include: {
+              tier: true,
+              _count: {
+                select: { clubUsers: true, members: true },
+              },
             },
           },
         },
-      },
-      orderBy: {
-        club: { name: 'asc' },
-      },
-    });
+        orderBy: {
+          club: { name: 'asc' },
+        },
+      }),
+      this.prisma.clubUser.findMany({
+        where: {
+          userId,
+          status: 'PENDING',
+          deletedAt: null,
+          club: { deletedAt: null },
+        },
+        include: {
+          club: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              avatarColor: true,
+              logoFileId: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+    ]);
 
-    const clubs = clubUsers.map((cu) => this.formatClubResponse(cu.club, cu.roles, cu.joinedAt));
+    const clubs = activeClubUsers.map((cu) =>
+      this.formatClubResponse(cu.club, cu.roles, cu.joinedAt)
+    );
+
+    const pendingInvitations = pendingClubUsers.map((cu) => ({
+      id: cu.id,
+      club: {
+        id: cu.club.id,
+        name: cu.club.name,
+        slug: cu.club.slug,
+        avatarColor: cu.club.avatarColor ?? undefined,
+        logoFileId: cu.club.logoFileId ?? undefined,
+      },
+      roles: cu.roles,
+      createdAt: cu.createdAt.toISOString(),
+    }));
 
     // Check if user can create clubs
     const selfServiceEnabled = await this.appSettings.isSelfServiceEnabled();
@@ -145,6 +184,7 @@ export class ClubsService {
 
     return {
       clubs,
+      pendingInvitations,
       meta: {
         canCreateClub,
       },
@@ -189,6 +229,8 @@ export class ClubsService {
    * Update club details.
    */
   async update(slug: string, dto: UpdateClubDto, userId: string, isSuperAdmin: boolean) {
+    await this.ensureClubNotDeactivated(slug);
+
     const club = await this.prisma.club.findFirst({
       where: { slug, deletedAt: null },
     });
@@ -277,6 +319,8 @@ export class ClubsService {
    * Soft delete a club.
    */
   async remove(slug: string, userId: string, isSuperAdmin: boolean) {
+    await this.ensureClubNotDeactivated(slug);
+
     const club = await this.prisma.club.findFirst({
       where: { slug, deletedAt: null },
     });
@@ -314,6 +358,8 @@ export class ClubsService {
    * Regenerate invite code (ADMIN/OWNER only).
    */
   async regenerateInviteCode(slug: string, userId: string, isSuperAdmin: boolean) {
+    await this.ensureClubNotDeactivated(slug);
+
     const club = await this.prisma.club.findFirst({
       where: { slug, deletedAt: null },
     });
@@ -348,6 +394,45 @@ export class ClubsService {
     });
 
     return { inviteCode: formatInviteCode(updated.inviteCode!) };
+  }
+
+  /**
+   * Remove invite code from a club.
+   */
+  async clearInviteCode(slug: string, userId: string, isSuperAdmin: boolean) {
+    await this.ensureClubNotDeactivated(slug);
+
+    const club = await this.prisma.club.findFirst({
+      where: { slug, deletedAt: null },
+    });
+
+    if (!club) {
+      throw new NotFoundException('Verein nicht gefunden');
+    }
+
+    if (!isSuperAdmin) {
+      const membership = await this.prisma.clubUser.findFirst({
+        where: {
+          userId,
+          clubId: club.id,
+          status: 'ACTIVE',
+          roles: { hasSome: ['OWNER', 'ADMIN'] },
+        },
+      });
+
+      if (!membership) {
+        throw new ForbiddenException(
+          'Nur Vereinsadministratoren können den Einladungscode entfernen'
+        );
+      }
+    }
+
+    await this.prisma.club.update({
+      where: { id: club.id },
+      data: { inviteCode: null },
+    });
+
+    return { inviteCode: null };
   }
 
   /**
@@ -398,9 +483,10 @@ export class ClubsService {
       );
     }
 
-    // Delete the membership
-    await this.prisma.clubUser.delete({
+    // Soft-delete the membership
+    await this.prisma.clubUser.update({
       where: { id: membership.id },
+      data: { deletedAt: new Date(), deletedBy: userId },
     });
 
     return { message: 'Du hast den Verein verlassen' };
@@ -610,6 +696,25 @@ export class ClubsService {
     ]);
 
     return this.formatClubResponse(updated);
+  }
+
+  /**
+   * Ensure a club is not deactivated. Throws ForbiddenException if it is.
+   */
+  private async ensureClubNotDeactivated(slug: string): Promise<void> {
+    const club = await this.prisma.club.findUnique({
+      where: { slug },
+      select: { deactivatedAt: true },
+    });
+    if (!club) {
+      throw new NotFoundException('Club nicht gefunden');
+    }
+    if (club.deactivatedAt) {
+      throw new ForbiddenException({
+        message: 'Dieser Verein ist deaktiviert',
+        code: 'CLUB_DEACTIVATED',
+      });
+    }
   }
 
   private formatClubResponse(

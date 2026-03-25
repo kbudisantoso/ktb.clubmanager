@@ -39,7 +39,7 @@ vi.mock('@/components/layout/page-header', () => ({
 const mockCancelMutate = vi.fn();
 vi.mock('@/hooks/use-clubs', () => ({
   useMyClubsQuery: () => ({
-    data: { clubs: [], canCreateClub: true },
+    data: { clubs: [], pendingInvitations: [], canCreateClub: true },
     isLoading: false,
   }),
   useMyAccessRequestsQuery: () => ({
@@ -48,6 +48,14 @@ vi.mock('@/hooks/use-clubs', () => ({
   }),
   useCancelAccessRequestMutation: () => ({
     mutate: mockCancelMutate,
+    isPending: false,
+  }),
+  useAcceptInvitationMutation: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+  useDeclineInvitationMutation: () => ({
+    mutate: vi.fn(),
     isPending: false,
   }),
 }));
@@ -502,7 +510,7 @@ describe('DashboardPage - Invite Code Input', () => {
       const { part1 } = getInputFields();
       await user.type(part1, 'ABC');
 
-      const submitButton = screen.getByRole('button', { name: /code einlösen/i });
+      const submitButton = screen.getByRole('button', { name: /einlösen/i });
       expect(submitButton).toBeDisabled();
     });
 
@@ -516,7 +524,7 @@ describe('DashboardPage - Invite Code Input', () => {
       });
 
       await waitFor(() => {
-        const submitButton = screen.getByRole('button', { name: /code einlösen/i });
+        const submitButton = screen.getByRole('button', { name: /einlösen/i });
         expect(submitButton).toBeEnabled();
       });
     });
@@ -532,10 +540,10 @@ describe('DashboardPage - Invite Code Input', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /code einlösen/i })).toBeEnabled();
+        expect(screen.getByRole('button', { name: /einlösen/i })).toBeEnabled();
       });
 
-      const submitButton = screen.getByRole('button', { name: /code einlösen/i });
+      const submitButton = screen.getByRole('button', { name: /einlösen/i });
       await user.click(submitButton);
 
       expect(mockPush).toHaveBeenCalledWith('/join/ABCD-EFGH');
@@ -570,7 +578,7 @@ describe('DashboardPage - Invite Code Input', () => {
     it('shows invite code card with submit button', () => {
       render(<DashboardPage />);
 
-      expect(screen.getByRole('button', { name: /code einlösen/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /einlösen/i })).toBeInTheDocument();
     });
   });
 });

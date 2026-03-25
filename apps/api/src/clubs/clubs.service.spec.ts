@@ -18,6 +18,7 @@ const mockPrisma = {
     findFirst: vi.fn(),
     findMany: vi.fn(),
     delete: vi.fn(),
+    update: vi.fn(),
   },
   member: {
     count: vi.fn(),
@@ -304,48 +305,50 @@ describe('ClubsService', () => {
     const userId = 'user-123';
 
     it('should return only user clubs with roles', async () => {
-      mockPrisma.clubUser.findMany.mockResolvedValue([
-        {
-          roles: ['OWNER'],
-          joinedAt: new Date(),
-          club: {
-            id: 'club-1',
-            name: 'Club One',
-            slug: 'club-one',
-            legalName: null,
-            description: null,
-            visibility: 'PRIVATE',
-            inviteCode: 'ABCD1234',
+      mockPrisma.clubUser.findMany
+        .mockResolvedValueOnce([
+          {
+            roles: ['OWNER'],
+            joinedAt: new Date(),
+            club: {
+              id: 'club-1',
+              name: 'Club One',
+              slug: 'club-one',
+              legalName: null,
+              description: null,
+              visibility: 'PRIVATE',
+              inviteCode: 'ABCD1234',
 
-            avatarColor: 'blue',
-            tierId: null,
-            tier: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            _count: { clubUsers: 2, members: 5 },
+              avatarColor: 'blue',
+              tierId: null,
+              tier: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              _count: { clubUsers: 2, members: 5 },
+            },
           },
-        },
-        {
-          roles: ['MEMBER'],
-          joinedAt: new Date(),
-          club: {
-            id: 'club-2',
-            name: 'Club Two',
-            slug: 'club-two',
-            legalName: null,
-            description: null,
-            visibility: 'PUBLIC',
-            inviteCode: null,
+          {
+            roles: ['MEMBER'],
+            joinedAt: new Date(),
+            club: {
+              id: 'club-2',
+              name: 'Club Two',
+              slug: 'club-two',
+              legalName: null,
+              description: null,
+              visibility: 'PUBLIC',
+              inviteCode: null,
 
-            avatarColor: 'green',
-            tierId: null,
-            tier: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            _count: { clubUsers: 10, members: 100 },
+              avatarColor: 'green',
+              tierId: null,
+              tier: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              _count: { clubUsers: 10, members: 100 },
+            },
           },
-        },
-      ]);
+        ])
+        .mockResolvedValueOnce([]); // no pending invitations
 
       mockAppSettings.isSelfServiceEnabled.mockResolvedValue(false);
 
@@ -362,6 +365,7 @@ describe('ClubsService', () => {
         name: 'Club Two',
         roles: ['MEMBER'],
       });
+      expect(result.pendingInvitations).toEqual([]);
       expect(result.meta.canCreateClub).toBe(false);
     });
 
@@ -390,6 +394,7 @@ describe('ClubsService', () => {
 
       await service.findMyClubs(userId, false);
 
+      // First call is for ACTIVE clubs, second for PENDING invitations
       expect(mockPrisma.clubUser.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
@@ -888,6 +893,12 @@ describe('ClubsService', () => {
 
       await expect(service.remove('nonexistent', userId, false)).rejects.toThrow(NotFoundException);
     });
+
+    it('should block removal of deactivated club', async () => {
+      mockPrisma.club.findUnique.mockResolvedValue({ deactivatedAt: new Date() });
+
+      await expect(service.remove('test-club', userId, false)).rejects.toThrow(ForbiddenException);
+    });
   });
 
   describe('leaveClub()', () => {
@@ -903,13 +914,14 @@ describe('ClubsService', () => {
         roles: ['MEMBER'],
         status: 'ACTIVE',
       });
-      mockPrisma.clubUser.delete.mockResolvedValue({});
+      mockPrisma.clubUser.update.mockResolvedValue({});
 
       const result = await service.leaveClub('test-club', userId);
 
       expect(result.message).toBe('Du hast den Verein verlassen');
-      expect(mockPrisma.clubUser.delete).toHaveBeenCalledWith({
+      expect(mockPrisma.clubUser.update).toHaveBeenCalledWith({
         where: { id: 'membership-1' },
+        data: { deletedAt: expect.any(Date), deletedBy: userId },
       });
     });
 
@@ -923,7 +935,7 @@ describe('ClubsService', () => {
         roles: ['ADMIN'],
         status: 'ACTIVE',
       });
-      mockPrisma.clubUser.delete.mockResolvedValue({});
+      mockPrisma.clubUser.update.mockResolvedValue({});
 
       const result = await service.leaveClub('test-club', userId);
 
@@ -942,7 +954,6 @@ describe('ClubsService', () => {
       });
 
       await expect(service.leaveClub('test-club', userId)).rejects.toThrow(ForbiddenException);
-      expect(mockPrisma.clubUser.delete).not.toHaveBeenCalled();
     });
 
     it('should fail if user is not a member', async () => {

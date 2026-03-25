@@ -19,6 +19,9 @@ const mockDb = {
 
 const mockPrisma = {
   forClub: vi.fn(() => mockDb),
+  membershipType: {
+    findFirst: vi.fn(),
+  },
 } as unknown as PrismaService;
 
 function makePeriod(overrides: Record<string, unknown> = {}) {
@@ -48,6 +51,9 @@ describe('MembershipPeriodsService', () => {
       mockDb.member.findFirst.mockResolvedValue({ id: 'member-1', deletedAt: null });
       mockDb.membershipPeriod.findFirst.mockResolvedValue(null); // no open period
       mockDb.membershipPeriod.findMany.mockResolvedValue([]); // no overlap
+      (
+        mockPrisma as unknown as { membershipType: { findFirst: ReturnType<typeof vi.fn> } }
+      ).membershipType.findFirst.mockResolvedValue({ id: 'type-1', clubId: 'club-1' });
       mockDb.membershipPeriod.create.mockResolvedValue(makePeriod());
 
       const result = await service.create('club-1', 'member-1', {
@@ -101,6 +107,9 @@ describe('MembershipPeriodsService', () => {
           leaveDate: new Date('2024-12-31'), // closed
         }),
       ]);
+      (
+        mockPrisma as unknown as { membershipType: { findFirst: ReturnType<typeof vi.fn> } }
+      ).membershipType.findFirst.mockResolvedValue({ id: 'type-1', clubId: 'club-1' });
       mockDb.membershipPeriod.create.mockResolvedValue(
         makePeriod({ id: 'period-2', joinDate: new Date('2025-06-01') })
       );
@@ -122,6 +131,22 @@ describe('MembershipPeriodsService', () => {
           membershipTypeId: 'type-1',
         } as never)
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should reject cross-club membershipType', async () => {
+      mockDb.member.findFirst.mockResolvedValue({ id: 'member-1', deletedAt: null });
+      mockDb.membershipPeriod.findFirst.mockResolvedValue(null);
+      mockDb.membershipPeriod.findMany.mockResolvedValue([]);
+      (
+        mockPrisma as unknown as { membershipType: { findFirst: ReturnType<typeof vi.fn> } }
+      ).membershipType.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.create('club-1', 'member-1', {
+          joinDate: '2025-01-01',
+          membershipTypeId: 'foreign-type',
+        } as never)
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

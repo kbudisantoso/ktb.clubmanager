@@ -1,14 +1,10 @@
 'use client';
 
-import { CheckIcon } from 'lucide-react';
-
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+import { MultiSelectFilter } from '@/components/shared/multi-select-filter';
 import { type MemberStatus, MEMBER_STATUSES } from '@/hooks/use-member-filters';
 import { STATUS_LABELS } from '@/lib/member-status-labels';
+
+const STATUS_OPTIONS = MEMBER_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }));
 
 interface MemberFilterStatusProps {
   selected: MemberStatus[];
@@ -16,56 +12,16 @@ interface MemberFilterStatusProps {
 }
 
 /**
- * Multi-select status filter using Popover + Command pattern.
- * Shows checkboxes for each member status with German labels.
+ * Member status multi-select filter.
+ * Thin wrapper around MultiSelectFilter with member-specific status options.
  */
 export function MemberFilterStatus({ selected, onSelectionChange }: MemberFilterStatusProps) {
-  function toggleStatus(status: MemberStatus) {
-    if (selected.includes(status)) {
-      onSelectionChange(selected.filter((s) => s !== status));
-    } else {
-      onSelectionChange([...selected, status]);
-    }
-  }
-
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 border-dashed">
-          Status
-          {selected.length > 0 && (
-            <Badge variant="secondary" className="ml-1 rounded-sm px-1 font-normal">
-              {selected.length}
-            </Badge>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-48 p-0" align="start">
-        <Command>
-          <CommandList>
-            <CommandGroup>
-              {MEMBER_STATUSES.map((status) => {
-                const isSelected = selected.includes(status);
-                return (
-                  <CommandItem key={status} value={status} onSelect={() => toggleStatus(status)}>
-                    <div
-                      className={cn(
-                        'border-primary mr-2 flex size-4 items-center justify-center rounded-sm border',
-                        isSelected
-                          ? 'bg-primary text-primary-foreground'
-                          : 'opacity-50 [&_svg]:invisible'
-                      )}
-                    >
-                      <CheckIcon className="size-3" />
-                    </div>
-                    {STATUS_LABELS[status]}
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <MultiSelectFilter
+      label="Status"
+      options={STATUS_OPTIONS}
+      selected={selected}
+      onSelectionChange={onSelectionChange as (selected: string[]) => void}
+    />
   );
 }

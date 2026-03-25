@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsEnum, IsOptional, IsString, ArrayMinSize, MaxLength } from 'class-validator';
-import { ClubRole } from '../../../../../prisma/generated/client/index.js';
+import { ClubRole, ClubUserStatus } from '../../../../../prisma/generated/client/index.js';
 
 export class ClubUserDto {
   @ApiProperty()
@@ -20,6 +20,9 @@ export class ClubUserDto {
 
   @ApiProperty({ enum: ClubRole, isArray: true })
   roles!: ClubRole[];
+
+  @ApiProperty({ enum: ClubUserStatus })
+  status!: ClubUserStatus;
 
   @ApiProperty()
   joinedAt!: Date;

@@ -47,29 +47,6 @@ function getPrisma(): PrismaClient {
 }
 
 /**
- * Call NestJS API to check if user should be promoted to Super Admin.
- *
- * This is called after user creation to check bootstrap rules:
- * 1. If SUPER_ADMIN_EMAIL matches, promote to Super Admin
- * 2. If no Super Admin exists and this is the first user, promote
- *
- * Errors are logged but don't fail user creation.
- */
-async function checkSuperAdminBootstrap(userId: string, email: string): Promise<void> {
-  try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    await fetch(`${apiUrl}/api/admin/bootstrap/check`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, email }),
-    });
-  } catch (error) {
-    // Don't fail signup if bootstrap check fails
-    console.error('[Bootstrap] Failed to check Super Admin:', error);
-  }
-}
-
-/**
  * Better Auth server configuration.
  *
  * Features:
@@ -199,12 +176,33 @@ export const auth = betterAuth({
   ],
 
   // Database hooks for Super Admin bootstrap
+  // Promotion happens inline via Prisma — no HTTP call to NestJS needed.
   databaseHooks: {
     user: {
       create: {
         async after(user) {
-          // Check if this user should be promoted to Super Admin
-          await checkSuperAdminBootstrap(user.id, user.email);
+          const superAdminEmail = process.env.SUPER_ADMIN_EMAIL?.toLowerCase();
+          if (!superAdminEmail) return; // No auto-promotion without env var
+          if (user.email.toLowerCase() !== superAdminEmail) return;
+
+          const prisma = getPrisma();
+          const existingSuperAdmins = await prisma.user.count({
+            where: { isSuperAdmin: true },
+          });
+          if (existingSuperAdmins > 0) return; // Zero-Admin-Guard
+
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { isSuperAdmin: true },
+          });
+
+          // SEC-009: Revoke sessions to force re-auth with elevated privileges
+          await prisma.session.deleteMany({ where: { userId: user.id } });
+
+          // SEC-013: Log userId instead of email to avoid PII in application logs
+          console.log(
+            `[Bootstrap] User ${user.id} promoted to Super Admin (matched SUPER_ADMIN_EMAIL)`
+          );
         },
       },
     },

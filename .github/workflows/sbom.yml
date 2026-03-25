@@ -33,12 +33,13 @@ jobs:
       - name: Generate SBOM (CycloneDX)
         run: pnpm dlx @cyclonedx/cdxgen -o sbom.json --spec-version 1.6
 
-      - name: Install Grype
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
-
-      - name: Generate VEX document
-        run: grype sbom:sbom.json -o cyclonedx-json > vex.json || true
+      - name: Scan SBOM with Grype and generate VEX
+        uses: anchore/scan-action@2c901ab7378897c01b8efaa2d0c9bf519cc64b9e # v6.1.0
+        with:
+          sbom: sbom.json
+          output-format: cyclonedx-json
+          output-file: vex.json
+          fail-build: false
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0

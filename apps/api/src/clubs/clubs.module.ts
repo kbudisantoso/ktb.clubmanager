@@ -9,9 +9,10 @@ import { MyPermissionsService } from './my-permissions.service.js';
 import { ClubUsersController } from './club-users.controller.js';
 import { ClubUsersService } from './club-users.service.js';
 import { MembershipTypesModule } from '../membership-types/membership-types.module.js';
+import { FilesModule } from '../files/files.module.js';
 
 @Module({
-  imports: [MembershipTypesModule],
+  imports: [MembershipTypesModule, FilesModule],
   controllers: [
     ClubsController,
     AccessRequestsController,
