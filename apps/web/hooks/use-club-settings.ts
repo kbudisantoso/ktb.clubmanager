@@ -81,6 +81,52 @@ export function useClubSettings(slug: string) {
  * Hook for updating club settings.
  * Sends only changed fields to PUT /api/clubs/:slug.
  */
+/**
+ * Hook to regenerate the club invite code.
+ */
+export function useRegenerateInviteCode(slug: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (): Promise<{ inviteCode: string }> => {
+      const res = await apiFetch(`/api/clubs/${slug}/regenerate-invite-code`, {
+        method: 'POST',
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Unbekannter Fehler' }));
+        throw new Error(error.message || 'Fehler beim Erneuern des Einladungscodes');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.detail(slug) });
+    },
+  });
+}
+
+/**
+ * Hook to clear/remove the club invite code.
+ */
+export function useClearInviteCode(slug: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (): Promise<{ inviteCode: null }> => {
+      const res = await apiFetch(`/api/clubs/${slug}/invite-code`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Unbekannter Fehler' }));
+        throw new Error(error.message || 'Fehler beim Entfernen des Einladungscodes');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.detail(slug) });
+    },
+  });
+}
+
 export function useUpdateClubSettings(slug: string) {
   const queryClient = useQueryClient();
 

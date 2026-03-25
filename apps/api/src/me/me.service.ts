@@ -402,4 +402,62 @@ export class MeService {
 
     return { message: 'Konto wurde geloescht' };
   }
+
+  /**
+   * Accept a pending club invitation.
+   */
+  async acceptInvitation(userId: string, clubUserId: string) {
+    const clubUser = await this.prisma.clubUser.findUnique({
+      where: { id: clubUserId },
+      include: { club: { select: { name: true, slug: true } } },
+    });
+
+    if (!clubUser || clubUser.deletedAt) {
+      throw new NotFoundException('Einladung nicht gefunden');
+    }
+    if (clubUser.userId !== userId) {
+      throw new ForbiddenException('Kein Zugriff');
+    }
+    if (clubUser.status !== 'PENDING') {
+      throw new BadRequestException('Diese Einladung ist nicht mehr offen');
+    }
+
+    await this.prisma.clubUser.update({
+      where: { id: clubUserId },
+      data: { status: 'ACTIVE', joinedAt: new Date() },
+    });
+
+    this.logger.log(`User ${userId} accepted invitation to club ${clubUser.club.slug}`);
+
+    return { message: `Du bist "${clubUser.club.name}" beigetreten.` };
+  }
+
+  /**
+   * Decline a pending club invitation.
+   */
+  async declineInvitation(userId: string, clubUserId: string) {
+    const clubUser = await this.prisma.clubUser.findUnique({
+      where: { id: clubUserId },
+      include: { club: { select: { name: true, slug: true } } },
+    });
+
+    if (!clubUser || clubUser.deletedAt) {
+      throw new NotFoundException('Einladung nicht gefunden');
+    }
+    if (clubUser.userId !== userId) {
+      throw new ForbiddenException('Kein Zugriff');
+    }
+    if (clubUser.status !== 'PENDING') {
+      throw new BadRequestException('Diese Einladung ist nicht mehr offen');
+    }
+
+    await this.prisma.clubUser.update({
+      where: { id: clubUserId },
+      data: { deletedAt: new Date(), deletedBy: userId },
+    });
+
+    this.logger.log(`User ${userId} declined invitation to club ${clubUser.club.slug}`);
+
+    return { message: 'Einladung abgelehnt' };
+  }
 }

@@ -305,48 +305,50 @@ describe('ClubsService', () => {
     const userId = 'user-123';
 
     it('should return only user clubs with roles', async () => {
-      mockPrisma.clubUser.findMany.mockResolvedValue([
-        {
-          roles: ['OWNER'],
-          joinedAt: new Date(),
-          club: {
-            id: 'club-1',
-            name: 'Club One',
-            slug: 'club-one',
-            legalName: null,
-            description: null,
-            visibility: 'PRIVATE',
-            inviteCode: 'ABCD1234',
+      mockPrisma.clubUser.findMany
+        .mockResolvedValueOnce([
+          {
+            roles: ['OWNER'],
+            joinedAt: new Date(),
+            club: {
+              id: 'club-1',
+              name: 'Club One',
+              slug: 'club-one',
+              legalName: null,
+              description: null,
+              visibility: 'PRIVATE',
+              inviteCode: 'ABCD1234',
 
-            avatarColor: 'blue',
-            tierId: null,
-            tier: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            _count: { clubUsers: 2, members: 5 },
+              avatarColor: 'blue',
+              tierId: null,
+              tier: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              _count: { clubUsers: 2, members: 5 },
+            },
           },
-        },
-        {
-          roles: ['MEMBER'],
-          joinedAt: new Date(),
-          club: {
-            id: 'club-2',
-            name: 'Club Two',
-            slug: 'club-two',
-            legalName: null,
-            description: null,
-            visibility: 'PUBLIC',
-            inviteCode: null,
+          {
+            roles: ['MEMBER'],
+            joinedAt: new Date(),
+            club: {
+              id: 'club-2',
+              name: 'Club Two',
+              slug: 'club-two',
+              legalName: null,
+              description: null,
+              visibility: 'PUBLIC',
+              inviteCode: null,
 
-            avatarColor: 'green',
-            tierId: null,
-            tier: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            _count: { clubUsers: 10, members: 100 },
+              avatarColor: 'green',
+              tierId: null,
+              tier: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              _count: { clubUsers: 10, members: 100 },
+            },
           },
-        },
-      ]);
+        ])
+        .mockResolvedValueOnce([]); // no pending invitations
 
       mockAppSettings.isSelfServiceEnabled.mockResolvedValue(false);
 
@@ -363,6 +365,7 @@ describe('ClubsService', () => {
         name: 'Club Two',
         roles: ['MEMBER'],
       });
+      expect(result.pendingInvitations).toEqual([]);
       expect(result.meta.canCreateClub).toBe(false);
     });
 
@@ -391,6 +394,7 @@ describe('ClubsService', () => {
 
       await service.findMyClubs(userId, false);
 
+      // First call is for ACTIVE clubs, second for PENDING invitations
       expect(mockPrisma.clubUser.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
