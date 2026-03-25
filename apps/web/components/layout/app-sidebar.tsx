@@ -6,6 +6,7 @@ import { useParams, usePathname } from 'next/navigation';
 import { Building2, ChevronsUpDown } from 'lucide-react';
 
 import { useActiveClub } from '@/lib/club-store';
+import { useClubPermissions } from '@/lib/club-permissions';
 import { useMyClubsQuery } from '@/hooks/use-clubs';
 import { cn } from '@/lib/utils';
 import { ClubAvatar } from '@/components/club-switcher/club-avatar';
@@ -52,7 +53,21 @@ export function AppSidebar() {
   const hasClub = clubs.length > 0 && slug !== '';
   const hasMultipleClubs = clubs.length >= 2;
   const isCollapsed = sidebarState === 'collapsed';
-  const navGroups = hasClub ? getClubNavGroups(slug) : [];
+  const { isClubMember, canManageFinances } = useClubPermissions();
+  const allNavGroups = hasClub ? getClubNavGroups(slug) : [];
+
+  // Filter nav items by permission group
+  const navGroups = allNavGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => {
+        if (!item.visibleTo) return true;
+        if (item.visibleTo === 'club-members') return isClubMember;
+        if (item.visibleTo === 'finance') return canManageFinances;
+        return true;
+      }),
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <>

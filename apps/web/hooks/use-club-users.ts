@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
+import { permissionKeys } from './use-club-permissions';
 
 // ============================================================================
 // Query Key Factory
@@ -186,6 +187,8 @@ export function useUpdateClubUserRoles(slug: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clubUserKeys.all(slug) });
+      // Invalidate permissions — role changes affect what the user can see/do
+      queryClient.invalidateQueries({ queryKey: permissionKeys.all(slug) });
     },
   });
 }

@@ -9,11 +9,11 @@ export default function NotFound() {
         Die angeforderte Seite existiert nicht oder du hast keinen Zugriff.
       </p>
       <div className="flex gap-4">
-        <Button asChild variant="outline">
+        <Button asChild>
           <Link href="/">Zur Startseite</Link>
         </Button>
-        <Button asChild>
-          <Link href="/clubs">Meine Vereine</Link>
+        <Button asChild variant="outline">
+          <Link href="/settings/my-clubs">Meine Vereine</Link>
         </Button>
       </div>
     </div>

@@ -21,6 +21,8 @@ export interface NavItem {
   url: string;
   icon: LucideIcon;
   comingSoon?: boolean;
+  /** Restricts visibility to users with a specific permission group */
+  visibleTo?: 'club-members' | 'finance';
 }
 
 export interface NavGroup {
@@ -42,25 +44,73 @@ export function getClubNavGroups(slug: string): NavGroup[] {
     {
       label: 'Mitglieder',
       items: [
-        { title: 'Mitglieder', url: `${base}/members`, icon: Users },
-        { title: 'Haushalte', url: `${base}/households`, icon: Home, comingSoon: true },
+        { title: 'Mitglieder', url: `${base}/members`, icon: Users, visibleTo: 'club-members' },
+        {
+          title: 'Haushalte',
+          url: `${base}/households`,
+          icon: Home,
+          comingSoon: true,
+          visibleTo: 'club-members',
+        },
       ],
     },
     {
       label: 'Finanzen',
       items: [
-        { title: 'Buchungen', url: `${base}/accounting`, icon: BookOpen, comingSoon: true },
-        { title: 'Kontenplan', url: `${base}/accounts`, icon: List, comingSoon: true },
-        { title: 'Belege', url: `${base}/receipts`, icon: Receipt, comingSoon: true },
-        { title: 'Berichte', url: `${base}/reports`, icon: BarChart3, comingSoon: true },
+        {
+          title: 'Buchungen',
+          url: `${base}/accounting`,
+          icon: BookOpen,
+          comingSoon: true,
+          visibleTo: 'finance',
+        },
+        {
+          title: 'Kontenplan',
+          url: `${base}/accounts`,
+          icon: List,
+          comingSoon: true,
+          visibleTo: 'finance',
+        },
+        {
+          title: 'Belege',
+          url: `${base}/receipts`,
+          icon: Receipt,
+          comingSoon: true,
+          visibleTo: 'finance',
+        },
+        {
+          title: 'Berichte',
+          url: `${base}/reports`,
+          icon: BarChart3,
+          comingSoon: true,
+          visibleTo: 'finance',
+        },
       ],
     },
     {
       label: 'Verwaltung',
       items: [
-        { title: 'Beiträge', url: `${base}/fees`, icon: CreditCard, comingSoon: true },
-        { title: 'SEPA', url: `${base}/sepa`, icon: Landmark, comingSoon: true },
-        { title: 'Arbeitsstunden', url: `${base}/hours`, icon: Clock, comingSoon: true },
+        {
+          title: 'Beiträge',
+          url: `${base}/fees`,
+          icon: CreditCard,
+          comingSoon: true,
+          visibleTo: 'club-members',
+        },
+        {
+          title: 'SEPA',
+          url: `${base}/sepa`,
+          icon: Landmark,
+          comingSoon: true,
+          visibleTo: 'club-members',
+        },
+        {
+          title: 'Arbeitsstunden',
+          url: `${base}/hours`,
+          icon: Clock,
+          comingSoon: true,
+          visibleTo: 'club-members',
+        },
       ],
     },
   ];

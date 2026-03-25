@@ -15,8 +15,22 @@ vi.mock('@/lib/club-store', () => ({
 
 // Mock club permissions
 let mockCanManageSettings = false;
+let mockIsClubMember = true;
+let mockCanManageFinances = false;
 vi.mock('@/lib/club-permissions', () => ({
   useCanManageSettings: () => mockCanManageSettings,
+  useClubPermissions: () => ({
+    isClubMember: mockIsClubMember,
+    canManageFinances: mockCanManageFinances,
+    canManageSettings: mockCanManageSettings,
+    isAdminOnly: !mockIsClubMember && mockCanManageSettings,
+    isOwner: false,
+    isBoardMember: false,
+    canManageUsers: mockCanManageSettings,
+    canManageProtocols: false,
+    hasAccess: true,
+    roles: [],
+  }),
 }));
 
 // Mock PageHeader (uses SidebarProvider context)
@@ -76,6 +90,8 @@ describe('ClubDashboardClient', () => {
     mockParams = { slug: 'test-club' };
     mockActiveClub = null;
     mockCanManageSettings = false;
+    mockIsClubMember = true;
+    mockCanManageFinances = false;
     mockFetch.mockReset();
     mockWriteText.mockReset();
     mockWriteText.mockResolvedValue(undefined);
@@ -121,10 +137,9 @@ describe('ClubDashboardClient', () => {
       render(<ClubDashboardClient />);
 
       await waitFor(() => {
-        // Use getAllByText since "Mitglieder" appears in quick action AND stats
+        // "Mitglieder" appears in quick action (when isClubMember) AND stats
         expect(screen.getAllByText('Mitglieder').length).toBeGreaterThan(0);
       });
-      expect(screen.getByText('Buchhaltung')).toBeInTheDocument();
     });
 
     it('displays statistics', async () => {

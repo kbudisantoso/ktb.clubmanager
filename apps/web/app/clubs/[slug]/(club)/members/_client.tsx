@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Plus, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +30,7 @@ import { MemberFilterHousehold } from '@/components/members/member-filter-househ
 import { MemberFilterPeriod } from '@/components/members/member-filter-period';
 import { MemberFilterChips } from '@/components/members/member-filter-chips';
 import { MemberColumnPicker } from '@/components/members/member-column-picker';
+import { useIsAdminOnly, useClubPermissions } from '@/lib/club-permissions';
 
 /**
  * Client component orchestrating the member list page.
@@ -40,6 +41,16 @@ import { MemberColumnPicker } from '@/components/members/member-column-picker';
 export function MembersClient() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
+  const router = useRouter();
+  const isAdminOnly = useIsAdminOnly();
+  const { canManageUsers } = useClubPermissions();
+
+  // ADMIN-only users don't have access to member data — redirect to settings
+  useEffect(() => {
+    if (isAdminOnly) {
+      router.replace(`/clubs/${slug}/settings`);
+    }
+  }, [isAdminOnly, slug, router]);
 
   // --- Filter state (URL-synced via nuqs) ---
   const [filters, setFilters] = useMemberFilters();
@@ -305,14 +316,16 @@ export function MembersClient() {
         </div>
       )}
 
-      {/* Unlinked users suggestion group */}
-      <UnlinkedUsersGroup
-        slug={slug}
-        onCreateMember={(prefill) => {
-          setCreateSheetPrefill(prefill);
-          setIsCreateSheetOpen(true);
-        }}
-      />
+      {/* Unlinked users suggestion group — only for users who can manage users (OWNER, ADMIN) */}
+      {canManageUsers && (
+        <UnlinkedUsersGroup
+          slug={slug}
+          onCreateMember={(prefill) => {
+            setCreateSheetPrefill(prefill);
+            setIsCreateSheetOpen(true);
+          }}
+        />
+      )}
 
       {/* Empty button for pages without Row 1 (no number ranges, no members) */}
       {!hasMemberNumberRange && members.length === 0 && !isLoading && (
@@ -344,6 +357,7 @@ export function MembersClient() {
           columnVisibility={columnVisibility}
           columnOrder={columnOrder}
           membershipTypes={membershipTypes}
+          slug={slug}
         />
       )}
 

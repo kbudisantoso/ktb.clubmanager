@@ -18,6 +18,7 @@ import {
   useRemoveClubUser,
 } from '@/hooks/use-club-users';
 import { useToast } from '@/hooks/use-toast';
+import { useHasPermission } from '@/lib/permission-hooks';
 import { apiFetch } from '@/lib/api';
 import { UserDetailHeader } from './user-detail-header';
 
@@ -107,6 +108,7 @@ function DetailContent({
   const updateStatus = useUpdateClubUserStatus(clubSlug);
   const removeUser = useRemoveClubUser(clubSlug);
 
+  const canReadMembers = useHasPermission('member:read');
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
   const [togglingExternal, setTogglingExternal] = useState(false);
@@ -335,62 +337,64 @@ function DetailContent({
           </div>
         </div>
 
-        {/* Member-Link Section */}
-        <div className="p-4 space-y-3 border-b">
-          <h3 className="text-sm font-semibold">Mitgliedsverknüpfung</h3>
+        {/* Member-Link Section — only visible to users with member:read permission */}
+        {canReadMembers && (
+          <div className="p-4 space-y-3 border-b">
+            <h3 className="text-sm font-semibold">Mitgliedsverknüpfung</h3>
 
-          {detail.member ? (
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Verknüpftes Mitglied:</span>
-              <Link
-                href={`/clubs/${clubSlug}/members?member=${detail.member.id}`}
-                className="text-sm text-primary hover:underline inline-flex items-center gap-1"
-              >
-                {detail.member.firstName} {detail.member.lastName} ({detail.member.memberNumber})
-                <ExternalLink className="h-3 w-3" />
-              </Link>
-            </div>
-          ) : detail.isExternal ? (
-            <div className="space-y-2">
-              <Badge variant="outline">Als extern markiert</Badge>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleToggleExternal(false)}
-                disabled={togglingExternal}
-              >
-                {togglingExternal && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                Extern-Markierung entfernen
-              </Button>
-            </div>
-          ) : (
-            <div className="rounded-md border p-3 space-y-3">
-              <div className="flex items-start gap-2">
-                <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <p className="text-sm text-muted-foreground">
-                  Dieser Benutzer ist mit keinem Mitglied verknüpft.
-                </p>
+            {detail.member ? (
+              <div className="flex items-center gap-2">
+                <span className="text-sm">Verknüpftes Mitglied:</span>
+                <Link
+                  href={`/clubs/${clubSlug}/members?member=${detail.member.id}`}
+                  className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  {detail.member.firstName} {detail.member.lastName} ({detail.member.memberNumber})
+                  <ExternalLink className="h-3 w-3" />
+                </Link>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={`/clubs/${clubSlug}/members`}>Mitglied verknüpfen</Link>
-                </Button>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={`/clubs/${clubSlug}/members?create=true`}>Mitglied erstellen</Link>
-                </Button>
+            ) : detail.isExternal ? (
+              <div className="space-y-2">
+                <Badge variant="outline">Als extern markiert</Badge>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  onClick={() => handleToggleExternal(true)}
+                  onClick={() => handleToggleExternal(false)}
                   disabled={togglingExternal}
                 >
                   {togglingExternal && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                  Als extern markieren
+                  Extern-Markierung entfernen
                 </Button>
               </div>
-            </div>
-          )}
-        </div>
+            ) : (
+              <div className="rounded-md border p-3 space-y-3">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground">
+                    Dieser Benutzer ist mit keinem Mitglied verknüpft.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/clubs/${clubSlug}/members`}>Mitglied verknüpfen</Link>
+                  </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/clubs/${clubSlug}/members?create=true`}>Mitglied erstellen</Link>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleToggleExternal(true)}
+                    disabled={togglingExternal}
+                  >
+                    {togglingExternal && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                    Als extern markieren
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Actions Section */}
         {!isSelf && (
