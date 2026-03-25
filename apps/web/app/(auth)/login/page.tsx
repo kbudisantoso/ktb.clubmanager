@@ -278,7 +278,7 @@ function LoginContent() {
                         ? `/register?callbackUrl=${encodeURIComponent(callbackUrl)}`
                         : '/register'
                     }
-                    className="text-accent hover:underline font-medium"
+                    className="text-primary hover:underline font-medium"
                   >
                     Jetzt registrieren
                   </Link>
