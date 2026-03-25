@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { RequireClubContext, GetClubContext } from '../common/decorators/club-context.decorator.js';
-import { RequirePermission } from '../common/decorators/permissions.decorator.js';
+import { RequirePermissions } from '../common/decorators/permissions.decorator.js';
 import { Permission } from '../common/permissions/permissions.enum.js';
 import { MembershipTypesService } from './membership-types.service.js';
 import { CreateMembershipTypeDto } from './dto/create-membership-type.dto.js';
@@ -16,7 +16,7 @@ export class MembershipTypesController {
   constructor(private membershipTypesService: MembershipTypesService) {}
 
   @Get()
-  @RequirePermission(Permission.MEMBER_READ)
+  @RequirePermissions([Permission.MEMBER_READ, Permission.CLUB_SETTINGS])
   @ApiOperation({ summary: 'List all membership types for club' })
   @ApiResponse({ status: 200, description: 'List of membership types' })
   async findAll(@GetClubContext() ctx: ClubContext) {
@@ -24,7 +24,7 @@ export class MembershipTypesController {
   }
 
   @Get(':id')
-  @RequirePermission(Permission.MEMBER_READ)
+  @RequirePermissions([Permission.MEMBER_READ, Permission.CLUB_SETTINGS])
   @ApiOperation({ summary: 'Get a single membership type' })
   @ApiResponse({ status: 200, description: 'Membership type details' })
   @ApiResponse({ status: 404, description: 'Membership type not found' })
@@ -33,7 +33,7 @@ export class MembershipTypesController {
   }
 
   @Post()
-  @RequirePermission(Permission.CLUB_SETTINGS)
+  @RequirePermissions([Permission.CLUB_SETTINGS])
   @ApiOperation({ summary: 'Create a new membership type' })
   @ApiResponse({ status: 201, description: 'Membership type created' })
   @ApiResponse({ status: 409, description: 'Code already exists for this club' })
@@ -42,7 +42,7 @@ export class MembershipTypesController {
   }
 
   @Patch(':id')
-  @RequirePermission(Permission.CLUB_SETTINGS)
+  @RequirePermissions([Permission.CLUB_SETTINGS])
   @ApiOperation({ summary: 'Update a membership type' })
   @ApiResponse({ status: 200, description: 'Membership type updated' })
   @ApiResponse({ status: 404, description: 'Membership type not found' })
@@ -56,7 +56,7 @@ export class MembershipTypesController {
 
   @Delete(':id')
   @HttpCode(204)
-  @RequirePermission(Permission.CLUB_SETTINGS)
+  @RequirePermissions([Permission.CLUB_SETTINGS])
   @ApiOperation({ summary: 'Delete a membership type' })
   @ApiResponse({ status: 204, description: 'Membership type deleted' })
   @ApiResponse({ status: 400, description: 'Cannot delete - type is in use by membership periods' })

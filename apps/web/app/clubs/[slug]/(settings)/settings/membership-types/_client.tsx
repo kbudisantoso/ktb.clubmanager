@@ -345,7 +345,7 @@ export function MembershipTypesSettingsClient() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {editingType ? 'Mitgliedsart bearbeiten' : 'Mitgliedsart erstellen'}
@@ -357,7 +357,7 @@ export function MembershipTypesSettingsClient() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto">
             {/* Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
