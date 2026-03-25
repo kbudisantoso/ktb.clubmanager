@@ -10,7 +10,7 @@ const reflector = new Reflector();
 
 function getMethodPermissions(methodName: string): string[] {
   const method = MembershipTypesController.prototype[methodName as keyof MembershipTypesController];
-  return reflector.get<string[]>(PERMISSIONS_KEY, method as () => void) ?? [];
+  return reflector.get<string[]>(PERMISSIONS_KEY, method as unknown as () => void) ?? [];
 }
 
 describe('MembershipTypesController permissions', () => {
