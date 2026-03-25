@@ -158,7 +158,9 @@ export function MemberDetailHeader({
           organizationName={member.organizationName}
           personType={member.personType}
           size="md"
-          imageUrl={member.userImage}
+          imageUrl={
+            member.userId && slug ? `/api/clubs/${slug}/users/${member.userId}/avatar` : undefined
+          }
           hasLinkedUser={!!member.userId}
         />
 

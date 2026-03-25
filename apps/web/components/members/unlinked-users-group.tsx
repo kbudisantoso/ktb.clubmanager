@@ -167,7 +167,9 @@ export function UnlinkedUsersGroup({ slug, onCreateMember }: UnlinkedUsersGroupP
               className="flex items-center gap-3 rounded-md bg-background/60 p-2.5"
             >
               <Avatar className="h-8 w-8 shrink-0">
-                {user.image && <AvatarImage src={user.image} />}
+                {user.userId && (
+                  <AvatarImage src={`/api/clubs/${slug}/users/${user.userId}/avatar`} />
+                )}
                 <AvatarFallback className="text-xs">
                   {(user.name ?? '?').slice(0, 2).toUpperCase()}
                 </AvatarFallback>

@@ -52,6 +52,8 @@ interface UserListTableProps {
   columnVisibility?: Partial<Record<UserColumnKey, boolean>>;
   /** ID of the current user (to show "(Du)" badge) */
   currentUserId?: string;
+  /** Club slug for tenant-scoped avatar URLs */
+  slug: string;
 }
 
 // ============================================================================
@@ -94,6 +96,7 @@ export function UserListTable({
   onSortChange,
   columnVisibility,
   currentUserId,
+  slug,
 }: UserListTableProps) {
   const lastShiftClickIndex = useRef<number | null>(null);
 
@@ -282,7 +285,7 @@ export function UserListTable({
 
               {visibleColumns.map((key) => (
                 <TableCell key={key} className={colClass(key)}>
-                  {renderCell(key, user, isSelf)}
+                  {renderCell(key, user, isSelf, slug)}
                 </TableCell>
               ))}
             </TableRow>
@@ -297,13 +300,14 @@ export function UserListTable({
 // Cell Renderers
 // ============================================================================
 
-function renderCell(key: UserColumnKey, user: ClubUserListItem, isSelf: boolean) {
+function renderCell(key: UserColumnKey, user: ClubUserListItem, isSelf: boolean, slug: string) {
   switch (key) {
-    case 'name':
+    case 'name': {
+      const avatarUrl = user.userId ? `/api/clubs/${slug}/users/${user.userId}/avatar` : undefined;
       return (
         <div className="flex items-center gap-3">
           <Avatar size="sm">
-            {user.image && <AvatarImage src={user.image} alt={user.name} />}
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={user.name} />}
             <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
           </Avatar>
           <div className="min-w-0">
@@ -323,6 +327,7 @@ function renderCell(key: UserColumnKey, user: ClubUserListItem, isSelf: boolean)
           </div>
         </div>
       );
+    }
     case 'email':
       return <span className="truncate block max-w-48">{user.email}</span>;
     case 'roles':

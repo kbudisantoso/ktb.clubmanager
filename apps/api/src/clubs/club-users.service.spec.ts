@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClubUsersService } from './club-users.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
+import type { S3Service } from '../files/s3.service.js';
 import { ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ClubRole } from '../../../../prisma/generated/client/index.js';
 
@@ -17,12 +18,16 @@ const mockPrisma = {
   },
 };
 
+const mockS3 = {
+  presignedGetUrl: vi.fn(),
+} as unknown as S3Service;
+
 describe('ClubUsersService', () => {
   let service: ClubUsersService;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new ClubUsersService(mockPrisma as unknown as PrismaService);
+    service = new ClubUsersService(mockPrisma as unknown as PrismaService, mockS3);
   });
 
   describe('updateClubUserRoles()', () => {

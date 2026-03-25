@@ -288,6 +288,7 @@ export function UsersSettingsClient() {
           onSortChange={setSort}
           columnVisibility={columnVisibility}
           currentUserId={session?.user?.id}
+          slug={slug}
         />
 
         {/* Bulk Actions */}

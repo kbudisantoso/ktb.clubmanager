@@ -5,6 +5,8 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { S3Service } from '../files/s3.service.js';
+import { getPresignedExpiry } from '../files/file-defaults.js';
 import { ClubRole, ClubUserStatus } from '../../../../prisma/generated/client/index.js';
 import { isOwner, getAssignableRoles } from '../common/permissions/club-permissions.js';
 import type { ClubUserDto, UpdateClubUserRolesDto } from './dto/update-club-user-roles.dto.js';
@@ -37,7 +39,10 @@ export interface ListClubUsersOptions {
 
 @Injectable()
 export class ClubUsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private s3Service: S3Service
+  ) {}
 
   /**
    * Map a ClubUser with included user to ClubUserDto.
@@ -469,5 +474,36 @@ export class ClubUsersService {
       isExternal: updated.isExternal,
       joinedAt: updated.joinedAt,
     };
+  }
+
+  /**
+   * Get a presigned avatar URL for a user within a club (tenant-scoped).
+   * Verifies the target user belongs to the same club before returning the URL.
+   */
+  async getUserAvatarUrl(clubId: string, userId: string): Promise<string> {
+    // Verify user belongs to this club
+    const clubUser = await this.prisma.clubUser.findFirst({
+      where: { userId, clubId, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!clubUser) {
+      throw new NotFoundException('Benutzer nicht gefunden');
+    }
+
+    const userFile = await this.prisma.userFile.findFirst({
+      where: {
+        userId,
+        file: { status: 'UPLOADED', deletedAt: null },
+      },
+      include: { file: { select: { s3Key: true } } },
+    });
+
+    if (!userFile?.file) {
+      throw new NotFoundException('Kein Profilbild vorhanden');
+    }
+
+    const { download } = getPresignedExpiry('user-avatar');
+    return this.s3Service.presignedGetUrl(userFile.file.s3Key, download);
   }
 }

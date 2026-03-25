@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Query,
+  Redirect,
+  Header,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -168,5 +179,17 @@ export class ClubUsersController {
     @CurrentUser('id') actorUserId: string
   ): Promise<void> {
     await this.clubUsersService.removeClubUser(ctx.clubId, clubUserId, actorUserId);
+  }
+
+  @Get(':userId/avatar')
+  @RequireClubContext()
+  @Redirect('', 302)
+  @Header('Cache-Control', 'private, max-age=300')
+  @ApiOperation({ summary: 'Get user avatar (tenant-scoped, 302 redirect to S3)' })
+  @ApiResponse({ status: 302, description: 'Redirects to presigned S3 URL' })
+  @ApiResponse({ status: 404, description: 'No avatar or user not in club' })
+  async getUserAvatar(@GetClubContext() ctx: ClubContext, @Param('userId') userId: string) {
+    const url = await this.clubUsersService.getUserAvatarUrl(ctx.clubId, userId);
+    return { url };
   }
 }
