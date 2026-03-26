@@ -44,6 +44,11 @@ export interface ClubSettingsResponse {
   fiscalYearStartMonth?: number | null;
   defaultMembershipTypeId?: string | null;
   probationPeriodDays?: number | null;
+  // Beitragseinstellungen
+  proRataMode?: string | null;
+  householdFeeMode?: string | null;
+  householdDiscountPercent?: number | null;
+  householdFlatAmount?: string | null;
   // Logo
   logoFileId?: string | null;
   // Meta

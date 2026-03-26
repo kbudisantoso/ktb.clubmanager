@@ -28,7 +28,10 @@ export function FeesClient() {
       />
 
       <div className="container mx-auto px-4 pb-6">
-        <Tabs value={tab} onValueChange={(value) => setParams({ tab: value as (typeof TAB_VALUES)[number] })}>
+        <Tabs
+          value={tab}
+          onValueChange={(value) => setParams({ tab: value as (typeof TAB_VALUES)[number] })}
+        >
           <TabsList>
             <TabsTrigger value="kategorien">Kategorien</TabsTrigger>
             <TabsTrigger value="erhebung">Erhebung</TabsTrigger>

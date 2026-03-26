@@ -45,6 +45,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Plus, Pencil, Trash2, Loader2, IdCard, Check, Minus } from 'lucide-react';
 
 interface MembershipTypeFormState {
@@ -57,6 +65,8 @@ interface MembershipTypeFormState {
   vote: boolean;
   assemblyAttendance: boolean;
   eligibleForOffice: boolean;
+  feeAmount: string;
+  billingInterval: 'MONTHLY' | 'QUARTERLY' | 'ANNUALLY';
 }
 
 const DEFAULT_FORM_STATE: MembershipTypeFormState = {
@@ -69,6 +79,8 @@ const DEFAULT_FORM_STATE: MembershipTypeFormState = {
   vote: true,
   assemblyAttendance: true,
   eligibleForOffice: true,
+  feeAmount: '',
+  billingInterval: 'ANNUALLY',
 };
 
 /** Render a boolean value as check or minus icon */
@@ -119,6 +131,9 @@ export function MembershipTypesSettingsClient() {
       vote: type.vote,
       assemblyAttendance: type.assemblyAttendance,
       eligibleForOffice: type.eligibleForOffice,
+      feeAmount: type.feeAmount ?? '',
+      billingInterval:
+        (type.billingInterval as MembershipTypeFormState['billingInterval']) ?? 'ANNUALLY',
     });
     setDialogOpen(true);
   }
@@ -135,6 +150,8 @@ export function MembershipTypesSettingsClient() {
       vote: formState.vote,
       assemblyAttendance: formState.assemblyAttendance,
       eligibleForOffice: formState.eligibleForOffice,
+      feeAmount: formState.feeAmount || null,
+      billingInterval: formState.feeAmount ? formState.billingInterval : undefined,
     };
 
     if (editingType) {
@@ -514,6 +531,48 @@ export function MembershipTypesSettingsClient() {
                   setFormState((prev) => ({ ...prev, eligibleForOffice: checked }))
                 }
               />
+            </div>
+
+            {/* Beitragseinstellungen */}
+            <Separator />
+            <h4 className="text-sm font-semibold">Beitragseinstellungen</h4>
+
+            {/* Grundbeitrag (EUR) */}
+            <div className="space-y-2">
+              <Label htmlFor="feeAmount">Grundbeitrag (EUR)</Label>
+              <Input
+                id="feeAmount"
+                placeholder="z.B. 120.00"
+                inputMode="decimal"
+                value={formState.feeAmount}
+                onChange={(e) => setFormState((prev) => ({ ...prev, feeAmount: e.target.value }))}
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional — nicht jede Mitgliedsart muss einen Beitrag haben.
+              </p>
+            </div>
+
+            {/* Abrechnungszeitraum */}
+            <div className="space-y-2">
+              <Label htmlFor="billingInterval">Abrechnungszeitraum</Label>
+              <Select
+                value={formState.billingInterval}
+                onValueChange={(val) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    billingInterval: val as MembershipTypeFormState['billingInterval'],
+                  }))
+                }
+              >
+                <SelectTrigger id="billingInterval" className="w-full">
+                  <SelectValue placeholder="Zeitraum waehlen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MONTHLY">Monatlich</SelectItem>
+                  <SelectItem value="QUARTERLY">Quartalsweise</SelectItem>
+                  <SelectItem value="ANNUALLY">Jaehrlich</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

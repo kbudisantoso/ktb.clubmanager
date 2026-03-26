@@ -27,6 +27,20 @@ export const ClubVisibilitySchema = z.enum(['PUBLIC', 'PRIVATE']);
 export type ClubVisibility = z.infer<typeof ClubVisibilitySchema>;
 
 /**
+ * Pro-rata mode for mid-period membership joins.
+ * Must match Prisma ProRataMode enum exactly.
+ */
+export const ProRataModeSchema = z.enum(['FULL', 'MONTHLY_PRO_RATA']);
+export type ProRataMode = z.infer<typeof ProRataModeSchema>;
+
+/**
+ * Household fee discount mode.
+ * Must match Prisma HouseholdFeeMode enum exactly.
+ */
+export const HouseholdFeeModeSchema = z.enum(['NONE', 'PERCENTAGE', 'FLAT']);
+export type HouseholdFeeMode = z.infer<typeof HouseholdFeeModeSchema>;
+
+/**
  * Schema for updating club settings (PATCH semantics).
  * All fields optional — only provided fields are updated.
  * Uses `.optional().nullable()` for clearable fields and `.optional()` for booleans/enums with defaults.
@@ -74,6 +88,12 @@ export const UpdateClubSettingsSchema = z.object({
     .union([z.nan().transform(() => null), z.number().int().min(0).max(365)])
     .optional()
     .nullable(),
+
+  // Beitragseinstellungen (Fee Settings)
+  proRataMode: ProRataModeSchema.optional(),
+  householdFeeMode: HouseholdFeeModeSchema.optional(),
+  householdDiscountPercent: z.number().int().min(0).max(100).optional().nullable(),
+  householdFlatAmount: z.string().optional().nullable(),
 
   // Sichtbarkeit
   visibility: ClubVisibilitySchema.optional(),
