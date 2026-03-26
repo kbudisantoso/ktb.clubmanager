@@ -71,8 +71,8 @@ describe('FeesService', () => {
       const result = await service.findAll(CLUB_ID);
 
       expect(result).toHaveLength(2);
-      expect(result[0].amount).toBe('50.00');
-      expect(result[1].amount).toBe('120.00');
+      expect(result[0]!.amount).toBe('50.00');
+      expect(result[1]!.amount).toBe('120.00');
       expect(mockPrisma.forClub).toHaveBeenCalledWith(CLUB_ID);
       expect(mockDb.feeCategory.findMany).toHaveBeenCalledWith({
         where: { deletedAt: null },
@@ -292,8 +292,8 @@ describe('FeesService', () => {
       const result = await service.findOverridesForMember(CLUB_ID, 'member-1');
 
       expect(result).toHaveLength(2);
-      expect(result[0].customAmount).toBeNull();
-      expect(result[1].customAmount).toBe('25.00');
+      expect(result[0]!.customAmount).toBeNull();
+      expect(result[1]!.customAmount).toBe('25.00');
     });
 
     it('should reject if member belongs to different club', async () => {

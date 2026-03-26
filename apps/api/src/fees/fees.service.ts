@@ -49,6 +49,7 @@ export class FeesService {
    */
   async create(clubId: string, dto: CreateFeeCategoryDto) {
     const db = this.prisma.forClub(clubId);
+    // clubId is injected by forClub() tenant extension at runtime
     const category = await db.feeCategory.create({
       data: {
         name: dto.name,
@@ -57,7 +58,7 @@ export class FeesService {
         billingInterval: dto.billingInterval ?? 'ANNUALLY',
         isOneTime: dto.isOneTime ?? false,
         sortOrder: dto.sortOrder ?? 0,
-      },
+      } as Prisma.FeeCategoryUncheckedCreateInput,
     });
 
     return this.serializeCategory(category);
@@ -197,7 +198,8 @@ export class FeesService {
    * Serialize a fee category record, converting Decimal fields to strings.
    * (Pitfall 1 from RESEARCH.md)
    */
-  private serializeCategory(category: Record<string, unknown>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private serializeCategory(category: any) {
     return {
       ...category,
       amount:
@@ -208,7 +210,8 @@ export class FeesService {
   /**
    * Serialize a member fee override record, converting Decimal fields to strings.
    */
-  private serializeOverride(override: Record<string, unknown>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private serializeOverride(override: any) {
     const customAmount = override.customAmount;
     return {
       ...override,

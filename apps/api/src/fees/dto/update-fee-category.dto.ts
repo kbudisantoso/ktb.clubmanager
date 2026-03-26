@@ -10,7 +10,7 @@ import {
   MaxLength,
   Matches,
 } from 'class-validator';
-import { BillingInterval } from '../../../../prisma/generated/client/index.js';
+import { BillingInterval } from '../../../../../prisma/generated/client/index.js';
 
 export class UpdateFeeCategoryDto {
   @ApiPropertyOptional({

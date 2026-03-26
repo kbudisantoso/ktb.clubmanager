@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsBoolean, IsEnum, Matches } from 'class-validator';
-import { FeeOverrideType } from '../../../../prisma/generated/client/index.js';
+import { FeeOverrideType } from '../../../../../prisma/generated/client/index.js';
 
 export class CreateMemberFeeOverrideDto {
   @ApiProperty({
