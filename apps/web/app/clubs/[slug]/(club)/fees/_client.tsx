@@ -1,21 +1,28 @@
 'use client';
 
-import { useQueryStates, parseAsStringLiteral } from 'nuqs';
+import { useParams } from 'next/navigation';
+import { useQueryStates, parseAsStringLiteral, parseAsString } from 'nuqs';
 import { PageHeader } from '@/components/layout/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
 import { FeeCategoryList } from '@/components/fees/fee-category-list';
+import { BillingRunPanel } from '@/components/fees/billing-run-panel';
+import { FeeChargeList } from '@/components/fees/fee-charge-list';
 
 const TAB_VALUES = ['kategorien', 'erhebung', 'forderungen'] as const;
 
 /**
  * Client component orchestrating the fees management page.
  * Tab state is persisted in the URL via nuqs (?tab=kategorien|erhebung|forderungen).
+ * Supports memberId URL parameter for pre-filtering the Forderungen tab.
  */
 export function FeesClient() {
-  const [{ tab }, setParams] = useQueryStates(
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
+
+  const [{ tab, memberId }, setParams] = useQueryStates(
     {
       tab: parseAsStringLiteral(TAB_VALUES).withDefault('kategorien'),
+      memberId: parseAsString.withDefault(''),
     },
     { shallow: true }
   );
@@ -44,19 +51,15 @@ export function FeesClient() {
             </TabsContent>
 
             <TabsContent value="erhebung" className="mt-0">
-              <Card>
-                <CardContent className="flex items-center justify-center py-12">
-                  <p className="text-muted-foreground">Wird in Kuerze verfuegbar</p>
-                </CardContent>
-              </Card>
+              <BillingRunPanel slug={slug} onComplete={() => setParams({ tab: 'forderungen' })} />
             </TabsContent>
 
             <TabsContent value="forderungen" className="mt-0">
-              <Card>
-                <CardContent className="flex items-center justify-center py-12">
-                  <p className="text-muted-foreground">Wird in Kuerze verfuegbar</p>
-                </CardContent>
-              </Card>
+              <FeeChargeList
+                slug={slug}
+                memberId={memberId || undefined}
+                onSwitchToErhebung={() => setParams({ tab: 'erhebung' })}
+              />
             </TabsContent>
           </div>
         </Tabs>

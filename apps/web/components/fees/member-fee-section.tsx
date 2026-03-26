@@ -6,11 +6,7 @@ import { ChevronRight, ChevronsUpDown, Settings2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FeeChargeStatusBadge } from '@/components/fees/fee-charge-status-badge';
 import { FeeOverrideDialog } from '@/components/fees/fee-override-dialog';
 import { useMemberFeeCharges } from '@/hooks/use-fee-charges';
@@ -132,10 +128,7 @@ export function MemberFeeSection({ slug, memberId, memberName }: MemberFeeSectio
             {!chargesLoading && displayCharges.length > 0 && (
               <div className="space-y-2">
                 {displayCharges.map((charge) => (
-                  <div
-                    key={charge.id}
-                    className="flex items-center justify-between gap-2 text-sm"
-                  >
+                  <div key={charge.id} className="flex items-center justify-between gap-2 text-sm">
                     <span className="truncate min-w-0">{charge.description}</span>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="tabular-nums text-right">
@@ -150,9 +143,7 @@ export function MemberFeeSection({ slug, memberId, memberName }: MemberFeeSectio
                 ))}
 
                 {remainingCount > 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    und {remainingCount} weitere...
-                  </p>
+                  <p className="text-sm text-muted-foreground">und {remainingCount} weitere...</p>
                 )}
               </div>
             )}
@@ -181,11 +172,7 @@ export function MemberFeeSection({ slug, memberId, memberName }: MemberFeeSectio
                 <ChevronRight className="h-3 w-3" />
               </Link>
 
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setOverrideDialogOpen(true)}
-              >
+              <Button variant="secondary" size="sm" onClick={() => setOverrideDialogOpen(true)}>
                 <Settings2 className="h-3.5 w-3.5" />
                 Anpassungen verwalten
               </Button>

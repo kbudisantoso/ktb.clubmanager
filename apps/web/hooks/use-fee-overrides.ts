@@ -87,7 +87,8 @@ export function useCreateFeeOverride(slug: string) {
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
         throw new Error(
-          error.message || 'Beitragsanpassung konnte nicht erstellt werden. Bitte pruefe deine Eingaben.'
+          error.message ||
+            'Beitragsanpassung konnte nicht erstellt werden. Bitte pruefe deine Eingaben.'
         );
       }
       return res.json();

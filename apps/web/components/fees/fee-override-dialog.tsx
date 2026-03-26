@@ -123,7 +123,8 @@ export function FeeOverrideDialog({
       overrideType: formType,
       isBaseFee,
       feeCategoryId,
-      customAmount: formType === 'CUSTOM_AMOUNT' || formType === 'ADDITIONAL' ? formAmount : undefined,
+      customAmount:
+        formType === 'CUSTOM_AMOUNT' || formType === 'ADDITIONAL' ? formAmount : undefined,
       reason: formReason || undefined,
     });
 
@@ -179,7 +180,7 @@ export function FeeOverrideDialog({
                         <span className="text-sm text-muted-foreground">
                           {override.isBaseFee
                             ? 'Grundbeitrag'
-                            : override.feeCategory?.name ?? 'Kategorie'}
+                            : (override.feeCategory?.name ?? 'Kategorie')}
                         </span>
                       </div>
                       {override.customAmount && (
@@ -211,10 +212,7 @@ export function FeeOverrideDialog({
                 {/* Override type */}
                 <div className="space-y-2">
                   <Label htmlFor="overrideType">Art der Anpassung</Label>
-                  <Select
-                    value={formType}
-                    onValueChange={(v) => setFormType(v as FeeOverrideType)}
-                  >
+                  <Select value={formType} onValueChange={(v) => setFormType(v as FeeOverrideType)}>
                     <SelectTrigger id="overrideType" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
@@ -278,14 +276,9 @@ export function FeeOverrideDialog({
                 <div className="flex gap-2">
                   <Button
                     onClick={handleCreate}
-                    disabled={
-                      createOverride.isPending ||
-                      (showAmountField && !formAmount)
-                    }
+                    disabled={createOverride.isPending || (showAmountField && !formAmount)}
                   >
-                    {createOverride.isPending && (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    )}
+                    {createOverride.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                     Speichern
                   </Button>
                   <Button variant="outline" onClick={resetForm}>
@@ -297,11 +290,7 @@ export function FeeOverrideDialog({
 
             {/* Add button */}
             {!showAddForm && !isLoading && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAddForm(true)}
-              >
+              <Button variant="outline" size="sm" onClick={() => setShowAddForm(true)}>
                 <Plus className="h-4 w-4" />
                 Anpassung hinzufuegen
               </Button>
