@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import type { FeeChargeResponse, FeeChargeQuery } from '@ktb/shared';

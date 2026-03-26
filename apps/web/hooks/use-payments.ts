@@ -61,8 +61,7 @@ export function useRecordPayment(slug: string) {
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
         throw new Error(
-          error.message ||
-            'Zahlung konnte nicht erfasst werden. Bitte versuche es erneut.'
+          error.message || 'Zahlung konnte nicht erfasst werden. Bitte versuche es erneut.'
         );
       }
 

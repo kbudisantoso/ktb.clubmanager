@@ -2,11 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { feeChargeKeys } from '@/hooks/use-fee-charges';
-import type {
-  BillingRunPreview,
-  BillingRunPreviewResponse,
-  BillingRunConfirm,
-} from '@ktb/shared';
+import type { BillingRunPreview, BillingRunPreviewResponse, BillingRunConfirm } from '@ktb/shared';
 
 // ============================================================================
 // Types
@@ -45,10 +41,9 @@ export function useBillingRunPreview(slug: string) {
 
       return res.json();
     },
-    onError: (error) => {
+    onError: () => {
       toast({
-        title:
-          'Die Beitragserhebung konnte nicht durchgefuehrt werden. Bitte versuche es erneut.',
+        title: 'Die Beitragserhebung konnte nicht durchgefuehrt werden. Bitte versuche es erneut.',
         variant: 'destructive',
       });
     },
@@ -91,8 +86,7 @@ export function useBillingRunConfirm(slug: string) {
     },
     onError: () => {
       toast({
-        title:
-          'Die Beitragserhebung konnte nicht durchgefuehrt werden. Bitte versuche es erneut.',
+        title: 'Die Beitragserhebung konnte nicht durchgefuehrt werden. Bitte versuche es erneut.',
         variant: 'destructive',
       });
     },
