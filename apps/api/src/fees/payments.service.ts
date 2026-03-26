@@ -145,13 +145,9 @@ export class PaymentsService {
           ? payment.paidAt.toISOString().split('T')[0]
           : payment.paidAt,
       createdAt:
-        payment.createdAt instanceof Date
-          ? payment.createdAt.toISOString()
-          : payment.createdAt,
+        payment.createdAt instanceof Date ? payment.createdAt.toISOString() : payment.createdAt,
       updatedAt:
-        payment.updatedAt instanceof Date
-          ? payment.updatedAt.toISOString()
-          : payment.updatedAt,
+        payment.updatedAt instanceof Date ? payment.updatedAt.toISOString() : payment.updatedAt,
     };
   }
 }

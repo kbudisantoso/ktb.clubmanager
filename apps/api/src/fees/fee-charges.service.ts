@@ -96,7 +96,14 @@ export class FeeChargesService {
     const totalAmount = chargeDataArray.reduce((sum, c) => sum.plus(c.amount), ZERO);
 
     const result = await this.prisma.$transaction(
-      async (tx: { feeCharge: { createMany: (args: { data: ChargeData[]; skipDuplicates: boolean }) => Promise<{ count: number }> } }) => {
+      async (tx: {
+        feeCharge: {
+          createMany: (args: {
+            data: ChargeData[];
+            skipDuplicates: boolean;
+          }) => Promise<{ count: number }>;
+        };
+      }) => {
         return tx.feeCharge.createMany({
           data: chargeDataArray,
           skipDuplicates: true,
@@ -161,10 +168,12 @@ export class FeeChargesService {
         : [];
 
     const paymentSumMap = new Map(
-      paymentAggregates.map((pa: { feeChargeId: string; _sum: { amount: Prisma.Decimal | null } }) => [
-        pa.feeChargeId,
-        pa._sum.amount ?? ZERO,
-      ])
+      paymentAggregates.map(
+        (pa: { feeChargeId: string; _sum: { amount: Prisma.Decimal | null } }) => [
+          pa.feeChargeId,
+          pa._sum.amount ?? ZERO,
+        ]
+      )
     );
 
     const today = new Date();
@@ -173,7 +182,10 @@ export class FeeChargesService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let enrichedCharges = charges.map((charge: any) => {
       const paidAmount = paymentSumMap.get(charge.id) ?? ZERO;
-      const amount = charge.amount instanceof Prisma.Decimal ? charge.amount : new Prisma.Decimal(String(charge.amount));
+      const amount =
+        charge.amount instanceof Prisma.Decimal
+          ? charge.amount
+          : new Prisma.Decimal(String(charge.amount));
       const status = paidAmount.gte(amount) ? 'PAID' : paidAmount.gt(ZERO) ? 'PARTIAL' : 'OPEN';
       const dueDate = new Date(charge.dueDate);
       dueDate.setHours(0, 0, 0, 0);
@@ -194,11 +206,22 @@ export class FeeChargesService {
         remainingAmount: roundMoney(remainingAmount).toFixed(DECIMAL_PLACES),
         status,
         isOverdue,
-        periodStart: charge.periodStart instanceof Date ? charge.periodStart.toISOString().split('T')[0] : charge.periodStart,
-        periodEnd: charge.periodEnd instanceof Date ? charge.periodEnd.toISOString().split('T')[0] : charge.periodEnd,
-        dueDate: charge.dueDate instanceof Date ? charge.dueDate.toISOString().split('T')[0] : charge.dueDate,
-        createdAt: charge.createdAt instanceof Date ? charge.createdAt.toISOString() : charge.createdAt,
-        updatedAt: charge.updatedAt instanceof Date ? charge.updatedAt.toISOString() : charge.updatedAt,
+        periodStart:
+          charge.periodStart instanceof Date
+            ? charge.periodStart.toISOString().split('T')[0]
+            : charge.periodStart,
+        periodEnd:
+          charge.periodEnd instanceof Date
+            ? charge.periodEnd.toISOString().split('T')[0]
+            : charge.periodEnd,
+        dueDate:
+          charge.dueDate instanceof Date
+            ? charge.dueDate.toISOString().split('T')[0]
+            : charge.dueDate,
+        createdAt:
+          charge.createdAt instanceof Date ? charge.createdAt.toISOString() : charge.createdAt,
+        updatedAt:
+          charge.updatedAt instanceof Date ? charge.updatedAt.toISOString() : charge.updatedAt,
       };
     });
 
@@ -206,10 +229,13 @@ export class FeeChargesService {
     if (query.status) {
       if (query.status === 'OVERDUE') {
         enrichedCharges = enrichedCharges.filter(
-          (c: { isOverdue: boolean; status: string }) => c.isOverdue && (c.status === 'OPEN' || c.status === 'PARTIAL')
+          (c: { isOverdue: boolean; status: string }) =>
+            c.isOverdue && (c.status === 'OPEN' || c.status === 'PARTIAL')
         );
       } else {
-        enrichedCharges = enrichedCharges.filter((c: { status: string }) => c.status === query.status);
+        enrichedCharges = enrichedCharges.filter(
+          (c: { status: string }) => c.status === query.status
+        );
       }
     }
 
@@ -390,7 +416,12 @@ export class FeeChargesService {
         baseFee = roundMoney(baseFee);
 
         const typeName = membershipType.name;
-        const description = this.generateChargeDescription(typeName, periodStart, periodEnd, dto.billingInterval);
+        const description = this.generateChargeDescription(
+          typeName,
+          periodStart,
+          periodEnd,
+          dto.billingInterval
+        );
 
         charges.push({
           clubId,
@@ -480,7 +511,7 @@ export class FeeChargesService {
     joinDate: Date,
     periodStart: Date,
     periodEnd: Date,
-    billingInterval: string
+    _billingInterval: string
   ): Prisma.Decimal {
     const join = new Date(joinDate);
 
@@ -507,9 +538,7 @@ export class FeeChargesService {
 
     // Pro-rata: feeAmount * remainingMonths / totalMonths
     return roundMoney(
-      feeAmount
-        .mul(new Prisma.Decimal(remainingMonths))
-        .div(new Prisma.Decimal(totalMonths))
+      feeAmount.mul(new Prisma.Decimal(remainingMonths)).div(new Prisma.Decimal(totalMonths))
     );
   }
 

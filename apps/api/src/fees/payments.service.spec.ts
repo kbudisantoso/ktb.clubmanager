@@ -80,11 +80,15 @@ describe('PaymentsService', () => {
         _sum: { amount: new Decimal('50.00') },
       });
 
-      const result = await service.recordPayment(CLUB_ID, {
-        feeChargeId: CHARGE_ID,
-        amount: '50.00',
-        paidAt: '2026-01-20',
-      }, USER_ID);
+      const result = await service.recordPayment(
+        CLUB_ID,
+        {
+          feeChargeId: CHARGE_ID,
+          amount: '50.00',
+          paidAt: '2026-01-20',
+        },
+        USER_ID
+      );
 
       expect(mockPrisma.payment.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -107,11 +111,15 @@ describe('PaymentsService', () => {
         _sum: { amount: new Decimal('50.00') },
       });
 
-      const result = await service.recordPayment(CLUB_ID, {
-        feeChargeId: CHARGE_ID,
-        amount: '50.00',
-        paidAt: '2026-01-20',
-      }, USER_ID);
+      const result = await service.recordPayment(
+        CLUB_ID,
+        {
+          feeChargeId: CHARGE_ID,
+          amount: '50.00',
+          paidAt: '2026-01-20',
+        },
+        USER_ID
+      );
 
       expect(result.chargeStatus.status).toBe('PARTIAL');
       expect(result.chargeStatus.paidAmount).toBe('50.00');
@@ -128,11 +136,15 @@ describe('PaymentsService', () => {
         _sum: { amount: new Decimal('120.00') },
       });
 
-      const result = await service.recordPayment(CLUB_ID, {
-        feeChargeId: CHARGE_ID,
-        amount: '120.00',
-        paidAt: '2026-01-20',
-      }, USER_ID);
+      const result = await service.recordPayment(
+        CLUB_ID,
+        {
+          feeChargeId: CHARGE_ID,
+          amount: '120.00',
+          paidAt: '2026-01-20',
+        },
+        USER_ID
+      );
 
       expect(result.chargeStatus.status).toBe('PAID');
       expect(result.chargeStatus.paidAmount).toBe('120.00');
@@ -149,11 +161,15 @@ describe('PaymentsService', () => {
         _sum: { amount: new Decimal('150.00') },
       });
 
-      const result = await service.recordPayment(CLUB_ID, {
-        feeChargeId: CHARGE_ID,
-        amount: '150.00',
-        paidAt: '2026-01-20',
-      }, USER_ID);
+      const result = await service.recordPayment(
+        CLUB_ID,
+        {
+          feeChargeId: CHARGE_ID,
+          amount: '150.00',
+          paidAt: '2026-01-20',
+        },
+        USER_ID
+      );
 
       expect(result.chargeStatus.status).toBe('PAID');
       expect(result.chargeStatus.remainingAmount).toBe('0.00');
@@ -164,11 +180,15 @@ describe('PaymentsService', () => {
       (mockPrisma.feeCharge.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       await expect(
-        service.recordPayment(CLUB_ID, {
-          feeChargeId: 'nonexistent',
-          amount: '50.00',
-          paidAt: '2026-01-20',
-        }, USER_ID)
+        service.recordPayment(
+          CLUB_ID,
+          {
+            feeChargeId: 'nonexistent',
+            amount: '50.00',
+            paidAt: '2026-01-20',
+          },
+          USER_ID
+        )
       ).rejects.toThrow(NotFoundException);
     });
   });

@@ -222,14 +222,16 @@ describe('FeeChargesService', () => {
       (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-        const txClient = {
-          feeCharge: {
-            createMany: vi.fn().mockResolvedValue({ count: 2 }),
-          },
-        };
-        return fn(txClient);
-      });
+      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+        async (fn: (tx: unknown) => Promise<unknown>) => {
+          const txClient = {
+            feeCharge: {
+              createMany: vi.fn().mockResolvedValue({ count: 2 }),
+            },
+          };
+          return fn(txClient);
+        }
+      );
 
       const result = await service.executeBillingRun(CLUB_ID, confirmDto, USER_ID);
 
@@ -267,17 +269,19 @@ describe('FeeChargesService', () => {
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       let capturedData: unknown[] = [];
-      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-        const txClient = {
-          feeCharge: {
-            createMany: vi.fn().mockImplementation(({ data }: { data: unknown[] }) => {
-              capturedData = data;
-              return { count: data.length };
-            }),
-          },
-        };
-        return fn(txClient);
-      });
+      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+        async (fn: (tx: unknown) => Promise<unknown>) => {
+          const txClient = {
+            feeCharge: {
+              createMany: vi.fn().mockImplementation(({ data }: { data: unknown[] }) => {
+                capturedData = data;
+                return { count: data.length };
+              }),
+            },
+          };
+          return fn(txClient);
+        }
+      );
 
       const result = await service.executeBillingRun(CLUB_ID, confirmDto, USER_ID);
 
@@ -300,17 +304,19 @@ describe('FeeChargesService', () => {
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       let capturedData: unknown[] = [];
-      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-        const txClient = {
-          feeCharge: {
-            createMany: vi.fn().mockImplementation(({ data }: { data: unknown[] }) => {
-              capturedData = data;
-              return { count: data.length };
-            }),
-          },
-        };
-        return fn(txClient);
-      });
+      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+        async (fn: (tx: unknown) => Promise<unknown>) => {
+          const txClient = {
+            feeCharge: {
+              createMany: vi.fn().mockImplementation(({ data }: { data: unknown[] }) => {
+                capturedData = data;
+                return { count: data.length };
+              }),
+            },
+          };
+          return fn(txClient);
+        }
+      );
 
       await service.executeBillingRun(CLUB_ID, confirmDto, USER_ID);
 
@@ -353,17 +359,19 @@ describe('FeeChargesService', () => {
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       let capturedData: unknown[] = [];
-      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-        const txClient = {
-          feeCharge: {
-            createMany: vi.fn().mockImplementation(({ data }: { data: unknown[] }) => {
-              capturedData = data;
-              return { count: data.length };
-            }),
-          },
-        };
-        return fn(txClient);
-      });
+      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+        async (fn: (tx: unknown) => Promise<unknown>) => {
+          const txClient = {
+            feeCharge: {
+              createMany: vi.fn().mockImplementation(({ data }: { data: unknown[] }) => {
+                capturedData = data;
+                return { count: data.length };
+              }),
+            },
+          };
+          return fn(txClient);
+        }
+      );
 
       await service.executeBillingRun(CLUB_ID, confirmDto, USER_ID);
 
@@ -390,17 +398,21 @@ describe('FeeChargesService', () => {
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       let skipDuplicatesUsed = false;
-      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-        const txClient = {
-          feeCharge: {
-            createMany: vi.fn().mockImplementation(({ skipDuplicates }: { skipDuplicates: boolean }) => {
-              skipDuplicatesUsed = skipDuplicates;
-              return { count: 1 };
-            }),
-          },
-        };
-        return fn(txClient);
-      });
+      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+        async (fn: (tx: unknown) => Promise<unknown>) => {
+          const txClient = {
+            feeCharge: {
+              createMany: vi
+                .fn()
+                .mockImplementation(({ skipDuplicates }: { skipDuplicates: boolean }) => {
+                  skipDuplicatesUsed = skipDuplicates;
+                  return { count: 1 };
+                }),
+            },
+          };
+          return fn(txClient);
+        }
+      );
 
       await service.executeBillingRun(CLUB_ID, confirmDto, USER_ID);
 
