@@ -27,6 +27,7 @@ import { useMemberStatusHistory } from '@/hooks/use-members';
 import { MemberAvatar } from './member-avatar';
 import { MemberStatusBadge } from './member-status-badge';
 import { HouseholdBadge } from './household-badge';
+import { MemberFeeBadge } from '@/components/fees/member-fee-badge';
 import { useCanManageUsers } from '@/lib/club-permissions';
 import { buildTransitionActions, CANCELLATION_STATUSES } from './member-status-actions';
 import type { MemberDetail } from '@/hooks/use-member-detail';
@@ -177,6 +178,7 @@ export function MemberDetailHeader({
               </Badge>
             )}
             <span className="text-sm text-muted-foreground font-mono">{member.memberNumber}</span>
+            <MemberFeeBadge slug={slug} memberId={member.id} />
             {member.household && (
               <HouseholdBadge
                 name={member.household.name}

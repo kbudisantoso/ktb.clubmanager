@@ -21,6 +21,7 @@ import { TierGuard } from './common/guards/tier.guard.js';
 import { PermissionGuard } from './common/guards/permission.guard.js';
 import { DeactivatedClubGuard } from './common/guards/deactivated-club.guard.js';
 import { ClubDeletionModule } from './club-deletion/club-deletion.module';
+import { FeesModule } from './fees/fees.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { ClubDeletionModule } from './club-deletion/club-deletion.module';
     MembershipTypesModule,
     FilesModule,
     ClubDeletionModule,
+    FeesModule,
     HealthModule,
   ],
   providers: [

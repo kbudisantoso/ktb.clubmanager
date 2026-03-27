@@ -5,12 +5,14 @@ import {
   IsBoolean,
   IsInt,
   IsIn,
+  IsEnum,
   Min,
   MinLength,
   MaxLength,
   Matches,
 } from 'class-validator';
 import { MEMBER_TYPE_COLORS } from '@ktb/shared';
+import { BillingInterval } from '../../../../../prisma/generated/client/index.js';
 
 export class CreateMembershipTypeDto {
   @ApiProperty({
@@ -100,4 +102,23 @@ export class CreateMembershipTypeDto {
   @IsOptional()
   @IsIn([...MEMBER_TYPE_COLORS], { message: 'Ungueltige Farbe' })
   color?: string;
+
+  @ApiPropertyOptional({
+    description: 'Base fee amount as decimal string (e.g., "120.00")',
+    example: '120.00',
+  })
+  @IsString()
+  @IsOptional()
+  @Matches(/^\d+(\.\d{1,2})?$/, {
+    message: 'Betrag muss ein gueltiges Dezimalformat haben (z.B. "120.00")',
+  })
+  feeAmount?: string;
+
+  @ApiPropertyOptional({
+    description: 'Billing frequency for base fee',
+    enum: BillingInterval,
+  })
+  @IsEnum(BillingInterval, { message: 'Ungueltiger Abrechnungszeitraum' })
+  @IsOptional()
+  billingInterval?: BillingInterval;
 }

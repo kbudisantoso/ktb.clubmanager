@@ -45,11 +45,10 @@
 
   "mounts": [
     "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",
-    "source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind",
     "source=clubmanager-local-${devcontainerId},target=/home/node/.local,type=volume"
   ],
 
   "forwardPorts": [33000, 33001, 35432, 36379, 35050, 35900, 35901, 38081, 39999],
 
-  "postCreateCommand": "sudo chown -R node:node /home/node/.local 2>/dev/null || true; command -v pnpm >/dev/null || { SHELL=/bin/bash pnpm setup 2>/dev/null || true; export PNPM_HOME=\"$HOME/.local/share/pnpm\" && export PATH=\"$PNPM_HOME:$PATH\" && pnpm self-update 2>/dev/null || true; }; command -v claude >/dev/null || curl -fsSL https://claude.ai/install.sh | bash; if [ -f package.json ]; then pnpm install && (pnpm db:migrate >/dev/null 2>&1 || echo 'Note: db:migrate skipped - run manually if needed'); fi"
+  "postCreateCommand": "sudo chown -R node:node /home/node/.local /home/node/.codex /home/node/.gemini 2>/dev/null || true; [ -f /home/node/.claude/claude.json ] && ln -sf /home/node/.claude/claude.json /home/node/.claude.json; command -v pnpm >/dev/null || { SHELL=/bin/bash pnpm setup 2>/dev/null || true; export PNPM_HOME=\"$HOME/.local/share/pnpm\" && export PATH=\"$PNPM_HOME:$PATH\" && pnpm self-update 2>/dev/null || true; }; command -v claude >/dev/null || curl -fsSL https://claude.ai/install.sh | bash; command -v codex >/dev/null || npm install -g @openai/codex; command -v gemini >/dev/null || npm install -g @google/gemini-cli; if [ -f package.json ]; then pnpm install && (pnpm db:migrate >/dev/null 2>&1 || echo 'Note: db:migrate skipped - run manually if needed'); fi"
 }

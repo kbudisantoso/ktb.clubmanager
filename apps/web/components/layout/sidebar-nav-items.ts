@@ -94,8 +94,7 @@ export function getClubNavGroups(slug: string): NavGroup[] {
           title: 'Beiträge',
           url: `${base}/fees`,
           icon: CreditCard,
-          comingSoon: true,
-          visibleTo: 'club-members',
+          visibleTo: 'finance',
         },
         {
           title: 'SEPA',

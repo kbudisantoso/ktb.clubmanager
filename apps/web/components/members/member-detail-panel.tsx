@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/format-date';
 import { MemberDetailHeader } from './member-detail-header';
 import { MemberForm } from './member-form/member-form';
+import { MemberFeeSection } from '@/components/fees/member-fee-section';
 import { MemberDeleteDialog } from './member-delete-dialog';
 import { MemberAnonymizeDialog } from './member-anonymize-dialog';
 import { MemberLinkUserDialog } from './member-link-user-dialog';
@@ -191,6 +192,19 @@ function DetailContent({
           onLinkUser={() => setLinkUserDialogOpen(true)}
           onDelete={() => setDeleteDialogOpen(true)}
           onAnonymize={() => setAnonymizeDialogOpen(true)}
+        />
+      </div>
+
+      {/* Fee section — collapsible section with open charges and override management */}
+      <div className="px-4 pt-3">
+        <MemberFeeSection
+          slug={slug}
+          memberId={member.id}
+          memberName={
+            member.personType === 'LEGAL_ENTITY' && member.organizationName
+              ? member.organizationName
+              : `${member.firstName} ${member.lastName}`
+          }
         />
       </div>
 
