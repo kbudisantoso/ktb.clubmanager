@@ -3,7 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagg
 import { RequireClubContext, GetClubContext } from '../common/decorators/club-context.decorator.js';
 import { RequirePermissions } from '../common/decorators/permissions.decorator.js';
 import { Permission } from '../common/permissions/permissions.enum.js';
-import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+
 import { FeeChargesService } from './fee-charges.service.js';
 import { BillingRunPreviewDto } from './dto/billing-run-preview.dto.js';
 import { BillingRunConfirmDto } from './dto/billing-run-confirm.dto.js';
@@ -29,12 +29,8 @@ export class FeeChargesController {
   @RequirePermissions([Permission.FINANCE_CREATE])
   @ApiOperation({ summary: 'Execute billing run and create fee charges' })
   @ApiResponse({ status: 201, description: 'Billing run executed, charges created' })
-  async confirmBillingRun(
-    @GetClubContext() ctx: ClubContext,
-    @Body() dto: BillingRunConfirmDto,
-    @CurrentUser('id') userId: string
-  ) {
-    return this.feeChargesService.executeBillingRun(ctx.clubId, dto, userId);
+  async confirmBillingRun(@GetClubContext() ctx: ClubContext, @Body() dto: BillingRunConfirmDto) {
+    return this.feeChargesService.executeBillingRun(ctx.clubId, dto);
   }
 
   @Get()

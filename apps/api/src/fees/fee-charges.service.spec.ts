@@ -8,7 +8,6 @@ const { Decimal } = Prisma;
 // ─── Mock Data Factories ────────────────────────────────────────────────────
 
 const CLUB_ID = 'club-1';
-const USER_ID = 'user-1';
 
 function makeMember(overrides: Record<string, unknown> = {}) {
   return {
@@ -233,7 +232,7 @@ describe('FeeChargesService', () => {
         }
       );
 
-      const result = await service.executeBillingRun(CLUB_ID, confirmDto, USER_ID);
+      const result = await service.executeBillingRun(CLUB_ID, confirmDto);
 
       expect(result.chargesCreated).toBe(2);
       expect(result.totalAmount).toBe('240.00');
@@ -283,7 +282,7 @@ describe('FeeChargesService', () => {
         }
       );
 
-      const result = await service.executeBillingRun(CLUB_ID, confirmDto, USER_ID);
+      const result = await service.executeBillingRun(CLUB_ID, confirmDto);
 
       expect(result.chargesCreated).toBe(1);
       // 120 * 6/12 = 60.00
@@ -318,7 +317,7 @@ describe('FeeChargesService', () => {
         }
       );
 
-      await service.executeBillingRun(CLUB_ID, confirmDto, USER_ID);
+      await service.executeBillingRun(CLUB_ID, confirmDto);
 
       const charge = capturedData[0] as {
         amount: Prisma.Decimal;
@@ -373,7 +372,7 @@ describe('FeeChargesService', () => {
         }
       );
 
-      await service.executeBillingRun(CLUB_ID, confirmDto, USER_ID);
+      await service.executeBillingRun(CLUB_ID, confirmDto);
 
       // HEAD pays full 120, SPOUSE pays 60 (50% discount)
       const headCharge = capturedData.find(
@@ -414,7 +413,7 @@ describe('FeeChargesService', () => {
         }
       );
 
-      await service.executeBillingRun(CLUB_ID, confirmDto, USER_ID);
+      await service.executeBillingRun(CLUB_ID, confirmDto);
 
       expect(skipDuplicatesUsed).toBe(true);
     });

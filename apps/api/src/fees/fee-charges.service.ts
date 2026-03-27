@@ -89,7 +89,7 @@ export class FeeChargesService {
    * Execute billing run and create FeeCharge records in a transaction.
    * Uses createMany with skipDuplicates for idempotency.
    */
-  async executeBillingRun(clubId: string, dto: BillingRunConfirmDto, _userId: string) {
+  async executeBillingRun(clubId: string, dto: BillingRunConfirmDto) {
     if (new Date(dto.periodStart) >= new Date(dto.periodEnd)) {
       throw new BadRequestException('Periodenbeginn muss vor dem Periodenende liegen');
     }
@@ -130,6 +130,11 @@ export class FeeChargesService {
   /**
    * Find all fee charges with computed payment status using SQL-level aggregation.
    * Returns paginated results with OPEN/PARTIAL/PAID status and overdue flag.
+   *
+   * Note: OVERDUE is a computed status (dueDate < today && not fully paid), so
+   * filtering by OVERDUE happens post-query. This means `total` reflects the
+   * unfiltered count and pages may appear partially empty when the OVERDUE filter
+   * is active. A proper fix requires SQL-level status computation.
    */
   async findAllWithStatus(clubId: string, query: FeeChargeQueryDto) {
     const db = this.prisma.forClub(clubId);
