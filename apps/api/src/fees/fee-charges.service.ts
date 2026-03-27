@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '../../../../prisma/generated/client/index.js';
 import type { BillingRunPreviewDto } from './dto/billing-run-preview.dto.js';
@@ -52,6 +52,10 @@ export class FeeChargesService {
    * Calculates what each active member owes for the specified period.
    */
   async previewBillingRun(clubId: string, dto: BillingRunPreviewDto) {
+    if (new Date(dto.periodStart) >= new Date(dto.periodEnd)) {
+      throw new BadRequestException('Periodenbeginn muss vor dem Periodenende liegen');
+    }
+
     const { charges, exemptions, breakdown } = await this.calculateBillingCharges(clubId, dto);
 
     // Check for existing charges for duplicate detection
@@ -86,6 +90,10 @@ export class FeeChargesService {
    * Uses createMany with skipDuplicates for idempotency.
    */
   async executeBillingRun(clubId: string, dto: BillingRunConfirmDto, _userId: string) {
+    if (new Date(dto.periodStart) >= new Date(dto.periodEnd)) {
+      throw new BadRequestException('Periodenbeginn muss vor dem Periodenende liegen');
+    }
+
     const { charges } = await this.calculateBillingCharges(clubId, dto);
 
     const chargeDataArray: ChargeData[] = charges.map((c) => ({

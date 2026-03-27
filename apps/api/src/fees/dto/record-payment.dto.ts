@@ -14,8 +14,8 @@ export class RecordPaymentDto {
     example: '50.00',
   })
   @IsString()
-  @Matches(/^\d+(\.\d{1,2})?$/, {
-    message: 'Betrag muss ein gueltiges Dezimalformat haben (z.B. "50.00")',
+  @Matches(/^(?!0+(\.0{1,2})?$)\d{1,8}(\.\d{1,2})?$/, {
+    message: 'Betrag muss groesser als 0 sein und ein gueltiges Dezimalformat haben (z.B. "50.00")',
   })
   amount!: string;
 

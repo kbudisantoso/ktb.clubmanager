@@ -82,7 +82,16 @@ export class PaymentsService {
   /**
    * Return all non-deleted payments for a charge, ordered by paidAt desc.
    */
-  async findPaymentsForCharge(feeChargeId: string) {
+  async findPaymentsForCharge(clubId: string, feeChargeId: string) {
+    // Verify charge belongs to this club before returning payments
+    const charge = await this.prisma.feeCharge.findFirst({
+      where: { id: feeChargeId, clubId, deletedAt: null },
+    });
+
+    if (!charge) {
+      throw new NotFoundException('Forderung nicht gefunden');
+    }
+
     const payments = await this.prisma.payment.findMany({
       where: { feeChargeId, deletedAt: null },
       orderBy: { paidAt: 'desc' },

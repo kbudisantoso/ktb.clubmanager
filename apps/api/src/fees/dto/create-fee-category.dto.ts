@@ -36,8 +36,8 @@ export class CreateFeeCategoryDto {
     example: '120.00',
   })
   @IsString()
-  @Matches(/^\d+(\.\d{1,2})?$/, {
-    message: 'Betrag muss ein gueltiges Dezimalformat haben (z.B. "120.00")',
+  @Matches(/^\d{1,8}(\.\d{1,2})?$/, {
+    message: 'Betrag muss ein gueltiges Dezimalformat haben (z.B. "120.00", max 8 Vorkommastellen)',
   })
   amount!: string;
 

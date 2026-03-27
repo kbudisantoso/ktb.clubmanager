@@ -197,19 +197,32 @@ describe('PaymentsService', () => {
 
   describe('findPaymentsForCharge()', () => {
     it('should return all non-deleted payments for a fee charge', async () => {
+      const charge = makeFeeCharge();
       const payments = [
         makePayment({ id: 'pay-1', amount: new Decimal('50.00') }),
         makePayment({ id: 'pay-2', amount: new Decimal('30.00'), paidAt: new Date('2026-02-10') }),
       ];
+      (mockPrisma.feeCharge.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(charge);
       (mockPrisma.payment.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(payments);
 
-      const result = await service.findPaymentsForCharge(CHARGE_ID);
+      const result = await service.findPaymentsForCharge(CLUB_ID, CHARGE_ID);
 
       expect(result).toHaveLength(2);
+      expect(mockPrisma.feeCharge.findFirst).toHaveBeenCalledWith({
+        where: { id: CHARGE_ID, clubId: CLUB_ID, deletedAt: null },
+      });
       expect(mockPrisma.payment.findMany).toHaveBeenCalledWith({
         where: { feeChargeId: CHARGE_ID, deletedAt: null },
         orderBy: { paidAt: 'desc' },
       });
+    });
+
+    it('should reject cross-tenant access (charge from another club)', async () => {
+      (mockPrisma.feeCharge.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      await expect(service.findPaymentsForCharge('other-club', CHARGE_ID)).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 

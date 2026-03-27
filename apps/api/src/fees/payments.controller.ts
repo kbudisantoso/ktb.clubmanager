@@ -32,8 +32,11 @@ export class PaymentsController {
   @RequirePermissions([Permission.FINANCE_READ])
   @ApiOperation({ summary: 'List all payments for a fee charge' })
   @ApiResponse({ status: 200, description: 'List of payments' })
-  async findPaymentsForCharge(@Param('chargeId') chargeId: string) {
-    return this.paymentsService.findPaymentsForCharge(chargeId);
+  async findPaymentsForCharge(
+    @GetClubContext() ctx: ClubContext,
+    @Param('chargeId') chargeId: string
+  ) {
+    return this.paymentsService.findPaymentsForCharge(ctx.clubId, chargeId);
   }
 
   @Delete(':id')

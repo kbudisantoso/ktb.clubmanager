@@ -90,7 +90,8 @@ export function useMemberFeeCharges(slug: string, memberId: string) {
         throw new Error('Fehler beim Laden der Beitragsdaten');
       }
 
-      return res.json();
+      const json = await res.json();
+      return json.data as FeeChargeResponse[];
     },
     staleTime: 30_000,
     enabled: !!slug && !!memberId,
