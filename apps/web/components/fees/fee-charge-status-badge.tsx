@@ -22,7 +22,7 @@ interface FeeChargeStatusBadgeProps {
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   OVERDUE: {
-    label: 'Ueberfaellig',
+    label: 'Überfällig',
     className: 'bg-destructive/15 text-destructive border-destructive/25',
   },
   OPEN: {

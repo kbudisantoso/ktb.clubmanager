@@ -15,7 +15,7 @@ export class RecordPaymentDto {
   })
   @IsString()
   @Matches(/^(?!0+(\.0{1,2})?$)\d{1,8}(\.\d{1,2})?$/, {
-    message: 'Betrag muss groesser als 0 sein und ein gueltiges Dezimalformat haben (z.B. "50.00")',
+    message: 'Betrag muss größer als 0 sein und ein gültiges Dezimalformat haben (z.B. "50.00")',
   })
   amount!: string;
 
@@ -23,7 +23,7 @@ export class RecordPaymentDto {
     description: 'Date the payment was made (ISO date string)',
     example: '2026-01-20',
   })
-  @IsDateString({}, { message: 'Zahlungsdatum muss ein gueltiges Datum sein' })
+  @IsDateString({}, { message: 'Zahlungsdatum muss ein gültiges Datum sein' })
   paidAt!: string;
 
   @ApiPropertyOptional({
@@ -32,6 +32,6 @@ export class RecordPaymentDto {
   })
   @IsString()
   @IsOptional()
-  @MaxLength(500, { message: 'Notizen duerfen maximal 500 Zeichen lang sein' })
+  @MaxLength(500, { message: 'Notizen dürfen maximal 500 Zeichen lang sein' })
   notes?: string;
 }

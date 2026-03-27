@@ -37,7 +37,7 @@ export class CreateFeeCategoryDto {
   })
   @IsString()
   @Matches(/^\d{1,8}(\.\d{1,2})?$/, {
-    message: 'Betrag muss ein gueltiges Dezimalformat haben (z.B. "120.00", max 8 Vorkommastellen)',
+    message: 'Betrag muss ein gültiges Dezimalformat haben (z.B. „120.00", max 8 Vorkommastellen)',
   })
   amount!: string;
 
@@ -46,7 +46,7 @@ export class CreateFeeCategoryDto {
     enum: BillingInterval,
     default: 'ANNUALLY',
   })
-  @IsEnum(BillingInterval, { message: 'Ungueltiger Abrechnungszeitraum' })
+  @IsEnum(BillingInterval, { message: 'Ungültiger Abrechnungszeitraum' })
   @IsOptional()
   billingInterval?: BillingInterval;
 

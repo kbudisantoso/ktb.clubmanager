@@ -22,8 +22,8 @@ import type { FeeCategoryResponse } from '@ktb/shared';
 
 const INTERVAL_LABELS: Record<string, string> = {
   MONTHLY: 'Monatlich',
-  QUARTERLY: 'Quartalsweise',
-  ANNUALLY: 'Jaehrlich',
+  QUARTERLY: 'Vierteljährlich',
+  ANNUALLY: 'Jährlich',
 };
 
 function formatAmount(amount: string): string {
@@ -120,7 +120,7 @@ export function FeeCategoryList() {
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <h3 className="text-lg font-semibold mb-2">Noch keine Beitragskategorien</h3>
               <p className="text-muted-foreground max-w-md mb-6">
-                Erstelle Beitragskategorien fuer zusaetzliche Positionen neben dem Grundbeitrag der
+                Erstelle Beitragskategorien für zusätzliche Positionen neben dem Grundbeitrag der
                 Mitgliedsart.
               </p>
               <Button onClick={openCreate}>
@@ -186,7 +186,7 @@ export function FeeCategoryList() {
                           variant="ghost"
                           size="icon"
                           onClick={() => setDeleteTarget(category)}
-                          aria-label={`${category.name} loeschen`}
+                          aria-label={`${category.name} löschen`}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -211,9 +211,9 @@ export function FeeCategoryList() {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Beitragskategorie loeschen"
-        description={`Moechtest du die Kategorie "${deleteTarget?.name}" wirklich loeschen? Bestehende Forderungen bleiben erhalten.`}
-        confirmLabel="Loeschen"
+        title="Beitragskategorie löschen"
+        description={`Möchtest du die Kategorie „${deleteTarget?.name}" wirklich löschen? Bestehende Forderungen bleiben erhalten.`}
+        confirmLabel="Löschen"
         cancelLabel="Abbrechen"
         variant="destructive"
         onConfirm={handleDelete}

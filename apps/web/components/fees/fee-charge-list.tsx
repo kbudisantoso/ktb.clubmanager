@@ -186,7 +186,7 @@ export function FeeChargeList({
         <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold">Noch keine Forderungen</h3>
         <p className="text-sm text-muted-foreground mt-2 max-w-md">
-          Fuehre eine Beitragserhebung durch, um Forderungen fuer deine Mitglieder zu erstellen.
+          Führe eine Beitragserhebung durch, um Forderungen für deine Mitglieder zu erstellen.
         </p>
         {onSwitchToErhebung && (
           <Button className="mt-4" onClick={onSwitchToErhebung}>
@@ -377,7 +377,7 @@ function FilterBar({
             <SelectItem value="OPEN">Offen</SelectItem>
             <SelectItem value="PARTIAL">Teilweise bezahlt</SelectItem>
             <SelectItem value="PAID">Bezahlt</SelectItem>
-            <SelectItem value="OVERDUE">Ueberfaellig</SelectItem>
+            <SelectItem value="OVERDUE">Überfällig</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -20,7 +20,7 @@ export class CreateMemberFeeOverrideDto {
     description: 'Type of override (EXEMPT, CUSTOM_AMOUNT, ADDITIONAL)',
     enum: FeeOverrideType,
   })
-  @IsEnum(FeeOverrideType, { message: 'Ungueltiger Override-Typ' })
+  @IsEnum(FeeOverrideType, { message: 'Ungültiger Override-Typ' })
   overrideType!: FeeOverrideType;
 
   @ApiPropertyOptional({
@@ -30,7 +30,7 @@ export class CreateMemberFeeOverrideDto {
   @IsString()
   @IsOptional()
   @Matches(/^\d{1,8}(\.\d{1,2})?$/, {
-    message: 'Betrag muss ein gueltiges Dezimalformat haben (z.B. "50.00", max 8 Vorkommastellen)',
+    message: 'Betrag muss ein gültiges Dezimalformat haben (z.B. „50.00", max 8 Vorkommastellen)',
   })
   customAmount?: string;
 

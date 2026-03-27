@@ -46,8 +46,8 @@ import { formatMoney } from '@/lib/format-money';
 
 const INTERVAL_OPTIONS: { value: BillingInterval; label: string }[] = [
   { value: 'MONTHLY', label: 'Monatlich' },
-  { value: 'QUARTERLY', label: 'Quartalsweise' },
-  { value: 'ANNUALLY', label: 'Jaehrlich' },
+  { value: 'QUARTERLY', label: 'Vierteljährlich' },
+  { value: 'ANNUALLY', label: 'Jährlich' },
 ];
 
 // ============================================================================
@@ -120,7 +120,7 @@ export function BillingRunPanel({ slug, onComplete }: BillingRunPanelProps) {
     <Card>
       <CardHeader>
         <CardTitle>Beitragserhebung</CardTitle>
-        <CardDescription>Forderungen fuer einen Abrechnungszeitraum erstellen</CardDescription>
+        <CardDescription>Forderungen für einen Abrechnungszeitraum erstellen</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Step 1: Configuration */}
@@ -200,15 +200,15 @@ export function BillingRunPanel({ slug, onComplete }: BillingRunPanelProps) {
               <div className="flex items-start gap-3 rounded-md border bg-warning/15 border-warning/25 p-4">
                 <AlertTriangle className="h-5 w-5 shrink-0 text-warning-foreground" />
                 <p className="text-sm text-warning-foreground">
-                  Fuer diesen Zeitraum existieren bereits {previewData.existingCharges} Forderungen.
-                  Doppelte werden uebersprungen.
+                  Für diesen Zeitraum existieren bereits {previewData.existingCharges} Forderungen.
+                  Doppelte werden übersprungen.
                 </p>
               </div>
             )}
 
             {/* Due date field */}
             <div className="space-y-2">
-              <Label htmlFor="dueDate">Faelligkeitsdatum</Label>
+              <Label htmlFor="dueDate">Fälligkeitsdatum</Label>
               <Input
                 id="dueDate"
                 type="date"
@@ -221,10 +221,10 @@ export function BillingRunPanel({ slug, onComplete }: BillingRunPanelProps) {
             {/* Action buttons */}
             <div className="flex gap-4">
               <Button variant="outline" onClick={handleBack}>
-                Zurueck
+                Zurück
               </Button>
               <Button onClick={() => setShowConfirmDialog(true)} disabled={!canConfirm}>
-                Erhebung durchfuehren
+                Erhebung durchführen
               </Button>
             </div>
           </div>
@@ -234,11 +234,11 @@ export function BillingRunPanel({ slug, onComplete }: BillingRunPanelProps) {
         <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Beitragserhebung durchfuehren</AlertDialogTitle>
+              <AlertDialogTitle>Beitragserhebung durchführen</AlertDialogTitle>
               <AlertDialogDescription>
-                Es werden {previewData?.memberCount ?? 0} Forderungen ueber insgesamt{' '}
+                Es werden {previewData?.memberCount ?? 0} Forderungen über insgesamt{' '}
                 {previewData ? formatMoney(previewData.totalAmount) : '0,00 EUR'} erstellt. Dieser
-                Vorgang kann nicht rueckgaengig gemacht werden.
+                Vorgang kann nicht rückgängig gemacht werden.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

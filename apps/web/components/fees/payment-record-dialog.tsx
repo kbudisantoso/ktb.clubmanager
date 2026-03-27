@@ -128,7 +128,7 @@ export function PaymentRecordDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Zahlung erfassen</DialogTitle>
-          <DialogDescription>Manuelle Zahlung fuer eine Forderung erfassen</DialogDescription>
+          <DialogDescription>Manuelle Zahlung für eine Forderung erfassen</DialogDescription>
         </DialogHeader>
 
         {/* Charge context (read-only) */}

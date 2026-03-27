@@ -142,7 +142,7 @@ export function FeeOverrideDialog({
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
-              Beitragsanpassungen fuer {memberName}
+              Beitragsanpassungen für {memberName}
             </DialogTitle>
             <DialogDescription>
               Befreiungen, individuelle Betraege und Zusatzbeitraege verwalten
@@ -302,7 +302,7 @@ export function FeeOverrideDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Anpassung entfernen</AlertDialogTitle>
             <AlertDialogDescription>
-              Moechtest du diese Beitragsanpassung wirklich entfernen?
+              Möchtest du diese Beitragsanpassung wirklich entfernen?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -565,12 +565,12 @@ export function MembershipTypesSettingsClient() {
                 }
               >
                 <SelectTrigger id="billingInterval" className="w-full">
-                  <SelectValue placeholder="Zeitraum waehlen" />
+                  <SelectValue placeholder="Zeitraum wählen" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="MONTHLY">Monatlich</SelectItem>
-                  <SelectItem value="QUARTERLY">Quartalsweise</SelectItem>
-                  <SelectItem value="ANNUALLY">Jaehrlich</SelectItem>
+                  <SelectItem value="QUARTERLY">Vierteljährlich</SelectItem>
+                  <SelectItem value="ANNUALLY">Jährlich</SelectItem>
                 </SelectContent>
               </Select>
             </div>

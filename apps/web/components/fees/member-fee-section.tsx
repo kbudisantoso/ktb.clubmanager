@@ -100,7 +100,7 @@ export function MemberFeeSection({ slug, memberId, memberName }: MemberFeeSectio
             type="button"
             className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-muted/80 transition-colors rounded-t-md"
           >
-            <span className="text-sm font-semibold">Offene Beitraege</span>
+            <span className="text-sm font-semibold">Offene Beiträge</span>
             <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
           </button>
         </CollapsibleTrigger>

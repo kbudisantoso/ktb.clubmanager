@@ -23,7 +23,7 @@ export class FeeChargeQueryDto {
     example: '2026-01-01',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Periodenbeginn muss ein gueltiges Datum sein' })
+  @IsDateString({}, { message: 'Periodenbeginn muss ein gültiges Datum sein' })
   periodStart?: string;
 
   @ApiPropertyOptional({
@@ -31,7 +31,7 @@ export class FeeChargeQueryDto {
     example: '2026-12-31',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Periodenende muss ein gueltiges Datum sein' })
+  @IsDateString({}, { message: 'Periodenende muss ein gültiges Datum sein' })
   periodEnd?: string;
 
   @ApiPropertyOptional({

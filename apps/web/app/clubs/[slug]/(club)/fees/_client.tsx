@@ -30,8 +30,8 @@ export function FeesClient() {
   return (
     <div>
       <PageHeader
-        title="Beitraege"
-        description="Beitragskategorien, Erhebungslaeufe und Forderungen verwalten"
+        title="Beiträge"
+        description="Beitragskategorien, Erhebungsläufe und Forderungen verwalten"
       />
 
       <div className="container mx-auto px-4 pb-6">

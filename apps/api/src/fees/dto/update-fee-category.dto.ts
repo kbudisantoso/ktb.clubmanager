@@ -38,7 +38,7 @@ export class UpdateFeeCategoryDto {
   @IsString()
   @IsOptional()
   @Matches(/^\d+(\.\d{1,2})?$/, {
-    message: 'Betrag muss ein gueltiges Dezimalformat haben (z.B. "120.00")',
+    message: 'Betrag muss ein gültiges Dezimalformat haben (z.B. „120.00")',
   })
   amount?: string;
 
@@ -46,7 +46,7 @@ export class UpdateFeeCategoryDto {
     description: 'Billing frequency',
     enum: BillingInterval,
   })
-  @IsEnum(BillingInterval, { message: 'Ungueltiger Abrechnungszeitraum' })
+  @IsEnum(BillingInterval, { message: 'Ungültiger Abrechnungszeitraum' })
   @IsOptional()
   billingInterval?: BillingInterval;
 
