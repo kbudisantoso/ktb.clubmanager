@@ -10,5 +10,9 @@ services:
       # Permissions: Issues (read/write)
       - GH_TOKEN=ghp_your_token_here
     volumes:
-      # Mount Claude config from host for persistent login
+      # Mount Claude config directory from host for persistent login.
+      # NOTE: ~/.claude.json lives INSIDE this directory (as claude.json) and is
+      # symlinked by postCreateCommand. Do NOT add a separate file bind mount for
+      # ~/.claude.json — file bind mounts break on atomic writes and cause corruption.
       - ~/.claude:/home/node/.claude:cached
+
