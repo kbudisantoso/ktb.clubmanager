@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsDateString, IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class FeeChargeQueryDto {
@@ -8,8 +8,10 @@ export class FeeChargeQueryDto {
     enum: ['OPEN', 'PARTIAL', 'PAID', 'OVERDUE'],
   })
   @IsOptional()
-  @IsString()
-  status?: string;
+  @IsIn(['OPEN', 'PARTIAL', 'PAID', 'OVERDUE'], {
+    message: 'Status muss OPEN, PARTIAL, PAID oder OVERDUE sein',
+  })
+  status?: 'OPEN' | 'PARTIAL' | 'PAID' | 'OVERDUE';
 
   @ApiPropertyOptional({
     description: 'Filter by specific member ID',

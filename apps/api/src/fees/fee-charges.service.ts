@@ -131,16 +131,15 @@ export class FeeChargesService {
    * Find all fee charges with computed payment status using SQL-level aggregation.
    * Returns paginated results with OPEN/PARTIAL/PAID status and overdue flag.
    *
-   * Note: OVERDUE is a computed status (dueDate < today && not fully paid), so
-   * filtering by OVERDUE happens post-query. This means `total` reflects the
-   * unfiltered count and pages may appear partially empty when the OVERDUE filter
-   * is active. A proper fix requires SQL-level status computation.
+   * When a status filter is active, uses a two-pass approach:
+   * 1. Fetch all matching charge IDs + amounts (lightweight), compute statuses
+   * 2. Filter by status, paginate, then fetch full data for the page
+   * This ensures correct `total` and pagination for computed status filters.
    */
   async findAllWithStatus(clubId: string, query: FeeChargeQueryDto) {
     const db = this.prisma.forClub(clubId);
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
-    const skip = (page - 1) * limit;
 
     // Build filter conditions
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -151,36 +150,134 @@ export class FeeChargesService {
       ...(query.periodEnd && { periodEnd: { lte: new Date(query.periodEnd) } }),
     };
 
-    const [charges, total] = await Promise.all([
-      db.feeCharge.findMany({
-        where,
-        include: {
-          member: {
-            select: { id: true, firstName: true, lastName: true, memberNumber: true },
-          },
-        },
-        orderBy: { dueDate: 'desc' },
-        skip,
-        take: limit,
-      }),
-      db.feeCharge.count({ where }),
-    ]);
-
-    // Batch-fetch payment aggregates for all charge IDs (SQL-level aggregation)
-    const chargeIds = charges.map((c: { id: string }) => c.id);
-    const paymentAggregates =
-      chargeIds.length > 0
-        ? await this.prisma.payment.groupBy({
-            by: ['feeChargeId'],
-            where: {
-              feeChargeId: { in: chargeIds },
-              deletedAt: null,
+    // No status filter: fast single-query path (existing behavior)
+    if (!query.status) {
+      const skip = (page - 1) * limit;
+      const [charges, total] = await Promise.all([
+        db.feeCharge.findMany({
+          where,
+          include: {
+            member: {
+              select: { id: true, firstName: true, lastName: true, memberNumber: true },
             },
-            _sum: { amount: true },
-          })
-        : [];
+          },
+          orderBy: { dueDate: 'desc' },
+          skip,
+          take: limit,
+        }),
+        db.feeCharge.count({ where }),
+      ]);
 
-    const paymentSumMap = new Map(
+      const enrichedCharges = await this.enrichChargesWithStatus(charges);
+      return { data: enrichedCharges, total, page, limit };
+    }
+
+    // Status filter active: two-pass approach for correct pagination
+    // Pass 1: Fetch all charge IDs + amounts (lightweight)
+    const allCharges = await db.feeCharge.findMany({
+      where,
+      select: { id: true, amount: true, dueDate: true },
+      orderBy: { dueDate: 'desc' },
+    });
+
+    const allChargeIds = allCharges.map((c: { id: string }) => c.id);
+    const paymentSumMap = await this.fetchPaymentSums(allChargeIds);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Compute status for each charge and filter
+    const filteredIds = allCharges
+      .filter((charge: { id: string; amount: Prisma.Decimal | number; dueDate: Date }) => {
+        const amount =
+          charge.amount instanceof Prisma.Decimal
+            ? charge.amount
+            : new Prisma.Decimal(String(charge.amount));
+        const paidAmount = paymentSumMap.get(charge.id) ?? ZERO;
+        const { status, isOverdue } = this.computeChargeStatus(
+          amount,
+          paidAmount,
+          charge.dueDate,
+          today
+        );
+
+        if (query.status === 'OVERDUE') return isOverdue;
+        return status === query.status;
+      })
+      .map((c: { id: string }) => c.id);
+
+    const filteredTotal = filteredIds.length;
+
+    // Paginate the filtered IDs
+    const skip = (page - 1) * limit;
+    const pageIds = filteredIds.slice(skip, skip + limit);
+
+    if (pageIds.length === 0) {
+      return { data: [], total: filteredTotal, page, limit };
+    }
+
+    // Pass 2: Fetch full data for this page only
+    const charges = await db.feeCharge.findMany({
+      where: { id: { in: pageIds } },
+      include: {
+        member: {
+          select: { id: true, firstName: true, lastName: true, memberNumber: true },
+        },
+      },
+      orderBy: { dueDate: 'desc' },
+    });
+
+    const enrichedCharges = await this.enrichChargesWithStatus(charges);
+    return { data: enrichedCharges, total: filteredTotal, page, limit };
+  }
+
+  // ─── findByMember ───────────────────────────────────────────────────
+
+  /**
+   * Find charges for a specific member with computed status.
+   * Used for member detail section.
+   */
+  async findByMember(clubId: string, memberId: string, options?: { limit?: number }) {
+    return this.findAllWithStatus(clubId, {
+      memberId,
+      limit: options?.limit ?? 20,
+    });
+  }
+
+  // ─── Private: Status Computation Helpers ────────────────────────────
+
+  /**
+   * Compute payment status for a single charge.
+   */
+  private computeChargeStatus(
+    amount: Prisma.Decimal,
+    paidAmount: Prisma.Decimal,
+    dueDate: Date,
+    today: Date
+  ): { status: string; isOverdue: boolean } {
+    const status = paidAmount.gte(amount) ? 'PAID' : paidAmount.gt(ZERO) ? 'PARTIAL' : 'OPEN';
+    const due = new Date(dueDate);
+    due.setHours(0, 0, 0, 0);
+    const isOverdue = status !== 'PAID' && due < today;
+    return { status, isOverdue };
+  }
+
+  /**
+   * Batch-fetch payment sums for a list of charge IDs.
+   */
+  private async fetchPaymentSums(chargeIds: string[]): Promise<Map<string, Prisma.Decimal>> {
+    if (chargeIds.length === 0) return new Map();
+
+    const paymentAggregates = await this.prisma.payment.groupBy({
+      by: ['feeChargeId'],
+      where: {
+        feeChargeId: { in: chargeIds },
+        deletedAt: null,
+      },
+      _sum: { amount: true },
+    });
+
+    return new Map(
       paymentAggregates.map(
         (pa: { feeChargeId: string; _sum: { amount: Prisma.Decimal | null } }) => [
           pa.feeChargeId,
@@ -188,21 +285,31 @@ export class FeeChargesService {
         ]
       )
     );
+  }
+
+  /**
+   * Enrich charge records with computed payment status fields.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async enrichChargesWithStatus(charges: any[]) {
+    const chargeIds = charges.map((c: { id: string }) => c.id);
+    const paymentSumMap = await this.fetchPaymentSums(chargeIds);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let enrichedCharges = charges.map((charge: any) => {
+    return charges.map((charge) => {
       const paidAmount = paymentSumMap.get(charge.id) ?? ZERO;
       const amount =
         charge.amount instanceof Prisma.Decimal
           ? charge.amount
           : new Prisma.Decimal(String(charge.amount));
-      const status = paidAmount.gte(amount) ? 'PAID' : paidAmount.gt(ZERO) ? 'PARTIAL' : 'OPEN';
-      const dueDate = new Date(charge.dueDate);
-      dueDate.setHours(0, 0, 0, 0);
-      const isOverdue = status !== 'PAID' && dueDate < today;
+      const { status, isOverdue } = this.computeChargeStatus(
+        amount,
+        paidAmount,
+        charge.dueDate,
+        today
+      );
       const remaining = amount.minus(paidAmount);
       const remainingAmount = remaining.lt(ZERO) ? ZERO : remaining;
 
@@ -236,40 +343,6 @@ export class FeeChargesService {
         updatedAt:
           charge.updatedAt instanceof Date ? charge.updatedAt.toISOString() : charge.updatedAt,
       };
-    });
-
-    // Post-query status filter (OVERDUE is a special computed status)
-    if (query.status) {
-      if (query.status === 'OVERDUE') {
-        enrichedCharges = enrichedCharges.filter(
-          (c: { isOverdue: boolean; status: string }) =>
-            c.isOverdue && (c.status === 'OPEN' || c.status === 'PARTIAL')
-        );
-      } else {
-        enrichedCharges = enrichedCharges.filter(
-          (c: { status: string }) => c.status === query.status
-        );
-      }
-    }
-
-    return {
-      data: enrichedCharges,
-      total,
-      page,
-      limit,
-    };
-  }
-
-  // ─── findByMember ───────────────────────────────────────────────────
-
-  /**
-   * Find charges for a specific member with computed status.
-   * Used for member detail section.
-   */
-  async findByMember(clubId: string, memberId: string, options?: { limit?: number }) {
-    return this.findAllWithStatus(clubId, {
-      memberId,
-      limit: options?.limit ?? 20,
     });
   }
 

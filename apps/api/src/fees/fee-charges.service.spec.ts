@@ -503,5 +503,118 @@ describe('FeeChargesService', () => {
         })
       );
     });
+
+    it('should return correct total when filtering by status (two-pass)', async () => {
+      // 3 charges: 1 OPEN (no payments), 1 PAID (fully paid), 1 OVERDUE (past due, no payments)
+      const openCharge = makeFeeCharge({ id: 'fc-open', dueDate: new Date('2099-12-31') });
+
+      // Pass 1: lightweight query returns all 3 charges (select: id, amount, dueDate)
+      (mockDb.feeCharge.findMany as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce([
+          { id: 'fc-open', amount: new Decimal('120.00'), dueDate: new Date('2099-12-31') },
+          { id: 'fc-paid', amount: new Decimal('120.00'), dueDate: new Date('2099-12-31') },
+          { id: 'fc-overdue', amount: new Decimal('120.00'), dueDate: new Date('2020-01-01') },
+        ])
+        // Pass 2: full data for filtered page (only the OPEN charge)
+        .mockResolvedValueOnce([openCharge]);
+
+      // Payment aggregates: only fc-paid is fully paid
+      (mockPrisma.payment.groupBy as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce([
+          { feeChargeId: 'fc-paid', _sum: { amount: new Decimal('120.00') } },
+        ])
+        // Second call for enrichChargesWithStatus
+        .mockResolvedValueOnce([]);
+
+      const result = await service.findAllWithStatus(CLUB_ID, { status: 'OPEN' });
+
+      // Only fc-open matches OPEN (fc-overdue is OPEN but overdue, not "OPEN" status-wise — it IS open but also overdue)
+      // Actually OPEN means: not paid, not overdue. fc-open is OPEN (future due), fc-overdue has status OPEN but isOverdue=true.
+      // The filter `status === 'OPEN'` matches both since computeChargeStatus returns status='OPEN' for both.
+      // But the status filter checks `status === query.status`, so both fc-open and fc-overdue match 'OPEN'.
+      expect(result.total).toBe(2);
+      expect(result.page).toBe(1);
+    });
+
+    it('should paginate correctly with status filter', async () => {
+      // Create 25 OPEN charges + 5 PAID charges
+      const openChargesLight = Array.from({ length: 25 }, (_, i) => ({
+        id: `fc-open-${i}`,
+        amount: new Decimal('10.00'),
+        dueDate: new Date('2099-12-31'),
+      }));
+      const paidChargesLight = Array.from({ length: 5 }, (_, i) => ({
+        id: `fc-paid-${i}`,
+        amount: new Decimal('10.00'),
+        dueDate: new Date('2099-12-31'),
+      }));
+
+      // Pass 1: all 30 charges
+      (mockDb.feeCharge.findMany as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce([...openChargesLight, ...paidChargesLight])
+        // Pass 2: 5 charges for page 2 (ids fc-open-20 through fc-open-24)
+        .mockResolvedValueOnce(
+          Array.from({ length: 5 }, (_, i) =>
+            makeFeeCharge({
+              id: `fc-open-${20 + i}`,
+              amount: new Decimal('10.00'),
+              dueDate: new Date('2099-12-31'),
+            })
+          )
+        );
+
+      // Payment sums: only paid charges have payments
+      const paidAggregates = Array.from({ length: 5 }, (_, i) => ({
+        feeChargeId: `fc-paid-${i}`,
+        _sum: { amount: new Decimal('10.00') },
+      }));
+
+      (mockPrisma.payment.groupBy as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce(paidAggregates)
+        // Second call for enrichChargesWithStatus on page 2 data
+        .mockResolvedValueOnce([]);
+
+      const result = await service.findAllWithStatus(CLUB_ID, {
+        status: 'OPEN',
+        page: 2,
+        limit: 20,
+      });
+
+      expect(result.total).toBe(25);
+      expect(result.data).toHaveLength(5);
+      expect(result.page).toBe(2);
+      expect(result.limit).toBe(20);
+    });
+
+    it('should return correct total when filtering by OVERDUE', async () => {
+      // 2 overdue (past due, unpaid), 1 future OPEN
+      (mockDb.feeCharge.findMany as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce([
+          { id: 'fc-overdue-1', amount: new Decimal('50.00'), dueDate: new Date('2020-01-01') },
+          { id: 'fc-overdue-2', amount: new Decimal('50.00'), dueDate: new Date('2020-06-01') },
+          { id: 'fc-future', amount: new Decimal('50.00'), dueDate: new Date('2099-12-31') },
+        ])
+        .mockResolvedValueOnce([
+          makeFeeCharge({
+            id: 'fc-overdue-1',
+            amount: new Decimal('50.00'),
+            dueDate: new Date('2020-01-01'),
+          }),
+          makeFeeCharge({
+            id: 'fc-overdue-2',
+            amount: new Decimal('50.00'),
+            dueDate: new Date('2020-06-01'),
+          }),
+        ]);
+
+      (mockPrisma.payment.groupBy as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+
+      const result = await service.findAllWithStatus(CLUB_ID, { status: 'OVERDUE' });
+
+      expect(result.total).toBe(2);
+      expect(result.data).toHaveLength(2);
+    });
   });
 });
