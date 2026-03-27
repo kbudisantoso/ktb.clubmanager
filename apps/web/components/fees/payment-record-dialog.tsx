@@ -42,7 +42,7 @@ function getTodayISO(): string {
 function validateAmount(value: string): string | null {
   if (!value) return 'Betrag ist erforderlich';
   const num = parseFloat(value);
-  if (isNaN(num) || num <= 0) return 'Betrag muss groesser als 0 sein';
+  if (isNaN(num) || num <= 0) return 'Betrag muss größer als 0 sein';
   if (!/^\d{1,10}(\.\d{1,2})?$/.test(value)) {
     return 'Betrag darf maximal 10 Vorkomma- und 2 Nachkommastellen haben';
   }

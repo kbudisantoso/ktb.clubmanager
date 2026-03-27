@@ -128,7 +128,7 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? 'Aendere die Konfiguration der Beitragskategorie.'
+              ? 'Ändere die Konfiguration der Beitragskategorie.'
               : 'Erstelle eine neue Beitragskategorie mit Betrag und Abrechnungszeitraum.'}
           </DialogDescription>
         </DialogHeader>
@@ -202,11 +202,11 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
               )}
             </div>
 
-            {/* Einmalige Gebuehr */}
+            {/* Einmalige Gebühr */}
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
                 <Label htmlFor="fc-isOneTime" className="text-sm font-medium">
-                  Einmalige Gebuehr (z.B. Aufnahmegebuehr)
+                  Einmalige Gebühr (z.B. Aufnahmegebühr)
                 </Label>
               </div>
               <Switch

@@ -91,7 +91,7 @@ export function FeeChargeList({
       page,
       limit: PAGE_SIZE,
     };
-    if (statusFilter !== 'ALL' && statusFilter !== 'OVERDUE') {
+    if (statusFilter !== 'ALL') {
       f.status = statusFilter;
     }
     if (memberId) {
@@ -109,9 +109,6 @@ export function FeeChargeList({
   // Compute filtered data for OVERDUE client-side filter
   const charges = useMemo(() => {
     if (!data?.data) return [];
-    if (statusFilter === 'OVERDUE') {
-      return data.data.filter((c) => c.isOverdue);
-    }
     // Client-side member name search (API filters by memberId; this filters by name text)
     if (debouncedMemberSearch && !memberId) {
       const search = debouncedMemberSearch.toLowerCase();
@@ -216,7 +213,7 @@ export function FeeChargeList({
           <h3 className="text-lg font-semibold">Keine Forderungen gefunden</h3>
           <p className="text-sm text-muted-foreground mt-2">Deine Filter ergaben keine Treffer.</p>
           <Button variant="outline" className="mt-4" onClick={resetFilters}>
-            Filter zuruecksetzen
+            Filter zurücksetzen
           </Button>
         </div>
       </div>
@@ -313,7 +310,7 @@ export function FeeChargeList({
             disabled={page <= 1}
           >
             <ChevronLeft className="h-4 w-4" />
-            Zurueck
+            Zurück
           </Button>
           <span className="text-sm text-muted-foreground tabular-nums">Seite {page}</span>
           <Button

@@ -6,6 +6,10 @@ import { z } from 'zod';
 export const FeeChargeStatusEnum = z.enum(['OPEN', 'PARTIAL', 'PAID']);
 export type FeeChargeStatus = z.infer<typeof FeeChargeStatusEnum>;
 
+/** Extended status enum for query filters — includes OVERDUE (a computed pseudo-status). */
+export const FeeChargeFilterStatusEnum = z.enum(['OPEN', 'PARTIAL', 'PAID', 'OVERDUE']);
+export type FeeChargeFilterStatus = z.infer<typeof FeeChargeFilterStatusEnum>;
+
 /**
  * Full fee charge response schema including derived payment status.
  * Amounts are serialized as strings for Decimal precision.
@@ -50,8 +54,8 @@ export type FeeChargeResponse = z.infer<typeof FeeChargeResponseSchema>;
  * Query parameters for filtering fee charges.
  */
 export const FeeChargeQuerySchema = z.object({
-  /** Filter by derived payment status */
-  status: FeeChargeStatusEnum.optional(),
+  /** Filter by derived payment status (includes OVERDUE pseudo-status) */
+  status: FeeChargeFilterStatusEnum.optional(),
   /** Filter by specific member */
   memberId: z.string().optional(),
   /** Filter by period start (inclusive) */

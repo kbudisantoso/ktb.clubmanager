@@ -26,14 +26,7 @@ const INTERVAL_LABELS: Record<string, string> = {
   ANNUALLY: 'Jährlich',
 };
 
-function formatAmount(amount: string): string {
-  return (
-    new Intl.NumberFormat('de-DE', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(parseFloat(amount)) + ' EUR'
-  );
-}
+import { formatMoney } from '@/lib/format-money';
 
 /**
  * Fee category list with CRUD actions.
@@ -104,7 +97,7 @@ export function FeeCategoryList() {
           <div className="flex items-center justify-between">
             <div>
               <CardDescription>
-                Zusaetzliche Beitragspositionen neben dem Grundbeitrag der Mitgliedsart
+                Zusätzliche Beitragspositionen neben dem Grundbeitrag der Mitgliedsart
               </CardDescription>
             </div>
             {!isEmpty && (
@@ -149,7 +142,7 @@ export function FeeCategoryList() {
                       {category.description || '—'}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {formatAmount(category.amount)}
+                      {formatMoney(category.amount)}
                     </TableCell>
                     <TableCell>
                       {category.isOneTime

@@ -63,7 +63,7 @@ export function BillingRunPreview({ data }: BillingRunPreviewProps) {
         {/* Breakdown */}
         {data.breakdown.length > 0 && (
           <div>
-            <h3 className="text-sm font-medium mb-3">Aufschluesselung nach Mitgliedsart:</h3>
+            <h3 className="text-sm font-medium mb-3">Aufschlüsselung nach Mitgliedsart:</h3>
             <Table>
               <TableHeader>
                 <TableRow>

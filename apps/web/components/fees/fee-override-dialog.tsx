@@ -145,7 +145,7 @@ export function FeeOverrideDialog({
               Beitragsanpassungen für {memberName}
             </DialogTitle>
             <DialogDescription>
-              Befreiungen, individuelle Betraege und Zusatzbeitraege verwalten
+              Befreiungen, individuelle Beträge und Zusatzbeiträge verwalten
             </DialogDescription>
           </DialogHeader>
 
@@ -262,7 +262,7 @@ export function FeeOverrideDialog({
                   <Label htmlFor="overrideReason">Grund</Label>
                   <Textarea
                     id="overrideReason"
-                    placeholder="z.B. Ehrenamtliche Taetigkeit"
+                    placeholder="z.B. Ehrenamtliche Tätigkeit"
                     value={formReason}
                     onChange={(e) => setFormReason(e.target.value)}
                     rows={2}
@@ -289,7 +289,7 @@ export function FeeOverrideDialog({
             {!showAddForm && !isLoading && (
               <Button variant="outline" size="sm" onClick={() => setShowAddForm(true)}>
                 <Plus className="h-4 w-4" />
-                Anpassung hinzufuegen
+                Anpassung hinzufügen
               </Button>
             )}
           </div>
