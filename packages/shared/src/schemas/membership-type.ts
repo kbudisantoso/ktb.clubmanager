@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BillingIntervalEnum } from './fee-category.js';
+import { BillingIntervalEnum } from './fee-category.ts';
 
 /**
  * Available badge colors for membership types.
