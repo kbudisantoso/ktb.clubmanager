@@ -26,10 +26,7 @@ interface MemberFeeSectionProps {
 // Helpers
 // ============================================================================
 
-const moneyFormatter = new Intl.NumberFormat('de-DE', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+import { moneyFormatter } from '@/lib/format-money';
 
 function formatDate(isoDate: string): string {
   const [year, month, day] = isoDate.split('-');

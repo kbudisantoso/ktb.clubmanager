@@ -55,10 +55,7 @@ interface FeeOverrideDialogProps {
 // Helpers
 // ============================================================================
 
-const moneyFormatter = new Intl.NumberFormat('de-DE', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+import { moneyFormatter } from '@/lib/format-money';
 
 const OVERRIDE_TYPE_OPTIONS: { value: FeeOverrideType; label: string }[] = [
   { value: 'EXEMPT', label: 'Befreit' },

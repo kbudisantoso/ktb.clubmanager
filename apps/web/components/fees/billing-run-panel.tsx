@@ -42,14 +42,7 @@ interface BillingRunPanelProps {
 // Helpers
 // ============================================================================
 
-const moneyFormatter = new Intl.NumberFormat('de-DE', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-function formatMoney(value: string): string {
-  return `${moneyFormatter.format(parseFloat(value))} EUR`;
-}
+import { formatMoney } from '@/lib/format-money';
 
 const INTERVAL_OPTIONS: { value: BillingInterval; label: string }[] = [
   { value: 'MONTHLY', label: 'Monatlich' },

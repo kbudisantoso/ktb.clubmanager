@@ -48,14 +48,7 @@ type StatusFilter = 'ALL' | 'OPEN' | 'PARTIAL' | 'PAID' | 'OVERDUE';
 // Helpers
 // ============================================================================
 
-const moneyFormatter = new Intl.NumberFormat('de-DE', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-function formatMoney(value: string): string {
-  return `${moneyFormatter.format(parseFloat(value))} EUR`;
-}
+import { moneyFormatter, formatMoney } from '@/lib/format-money';
 
 function formatPeriod(start: string, end: string): string {
   const startDate = new Date(start);
