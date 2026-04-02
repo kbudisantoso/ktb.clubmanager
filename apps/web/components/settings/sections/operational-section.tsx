@@ -46,7 +46,6 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
   const {
     register,
     control,
-    watch,
     formState: { errors },
   } = form;
 
@@ -192,8 +191,12 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="NONE">Kein Haushaltsmodell</SelectItem>
-                    <SelectItem value="REDUCED_MEMBERS">Reduzierter Beitrag für weitere Mitglieder</SelectItem>
-                    <SelectItem value="FAMILY_PAYER">Familienzahler (Kopf zahlt, Rest beitragsfrei)</SelectItem>
+                    <SelectItem value="REDUCED_MEMBERS">
+                      Reduzierter Beitrag für weitere Mitglieder
+                    </SelectItem>
+                    <SelectItem value="FAMILY_PAYER">
+                      Familienzahler (Kopf zahlt, Rest beitragsfrei)
+                    </SelectItem>
                     <SelectItem value="ALL_REDUCED">Alle Haushaltsmitglieder reduziert</SelectItem>
                   </SelectContent>
                 </Select>
