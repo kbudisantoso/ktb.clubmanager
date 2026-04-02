@@ -69,9 +69,11 @@ export class FeeChargesService {
     });
 
     const totalAmount = charges.reduce((sum, c) => sum.plus(c.amount), ZERO);
+    const uniqueMembers = new Set(charges.map((c) => c.memberId)).size;
 
     return {
-      memberCount: charges.length,
+      memberCount: uniqueMembers,
+      chargeCount: charges.length,
       totalAmount: roundMoney(totalAmount).toFixed(DECIMAL_PLACES),
       exemptions,
       breakdown: breakdown.map((b) => ({
@@ -367,13 +369,11 @@ export class FeeChargesService {
       where: { id: clubId },
       select: {
         proRataMode: true,
-        householdFeeMode: true,
-        householdDiscountPercent: true,
-        householdFlatAmount: true,
+        householdBillingModel: true,
       },
     });
 
-    // 2. Get active members with membership info and overrides
+    // 2. Get active members with membership info, fee type, and overrides
     const members = await this.prisma.member.findMany({
       where: {
         clubId,
@@ -388,8 +388,6 @@ export class FeeChargesService {
               select: {
                 id: true,
                 name: true,
-                feeAmount: true,
-                billingInterval: true,
               },
             },
           },
@@ -397,6 +395,7 @@ export class FeeChargesService {
           take: 1,
         },
         memberFeeOverrides: true,
+        feeType: true,
       },
     });
 
@@ -435,9 +434,23 @@ export class FeeChargesService {
         continue;
       }
 
-      // Calculate base fee if membership type has a fee and matches interval
-      if (membershipType.feeAmount && membershipType.billingInterval === dto.billingInterval) {
-        let baseFee = new Prisma.Decimal(membershipType.feeAmount.toString());
+      // D-17: Members without feeTypeId are excluded from billing
+      if (!member.feeTypeId) {
+        exemptions++;
+        continue;
+      }
+
+      // Look up base fee from cross-table (MembershipType x FeeType)
+      const crossTableEntry = await db.membershipTypeFeeType.findFirst({
+        where: {
+          membershipTypeId: membershipType.id,
+          feeTypeId: member.feeTypeId,
+          billingInterval: dto.billingInterval,
+        },
+      });
+
+      if (crossTableEntry) {
+        let baseFee = new Prisma.Decimal(crossTableEntry.amount.toString());
         let discountAmount: Prisma.Decimal | null = null;
         let discountReason: string | null = null;
 
@@ -464,7 +477,7 @@ export class FeeChargesService {
           // Recalculate discount if pro-rata was applied and there was a custom override
           if (customOverride?.customAmount) {
             const originalProRata = this.calculateProRata(
-              new Prisma.Decimal(membershipType.feeAmount.toString()),
+              new Prisma.Decimal(crossTableEntry.amount.toString()),
               currentPeriod.joinDate,
               periodStart,
               periodEnd,
@@ -472,31 +485,6 @@ export class FeeChargesService {
             );
             discountAmount = roundMoney(originalProRata.minus(baseFee));
           }
-        }
-
-        // Apply household discount
-        if (
-          club?.householdFeeMode === 'PERCENTAGE' &&
-          member.householdId &&
-          member.householdRole &&
-          member.householdRole !== 'HEAD' &&
-          club.householdDiscountPercent
-        ) {
-          const discountPercent = new Prisma.Decimal(club.householdDiscountPercent);
-          const discount = roundMoney(baseFee.mul(discountPercent).div(100));
-          discountAmount = discount;
-          discountReason = `Haushaltsrabatt ${club.householdDiscountPercent}%`;
-          baseFee = roundMoney(baseFee.minus(discount));
-        } else if (
-          club?.householdFeeMode === 'FLAT' &&
-          member.householdId &&
-          member.householdRole === 'HEAD' &&
-          club.householdFlatAmount
-        ) {
-          const flatAmount = new Prisma.Decimal(club.householdFlatAmount.toString());
-          discountAmount = roundMoney(baseFee.minus(flatAmount));
-          discountReason = 'Haushaltspauschale';
-          baseFee = flatAmount;
         }
 
         baseFee = roundMoney(baseFee);
@@ -575,6 +563,20 @@ export class FeeChargesService {
           discountAmount: catDiscountAmount,
           discountReason: catDiscountReason,
         });
+
+        // Track category in breakdown
+        const catName = category.name;
+        const existingCat = breakdownMap.get(catName);
+        if (existingCat) {
+          existingCat.count++;
+          existingCat.subtotal = existingCat.subtotal.plus(categoryFee);
+        } else {
+          breakdownMap.set(catName, {
+            membershipType: catName,
+            count: 1,
+            subtotal: categoryFee,
+          });
+        }
       }
     }
 

@@ -65,8 +65,6 @@ interface MembershipTypeFormState {
   vote: boolean;
   assemblyAttendance: boolean;
   eligibleForOffice: boolean;
-  feeAmount: string;
-  billingInterval: 'MONTHLY' | 'QUARTERLY' | 'ANNUALLY';
 }
 
 const DEFAULT_FORM_STATE: MembershipTypeFormState = {
@@ -79,8 +77,6 @@ const DEFAULT_FORM_STATE: MembershipTypeFormState = {
   vote: true,
   assemblyAttendance: true,
   eligibleForOffice: true,
-  feeAmount: '',
-  billingInterval: 'ANNUALLY',
 };
 
 /** Render a boolean value as check or minus icon */
@@ -131,9 +127,6 @@ export function MembershipTypesSettingsClient() {
       vote: type.vote,
       assemblyAttendance: type.assemblyAttendance,
       eligibleForOffice: type.eligibleForOffice,
-      feeAmount: type.feeAmount ?? '',
-      billingInterval:
-        (type.billingInterval as MembershipTypeFormState['billingInterval']) ?? 'ANNUALLY',
     });
     setDialogOpen(true);
   }
@@ -150,8 +143,6 @@ export function MembershipTypesSettingsClient() {
       vote: formState.vote,
       assemblyAttendance: formState.assemblyAttendance,
       eligibleForOffice: formState.eligibleForOffice,
-      feeAmount: formState.feeAmount || null,
-      billingInterval: formState.feeAmount ? formState.billingInterval : undefined,
     };
 
     if (editingType) {
@@ -533,47 +524,7 @@ export function MembershipTypesSettingsClient() {
               />
             </div>
 
-            {/* Beitragseinstellungen */}
-            <Separator />
-            <h4 className="text-sm font-semibold">Beitragseinstellungen</h4>
-
-            {/* Grundbeitrag (EUR) */}
-            <div className="space-y-2">
-              <Label htmlFor="feeAmount">Grundbeitrag (EUR)</Label>
-              <Input
-                id="feeAmount"
-                placeholder="z.B. 120.00"
-                inputMode="decimal"
-                value={formState.feeAmount}
-                onChange={(e) => setFormState((prev) => ({ ...prev, feeAmount: e.target.value }))}
-              />
-              <p className="text-xs text-muted-foreground">
-                Optional — nicht jede Mitgliedsart muss einen Beitrag haben.
-              </p>
-            </div>
-
-            {/* Abrechnungszeitraum */}
-            <div className="space-y-2">
-              <Label htmlFor="billingInterval">Abrechnungszeitraum</Label>
-              <Select
-                value={formState.billingInterval}
-                onValueChange={(val) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    billingInterval: val as MembershipTypeFormState['billingInterval'],
-                  }))
-                }
-              >
-                <SelectTrigger id="billingInterval" className="w-full">
-                  <SelectValue placeholder="Zeitraum wählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MONTHLY">Monatlich</SelectItem>
-                  <SelectItem value="QUARTERLY">Vierteljährlich</SelectItem>
-                  <SelectItem value="ANNUALLY">Jährlich</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Note: Fee amounts are now configured in the Beitragsmodell section (FeeType x MembershipType cross-table) */}
           </div>
 
           <DialogFooter>

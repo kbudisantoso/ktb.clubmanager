@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { BillingIntervalEnum } from './fee-category.ts';
 
 /**
  * Available badge colors for membership types.
@@ -58,12 +57,6 @@ export const CreateMembershipTypeSchema = z.object({
 
   /** Badge color for UI display */
   color: MemberTypeColorSchema.optional(),
-
-  /** Fee amount as decimal string (e.g., "120.00") — nullable, not all types have fees */
-  feeAmount: z.string().nullable().optional(),
-
-  /** Billing frequency for this membership type's base fee */
-  billingInterval: BillingIntervalEnum.optional(),
 });
 
 export type CreateMembershipType = z.infer<typeof CreateMembershipTypeSchema>;
@@ -92,8 +85,6 @@ export const MembershipTypeResponseSchema = z.object({
   assemblyAttendance: z.boolean(),
   eligibleForOffice: z.boolean(),
   color: MemberTypeColorSchema,
-  feeAmount: z.string().nullable().optional(),
-  billingInterval: BillingIntervalEnum.optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

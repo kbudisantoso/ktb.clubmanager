@@ -46,9 +46,7 @@ export interface ClubSettingsResponse {
   probationPeriodDays?: number | null;
   // Beitragseinstellungen
   proRataMode?: string | null;
-  householdFeeMode?: string | null;
-  householdDiscountPercent?: number | null;
-  householdFlatAmount?: string | null;
+  householdBillingModel?: string | null;
   // Logo
   logoFileId?: string | null;
   // Meta

@@ -23,7 +23,7 @@ interface OperationalSectionProps {
 const MONTH_OPTIONS = [
   { value: '1', label: 'Januar' },
   { value: '2', label: 'Februar' },
-  { value: '3', label: 'Maerz' },
+  { value: '3', label: 'März' },
   { value: '4', label: 'April' },
   { value: '5', label: 'Mai' },
   { value: '6', label: 'Juni' },
@@ -36,8 +36,8 @@ const MONTH_OPTIONS = [
 ] as const;
 
 /**
- * Betriebseinstellungen section: Geschaeftsjahrbeginn, Standard-Mitgliedschaftstyp, Probezeitraum,
- * and Beitragseinstellungen (proRataMode, householdFeeMode with conditional fields).
+ * Betriebseinstellungen section: Geschäftsjahrbeginn, Standard-Mitgliedschaftstyp, Probezeitraum,
+ * and Beitragseinstellungen (proRataMode, householdBillingModel).
  */
 export function OperationalSection({ form, disabled }: OperationalSectionProps) {
   const params = useParams<{ slug: string }>();
@@ -50,19 +50,17 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
     formState: { errors },
   } = form;
 
-  const householdFeeMode = watch('householdFeeMode');
-
   return (
     <>
       <Card id="section-defaults">
         <CardHeader>
           <CardTitle>Vereinsvorgaben</CardTitle>
-          <CardDescription>Standardwerte fuer Mitgliedschaften und Geschaeftsjahr</CardDescription>
+          <CardDescription>Standardwerte für Mitgliedschaften und Geschäftsjahr</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Geschaeftsjahrbeginn */}
+          {/* Geschäftsjahrbeginn */}
           <div className="space-y-1.5">
-            <Label htmlFor="settings-fiscalYearStartMonth">Geschaeftsjahrbeginn</Label>
+            <Label htmlFor="settings-fiscalYearStartMonth">Geschäftsjahrbeginn</Label>
             <Controller
               name="fiscalYearStartMonth"
               control={control}
@@ -145,7 +143,7 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
         <CardHeader>
           <CardTitle>Beitragseinstellungen</CardTitle>
           <CardDescription>
-            Konfiguration fuer anteilige Berechnung und Haushaltsrabatte
+            Konfiguration für anteilige Berechnung und Haushaltsrabatte
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -177,11 +175,11 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
             </p>
           </div>
 
-          {/* Haushaltsbeitrag (householdFeeMode) */}
+          {/* Haushalts-Abrechnungsmodell (householdBillingModel) */}
           <div className="space-y-1.5">
-            <Label htmlFor="settings-householdFeeMode">Haushaltsbeitrag</Label>
+            <Label htmlFor="settings-householdBillingModel">Haushalts-Abrechnungsmodell</Label>
             <Controller
-              name="householdFeeMode"
+              name="householdBillingModel"
               control={control}
               render={({ field }) => (
                 <Select
@@ -189,67 +187,22 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
                   onValueChange={field.onChange}
                   disabled={disabled}
                 >
-                  <SelectTrigger id="settings-householdFeeMode" className="w-full">
-                    <SelectValue placeholder="Modus waehlen" />
+                  <SelectTrigger id="settings-householdBillingModel" className="w-full">
+                    <SelectValue placeholder="Modell wählen" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="NONE">Kein Rabatt</SelectItem>
-                    <SelectItem value="PERCENTAGE">Prozentual</SelectItem>
-                    <SelectItem value="FLAT">Pauschal</SelectItem>
+                    <SelectItem value="NONE">Kein Haushaltsmodell</SelectItem>
+                    <SelectItem value="REDUCED_MEMBERS">Reduzierter Beitrag für weitere Mitglieder</SelectItem>
+                    <SelectItem value="FAMILY_PAYER">Familienzahler (Kopf zahlt, Rest beitragsfrei)</SelectItem>
+                    <SelectItem value="ALL_REDUCED">Alle Haushaltsmitglieder reduziert</SelectItem>
                   </SelectContent>
                 </Select>
               )}
             />
             <p className="text-xs text-muted-foreground">
-              Rabatt fuer weitere Haushaltsmitglieder.
+              Bestimmt, wie Beitragsarten für Haushaltsmitglieder vorgeschlagen werden.
             </p>
           </div>
-
-          {/* Conditional: Rabatt (%) for PERCENTAGE mode */}
-          {householdFeeMode === 'PERCENTAGE' && (
-            <div className="space-y-1.5">
-              <Label htmlFor="settings-householdDiscountPercent">Rabatt (%)</Label>
-              <Input
-                id="settings-householdDiscountPercent"
-                type="number"
-                min={0}
-                max={100}
-                placeholder="z.B. 50"
-                disabled={disabled}
-                {...register('householdDiscountPercent', {
-                  setValueAs: (v: string | number | undefined | null) => {
-                    if (v === '' || v === undefined || v === null) return undefined;
-                    const n = Number(v);
-                    return Number.isNaN(n) ? undefined : n;
-                  },
-                })}
-              />
-              {errors.householdDiscountPercent?.message && (
-                <p className="text-xs text-destructive">
-                  {String(errors.householdDiscountPercent.message)}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Conditional: Pauschalbetrag (EUR) for FLAT mode */}
-          {householdFeeMode === 'FLAT' && (
-            <div className="space-y-1.5">
-              <Label htmlFor="settings-householdFlatAmount">Pauschalbetrag (EUR)</Label>
-              <Input
-                id="settings-householdFlatAmount"
-                placeholder="z.B. 50.00"
-                inputMode="decimal"
-                disabled={disabled}
-                {...register('householdFlatAmount')}
-              />
-              {errors.householdFlatAmount?.message && (
-                <p className="text-xs text-destructive">
-                  {String(errors.householdFlatAmount.message)}
-                </p>
-              )}
-            </div>
-          )}
         </CardContent>
       </Card>
     </>

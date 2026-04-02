@@ -103,6 +103,7 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
       billingInterval: data.billingInterval ?? 'ANNUALLY',
       isOneTime: data.isOneTime ?? false,
       sortOrder: data.sortOrder ?? 0,
+      scope: 'ALL_MEMBERS',
     };
 
     if (isEditing) {
@@ -116,6 +117,8 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
     onOpenChange(false);
   }
 
+  const name = watch('name');
+  const amount = watch('amount');
   const isOneTime = watch('isOneTime');
   const billingInterval = watch('billingInterval');
 
@@ -240,7 +243,7 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
             >
               Abbrechen
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending || !name || !amount}>
               {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {isEditing ? 'Speichern' : 'Erstellen'}
             </Button>

@@ -168,7 +168,7 @@ export class MembershipTypesService {
 
     if (periodCount > 0) {
       throw new BadRequestException(
-        'Mitgliedsart kann nicht geloescht werden, da sie von Mitgliedschaften verwendet wird'
+        'Mitgliedsart kann nicht gelöscht werden, da sie von Mitgliedschaften verwendet wird'
       );
     }
 

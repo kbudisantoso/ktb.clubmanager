@@ -34,11 +34,16 @@ export const ProRataModeSchema = z.enum(['FULL', 'MONTHLY_PRO_RATA']);
 export type ProRataMode = z.infer<typeof ProRataModeSchema>;
 
 /**
- * Household fee discount mode.
- * Must match Prisma HouseholdFeeMode enum exactly.
+ * Household billing model (determines FeeType auto-suggestion rules).
+ * Must match Prisma HouseholdBillingModel enum exactly.
  */
-export const HouseholdFeeModeSchema = z.enum(['NONE', 'PERCENTAGE', 'FLAT']);
-export type HouseholdFeeMode = z.infer<typeof HouseholdFeeModeSchema>;
+export const HouseholdBillingModelSchema = z.enum([
+  'NONE',
+  'REDUCED_MEMBERS',
+  'FAMILY_PAYER',
+  'ALL_REDUCED',
+]);
+export type HouseholdBillingModel = z.infer<typeof HouseholdBillingModelSchema>;
 
 /**
  * Schema for updating club settings (PATCH semantics).
@@ -91,9 +96,7 @@ export const UpdateClubSettingsSchema = z.object({
 
   // Beitragseinstellungen (Fee Settings)
   proRataMode: ProRataModeSchema.optional(),
-  householdFeeMode: HouseholdFeeModeSchema.optional(),
-  householdDiscountPercent: z.number().int().min(0).max(100).optional().nullable(),
-  householdFlatAmount: z.string().optional().nullable(),
+  householdBillingModel: HouseholdBillingModelSchema.optional(),
 
   // Sichtbarkeit
   visibility: ClubVisibilitySchema.optional(),

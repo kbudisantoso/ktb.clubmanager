@@ -76,10 +76,8 @@ function clubToFormValues(club: ClubSettingsResponse): SettingsFormValues {
     probationPeriodDays: club.probationPeriodDays ?? undefined,
     // Beitragseinstellungen
     proRataMode: (club.proRataMode as SettingsFormValues['proRataMode']) ?? undefined,
-    householdFeeMode:
-      (club.householdFeeMode as SettingsFormValues['householdFeeMode']) ?? undefined,
-    householdDiscountPercent: club.householdDiscountPercent ?? undefined,
-    householdFlatAmount: club.householdFlatAmount ?? undefined,
+    householdBillingModel:
+      (club.householdBillingModel as SettingsFormValues['householdBillingModel']) ?? undefined,
     // Sichtbarkeit
     visibility: club.visibility,
     // Logo & Avatar

@@ -20,6 +20,8 @@ function makeMember(overrides: Record<string, unknown> = {}) {
     householdId: null,
     householdRole: null,
     deletedAt: null,
+    feeTypeId: 'ft-1',
+    feeType: { id: 'ft-1', name: 'Einzelbeitrag', isActive: true },
     membershipPeriods: [
       {
         id: 'mp-1',
@@ -29,8 +31,6 @@ function makeMember(overrides: Record<string, unknown> = {}) {
         membershipType: {
           id: 'mt-1',
           name: 'Ordentliches Mitglied',
-          feeAmount: new Decimal('120.00'),
-          billingInterval: 'ANNUALLY',
         },
       },
     ],
@@ -63,9 +63,7 @@ function makeClub(overrides: Record<string, unknown> = {}) {
   return {
     id: CLUB_ID,
     proRataMode: 'FULL',
-    householdFeeMode: 'NONE',
-    householdDiscountPercent: null,
-    householdFlatAmount: null,
+    householdBillingModel: 'NONE',
     ...overrides,
   };
 }
@@ -108,6 +106,9 @@ const mockDb = {
     count: vi.fn(),
     createMany: vi.fn(),
   },
+  membershipTypeFeeType: {
+    findFirst: vi.fn(),
+  },
 };
 
 const mockPrisma = {
@@ -137,6 +138,14 @@ describe('FeeChargesService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (mockPrisma.forClub as ReturnType<typeof vi.fn>).mockReturnValue(mockDb);
+    // Default cross-table entry: mt-1 x ft-1 = 120.00 ANNUALLY
+    (mockDb.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 'mtft-1',
+      membershipTypeId: 'mt-1',
+      feeTypeId: 'ft-1',
+      amount: new Decimal('120.00'),
+      billingInterval: 'ANNUALLY',
+    });
     service = new FeeChargesService(mockPrisma);
   });
 
@@ -164,9 +173,51 @@ describe('FeeChargesService', () => {
       const result = await service.previewBillingRun(CLUB_ID, previewDto);
 
       expect(result.memberCount).toBe(3);
+      expect(result.chargeCount).toBe(3);
       expect(result.totalAmount).toBe('360.00');
       expect(result.exemptions).toBe(0);
       expect(result.existingCharges).toBe(0);
+    });
+
+    it('should include category fees in chargeCount, totalAmount, and breakdown', async () => {
+      const members = [
+        makeMember({ id: 'member-1', memberNumber: 'TSV-001' }),
+        makeMember({ id: 'member-2', firstName: 'Anna', memberNumber: 'TSV-002' }),
+      ];
+      const categories = [
+        {
+          id: 'cat-1',
+          name: 'Tennisabteilung',
+          amount: new Decimal('50.00'),
+          billingInterval: 'ANNUALLY',
+          isOneTime: false,
+          isActive: true,
+          deletedAt: null,
+        },
+      ];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(categories);
+      (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+
+      const result = await service.previewBillingRun(CLUB_ID, previewDto);
+
+      // 2 members × (1 base + 1 category) = 4 charges
+      expect(result.memberCount).toBe(2);
+      expect(result.chargeCount).toBe(4);
+      // 2 × 120 + 2 × 50 = 340
+      expect(result.totalAmount).toBe('340.00');
+      // Breakdown: base fee type + category
+      expect(result.breakdown).toHaveLength(2);
+      const baseFee = result.breakdown.find((b) => b.membershipType === 'Ordentliches Mitglied');
+      const catFee = result.breakdown.find((b) => b.membershipType === 'Tennisabteilung');
+      expect(baseFee).toEqual({
+        membershipType: 'Ordentliches Mitglied',
+        count: 2,
+        subtotal: '240.00',
+      });
+      expect(catFee).toEqual({ membershipType: 'Tennisabteilung', count: 2, subtotal: '100.00' });
     });
 
     it('should exclude exempt member: memberCount=2, exemptions=1', async () => {
@@ -184,6 +235,7 @@ describe('FeeChargesService', () => {
       const result = await service.previewBillingRun(CLUB_ID, previewDto);
 
       expect(result.memberCount).toBe(2);
+      expect(result.chargeCount).toBe(2);
       expect(result.exemptions).toBe(1);
       expect(result.totalAmount).toBe('240.00');
     });
@@ -253,8 +305,6 @@ describe('FeeChargesService', () => {
               membershipType: {
                 id: 'mt-1',
                 name: 'Ordentliches Mitglied',
-                feeAmount: new Decimal('120.00'),
-                billingInterval: 'ANNUALLY',
               },
             },
           ],
@@ -330,30 +380,23 @@ describe('FeeChargesService', () => {
       expect(charge.discountReason).toContain('Individueller Betrag');
     });
 
-    it('should apply household PERCENTAGE discount and populate discountAmount', async () => {
-      const headMember = makeMember({
-        id: 'member-head',
+    it('should exclude members without feeTypeId (D-17)', async () => {
+      const memberWithFeeType = makeMember({
+        id: 'member-with',
         memberNumber: 'TSV-020',
-        householdId: 'hh-1',
-        householdRole: 'HEAD',
       });
-      const spouseMember = makeMember({
-        id: 'member-spouse',
+      const memberWithoutFeeType = makeMember({
+        id: 'member-without',
         firstName: 'Anna',
         memberNumber: 'TSV-021',
-        householdId: 'hh-1',
-        householdRole: 'SPOUSE',
+        feeTypeId: null,
+        feeType: null,
       });
 
-      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        makeClub({
-          householdFeeMode: 'PERCENTAGE',
-          householdDiscountPercent: 50,
-        })
-      );
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
-        headMember,
-        spouseMember,
+        memberWithFeeType,
+        memberWithoutFeeType,
       ]);
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -374,19 +417,9 @@ describe('FeeChargesService', () => {
 
       await service.executeBillingRun(CLUB_ID, confirmDto);
 
-      // HEAD pays full 120, SPOUSE pays 60 (50% discount)
-      const headCharge = capturedData.find(
-        (c: unknown) => (c as { memberId: string }).memberId === 'member-head'
-      ) as { amount: Prisma.Decimal; discountAmount: Prisma.Decimal | null };
-      const spouseCharge = capturedData.find(
-        (c: unknown) => (c as { memberId: string }).memberId === 'member-spouse'
-      ) as { amount: Prisma.Decimal; discountAmount: Prisma.Decimal; discountReason: string };
-
-      expect(headCharge.amount.toFixed(2)).toBe('120.00');
-      expect(headCharge.discountAmount).toBeNull();
-      expect(spouseCharge.amount.toFixed(2)).toBe('60.00');
-      expect(spouseCharge.discountAmount.toFixed(2)).toBe('60.00');
-      expect(spouseCharge.discountReason).toContain('Haushaltsrabatt');
+      // Only member with feeTypeId should be charged
+      expect(capturedData).toHaveLength(1);
+      expect((capturedData[0] as { memberId: string }).memberId).toBe('member-with');
     });
 
     it('should skip duplicates via createMany skipDuplicates (idempotent)', async () => {
