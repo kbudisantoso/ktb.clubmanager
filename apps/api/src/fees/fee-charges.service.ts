@@ -16,12 +16,20 @@ function roundMoney(value: Prisma.Decimal): Prisma.Decimal {
 
 const ZERO = new Prisma.Decimal(0);
 
+/** Warning for members excluded from billing */
+interface BillingWarning {
+  memberId: string;
+  memberName: string;
+  reason: string;
+}
+
 /** Charge data prepared from billing calculation */
 interface ChargeData {
   clubId: string;
   memberId: string;
   feeCategoryId: string | null;
   membershipTypeId: string | null;
+  feeTypeId: string | null;
   description: string;
   periodStart: Date;
   periodEnd: Date;
@@ -56,7 +64,8 @@ export class FeeChargesService {
       throw new BadRequestException('Periodenbeginn muss vor dem Periodenende liegen');
     }
 
-    const { charges, exemptions, breakdown } = await this.calculateBillingCharges(clubId, dto);
+    const { charges, exemptions, warnings, breakdown } =
+      await this.calculateBillingCharges(clubId, dto);
 
     // Check for existing charges for duplicate detection
     const db = this.prisma.forClub(clubId);
@@ -76,6 +85,7 @@ export class FeeChargesService {
       chargeCount: charges.length,
       totalAmount: roundMoney(totalAmount).toFixed(DECIMAL_PLACES),
       exemptions,
+      warnings,
       breakdown: breakdown.map((b) => ({
         membershipType: b.membershipType,
         count: b.count,
@@ -360,6 +370,7 @@ export class FeeChargesService {
   ): Promise<{
     charges: Omit<ChargeData, 'dueDate'>[];
     exemptions: number;
+    warnings: BillingWarning[];
     breakdown: BreakdownEntry[];
   }> {
     const db = this.prisma.forClub(clubId);
@@ -369,7 +380,6 @@ export class FeeChargesService {
       where: { id: clubId },
       select: {
         proRataMode: true,
-        householdBillingModel: true,
       },
     });
 
@@ -395,16 +405,19 @@ export class FeeChargesService {
           take: 1,
         },
         memberFeeOverrides: true,
-        feeType: true,
+        feeType: { select: { id: true, name: true } },
       },
     });
 
-    // 3. Get active fee categories matching the billing interval
+    // 3. Get active fee categories matching the billing interval with scope join
     const feeCategories = await db.feeCategory.findMany({
       where: {
         deletedAt: null,
         isActive: true,
         billingInterval: dto.billingInterval,
+      },
+      include: {
+        feeCategoryMembershipTypes: true,
       },
     });
 
@@ -412,6 +425,7 @@ export class FeeChargesService {
     const periodEnd = new Date(dto.periodEnd);
 
     const charges: Omit<ChargeData, 'dueDate'>[] = [];
+    const warnings: BillingWarning[] = [];
     let exemptions = 0;
     const breakdownMap = new Map<string, BreakdownEntry>();
 
@@ -434,8 +448,13 @@ export class FeeChargesService {
         continue;
       }
 
-      // D-17: Members without feeTypeId are excluded from billing
+      // D-17: Members without feeTypeId are excluded from billing with warning
       if (!member.feeTypeId) {
+        warnings.push({
+          memberId: member.id,
+          memberName: `${member.firstName} ${member.lastName}`,
+          reason: 'Keine Beitragsart zugewiesen',
+        });
         exemptions++;
         continue;
       }
@@ -449,7 +468,16 @@ export class FeeChargesService {
         },
       });
 
-      if (crossTableEntry) {
+      if (!crossTableEntry) {
+        warnings.push({
+          memberId: member.id,
+          memberName: `${member.firstName} ${member.lastName}`,
+          reason: `Kein Betrag in der Beitragstabelle für ${membershipType.name} × ${member.feeType?.name ?? 'Unbekannt'}`,
+        });
+        continue;
+      }
+
+      {
         let baseFee = new Prisma.Decimal(crossTableEntry.amount.toString());
         let discountAmount: Prisma.Decimal | null = null;
         let discountReason: string | null = null;
@@ -489,9 +517,9 @@ export class FeeChargesService {
 
         baseFee = roundMoney(baseFee);
 
-        const typeName = membershipType.name;
+        const feeTypeName = member.feeType?.name ?? '';
         const description = this.generateChargeDescription(
-          typeName,
+          `${membershipType.name} × ${feeTypeName}`,
           periodStart,
           periodEnd,
           dto.billingInterval
@@ -502,6 +530,7 @@ export class FeeChargesService {
           memberId: member.id,
           feeCategoryId: null,
           membershipTypeId: membershipType.id,
+          feeTypeId: member.feeTypeId,
           description,
           periodStart,
           periodEnd,
@@ -511,6 +540,7 @@ export class FeeChargesService {
         });
 
         // Track breakdown
+        const typeName = membershipType.name;
         const existing = breakdownMap.get(typeName);
         if (existing) {
           existing.count++;
@@ -524,8 +554,19 @@ export class FeeChargesService {
         }
       }
 
-      // Calculate additional category fees
+      // Calculate additional category fees with scope filtering
       for (const category of feeCategories) {
+        // Scope filtering per FeeCategoryScope
+        if (category.scope === 'INDIVIDUAL') continue; // Only via MemberFeeOverride
+        if (category.scope === 'BY_MEMBERSHIP_TYPE') {
+          const matchesMT = category.feeCategoryMembershipTypes.some(
+            (mt: { membershipTypeId: string }) =>
+              mt.membershipTypeId === membershipType.id
+          );
+          if (!matchesMT) continue;
+        }
+        // ALL_MEMBERS: always apply (existing behavior)
+
         const categoryOverride = member.memberFeeOverrides.find(
           (o: MemberWithRelations) => o.feeCategoryId === category.id
         );
@@ -556,6 +597,7 @@ export class FeeChargesService {
           memberId: member.id,
           feeCategoryId: category.id,
           membershipTypeId: null,
+          feeTypeId: null,
           description,
           periodStart,
           periodEnd,
@@ -583,6 +625,7 @@ export class FeeChargesService {
     return {
       charges,
       exemptions,
+      warnings,
       breakdown: Array.from(breakdownMap.values()),
     };
   }

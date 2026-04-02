@@ -109,6 +109,9 @@ const mockDb = {
   membershipTypeFeeType: {
     findFirst: vi.fn(),
   },
+  feeCategoryMembershipType: {
+    findMany: vi.fn(),
+  },
 };
 
 const mockPrisma = {
@@ -193,6 +196,8 @@ describe('FeeChargesService', () => {
           isOneTime: false,
           isActive: true,
           deletedAt: null,
+          scope: 'ALL_MEMBERS',
+          feeCategoryMembershipTypes: [],
         },
       ];
 
@@ -251,6 +256,202 @@ describe('FeeChargesService', () => {
       const result = await service.previewBillingRun(CLUB_ID, previewDto);
 
       expect(result.existingCharges).toBe(5);
+    });
+
+    it('should return warnings for members without feeTypeId', async () => {
+      const members = [
+        makeMember({ id: 'member-1', memberNumber: 'TSV-001' }),
+        makeMember({
+          id: 'member-no-ft',
+          firstName: 'Anna',
+          lastName: 'Ohne',
+          memberNumber: 'TSV-002',
+          feeTypeId: null,
+          feeType: null,
+        }),
+      ];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+
+      const result = await service.previewBillingRun(CLUB_ID, previewDto);
+
+      expect(result.warnings).toHaveLength(1);
+      expect(result.warnings[0]).toEqual({
+        memberId: 'member-no-ft',
+        memberName: 'Anna Ohne',
+        reason: 'Keine Beitragsart zugewiesen',
+      });
+      expect(result.memberCount).toBe(1);
+      expect(result.exemptions).toBe(1);
+    });
+
+    it('should return warning when no cross-table entry exists for member', async () => {
+      const members = [
+        makeMember({
+          id: 'member-no-entry',
+          firstName: 'Peter',
+          lastName: 'NoEntry',
+          memberNumber: 'TSV-050',
+          feeTypeId: 'ft-unknown',
+          feeType: { id: 'ft-unknown', name: 'Sondertarif' },
+        }),
+      ];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+      // No cross-table entry for ft-unknown
+      (mockDb.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      const result = await service.previewBillingRun(CLUB_ID, previewDto);
+
+      expect(result.warnings).toHaveLength(1);
+      expect(result.warnings[0]!.reason).toContain('Kein Betrag in der Beitragstabelle');
+      expect(result.memberCount).toBe(0);
+    });
+
+    it('should apply FeeCategory with scope ALL_MEMBERS to all members', async () => {
+      const members = [
+        makeMember({ id: 'member-1', memberNumber: 'TSV-001' }),
+        makeMember({
+          id: 'member-2',
+          firstName: 'Anna',
+          memberNumber: 'TSV-002',
+          membershipPeriods: [
+            {
+              id: 'mp-2',
+              joinDate: new Date('2020-01-01'),
+              leaveDate: null,
+              membershipTypeId: 'mt-2',
+              membershipType: { id: 'mt-2', name: 'Passives Mitglied' },
+            },
+          ],
+        }),
+      ];
+      const categories = [
+        {
+          id: 'cat-all',
+          name: 'Vereinszeitung',
+          amount: new Decimal('10.00'),
+          billingInterval: 'ANNUALLY',
+          isActive: true,
+          deletedAt: null,
+          scope: 'ALL_MEMBERS',
+          feeCategoryMembershipTypes: [],
+        },
+      ];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(categories);
+      (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+      // Both members get cross-table entry
+      (mockDb.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'mtft-1',
+        membershipTypeId: 'mt-1',
+        feeTypeId: 'ft-1',
+        amount: new Decimal('120.00'),
+        billingInterval: 'ANNUALLY',
+      });
+
+      const result = await service.previewBillingRun(CLUB_ID, previewDto);
+
+      // 2 base + 2 category = 4 charges
+      expect(result.chargeCount).toBe(4);
+      const catBreakdown = result.breakdown.find((b) => b.membershipType === 'Vereinszeitung');
+      expect(catBreakdown).toEqual({
+        membershipType: 'Vereinszeitung',
+        count: 2,
+        subtotal: '20.00',
+      });
+    });
+
+    it('should apply FeeCategory with scope BY_MEMBERSHIP_TYPE only to matching members', async () => {
+      const members = [
+        makeMember({ id: 'member-1', memberNumber: 'TSV-001' }), // mt-1 (Ordentlich)
+        makeMember({
+          id: 'member-2',
+          firstName: 'Anna',
+          memberNumber: 'TSV-002',
+          membershipPeriods: [
+            {
+              id: 'mp-2',
+              joinDate: new Date('2020-01-01'),
+              leaveDate: null,
+              membershipTypeId: 'mt-2',
+              membershipType: { id: 'mt-2', name: 'Passives Mitglied' },
+            },
+          ],
+        }),
+      ];
+      const categories = [
+        {
+          id: 'cat-mt',
+          name: 'Tennisabteilung',
+          amount: new Decimal('50.00'),
+          billingInterval: 'ANNUALLY',
+          isActive: true,
+          deletedAt: null,
+          scope: 'BY_MEMBERSHIP_TYPE',
+          feeCategoryMembershipTypes: [
+            { id: 'fcmt-1', feeCategoryId: 'cat-mt', membershipTypeId: 'mt-1' },
+          ],
+        },
+      ];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(categories);
+      (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+      (mockDb.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'mtft-1',
+        membershipTypeId: 'mt-1',
+        feeTypeId: 'ft-1',
+        amount: new Decimal('120.00'),
+        billingInterval: 'ANNUALLY',
+      });
+
+      const result = await service.previewBillingRun(CLUB_ID, previewDto);
+
+      // 2 base + 1 category (only member-1 matches mt-1) = 3 charges
+      expect(result.chargeCount).toBe(3);
+      const catBreakdown = result.breakdown.find((b) => b.membershipType === 'Tennisabteilung');
+      expect(catBreakdown).toEqual({
+        membershipType: 'Tennisabteilung',
+        count: 1,
+        subtotal: '50.00',
+      });
+    });
+
+    it('should skip FeeCategory with scope INDIVIDUAL (only via override)', async () => {
+      const members = [makeMember({ id: 'member-1', memberNumber: 'TSV-001' })];
+      const categories = [
+        {
+          id: 'cat-indiv',
+          name: 'Sonderbeitrag',
+          amount: new Decimal('25.00'),
+          billingInterval: 'ANNUALLY',
+          isActive: true,
+          deletedAt: null,
+          scope: 'INDIVIDUAL',
+          feeCategoryMembershipTypes: [],
+        },
+      ];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(categories);
+      (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+
+      const result = await service.previewBillingRun(CLUB_ID, previewDto);
+
+      // Only base fee, no category charge (INDIVIDUAL skipped)
+      expect(result.chargeCount).toBe(1);
+      expect(result.breakdown.find((b) => b.membershipType === 'Sonderbeitrag')).toBeUndefined();
     });
   });
 
@@ -420,6 +621,34 @@ describe('FeeChargesService', () => {
       // Only member with feeTypeId should be charged
       expect(capturedData).toHaveLength(1);
       expect((capturedData[0] as { memberId: string }).memberId).toBe('member-with');
+    });
+
+    it('should include feeTypeId in charge data', async () => {
+      const members = [makeMember()];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+      let capturedData: unknown[] = [];
+      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+        async (fn: (tx: unknown) => Promise<unknown>) => {
+          const txClient = {
+            feeCharge: {
+              createMany: vi.fn().mockImplementation(({ data }: { data: unknown[] }) => {
+                capturedData = data;
+                return { count: data.length };
+              }),
+            },
+          };
+          return fn(txClient);
+        }
+      );
+
+      await service.executeBillingRun(CLUB_ID, confirmDto);
+
+      expect(capturedData).toHaveLength(1);
+      expect((capturedData[0] as { feeTypeId: string }).feeTypeId).toBe('ft-1');
     });
 
     it('should skip duplicates via createMany skipDuplicates (idempotent)', async () => {
