@@ -5,17 +5,19 @@ import {
   IsBoolean,
   IsInt,
   IsEnum,
+  IsArray,
   Min,
   MinLength,
   MaxLength,
   Matches,
 } from 'class-validator';
-import { BillingInterval } from '../../../../../prisma/generated/client/index.js';
+import { Transform } from 'class-transformer';
+import { BillingInterval, FeeCategoryScope } from '../../../../../prisma/generated/client/index.js';
 
 export class CreateFeeCategoryDto {
   @ApiProperty({
-    description: 'Category name (e.g., "Aufnahmegebuehr", "Tennisabteilung")',
-    example: 'Aufnahmegebuehr',
+    description: 'Category name (e.g., "Aufnahmegebühr", "Tennisabteilung")',
+    example: 'Aufnahmegebühr',
   })
   @IsString()
   @MinLength(1, { message: 'Name darf nicht leer sein' })
@@ -24,7 +26,7 @@ export class CreateFeeCategoryDto {
 
   @ApiPropertyOptional({
     description: 'Optional description',
-    example: 'Einmalige Aufnahmegebuehr fuer neue Mitglieder',
+    example: 'Einmalige Aufnahmegebühr für neue Mitglieder',
   })
   @IsString()
   @IsOptional()
@@ -36,7 +38,8 @@ export class CreateFeeCategoryDto {
     example: '120.00',
   })
   @IsString()
-  @Matches(/^\d{1,8}(\.\d{1,2})?$/, {
+  @Transform(({ value }) => (typeof value === 'string' ? value.replace(',', '.') : value))
+  @Matches(/^\d{1,8}([.,]\d{1,2})?$/, {
     message: 'Betrag muss ein gültiges Dezimalformat haben (z.B. „120.00", max 8 Vorkommastellen)',
   })
   amount!: string;
@@ -67,4 +70,22 @@ export class CreateFeeCategoryDto {
   @IsOptional()
   @Min(0, { message: 'Sortierung muss mindestens 0 sein' })
   sortOrder?: number;
+
+  @ApiPropertyOptional({
+    description: 'Scope: which members this category applies to',
+    enum: FeeCategoryScope,
+    default: 'ALL_MEMBERS',
+  })
+  @IsEnum(FeeCategoryScope, { message: 'Ungültiger Geltungsbereich' })
+  @IsOptional()
+  scope?: FeeCategoryScope;
+
+  @ApiPropertyOptional({
+    description: 'Membership type IDs (for BY_MEMBERSHIP_TYPE scope)',
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  membershipTypeIds?: string[];
 }

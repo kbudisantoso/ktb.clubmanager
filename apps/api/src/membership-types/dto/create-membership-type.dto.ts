@@ -100,5 +100,4 @@ export class CreateMembershipTypeDto {
   @IsOptional()
   @IsIn([...MEMBER_TYPE_COLORS], { message: 'Ungültige Farbe' })
   color?: string;
-
 }

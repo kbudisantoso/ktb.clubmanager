@@ -39,7 +39,7 @@ export class MeService {
     const allowedTypes = ALLOWED_CONTENT_TYPES['user-avatar'];
     if (!allowedTypes?.includes(dto.contentType)) {
       throw new BadRequestException(
-        `Dateityp "${dto.contentType}" ist nicht erlaubt fuer user-avatar. ` +
+        `Dateityp "${dto.contentType}" ist nicht erlaubt für user-avatar. ` +
           `Erlaubt: ${allowedTypes?.join(', ') ?? 'keine'}`
       );
     }
@@ -349,7 +349,7 @@ export class MeService {
     if (!check.canDelete) {
       throw new BadRequestException({
         message:
-          'Konto kann nicht geloescht werden. Du bist der einzige Verantwortliche in folgenden Vereinen.',
+          'Konto kann nicht gelöscht werden. Du bist der einzige Verantwortliche in folgenden Vereinen.',
         blockedClubs: check.blockedClubs,
       });
     }
@@ -359,7 +359,7 @@ export class MeService {
       await tx.user.update({
         where: { id: userId },
         data: {
-          name: 'Geloeschter Benutzer',
+          name: 'Gelöschter Benutzer',
           email: `deleted_${userId}@anonymized.local`,
           image: null,
           emailVerified: false,
@@ -400,7 +400,7 @@ export class MeService {
 
     this.logger.log(`User ${userId} account anonymized`);
 
-    return { message: 'Konto wurde geloescht' };
+    return { message: 'Konto wurde gelöscht' };
   }
 
   /**

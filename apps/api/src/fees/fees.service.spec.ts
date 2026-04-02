@@ -11,6 +11,7 @@ const mockDb = {
   feeCategory: {
     findMany: vi.fn(),
     findFirst: vi.fn(),
+    findUnique: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
   },
@@ -27,6 +28,11 @@ const mockPrisma = {
     findFirst: vi.fn(),
     delete: vi.fn(),
   },
+  feeCategoryMembershipType: {
+    createMany: vi.fn(),
+    deleteMany: vi.fn(),
+  },
+  $transaction: vi.fn(),
 } as unknown as PrismaService;
 
 const CLUB_ID = 'club-1';
@@ -36,13 +42,15 @@ function makeCategory(overrides: Record<string, unknown> = {}) {
   return {
     id: 'fc-1',
     clubId: CLUB_ID,
-    name: 'Aufnahmegebuehr',
+    name: 'Aufnahmegebühr',
     description: null,
     amount: new Decimal('50.00'),
     billingInterval: 'ANNUALLY',
     isActive: true,
     isOneTime: true,
     sortOrder: 0,
+    scope: 'ALL_MEMBERS',
+    feeCategoryMembershipTypes: [],
     deletedAt: null,
     deletedBy: null,
     createdAt: new Date('2026-01-01'),
@@ -61,9 +69,9 @@ describe('FeesService', () => {
   });
 
   describe('findAll()', () => {
-    it('should return only active, non-deleted categories with Decimal as string', async () => {
+    it('should return only active, non-deleted categories with Decimal as string and scope', async () => {
       const categories = [
-        makeCategory({ id: 'fc-1', name: 'Aufnahmegebuehr' }),
+        makeCategory({ id: 'fc-1', name: 'Aufnahmegebühr' }),
         makeCategory({ id: 'fc-2', name: 'Tennisabteilung', amount: new Decimal('120.00') }),
       ];
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(categories);
@@ -72,11 +80,14 @@ describe('FeesService', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0]!.amount).toBe('50.00');
+      expect(result[0]!.scope).toBe('ALL_MEMBERS');
+      expect(result[0]!.membershipTypes).toEqual([]);
       expect(result[1]!.amount).toBe('120.00');
       expect(mockPrisma.forClub).toHaveBeenCalledWith(CLUB_ID);
       expect(mockDb.feeCategory.findMany).toHaveBeenCalledWith({
         where: { deletedAt: null },
         orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+        include: { feeCategoryMembershipTypes: true },
       });
     });
   });
@@ -99,12 +110,20 @@ describe('FeesService', () => {
   });
 
   describe('create()', () => {
+    beforeEach(() => {
+      // Default transaction mock — runs the callback with mockPrisma as tx
+      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+        async (fn: (tx: unknown) => Promise<unknown>) => fn(mockPrisma)
+      );
+    });
+
     it('should create a fee category and return with Decimal as string', async () => {
       const created = makeCategory({ id: 'fc-new' });
       (mockDb.feeCategory.create as ReturnType<typeof vi.fn>).mockResolvedValue(created);
+      (mockDb.feeCategory.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(created);
 
       const result = await service.create(CLUB_ID, {
-        name: 'Aufnahmegebuehr',
+        name: 'Aufnahmegebühr',
         amount: '50.00',
         billingInterval: 'ANNUALLY',
         isOneTime: true,
@@ -112,23 +131,62 @@ describe('FeesService', () => {
 
       expect(result.id).toBe('fc-new');
       expect(result.amount).toBe('50.00');
+      expect(result.scope).toBe('ALL_MEMBERS');
+      expect(result.membershipTypes).toEqual([]);
       expect(mockDb.feeCategory.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          name: 'Aufnahmegebuehr',
+          name: 'Aufnahmegebühr',
           amount: expect.any(Decimal),
           billingInterval: 'ANNUALLY',
           isOneTime: true,
+          scope: 'ALL_MEMBERS',
         }),
+      });
+    });
+
+    it('should create join records when scope is BY_MEMBERSHIP_TYPE', async () => {
+      const created = makeCategory({
+        id: 'fc-mt',
+        scope: 'BY_MEMBERSHIP_TYPE',
+        feeCategoryMembershipTypes: [
+          { id: 'fcmt-1', feeCategoryId: 'fc-mt', membershipTypeId: 'mt-1' },
+        ],
+      });
+      (mockDb.feeCategory.create as ReturnType<typeof vi.fn>).mockResolvedValue(created);
+      (mockDb.feeCategory.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(created);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (
+        (mockPrisma as any).feeCategoryMembershipType.createMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ count: 1 });
+
+      const result = await service.create(CLUB_ID, {
+        name: 'Tennisabteilung',
+        amount: '50.00',
+        scope: 'BY_MEMBERSHIP_TYPE' as 'ALL_MEMBERS' | 'BY_MEMBERSHIP_TYPE' | 'INDIVIDUAL',
+        membershipTypeIds: ['mt-1'],
+      });
+
+      expect(result.scope).toBe('BY_MEMBERSHIP_TYPE');
+      expect(result.membershipTypes).toHaveLength(1);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((mockPrisma as any).feeCategoryMembershipType.createMany).toHaveBeenCalledWith({
+        data: [{ feeCategoryId: 'fc-mt', membershipTypeId: 'mt-1' }],
       });
     });
   });
 
   describe('update()', () => {
-    it('should update fee category amount and return with Decimal as string', async () => {
-      (mockDb.feeCategory.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeCategory());
-      (mockDb.feeCategory.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        makeCategory({ amount: new Decimal('75.00') })
+    beforeEach(() => {
+      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+        async (fn: (tx: unknown) => Promise<unknown>) => fn(mockPrisma)
       );
+    });
+
+    it('should update fee category amount and return with Decimal as string', async () => {
+      const updated = makeCategory({ amount: new Decimal('75.00') });
+      (mockDb.feeCategory.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeCategory());
+      (mockDb.feeCategory.update as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
+      (mockDb.feeCategory.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
 
       const result = await service.update(CLUB_ID, 'fc-1', { amount: '75.00' });
 
@@ -141,6 +199,34 @@ describe('FeesService', () => {
       await expect(service.update(CLUB_ID, 'nonexistent', { name: 'X' })).rejects.toThrow(
         NotFoundException
       );
+    });
+
+    it('should update scope and manage join records', async () => {
+      const updated = makeCategory({
+        scope: 'BY_MEMBERSHIP_TYPE',
+        feeCategoryMembershipTypes: [
+          { id: 'fcmt-1', feeCategoryId: 'fc-1', membershipTypeId: 'mt-1' },
+        ],
+      });
+      (mockDb.feeCategory.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeCategory());
+      (mockDb.feeCategory.update as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
+      (mockDb.feeCategory.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (
+        (mockPrisma as any).feeCategoryMembershipType.deleteMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ count: 0 });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (
+        (mockPrisma as any).feeCategoryMembershipType.createMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ count: 1 });
+
+      const result = await service.update(CLUB_ID, 'fc-1', {
+        scope: 'BY_MEMBERSHIP_TYPE' as 'ALL_MEMBERS' | 'BY_MEMBERSHIP_TYPE' | 'INDIVIDUAL',
+        membershipTypeIds: ['mt-1'],
+      });
+
+      expect(result.scope).toBe('BY_MEMBERSHIP_TYPE');
+      expect(result.membershipTypes).toHaveLength(1);
     });
   });
 
@@ -180,6 +266,7 @@ describe('FeesService', () => {
       expect(mockDb.feeCategory.findMany).toHaveBeenCalledWith({
         where: { deletedAt: null },
         orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+        include: { feeCategoryMembershipTypes: true },
       });
     });
   });

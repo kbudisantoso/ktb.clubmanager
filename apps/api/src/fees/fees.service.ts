@@ -22,6 +22,9 @@ export class FeesService {
     const categories = await db.feeCategory.findMany({
       where: { deletedAt: null },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      include: {
+        feeCategoryMembershipTypes: true,
+      },
     });
 
     return categories.map((c) => this.serializeCategory(c));
@@ -34,6 +37,9 @@ export class FeesService {
     const db = this.prisma.forClub(clubId);
     const category = await db.feeCategory.findFirst({
       where: { id, deletedAt: null },
+      include: {
+        feeCategoryMembershipTypes: true,
+      },
     });
 
     if (!category) {
@@ -49,19 +55,39 @@ export class FeesService {
    */
   async create(clubId: string, dto: CreateFeeCategoryDto) {
     const db = this.prisma.forClub(clubId);
-    // clubId is injected by forClub() tenant extension at runtime
-    const category = await db.feeCategory.create({
-      data: {
-        name: dto.name,
-        description: dto.description,
-        amount: new Decimal(dto.amount),
-        billingInterval: dto.billingInterval ?? 'ANNUALLY',
-        isOneTime: dto.isOneTime ?? false,
-        sortOrder: dto.sortOrder ?? 0,
-      } as Prisma.FeeCategoryUncheckedCreateInput,
+
+    // Use transaction when scope requires join table records
+    const result = await this.prisma.$transaction(async (tx) => {
+      const category = await db.feeCategory.create({
+        data: {
+          name: dto.name,
+          description: dto.description,
+          amount: new Decimal(dto.amount),
+          billingInterval: dto.billingInterval ?? 'ANNUALLY',
+          isOneTime: dto.isOneTime ?? false,
+          sortOrder: dto.sortOrder ?? 0,
+          scope: dto.scope ?? 'ALL_MEMBERS',
+        } as Prisma.FeeCategoryUncheckedCreateInput,
+      });
+
+      // Create join records for BY_MEMBERSHIP_TYPE scope
+      if (dto.scope === 'BY_MEMBERSHIP_TYPE' && dto.membershipTypeIds?.length) {
+        await tx.feeCategoryMembershipType.createMany({
+          data: dto.membershipTypeIds.map((mtId: string) => ({
+            feeCategoryId: category.id,
+            membershipTypeId: mtId,
+          })),
+        });
+      }
+
+      // Re-fetch with relations
+      return db.feeCategory.findUnique({
+        where: { id: category.id },
+        include: { feeCategoryMembershipTypes: true },
+      });
     });
 
-    return this.serializeCategory(category);
+    return this.serializeCategory(result);
   }
 
   /**
@@ -78,20 +104,47 @@ export class FeesService {
       throw new NotFoundException('Beitragskategorie nicht gefunden');
     }
 
-    const category = await db.feeCategory.update({
-      where: { id },
-      data: {
-        ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.amount !== undefined && { amount: new Decimal(dto.amount) }),
-        ...(dto.billingInterval !== undefined && { billingInterval: dto.billingInterval }),
-        ...(dto.isOneTime !== undefined && { isOneTime: dto.isOneTime }),
-        ...(dto.isActive !== undefined && { isActive: dto.isActive }),
-        ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
-      },
+    const result = await this.prisma.$transaction(async (tx) => {
+      const category = await db.feeCategory.update({
+        where: { id },
+        data: {
+          ...(dto.name !== undefined && { name: dto.name }),
+          ...(dto.description !== undefined && { description: dto.description }),
+          ...(dto.amount !== undefined && { amount: new Decimal(dto.amount) }),
+          ...(dto.billingInterval !== undefined && { billingInterval: dto.billingInterval }),
+          ...(dto.isOneTime !== undefined && { isOneTime: dto.isOneTime }),
+          ...(dto.isActive !== undefined && { isActive: dto.isActive }),
+          ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
+          ...(dto.scope !== undefined && { scope: dto.scope }),
+        },
+      });
+
+      // Update join records if membershipTypeIds is provided
+      if (dto.membershipTypeIds !== undefined) {
+        // Delete existing join records
+        await tx.feeCategoryMembershipType.deleteMany({
+          where: { feeCategoryId: id },
+        });
+
+        // Create new join records
+        if (dto.membershipTypeIds.length > 0) {
+          await tx.feeCategoryMembershipType.createMany({
+            data: dto.membershipTypeIds.map((mtId: string) => ({
+              feeCategoryId: id,
+              membershipTypeId: mtId,
+            })),
+          });
+        }
+      }
+
+      // Re-fetch with relations
+      return db.feeCategory.findUnique({
+        where: { id: category.id },
+        include: { feeCategoryMembershipTypes: true },
+      });
     });
 
-    return this.serializeCategory(category);
+    return this.serializeCategory(result);
   }
 
   /**
@@ -200,10 +253,13 @@ export class FeesService {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private serializeCategory(category: any) {
+    const { feeCategoryMembershipTypes, ...rest } = category ?? {};
     return {
-      ...category,
+      ...rest,
       amount:
         category.amount instanceof Decimal ? category.amount.toFixed(2) : String(category.amount),
+      scope: category.scope ?? 'ALL_MEMBERS',
+      membershipTypes: feeCategoryMembershipTypes ?? [],
     };
   }
 

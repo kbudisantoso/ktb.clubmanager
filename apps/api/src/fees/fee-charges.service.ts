@@ -17,7 +17,7 @@ function roundMoney(value: Prisma.Decimal): Prisma.Decimal {
 const ZERO = new Prisma.Decimal(0);
 
 /** Warning for members excluded from billing */
-interface BillingWarning {
+export interface BillingWarning {
   memberId: string;
   memberName: string;
   reason: string;
@@ -64,8 +64,10 @@ export class FeeChargesService {
       throw new BadRequestException('Periodenbeginn muss vor dem Periodenende liegen');
     }
 
-    const { charges, exemptions, warnings, breakdown } =
-      await this.calculateBillingCharges(clubId, dto);
+    const { charges, exemptions, warnings, breakdown } = await this.calculateBillingCharges(
+      clubId,
+      dto
+    );
 
     // Check for existing charges for duplicate detection
     const db = this.prisma.forClub(clubId);
@@ -560,8 +562,7 @@ export class FeeChargesService {
         if (category.scope === 'INDIVIDUAL') continue; // Only via MemberFeeOverride
         if (category.scope === 'BY_MEMBERSHIP_TYPE') {
           const matchesMT = category.feeCategoryMembershipTypes.some(
-            (mt: { membershipTypeId: string }) =>
-              mt.membershipTypeId === membershipType.id
+            (mt: { membershipTypeId: string }) => mt.membershipTypeId === membershipType.id
           );
           if (!matchesMT) continue;
         }
