@@ -11,8 +11,11 @@ const TENANT_SCOPED_MODELS = [
   'LedgerAccount',
   'FeeCategory',
   'FeeCharge',
+  'FeeType',
   // Note: MembershipPeriod is scoped via Member relation (no clubId column)
   // Note: Payment is scoped via FeeCharge relation (no clubId column)
+  // Note: MembershipTypeFeeType is scoped via FeeType relation (no clubId column)
+  // Note: FeeCategoryMembershipType is scoped via FeeCategory relation (no clubId column)
 ] as const;
 
 type TenantScopedModel = (typeof TENANT_SCOPED_MODELS)[number];
