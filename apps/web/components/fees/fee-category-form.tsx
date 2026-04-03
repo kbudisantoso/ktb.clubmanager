@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,8 +9,10 @@ import {
   CreateFeeCategorySchema,
   type CreateFeeCategory,
   type FeeCategoryResponse,
+  type FeeCategoryScope,
 } from '@ktb/shared';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +33,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreateFeeCategory, useUpdateFeeCategory } from '@/hooks/use-fee-categories';
+import { useMembershipTypes } from '@/hooks/use-membership-types';
 
 /**
  * Form values type uses the schema _input for zodResolver compatibility.
@@ -44,6 +47,8 @@ const DEFAULT_VALUES: FeeCategoryFormValues = {
   billingInterval: 'ANNUALLY',
   isOneTime: false,
   sortOrder: 0,
+  scope: 'ALL_MEMBERS',
+  membershipTypeIds: [],
 };
 
 interface FeeCategoryFormProps {
@@ -65,6 +70,11 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
   const updateMutation = useUpdateFeeCategory(slug);
   const isPending = createMutation.isPending || updateMutation.isPending;
 
+  const { data: membershipTypes } = useMembershipTypes(slug);
+
+  // Track selected membership type IDs for BY_MEMBERSHIP_TYPE scope
+  const [selectedMembershipTypeIds, setSelectedMembershipTypeIds] = useState<string[]>([]);
+
   const {
     register,
     handleSubmit,
@@ -81,6 +91,8 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
   useEffect(() => {
     if (open) {
       if (editingCategory) {
+        const existingMtIds =
+          editingCategory.membershipTypes?.map((mt) => mt.membershipTypeId) ?? [];
         reset({
           name: editingCategory.name,
           description: editingCategory.description ?? '',
@@ -88,14 +100,19 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
           billingInterval: editingCategory.billingInterval,
           isOneTime: editingCategory.isOneTime,
           sortOrder: editingCategory.sortOrder,
+          scope: editingCategory.scope,
+          membershipTypeIds: existingMtIds,
         });
+        setSelectedMembershipTypeIds(existingMtIds);
       } else {
         reset(DEFAULT_VALUES);
+        setSelectedMembershipTypeIds([]);
       }
     }
   }, [open, editingCategory, reset]);
 
   async function onSubmit(data: FeeCategoryFormValues) {
+    const scope = (data.scope ?? 'ALL_MEMBERS') as FeeCategoryScope;
     const payload: CreateFeeCategory = {
       name: data.name,
       description: data.description || undefined,
@@ -103,7 +120,8 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
       billingInterval: data.billingInterval ?? 'ANNUALLY',
       isOneTime: data.isOneTime ?? false,
       sortOrder: data.sortOrder ?? 0,
-      scope: 'ALL_MEMBERS',
+      scope,
+      membershipTypeIds: scope === 'BY_MEMBERSHIP_TYPE' ? selectedMembershipTypeIds : undefined,
     };
 
     if (isEditing) {
@@ -121,6 +139,13 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
   const amount = watch('amount');
   const isOneTime = watch('isOneTime');
   const billingInterval = watch('billingInterval');
+  const watchedScope = watch('scope') as FeeCategoryScope | undefined;
+
+  function handleMembershipTypeToggle(mtId: string, checked: boolean) {
+    setSelectedMembershipTypeIds((prev) =>
+      checked ? [...prev, mtId] : prev.filter((id) => id !== mtId)
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -232,6 +257,58 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
                 <p className="text-destructive text-sm">{errors.sortOrder.message}</p>
               )}
             </div>
+
+            {/* Zuordnung (Scope) */}
+            <div className="space-y-2">
+              <Label htmlFor="fc-scope">Zuordnung</Label>
+              <Select
+                value={watchedScope ?? 'ALL_MEMBERS'}
+                onValueChange={(val) => setValue('scope', val as FeeCategoryScope)}
+              >
+                <SelectTrigger id="fc-scope" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL_MEMBERS">Alle Mitglieder</SelectItem>
+                  <SelectItem value="BY_MEMBERSHIP_TYPE">Nach Mitgliedsart</SelectItem>
+                  <SelectItem value="INDIVIDUAL">Individuell</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Conditional MembershipType checkboxes */}
+            {watchedScope === 'BY_MEMBERSHIP_TYPE' && (
+              <div className="space-y-2">
+                <Label>Mitgliedsarten</Label>
+                {membershipTypes && membershipTypes.length > 0 ? (
+                  <div className="space-y-2">
+                    {membershipTypes.map((mt) => (
+                      <div key={mt.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`mt-${mt.id}`}
+                          checked={selectedMembershipTypeIds.includes(mt.id)}
+                          onCheckedChange={(checked) =>
+                            handleMembershipTypeToggle(mt.id, !!checked)
+                          }
+                        />
+                        <Label htmlFor={`mt-${mt.id}`} className="font-normal">
+                          {mt.name}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Keine Mitgliedsarten vorhanden.</p>
+                )}
+                {selectedMembershipTypeIds.length === 0 &&
+                  membershipTypes &&
+                  membershipTypes.length > 0 && (
+                    <p className="text-sm text-destructive">
+                      Wähle mindestens eine Mitgliedsart aus.
+                    </p>
+                  )}
+              </div>
+            )}
           </div>
 
           <DialogFooter>

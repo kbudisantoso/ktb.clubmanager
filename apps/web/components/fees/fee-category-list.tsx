@@ -26,6 +26,12 @@ const INTERVAL_LABELS: Record<string, string> = {
   ANNUALLY: 'Jährlich',
 };
 
+const SCOPE_LABELS: Record<string, string> = {
+  ALL_MEMBERS: 'Alle',
+  BY_MEMBERSHIP_TYPE: 'Nach Mitgliedsart',
+  INDIVIDUAL: 'Individuell',
+};
+
 import { formatMoney } from '@/lib/format-money';
 
 /**
@@ -129,6 +135,7 @@ export function FeeCategoryList() {
                   <TableHead className="hidden lg:table-cell">Beschreibung</TableHead>
                   <TableHead className="text-right">Betrag</TableHead>
                   <TableHead>Rhythmus</TableHead>
+                  <TableHead>Zuordnung</TableHead>
                   <TableHead>Einmalig</TableHead>
                   <TableHead>Aktiv</TableHead>
                   <TableHead className="w-24">Aktionen</TableHead>
@@ -148,6 +155,11 @@ export function FeeCategoryList() {
                       {category.isOneTime
                         ? 'Einmalig'
                         : (INTERVAL_LABELS[category.billingInterval] ?? category.billingInterval)}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs text-muted-foreground">
+                        {SCOPE_LABELS[category.scope] ?? category.scope}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Badge variant={category.isOneTime ? 'default' : 'secondary'}>
