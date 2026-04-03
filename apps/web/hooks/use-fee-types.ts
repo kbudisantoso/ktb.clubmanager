@@ -55,7 +55,8 @@ export function useCreateFeeType(slug: string) {
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
         throw new Error(
-          error.message || 'Beitragsart konnte nicht erstellt werden. Bitte pr\u00fcfe deine Eingaben.'
+          error.message ||
+            'Beitragsart konnte nicht erstellt werden. Bitte pr\u00fcfe deine Eingaben.'
         );
       }
       return res.json();
@@ -115,9 +116,7 @@ export function useUpdateFeeType(slug: string) {
       toast({
         title: 'Fehler',
         description:
-          error instanceof Error
-            ? error.message
-            : 'Fehler beim Aktualisieren der Beitragsart',
+          error instanceof Error ? error.message : 'Fehler beim Aktualisieren der Beitragsart',
         variant: 'destructive',
       });
     },

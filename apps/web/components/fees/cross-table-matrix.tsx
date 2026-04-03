@@ -71,12 +71,9 @@ export function CrossTableMatrix({ slug }: CrossTableMatrixProps) {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <h3 className="text-lg font-semibold mb-2">
-              Beitragstabelle nicht verf\u00fcgbar
-            </h3>
+            <h3 className="text-lg font-semibold mb-2">Beitragstabelle nicht verf\u00fcgbar</h3>
             <p className="text-muted-foreground max-w-md">
-              Erstelle zuerst Beitragsarten (siehe oben), um die Beitragstabelle zu
-              bef\u00fcllen.
+              Erstelle zuerst Beitragsarten (siehe oben), um die Beitragstabelle zu bef\u00fcllen.
             </p>
           </div>
         </CardContent>
@@ -149,8 +146,8 @@ export function CrossTableMatrix({ slug }: CrossTableMatrixProps) {
           </Table>
         </div>
         <p className="mt-4 text-sm text-muted-foreground">
-          Leere Zellen bedeuten, dass die Kombination nicht verf\u00fcgbar ist. Trage einen
-          Betrag ein, um die Zuordnung zu aktivieren.
+          Leere Zellen bedeuten, dass die Kombination nicht verf\u00fcgbar ist. Trage einen Betrag
+          ein, um die Zuordnung zu aktivieren.
         </p>
       </CardContent>
     </Card>

@@ -169,11 +169,7 @@ export function FeeTypeList({ slug }: FeeTypeListProps) {
       </Card>
 
       {/* Create/Edit Dialog */}
-      <FeeTypeForm
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        editingFeeType={editingFeeType}
-      />
+      <FeeTypeForm open={formOpen} onOpenChange={setFormOpen} editingFeeType={editingFeeType} />
 
       {/* Delete Confirmation */}
       <ConfirmDialog
