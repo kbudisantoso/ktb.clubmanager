@@ -141,9 +141,7 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
       <Card id="section-fees">
         <CardHeader>
           <CardTitle>Beitragseinstellungen</CardTitle>
-          <CardDescription>
-            Konfiguration für anteilige Berechnung und Haushaltsrabatte
-          </CardDescription>
+          <CardDescription>Konfiguration für anteilige Berechnung</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Anteilige Berechnung (proRataMode) */}
@@ -159,7 +157,7 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
                   disabled={disabled}
                 >
                   <SelectTrigger id="settings-proRataMode" className="w-full">
-                    <SelectValue placeholder="Modus waehlen" />
+                    <SelectValue placeholder="Modus w\u00e4hlen" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="FULL">Voller Beitrag</SelectItem>
@@ -169,41 +167,8 @@ export function OperationalSection({ form, disabled }: OperationalSectionProps) 
               )}
             />
             <p className="text-xs text-muted-foreground">
-              Bestimmt, ob bei unterjährigem Eintritt der volle Beitrag oder ein anteiliger Betrag
-              berechnet wird.
-            </p>
-          </div>
-
-          {/* Haushalts-Abrechnungsmodell (householdBillingModel) */}
-          <div className="space-y-1.5">
-            <Label htmlFor="settings-householdBillingModel">Haushalts-Abrechnungsmodell</Label>
-            <Controller
-              name="householdBillingModel"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  value={field.value ?? undefined}
-                  onValueChange={field.onChange}
-                  disabled={disabled}
-                >
-                  <SelectTrigger id="settings-householdBillingModel" className="w-full">
-                    <SelectValue placeholder="Modell wählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">Kein Haushaltsmodell</SelectItem>
-                    <SelectItem value="REDUCED_MEMBERS">
-                      Reduzierter Beitrag für weitere Mitglieder
-                    </SelectItem>
-                    <SelectItem value="FAMILY_PAYER">
-                      Familienzahler (Kopf zahlt, Rest beitragsfrei)
-                    </SelectItem>
-                    <SelectItem value="ALL_REDUCED">Alle Haushaltsmitglieder reduziert</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            <p className="text-xs text-muted-foreground">
-              Bestimmt, wie Beitragsarten für Haushaltsmitglieder vorgeschlagen werden.
+              Bestimmt, ob bei unterj\u00e4hrigem Eintritt der volle Beitrag oder ein anteiliger
+              Betrag berechnet wird.
             </p>
           </div>
         </CardContent>
