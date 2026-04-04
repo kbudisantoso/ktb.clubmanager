@@ -1,13 +1,25 @@
 'use client';
 
 import { useCallback, useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { UpdateMemberSchema } from '@ktb/shared';
+import type { FeeTypeResponse, CrossTableEntryResponse } from '@ktb/shared';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useUpdateMember } from '@/hooks/use-members';
+import { useFeeTypes } from '@/hooks/use-fee-types';
+import { useCrossTable } from '@/hooks/use-cross-table';
+import { useClubSettings } from '@/hooks/use-club-settings';
 import { useToast } from '@/hooks/use-toast';
 import type { MemberDetail } from '@/hooks/use-member-detail';
 import { BasicInfoSection } from './basic-info-section';
@@ -29,6 +41,98 @@ interface MemberFormProps {
   slug: string;
   /** Called when the form dirty state changes */
   onDirtyChange?: (dirty: boolean) => void;
+}
+
+// ============================================================================
+// Helper: Format amount to German locale
+// ============================================================================
+
+function formatAmount(amount: string): string {
+  return parseFloat(amount).toFixed(2).replace('.', ',');
+}
+
+// ============================================================================
+// Helper: Suggest FeeType based on HouseholdBillingModel + household context
+// ============================================================================
+
+interface FeeTypeSuggestion {
+  feeTypeId: string;
+  feeTypeName: string;
+  reason: string;
+}
+
+function suggestFeeType(
+  model: string | null | undefined,
+  householdRole: string | null,
+  isInHousehold: boolean,
+  membershipTypeName: string | null,
+  feeTypes: FeeTypeResponse[]
+): FeeTypeSuggestion | null {
+  const activeFeeTypes = feeTypes.filter((ft) => ft.isActive);
+  if (activeFeeTypes.length === 0) return null;
+
+  // Find by name (case-insensitive, fuzzy start match)
+  const findByName = (name: string) =>
+    activeFeeTypes.find((ft) => ft.name.toLowerCase().includes(name.toLowerCase()));
+
+  // Honorary members always get "Beitragsfrei"
+  if (membershipTypeName?.toLowerCase().includes('ehren')) {
+    const free = findByName('beitragsfrei');
+    return free ? { feeTypeId: free.id, feeTypeName: free.name, reason: 'Ehrenmitglied' } : null;
+  }
+
+  if (!model || model === 'NONE' || !isInHousehold) {
+    const single = findByName('einzelbeitrag');
+    return single
+      ? { feeTypeId: single.id, feeTypeName: single.name, reason: 'Einzelperson' }
+      : null;
+  }
+
+  switch (model) {
+    case 'REDUCED_MEMBERS':
+      if (householdRole === 'HEAD') {
+        const single = findByName('einzelbeitrag');
+        return single
+          ? { feeTypeId: single.id, feeTypeName: single.name, reason: 'Hauptmitglied' }
+          : null;
+      } else {
+        const family = findByName('familientarif');
+        return family
+          ? { feeTypeId: family.id, feeTypeName: family.name, reason: 'Haushaltsmitglied' }
+          : null;
+      }
+
+    case 'FAMILY_PAYER':
+      if (householdRole === 'HEAD') {
+        const familyPay = findByName('familien-pauschal') ?? findByName('familienpauschal');
+        return familyPay
+          ? { feeTypeId: familyPay.id, feeTypeName: familyPay.name, reason: 'Familienzahler' }
+          : null;
+      } else {
+        const free = findByName('beitragsfrei');
+        return free
+          ? {
+              feeTypeId: free.id,
+              feeTypeName: free.name,
+              reason: 'Haushalt, beitragsfrei',
+            }
+          : null;
+      }
+
+    case 'ALL_REDUCED': {
+      const reduced = findByName('familientarif');
+      return reduced
+        ? {
+            feeTypeId: reduced.id,
+            feeTypeName: reduced.name,
+            reason: 'Alle reduziert',
+          }
+        : null;
+    }
+
+    default:
+      return null;
+  }
 }
 
 // ============================================================================
@@ -62,6 +166,7 @@ function memberToFormValues(member: MemberDetail): FormValues {
     postalCode: member.postalCode ?? '',
     city: member.city ?? '',
     country: member.country ?? 'DE',
+    feeTypeId: member.feeTypeId ?? undefined,
   };
 }
 
@@ -76,6 +181,9 @@ function memberToFormValues(member: MemberDetail): FormValues {
 export function MemberForm({ member, slug, onDirtyChange }: MemberFormProps) {
   const { toast } = useToast();
   const updateMember = useUpdateMember(slug);
+  const { data: feeTypes } = useFeeTypes(slug);
+  const { data: crossTableEntries } = useCrossTable(slug);
+  const { data: clubSettings } = useClubSettings(slug);
 
   const defaultValues = useMemo(() => memberToFormValues(member), [member]);
 
@@ -93,6 +201,58 @@ export function MemberForm({ member, slug, onDirtyChange }: MemberFormProps) {
     control,
     formState: { errors, isDirty, isSubmitting },
   } = form;
+
+  const selectedFeeTypeId = watch('feeTypeId');
+
+  // Resolve the member's current MembershipType from the latest period
+  const currentMembershipTypeId = useMemo(() => {
+    const periods = member.membershipPeriods ?? [];
+    // Latest period that has a membershipTypeId
+    const latest = [...periods]
+      .sort((a, b) => {
+        const dateA = a.joinDate ?? a.createdAt ?? '';
+        const dateB = b.joinDate ?? b.createdAt ?? '';
+        return dateB.localeCompare(dateA);
+      })
+      .find((p) => p.membershipTypeId);
+    return latest?.membershipTypeId ?? null;
+  }, [member.membershipPeriods]);
+
+  // Resolve MembershipType name for suggestion logic (fuzzy match via name)
+  const currentMembershipTypeName = useMemo(() => {
+    // We don't have membership type names directly, so use householdRole-based check only
+    // The membershipType name is not on MemberDetail — we rely on honorary check via null/code approach
+    return null;
+  }, []);
+
+  // Compute auto-suggestion
+  const suggestion = useMemo(() => {
+    if (!feeTypes?.length) return null;
+    const isInHousehold = !!member.householdId;
+    return suggestFeeType(
+      clubSettings?.householdBillingModel,
+      member.householdRole,
+      isInHousehold,
+      currentMembershipTypeName,
+      feeTypes
+    );
+  }, [
+    feeTypes,
+    clubSettings?.householdBillingModel,
+    member.householdRole,
+    member.householdId,
+    currentMembershipTypeName,
+  ]);
+
+  // Compute the cross-table entry for the currently selected feeType + membershipType
+  const selectedEntry = useMemo((): CrossTableEntryResponse | null => {
+    if (!selectedFeeTypeId || !currentMembershipTypeId || !crossTableEntries?.length) return null;
+    return (
+      crossTableEntries.find(
+        (e) => e.feeTypeId === selectedFeeTypeId && e.membershipTypeId === currentMembershipTypeId
+      ) ?? null
+    );
+  }, [selectedFeeTypeId, currentMembershipTypeId, crossTableEntries]);
 
   // Reset form when member data changes (e.g., after save or external refresh)
   useEffect(() => {
@@ -121,6 +281,11 @@ export function MemberForm({ member, slug, onDirtyChange }: MemberFormProps) {
           if ((value === '' || value === undefined) && original) {
             changed[key] = null;
           }
+        }
+
+        // Explicitly handle feeTypeId clearing (from value to null/undefined)
+        if (data.feeTypeId !== defaultValues.feeTypeId) {
+          changed.feeTypeId = data.feeTypeId ?? null;
         }
 
         if (Object.keys(changed).length === 0) {
@@ -183,6 +348,74 @@ export function MemberForm({ member, slug, onDirtyChange }: MemberFormProps) {
           {/* Section: Mitgliedschaft */}
           <SectionHeader title="Mitgliedschaft" />
           <MembershipSection member={member} slug={slug} />
+
+          <Separator />
+
+          {/* Section: Beitragsart */}
+          <SectionHeader title="Beitragsart" />
+          <div className="space-y-1.5">
+            <Label htmlFor="feeTypeId">Beitragsart</Label>
+            <Controller
+              name="feeTypeId"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  value={field.value ?? ''}
+                  onValueChange={(val) => field.onChange(val === '__none__' ? null : val)}
+                  disabled={isSubmitting || !feeTypes?.length}
+                >
+                  <SelectTrigger id="feeTypeId">
+                    <SelectValue
+                      placeholder={
+                        feeTypes?.length ? 'Beitragsart wählen' : 'Keine Beitragsarten vorhanden'
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Keine Auswahl</SelectItem>
+                    {feeTypes
+                      ?.filter((ft) => ft.isActive)
+                      .map((ft) => {
+                        const entry = crossTableEntries?.find(
+                          (e) =>
+                            e.feeTypeId === ft.id && e.membershipTypeId === currentMembershipTypeId
+                        );
+                        return (
+                          <SelectItem key={ft.id} value={ft.id}>
+                            {ft.name}
+                            {entry ? ` (${formatAmount(entry.amount)} EUR/Jahr)` : ''}
+                          </SelectItem>
+                        );
+                      })}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {/* Suggestion line (per D-10) */}
+            {suggestion && (
+              <p
+                className={
+                  selectedFeeTypeId && selectedFeeTypeId !== suggestion.feeTypeId
+                    ? 'text-sm text-warning'
+                    : 'text-sm text-muted-foreground'
+                }
+              >
+                {selectedFeeTypeId && selectedFeeTypeId !== suggestion.feeTypeId
+                  ? `Manuell gewählt (Vorschlag wäre: ${suggestion.feeTypeName})`
+                  : `Vorschlag: ${suggestion.feeTypeName} (${suggestion.reason})`}
+              </p>
+            )}
+            {/* Computed amount line */}
+            {selectedEntry ? (
+              <p className="text-sm font-medium tabular-nums">
+                Grundbeitrag: {formatAmount(selectedEntry.amount)} EUR / Jahr
+              </p>
+            ) : selectedFeeTypeId ? (
+              <p className="text-sm text-warning">
+                Kein Betrag in der Beitragstabelle für diese Kombination
+              </p>
+            ) : null}
+          </div>
 
           <Separator />
 

@@ -26,6 +26,7 @@ import { DateInput } from '@/components/ui/date-input';
 import { useCreateMember } from '@/hooks/use-members';
 import { useNumberRanges } from '@/hooks/use-number-ranges';
 import { useMembershipTypes } from '@/hooks/use-membership-types';
+import { useFeeTypes } from '@/hooks/use-fee-types';
 import { useToast } from '@/hooks/use-toast';
 import { getTodayISO } from '@/lib/format-date';
 import { STATUS_LABELS } from '@/lib/member-status-labels';
@@ -82,6 +83,13 @@ export function MemberCreateSheet({
   const createMember = useCreateMember(slug);
   const { data: numberRanges } = useNumberRanges(slug);
   const { data: membershipTypes } = useMembershipTypes(slug);
+  const { data: feeTypes } = useFeeTypes(slug);
+
+  // Active fee types for the dropdown
+  const activeFeeTypes = useMemo(() => {
+    if (!feeTypes) return [];
+    return feeTypes.filter((ft) => ft.isActive);
+  }, [feeTypes]);
 
   // Check if auto-generation is available
   const memberNumberRange = useMemo(
@@ -491,6 +499,34 @@ export function MemberCreateSheet({
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                )}
+
+                {/* Beitragsart (only shown when fee types exist) */}
+                {activeFeeTypes.length > 0 && (
+                  <div className="space-y-1.5">
+                    <Label>Beitragsart</Label>
+                    <Select
+                      disabled={isSubmitting}
+                      onValueChange={(val) =>
+                        setValue('feeTypeId', val === '__none__' ? null : val)
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Beitragsart wählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Keine Auswahl</SelectItem>
+                        {activeFeeTypes.map((ft) => (
+                          <SelectItem key={ft.id} value={ft.id}>
+                            {ft.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Bestimmt den Grundbeitrag zusammen mit der Mitgliedsart.
+                    </p>
                   </div>
                 )}
               </div>

@@ -226,6 +226,7 @@ function MatrixCell({ slug, membershipType, feeType, entry }: MatrixCellProps) {
         membershipTypeId: membershipType.id,
         feeTypeId: feeType.id,
         amount: normalized,
+        billingInterval: entry?.billingInterval ?? 'ANNUALLY',
       });
       setIsEditing(false);
     } catch {
