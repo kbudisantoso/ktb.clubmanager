@@ -27,6 +27,9 @@ export const BillingRunPreviewResponseSchema = z.object({
   /** Number of members that would receive charges */
   memberCount: z.number(),
 
+  /** Total number of charges that would be created */
+  chargeCount: z.number(),
+
   /** Total amount of all charges (decimal string) */
   totalAmount: z.string(),
 
@@ -47,6 +50,18 @@ export const BillingRunPreviewResponseSchema = z.object({
 
   /** Number of existing charges for this period (duplicate warning) */
   existingCharges: z.number(),
+
+  /** Warnings for members excluded from billing (e.g., no feeTypeId assigned) */
+  warnings: z
+    .array(
+      z.object({
+        memberId: z.string(),
+        memberName: z.string(),
+        reason: z.string(),
+      })
+    )
+    .optional()
+    .default([]),
 });
 
 export type BillingRunPreviewResponse = z.infer<typeof BillingRunPreviewResponseSchema>;
