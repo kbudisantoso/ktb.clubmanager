@@ -67,13 +67,13 @@ export function CrossTableMatrix({ slug }: CrossTableMatrixProps) {
       <Card>
         <CardHeader>
           <CardTitle>Beitragstabelle</CardTitle>
-          <CardDescription>Betr\u00e4ge pro Mitgliedsart und Beitragsart</CardDescription>
+          <CardDescription>Beträge pro Mitgliedsart und Beitragsart</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <h3 className="text-lg font-semibold mb-2">Beitragstabelle nicht verf\u00fcgbar</h3>
+            <h3 className="text-lg font-semibold mb-2">Beitragstabelle nicht verfügbar</h3>
             <p className="text-muted-foreground max-w-md">
-              Erstelle zuerst Beitragsarten (siehe oben), um die Beitragstabelle zu bef\u00fcllen.
+              Erstelle zuerst Beitragsarten (siehe oben), um die Beitragstabelle zu befüllen.
             </p>
           </div>
         </CardContent>
@@ -87,7 +87,7 @@ export function CrossTableMatrix({ slug }: CrossTableMatrixProps) {
       <Card>
         <CardHeader>
           <CardTitle>Beitragstabelle</CardTitle>
-          <CardDescription>Betr\u00e4ge pro Mitgliedsart und Beitragsart</CardDescription>
+          <CardDescription>Beträge pro Mitgliedsart und Beitragsart</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -105,7 +105,7 @@ export function CrossTableMatrix({ slug }: CrossTableMatrixProps) {
     <Card>
       <CardHeader>
         <CardTitle>Beitragstabelle</CardTitle>
-        <CardDescription>Betr\u00e4ge pro Mitgliedsart und Beitragsart</CardDescription>
+        <CardDescription>Beträge pro Mitgliedsart und Beitragsart</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -146,8 +146,8 @@ export function CrossTableMatrix({ slug }: CrossTableMatrixProps) {
           </Table>
         </div>
         <p className="mt-4 text-sm text-muted-foreground">
-          Leere Zellen bedeuten, dass die Kombination nicht verf\u00fcgbar ist. Trage einen Betrag
-          ein, um die Zuordnung zu aktivieren.
+          Leere Zellen bedeuten, dass die Kombination nicht verfügbar ist. Trage einen Betrag ein,
+          um die Zuordnung zu aktivieren.
         </p>
       </CardContent>
     </Card>
@@ -208,7 +208,7 @@ function MatrixCell({ slug, membershipType, feeType, entry }: MatrixCellProps) {
     if (isNaN(num) || num < 0) {
       toast({
         title: 'Fehler',
-        description: 'Bitte gib einen g\u00fcltigen Betrag ein (z.B. 65,00).',
+        description: 'Bitte gib einen gültigen Betrag ein (z.B. 65,00).',
         variant: 'destructive',
       });
       return;

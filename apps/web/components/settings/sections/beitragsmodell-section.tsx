@@ -28,7 +28,7 @@ const HOUSEHOLD_BILLING_OPTIONS = [
   },
   {
     value: 'FAMILY_PAYER',
-    label: 'Einer zahlt f\u00fcr alle',
+    label: 'Einer zahlt für alle',
     description:
       'Das Hauptmitglied zahlt einen Familien-Pauschalbeitrag, alle weiteren Mitglieder sind beitragsfrei.',
   },
@@ -52,9 +52,7 @@ export function BeitragsmodellSection({ form, disabled, slug }: BeitragsmodellSe
       <Card>
         <CardHeader>
           <CardTitle>Haushaltsbeitragsmodell</CardTitle>
-          <CardDescription>
-            Wie werden Beitr\u00e4ge f\u00fcr Haushaltsmitglieder berechnet?
-          </CardDescription>
+          <CardDescription>Wie werden Beiträge für Haushaltsmitglieder berechnet?</CardDescription>
         </CardHeader>
         <CardContent>
           <Controller
@@ -86,8 +84,8 @@ export function BeitragsmodellSection({ form, disabled, slug }: BeitragsmodellSe
             )}
           />
           <p className="mt-4 text-sm text-muted-foreground">
-            \u00c4nderung beeinflusst die automatische Beitragsart-Zuweisung f\u00fcr neue
-            Mitglieder und Haushaltswechsel. Bestehende Zuweisungen bleiben unver\u00e4ndert.
+            Änderung beeinflusst die automatische Beitragsart-Zuweisung für neue Mitglieder und
+            Haushaltswechsel. Bestehende Zuweisungen bleiben unverändert.
           </p>
         </CardContent>
       </Card>

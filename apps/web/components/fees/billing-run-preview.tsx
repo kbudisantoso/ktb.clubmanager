@@ -142,7 +142,7 @@ export function BillingRunPreview({ data }: BillingRunPreviewProps) {
                           </TooltipProvider>
                         )}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{'\u2014'}</TableCell>
+                      <TableCell className="text-muted-foreground">{'—'}</TableCell>
                       <TableCell className="text-right tabular-nums">{item.count}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatMoney(item.subtotal)}

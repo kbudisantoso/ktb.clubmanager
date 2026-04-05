@@ -89,7 +89,7 @@ export function useDeleteCrossTableEntry(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Eintrag konnte nicht gel\u00f6scht werden');
+        throw new Error(error.message || 'Eintrag konnte nicht gelöscht werden');
       }
     },
     onSuccess: () => {
@@ -101,7 +101,7 @@ export function useDeleteCrossTableEntry(slug: string) {
       toast({
         title: 'Fehler',
         description:
-          error instanceof Error ? error.message : 'Eintrag konnte nicht gel\u00f6scht werden',
+          error instanceof Error ? error.message : 'Eintrag konnte nicht gelöscht werden',
         variant: 'destructive',
       });
     },

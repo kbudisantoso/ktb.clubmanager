@@ -105,7 +105,7 @@ export function FeeTypeForm({ open, onOpenChange, editingFeeType }: FeeTypeFormP
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? '\u00c4ndere die Konfiguration der Beitragsart.'
+              ? 'Ändere die Konfiguration der Beitragsart.'
               : 'Erstelle eine neue Beitragsart, die festlegt, wie ein Mitglied zahlt.'}
           </DialogDescription>
         </DialogHeader>
@@ -149,7 +149,7 @@ export function FeeTypeForm({ open, onOpenChange, editingFeeType }: FeeTypeFormP
                   Aktiv
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Inaktive Beitragsarten k\u00f6nnen nicht mehr zugewiesen werden.
+                  Inaktive Beitragsarten können nicht mehr zugewiesen werden.
                 </p>
               </div>
               <Switch

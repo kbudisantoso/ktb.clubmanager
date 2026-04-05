@@ -127,7 +127,7 @@ export function FeeTypeList({ slug }: FeeTypeListProps) {
                   <TableRow key={ft.id}>
                     <TableCell className="font-medium">{ft.name}</TableCell>
                     <TableCell className="hidden lg:table-cell text-muted-foreground">
-                      {ft.description || '\u2014'}
+                      {ft.description || '—'}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -154,7 +154,7 @@ export function FeeTypeList({ slug }: FeeTypeListProps) {
                           variant="ghost"
                           size="icon"
                           onClick={() => setDeleteTarget(ft)}
-                          aria-label={`Beitragsart ${ft.name} l\u00f6schen`}
+                          aria-label={`Beitragsart ${ft.name} löschen`}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -175,9 +175,9 @@ export function FeeTypeList({ slug }: FeeTypeListProps) {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Beitragsart l\u00f6schen"
-        description={`M\u00f6chtest du die Beitragsart \u201e${deleteTarget?.name}\u201c wirklich l\u00f6schen? Mitglieder mit dieser Beitragsart behalten ihre aktuelle Zuweisung, die Beitragsart kann aber nicht mehr neu zugewiesen werden.`}
-        confirmLabel="Beitragsart l\u00f6schen"
+        title="Beitragsart löschen"
+        description={`Möchtest du die Beitragsart „${deleteTarget?.name}" wirklich löschen? Mitglieder mit dieser Beitragsart behalten ihre aktuelle Zuweisung, die Beitragsart kann aber nicht mehr neu zugewiesen werden.`}
+        confirmLabel="Beitragsart löschen"
         cancelLabel="Abbrechen"
         variant="destructive"
         onConfirm={handleDelete}

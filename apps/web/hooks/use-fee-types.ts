@@ -55,8 +55,7 @@ export function useCreateFeeType(slug: string) {
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
         throw new Error(
-          error.message ||
-            'Beitragsart konnte nicht erstellt werden. Bitte pr\u00fcfe deine Eingaben.'
+          error.message || 'Beitragsart konnte nicht erstellt werden. Bitte prüfe deine Eingaben.'
         );
       }
       return res.json();
@@ -73,7 +72,7 @@ export function useCreateFeeType(slug: string) {
         description:
           error instanceof Error
             ? error.message
-            : 'Beitragsart konnte nicht erstellt werden. Bitte pr\u00fcfe deine Eingaben.',
+            : 'Beitragsart konnte nicht erstellt werden. Bitte prüfe deine Eingaben.',
         variant: 'destructive',
       });
     },
@@ -137,20 +136,19 @@ export function useDeleteFeeType(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Fehler beim L\u00f6schen der Beitragsart');
+        throw new Error(error.message || 'Fehler beim Löschen der Beitragsart');
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: feeTypeKeys.list(slug),
       });
-      toast({ title: 'Beitragsart gel\u00f6scht' });
+      toast({ title: 'Beitragsart gelöscht' });
     },
     onError: (error) => {
       toast({
         title: 'Fehler',
-        description:
-          error instanceof Error ? error.message : 'Fehler beim L\u00f6schen der Beitragsart',
+        description: error instanceof Error ? error.message : 'Fehler beim Löschen der Beitragsart',
         variant: 'destructive',
       });
     },
