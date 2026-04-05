@@ -19,7 +19,6 @@ import { RegistrySection } from './sections/registry-section';
 import { TaxSection } from './sections/tax-section';
 import { BankSection } from './sections/bank-section';
 import { OperationalSection } from './sections/operational-section';
-import { BeitragsmodellSection } from './sections/beitragsmodell-section';
 import { VisibilitySection } from './sections/visibility-section';
 
 // ============================================================================
@@ -77,8 +76,6 @@ function clubToFormValues(club: ClubSettingsResponse): SettingsFormValues {
     probationPeriodDays: club.probationPeriodDays ?? undefined,
     // Beitragseinstellungen
     proRataMode: (club.proRataMode as SettingsFormValues['proRataMode']) ?? undefined,
-    householdBillingModel:
-      (club.householdBillingModel as SettingsFormValues['householdBillingModel']) ?? undefined,
     // Sichtbarkeit
     visibility: club.visibility,
     // Logo & Avatar
@@ -262,7 +259,6 @@ export function ClubSettingsForm({ club, slug }: ClubSettingsFormProps) {
           <TaxSection form={form} disabled={isSubmitting} />
           <BankSection form={form} disabled={isSubmitting} />
           <OperationalSection form={form} disabled={isSubmitting} />
-          <BeitragsmodellSection form={form} disabled={isSubmitting} slug={slug} />
           <VisibilitySection form={form} disabled={isSubmitting} />
         </div>
       </div>
