@@ -271,20 +271,22 @@ function MatrixCell({ slug, membershipType, feeType, entry }: MatrixCellProps) {
   if (!entry) {
     return (
       <TableCell
-        className="text-center text-muted-foreground cursor-pointer hover:bg-muted/50"
+        className="text-right text-muted-foreground cursor-pointer hover:bg-muted/50 hover:ring-1 hover:ring-border hover:rounded-sm transition-shadow"
         onClick={startEditing}
         aria-label={ariaLabel}
+        title="Klicke, um einen Betrag einzutragen"
       >
-        <span className="text-sm">&mdash;</span>
+        <span className="text-sm">—</span>
       </TableCell>
     );
   }
 
   return (
     <TableCell
-      className={`text-right tabular-nums text-sm cursor-pointer hover:bg-muted/50 ${isSaving ? 'opacity-50' : ''}`}
+      className={`text-right tabular-nums text-sm cursor-pointer hover:bg-muted/50 hover:ring-1 hover:ring-border hover:rounded-sm transition-shadow ${isSaving ? 'opacity-50' : ''}`}
       onClick={startEditing}
       aria-label={ariaLabel}
+      title="Klicke, um den Betrag zu ändern"
     >
       {displayValue} EUR
     </TableCell>
