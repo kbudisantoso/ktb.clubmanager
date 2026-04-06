@@ -294,17 +294,22 @@ export class CreateClubDto {
     description: 'Pro-rata mode for mid-period membership joins',
     enum: ['FULL', 'MONTHLY_PRO_RATA'],
   })
-  @IsString()
+  @IsEnum({ FULL: 'FULL', MONTHLY_PRO_RATA: 'MONTHLY_PRO_RATA' })
   @IsOptional()
-  proRataMode?: string;
+  proRataMode?: 'FULL' | 'MONTHLY_PRO_RATA';
 
   @ApiPropertyOptional({
     description: 'Household billing model (determines FeeType auto-suggestion)',
     enum: ['NONE', 'REDUCED_MEMBERS', 'FAMILY_PAYER', 'ALL_REDUCED'],
   })
-  @IsString()
+  @IsEnum({
+    NONE: 'NONE',
+    REDUCED_MEMBERS: 'REDUCED_MEMBERS',
+    FAMILY_PAYER: 'FAMILY_PAYER',
+    ALL_REDUCED: 'ALL_REDUCED',
+  })
   @IsOptional()
-  householdBillingModel?: string;
+  householdBillingModel?: 'NONE' | 'REDUCED_MEMBERS' | 'FAMILY_PAYER' | 'ALL_REDUCED';
 
   // --- Logo ---
 
