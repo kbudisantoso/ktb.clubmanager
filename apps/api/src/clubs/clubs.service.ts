@@ -301,6 +301,9 @@ export class ClubsService {
         fiscalYearStartMonth: dto.fiscalYearStartMonth,
         defaultMembershipTypeId: dto.defaultMembershipTypeId,
         probationPeriodDays: dto.probationPeriodDays,
+        // Beitragseinstellungen
+        proRataMode: dto.proRataMode,
+        householdBillingModel: dto.householdBillingModel,
         // Logo
         logoFileId: dto.logoFileId,
       },
@@ -758,6 +761,9 @@ export class ClubsService {
       fiscalYearStartMonth: number | null;
       defaultMembershipTypeId: string | null;
       probationPeriodDays: number | null;
+      // Beitragseinstellungen
+      proRataMode: string | null;
+      householdBillingModel: string | null;
       // Logo
       logoFileId: string | null;
       // Deactivation
@@ -815,6 +821,9 @@ export class ClubsService {
       fiscalYearStartMonth: club.fiscalYearStartMonth ?? undefined,
       defaultMembershipTypeId: club.defaultMembershipTypeId ?? undefined,
       probationPeriodDays: club.probationPeriodDays ?? undefined,
+      // Beitragseinstellungen
+      proRataMode: club.proRataMode ?? undefined,
+      householdBillingModel: club.householdBillingModel ?? undefined,
       // Logo
       logoFileId: club.logoFileId ?? undefined,
       // Deactivation
