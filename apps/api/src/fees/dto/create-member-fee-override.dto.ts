@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsBoolean, IsEnum, Matches } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { FeeOverrideType } from '../../../../../prisma/generated/client/index.js';
 
 export class CreateMemberFeeOverrideDto {
@@ -29,7 +30,8 @@ export class CreateMemberFeeOverrideDto {
   })
   @IsString()
   @IsOptional()
-  @Matches(/^\d{1,8}(\.\d{1,2})?$/, {
+  @Transform(({ value }) => (typeof value === 'string' ? value.replace(',', '.') : value))
+  @Matches(/^\d{1,8}([.,]\d{1,2})?$/, {
     message: 'Betrag muss ein gültiges Dezimalformat haben (z.B. „50.00", max 8 Vorkommastellen)',
   })
   customAmount?: string;

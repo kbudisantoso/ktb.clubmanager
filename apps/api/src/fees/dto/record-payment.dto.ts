@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDateString, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class RecordPaymentDto {
   @ApiProperty({
@@ -14,7 +15,8 @@ export class RecordPaymentDto {
     example: '50.00',
   })
   @IsString()
-  @Matches(/^(?!0+(\.0{1,2})?$)\d{1,8}(\.\d{1,2})?$/, {
+  @Transform(({ value }) => (typeof value === 'string' ? value.replace(',', '.') : value))
+  @Matches(/^(?!0+([.,]0{1,2})?$)\d{1,8}([.,]\d{1,2})?$/, {
     message: 'Betrag muss größer als 0 sein und ein gültiges Dezimalformat haben (z.B. "50.00")',
   })
   amount!: string;

@@ -39,11 +39,14 @@ function getTodayISO(): string {
 }
 
 // Validation: amount must be > 0, max 10 digits before decimal, max 2 after
+// Accepts both dot and comma as decimal separator (German locale)
 function validateAmount(value: string): string | null {
   if (!value) return 'Betrag ist erforderlich';
-  const num = parseFloat(value);
+  // Normalize comma to dot for numeric parsing
+  const normalized = value.replace(',', '.');
+  const num = parseFloat(normalized);
   if (isNaN(num) || num <= 0) return 'Betrag muss größer als 0 sein';
-  if (!/^\d{1,10}(\.\d{1,2})?$/.test(value)) {
+  if (!/^\d{1,10}([.,]\d{1,2})?$/.test(value)) {
     return 'Betrag darf maximal 10 Vorkomma- und 2 Nachkommastellen haben';
   }
   return null;
@@ -106,10 +109,13 @@ export function PaymentRecordDialog({
 
     setErrors({});
 
+    // Normalize comma to dot before sending to API
+    const normalizedAmount = amount.replace(',', '.');
+
     recordPayment.mutate(
       {
         feeChargeId: charge.id,
-        amount,
+        amount: normalizedAmount,
         paidAt,
         notes: notes || undefined,
       },

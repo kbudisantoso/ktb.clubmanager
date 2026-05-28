@@ -7,9 +7,10 @@ export const PaymentSourceEnum = z.enum(['MANUAL', 'BANK_IMPORT', 'SEPA']);
 export type PaymentSource = z.infer<typeof PaymentSourceEnum>;
 
 /**
- * Regex for validating decimal amounts (e.g., "12.50", "0.00", "1000.99").
+ * Regex for validating decimal amounts (e.g., "12.50", "0.00", "1000.99", "120,00").
+ * Accepts both dot and comma as decimal separator.
  */
-const DECIMAL_REGEX = /^\d+(\.\d{1,2})?$/;
+const DECIMAL_REGEX = /^\d+([.,]\d{1,2})?$/;
 
 /**
  * Schema for recording a new payment against a fee charge.
@@ -18,8 +19,11 @@ export const RecordPaymentSchema = z.object({
   /** The fee charge this payment is for */
   feeChargeId: z.string(),
 
-  /** Payment amount as decimal string */
-  amount: z.string().regex(DECIMAL_REGEX, 'Betrag muss ein gueltiges Dezimalformat haben'),
+  /** Payment amount as decimal string — normalized to dot */
+  amount: z
+    .string()
+    .transform((v) => v.replace(',', '.'))
+    .pipe(z.string().regex(DECIMAL_REGEX, 'Betrag muss ein gültiges Dezimalformat haben')),
 
   /** Date the payment was made (ISO date string, e.g., "2026-01-15") */
   paidAt: z.string().date(),
