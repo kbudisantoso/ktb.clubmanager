@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useFeeCategories, useDeleteFeeCategory } from '@/hooks/use-fee-categories';
 import { FeeCategoryForm } from './fee-category-form';
+import { ExpandableDescription } from './expandable-description';
 import type { FeeCategoryResponse } from '@ktb/shared';
 
 const INTERVAL_LABELS: Record<string, string> = {
@@ -145,8 +146,12 @@ export function FeeCategoryList() {
                 {items.map((category) => (
                   <TableRow key={category.id}>
                     <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-muted-foreground">
-                      {category.description || '—'}
+                    <TableCell className="hidden lg:table-cell">
+                      {category.description ? (
+                        <ExpandableDescription>{category.description}</ExpandableDescription>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatMoney(category.amount)}

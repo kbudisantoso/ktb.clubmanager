@@ -21,6 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ExpandableDescription } from '@/components/fees/expandable-description';
 import { FeeChargeStatusBadge } from '@/components/fees/fee-charge-status-badge';
 import { PaymentRecordDialog } from '@/components/fees/payment-record-dialog';
 import { useFeeCharges, type FeeChargeFilters } from '@/hooks/use-fee-charges';
@@ -272,7 +273,9 @@ export function FeeChargeList({
                   </span>
                 </div>
               </TableCell>
-              <TableCell>{charge.description}</TableCell>
+              <TableCell>
+                <ExpandableDescription>{charge.description}</ExpandableDescription>
+              </TableCell>
               <TableCell className="hidden lg:table-cell">
                 {formatPeriod(charge.periodStart, charge.periodEnd)}
               </TableCell>
