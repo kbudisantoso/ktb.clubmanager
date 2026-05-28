@@ -236,7 +236,8 @@ export function BillingRunPanel({ slug, onComplete }: BillingRunPanelProps) {
             <AlertDialogHeader>
               <AlertDialogTitle>Beitragserhebung durchführen</AlertDialogTitle>
               <AlertDialogDescription>
-                Es werden {previewData?.memberCount ?? 0} Forderungen über insgesamt{' '}
+                Es werden {previewData?.chargeCount ?? 0} Forderungen für{' '}
+                {previewData?.memberCount ?? 0} Mitglieder über insgesamt{' '}
                 {previewData ? formatMoney(previewData.totalAmount) : '0,00 EUR'} erstellt. Dieser
                 Vorgang kann nicht rückgängig gemacht werden.
               </AlertDialogDescription>
