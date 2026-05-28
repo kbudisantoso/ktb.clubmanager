@@ -88,7 +88,7 @@ export function useCreateFeeOverride(slug: string) {
         const error = await res.json().catch(() => ({}));
         throw new Error(
           error.message ||
-            'Beitragsanpassung konnte nicht erstellt werden. Bitte pruefe deine Eingaben.'
+            'Beitragsanpassung konnte nicht erstellt werden. Bitte prüfe deine Eingaben.'
         );
       }
       return res.json();
@@ -105,7 +105,7 @@ export function useCreateFeeOverride(slug: string) {
         description:
           error instanceof Error
             ? error.message
-            : 'Beitragsanpassung konnte nicht erstellt werden. Bitte pruefe deine Eingaben.',
+            : 'Beitragsanpassung konnte nicht erstellt werden. Bitte prüfe deine Eingaben.',
         variant: 'destructive',
       });
     },

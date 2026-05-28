@@ -816,7 +816,7 @@ export class MemberStatusService {
       });
 
       if (!transition) {
-        throw new NotFoundException('Statusuebergang nicht gefunden');
+        throw new NotFoundException('Statusübergang nicht gefunden');
       }
 
       // One-entry-per-day validation when effectiveDate changes
@@ -901,7 +901,7 @@ export class MemberStatusService {
       });
 
       if (!transition) {
-        throw new NotFoundException('Statusuebergang nicht gefunden');
+        throw new NotFoundException('Statusübergang nicht gefunden');
       }
 
       // Guard: block deletion of LEFT transitions when a formal cancellation exists.

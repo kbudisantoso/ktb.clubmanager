@@ -103,7 +103,7 @@ export function useDeletePayment(slug: string) {
 
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Zahlung konnte nicht geloescht werden');
+        throw new Error(error.message || 'Zahlung konnte nicht gelöscht werden');
       }
     },
     onSuccess: () => {
@@ -114,12 +114,12 @@ export function useDeletePayment(slug: string) {
         queryKey: feeChargeKeys.all(slug),
       });
       toast({
-        title: 'Zahlung geloescht',
+        title: 'Zahlung gelöscht',
       });
     },
     onError: () => {
       toast({
-        title: 'Zahlung konnte nicht geloescht werden. Bitte versuche es erneut.',
+        title: 'Zahlung konnte nicht gelöscht werden. Bitte versuche es erneut.',
         variant: 'destructive',
       });
     },

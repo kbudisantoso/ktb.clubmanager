@@ -56,7 +56,7 @@ export function useCreateFeeCategory(slug: string) {
         const error = await res.json().catch(() => ({}));
         throw new Error(
           error.message ||
-            'Beitragskategorie konnte nicht erstellt werden. Bitte pruefe deine Eingaben.'
+            'Beitragskategorie konnte nicht erstellt werden. Bitte prüfe deine Eingaben.'
         );
       }
       return res.json();
@@ -73,7 +73,7 @@ export function useCreateFeeCategory(slug: string) {
         description:
           error instanceof Error
             ? error.message
-            : 'Beitragskategorie konnte nicht erstellt werden. Bitte pruefe deine Eingaben.',
+            : 'Beitragskategorie konnte nicht erstellt werden. Bitte prüfe deine Eingaben.',
         variant: 'destructive',
       });
     },
@@ -139,20 +139,20 @@ export function useDeleteFeeCategory(slug: string) {
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || 'Fehler beim Loeschen der Beitragskategorie');
+        throw new Error(error.message || 'Fehler beim Löschen der Beitragskategorie');
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: feeCategoryKeys.list(slug),
       });
-      toast({ title: 'Beitragskategorie geloescht' });
+      toast({ title: 'Beitragskategorie gelöscht' });
     },
     onError: (error) => {
       toast({
         title: 'Fehler',
         description:
-          error instanceof Error ? error.message : 'Fehler beim Loeschen der Beitragskategorie',
+          error instanceof Error ? error.message : 'Fehler beim Löschen der Beitragskategorie',
         variant: 'destructive',
       });
     },

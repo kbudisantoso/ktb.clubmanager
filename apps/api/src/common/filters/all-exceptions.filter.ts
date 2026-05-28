@@ -48,7 +48,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
           break;
         case 'P2003':
           statusCode = 400;
-          message = 'Ungueltige Referenz';
+          message = 'Ungültige Referenz';
           break;
         default:
           statusCode = 400;

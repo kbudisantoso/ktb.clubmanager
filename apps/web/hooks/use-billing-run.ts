@@ -35,7 +35,7 @@ export function useBillingRunPreview(slug: string) {
         const error = await res.json().catch(() => ({}));
         throw new Error(
           error.message ||
-            'Die Beitragserhebung konnte nicht durchgefuehrt werden. Bitte versuche es erneut.'
+            'Die Beitragserhebung konnte nicht durchgeführt werden. Bitte versuche es erneut.'
         );
       }
 
@@ -43,7 +43,7 @@ export function useBillingRunPreview(slug: string) {
     },
     onError: () => {
       toast({
-        title: 'Die Beitragserhebung konnte nicht durchgefuehrt werden. Bitte versuche es erneut.',
+        title: 'Die Beitragserhebung konnte nicht durchgeführt werden. Bitte versuche es erneut.',
         variant: 'destructive',
       });
     },
@@ -70,7 +70,7 @@ export function useBillingRunConfirm(slug: string) {
         const error = await res.json().catch(() => ({}));
         throw new Error(
           error.message ||
-            'Die Beitragserhebung konnte nicht durchgefuehrt werden. Bitte versuche es erneut.'
+            'Die Beitragserhebung konnte nicht durchgeführt werden. Bitte versuche es erneut.'
         );
       }
 
@@ -86,7 +86,7 @@ export function useBillingRunConfirm(slug: string) {
     },
     onError: () => {
       toast({
-        title: 'Die Beitragserhebung konnte nicht durchgefuehrt werden. Bitte versuche es erneut.',
+        title: 'Die Beitragserhebung konnte nicht durchgeführt werden. Bitte versuche es erneut.',
         variant: 'destructive',
       });
     },

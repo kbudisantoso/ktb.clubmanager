@@ -34,7 +34,7 @@ export class FilesService {
     const allowedTypes = ALLOWED_CONTENT_TYPES[dto.purpose];
     if (!allowedTypes?.includes(dto.contentType)) {
       throw new BadRequestException(
-        `Dateityp "${dto.contentType}" ist nicht erlaubt fuer ${dto.purpose}. ` +
+        `Dateityp "${dto.contentType}" ist nicht erlaubt für ${dto.purpose}. ` +
           `Erlaubt: ${allowedTypes?.join(', ') ?? 'keine'}`
       );
     }
@@ -327,7 +327,7 @@ export class FilesService {
     const file = clubFile.file;
 
     if (file.deletedAt) {
-      throw new BadRequestException('Datei wurde bereits geloescht');
+      throw new BadRequestException('Datei wurde bereits gelöscht');
     }
 
     const updated = await this.prisma.file.update({

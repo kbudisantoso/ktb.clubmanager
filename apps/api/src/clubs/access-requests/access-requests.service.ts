@@ -225,7 +225,7 @@ export class AccessRequestsService {
 
     if (existingRequest) {
       if (existingRequest.status === 'PENDING') {
-        throw new BadRequestException('Du hast bereits eine Anfrage fuer diesen Verein gestellt');
+        throw new BadRequestException('Du hast bereits eine Anfrage für diesen Verein gestellt');
       }
 
       if (

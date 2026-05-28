@@ -239,7 +239,7 @@ export class MembershipPeriodsService {
 
       if (newStart <= existingEndOrMax && existingStart <= newEndOrMax) {
         throw new BadRequestException(
-          `Mitgliedschaftszeitraum ueberschneidet sich mit bestehendem Zeitraum ` +
+          `Mitgliedschaftszeitraum überschneidet sich mit bestehendem Zeitraum ` +
             `(${toDateString(existingStart)} - ${existingEnd ? toDateString(existingEnd) : 'offen'})`
         );
       }
