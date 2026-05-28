@@ -1,19 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Put,
-  Param,
-  Body,
-  HttpCode,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Put, Param, Body, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import {
-  RequireClubContext,
-  GetClubContext,
-} from '../common/decorators/club-context.decorator.js';
+import { RequireClubContext, GetClubContext } from '../common/decorators/club-context.decorator.js';
 import { RequirePermissions } from '../common/decorators/permissions.decorator.js';
 import { Permission } from '../common/permissions/permissions.enum.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -81,10 +68,7 @@ export class FeeTypesController {
   @ApiOperation({ summary: 'Create a new fee type' })
   @ApiResponse({ status: 201, description: 'Fee type created' })
   @ApiResponse({ status: 409, description: 'Fee type name already exists' })
-  async create(
-    @GetClubContext() ctx: ClubContext,
-    @Body() dto: CreateFeeTypeDto
-  ) {
+  async create(@GetClubContext() ctx: ClubContext, @Body() dto: CreateFeeTypeDto) {
     return this.feeTypesService.create(ctx.clubId, dto);
   }
 

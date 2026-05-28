@@ -66,13 +66,8 @@ export class FeeTypesService {
 
       return this.serializeFeeType(feeType);
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new ConflictException(
-          'Eine Beitragsart mit diesem Namen existiert bereits'
-        );
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Eine Beitragsart mit diesem Namen existiert bereits');
       }
       throw error;
     }
@@ -210,10 +205,7 @@ export class FeeTypesService {
   private serializeCrossTableEntry(entry: any) {
     return {
       ...entry,
-      amount:
-        entry.amount instanceof Decimal
-          ? entry.amount.toFixed(2)
-          : String(entry.amount),
+      amount: entry.amount instanceof Decimal ? entry.amount.toFixed(2) : String(entry.amount),
     };
   }
 }

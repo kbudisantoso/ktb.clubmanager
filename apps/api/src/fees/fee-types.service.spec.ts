@@ -156,9 +156,9 @@ describe('FeeTypesService', () => {
       });
       (mockDb.feeType.create as ReturnType<typeof vi.fn>).mockRejectedValue(prismaError);
 
-      await expect(
-        service.create(CLUB_ID, { name: 'Einzelbeitrag' })
-      ).rejects.toThrow(ConflictException);
+      await expect(service.create(CLUB_ID, { name: 'Einzelbeitrag' })).rejects.toThrow(
+        ConflictException
+      );
     });
   });
 
