@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FeesService } from './fees.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { Prisma } from '../../../../prisma/generated/client/index.js';
 
 const { Decimal } = Prisma;
@@ -17,8 +17,17 @@ const mockDb = {
   },
 };
 
+// Join-table mock (tenant-unscoped delegate) — typed so tests call .mockResolvedValue without casts
+const mockJoinTable = {
+  createMany: vi.fn(),
+  deleteMany: vi.fn(),
+};
+
 const mockPrisma = {
   forClub: vi.fn(() => mockDb),
+  // tx-based writes (CR-03) call tx.feeCategory.* — point at the same mock
+  // functions used by the forClub-scoped mockDb so existing setups apply.
+  feeCategory: mockDb.feeCategory,
   member: {
     findFirst: vi.fn(),
   },
@@ -28,10 +37,7 @@ const mockPrisma = {
     findFirst: vi.fn(),
     delete: vi.fn(),
   },
-  feeCategoryMembershipType: {
-    createMany: vi.fn(),
-    deleteMany: vi.fn(),
-  },
+  feeCategoryMembershipType: mockJoinTable,
   $transaction: vi.fn(),
 } as unknown as PrismaService;
 
@@ -154,10 +160,7 @@ describe('FeesService', () => {
       });
       (mockDb.feeCategory.create as ReturnType<typeof vi.fn>).mockResolvedValue(created);
       (mockDb.feeCategory.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(created);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (
-        (mockPrisma as any).feeCategoryMembershipType.createMany as ReturnType<typeof vi.fn>
-      ).mockResolvedValue({ count: 1 });
+      mockJoinTable.createMany.mockResolvedValue({ count: 1 });
 
       const result = await service.create(CLUB_ID, {
         name: 'Tennisabteilung',
@@ -168,8 +171,7 @@ describe('FeesService', () => {
 
       expect(result.scope).toBe('BY_MEMBERSHIP_TYPE');
       expect(result.membershipTypes).toHaveLength(1);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((mockPrisma as any).feeCategoryMembershipType.createMany).toHaveBeenCalledWith({
+      expect(mockJoinTable.createMany).toHaveBeenCalledWith({
         data: [{ feeCategoryId: 'fc-mt', membershipTypeId: 'mt-1' }],
       });
     });
@@ -211,14 +213,8 @@ describe('FeesService', () => {
       (mockDb.feeCategory.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeCategory());
       (mockDb.feeCategory.update as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
       (mockDb.feeCategory.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (
-        (mockPrisma as any).feeCategoryMembershipType.deleteMany as ReturnType<typeof vi.fn>
-      ).mockResolvedValue({ count: 0 });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (
-        (mockPrisma as any).feeCategoryMembershipType.createMany as ReturnType<typeof vi.fn>
-      ).mockResolvedValue({ count: 1 });
+      mockJoinTable.deleteMany.mockResolvedValue({ count: 0 });
+      mockJoinTable.createMany.mockResolvedValue({ count: 1 });
 
       const result = await service.update(CLUB_ID, 'fc-1', {
         scope: 'BY_MEMBERSHIP_TYPE' as 'ALL_MEMBERS' | 'BY_MEMBERSHIP_TYPE' | 'INDIVIDUAL',
@@ -306,6 +302,10 @@ describe('FeesService', () => {
         id: 'member-1',
         clubId: CLUB_ID,
       });
+      // feeCategoryId is set -> club ownership lookup must succeed
+      (mockDb.feeCategory.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeCategory({ id: 'fc-1' })
+      );
       (mockPrisma.memberFeeOverride.create as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'override-2',
         memberId: 'member-1',
@@ -328,6 +328,27 @@ describe('FeesService', () => {
 
       expect(result.id).toBe('override-2');
       expect(result.customAmount).toBe('25.00');
+    });
+
+    it('should reject a feeCategoryId belonging to a different club (CR-02 tenant isolation)', async () => {
+      // Member belongs to this club...
+      (mockPrisma.member.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'member-1',
+        clubId: CLUB_ID,
+      });
+      // ...but the fee category lookup scoped to this club finds nothing
+      (mockDb.feeCategory.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      await expect(
+        service.createOverride(CLUB_ID, {
+          memberId: 'member-1',
+          overrideType: 'CUSTOM_AMOUNT',
+          customAmount: '25.00',
+          feeCategoryId: 'fc-other-club',
+          reason: 'Sozialtarif',
+        })
+      ).rejects.toThrow(BadRequestException);
+      expect(mockPrisma.memberFeeOverride.create).not.toHaveBeenCalled();
     });
 
     it('should reject memberId belonging to a different club (tenant isolation)', async () => {

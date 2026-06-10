@@ -30,6 +30,9 @@ const mockPrisma = {
   membershipType: {
     findFirst: vi.fn(),
   },
+  feeType: {
+    findFirst: vi.fn(),
+  },
 } as unknown as PrismaService;
 
 const mockNumberRanges = {
@@ -181,6 +184,40 @@ describe('MembersService', () => {
       await expect(
         service.create('club-1', { firstName: 'Max', lastName: 'Mustermann' } as never, 'user-1')
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject feeTypeId belonging to a different club (CR-02 tenant isolation)', async () => {
+      (mockNumberRanges.generateNext as ReturnType<typeof vi.fn>).mockResolvedValue('M-0001');
+      // FeeType lookup scoped to this club finds nothing -> foreign club
+      (
+        mockPrisma as unknown as { feeType: { findFirst: ReturnType<typeof vi.fn> } }
+      ).feeType.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.create(
+          'club-1',
+          { firstName: 'Max', lastName: 'Mustermann', feeTypeId: 'ft-other-club' } as never,
+          'user-1'
+        )
+      ).rejects.toThrow(BadRequestException);
+      expect(mockDb.member.create).not.toHaveBeenCalled();
+    });
+
+    it('should accept feeTypeId that belongs to the club', async () => {
+      (mockNumberRanges.generateNext as ReturnType<typeof vi.fn>).mockResolvedValue('M-0001');
+      (
+        mockPrisma as unknown as { feeType: { findFirst: ReturnType<typeof vi.fn> } }
+      ).feeType.findFirst.mockResolvedValue({ id: 'ft-1', clubId: 'club-1' });
+      mockDb.member.create.mockResolvedValue(makeMember({ feeTypeId: 'ft-1' }));
+
+      const result = await service.create(
+        'club-1',
+        { firstName: 'Max', lastName: 'Mustermann', feeTypeId: 'ft-1' } as never,
+        'user-1'
+      );
+
+      expect(result.memberNumber).toBe('M-0001');
+      expect(mockDb.member.create).toHaveBeenCalled();
     });
   });
 
@@ -399,6 +436,42 @@ describe('MembersService', () => {
       await expect(
         service.update('club-1', 'member-1', { lastName: 'Test', version: 0 } as never, 'user-1')
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should reject feeTypeId belonging to a different club (CR-02 tenant isolation)', async () => {
+      mockDb.member.findFirst.mockResolvedValue(makeMember());
+      // FeeType lookup scoped to this club finds nothing -> foreign club
+      (
+        mockPrisma as unknown as { feeType: { findFirst: ReturnType<typeof vi.fn> } }
+      ).feeType.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.update(
+          'club-1',
+          'member-1',
+          { feeTypeId: 'ft-other-club', version: 0 } as never,
+          'user-1'
+        )
+      ).rejects.toThrow(BadRequestException);
+      expect(mockDb.member.update).not.toHaveBeenCalled();
+    });
+
+    it('should accept feeTypeId that belongs to the club', async () => {
+      mockDb.member.findFirst.mockResolvedValue(makeMember());
+      (
+        mockPrisma as unknown as { feeType: { findFirst: ReturnType<typeof vi.fn> } }
+      ).feeType.findFirst.mockResolvedValue({ id: 'ft-1', clubId: 'club-1' });
+      mockDb.member.update.mockResolvedValue(makeMember({ feeTypeId: 'ft-1', version: 1 }));
+
+      const result = await service.update(
+        'club-1',
+        'member-1',
+        { feeTypeId: 'ft-1', version: 0 } as never,
+        'user-1'
+      );
+
+      expect(result.feeTypeId).toBe('ft-1');
+      expect(mockDb.member.update).toHaveBeenCalled();
     });
   });
 

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateFeeCategoryDto } from './dto/create-fee-category.dto.js';
 import { UpdateFeeCategoryDto } from './dto/update-fee-category.dto.js';
@@ -54,12 +59,13 @@ export class FeesService {
    * Converts amount string to Decimal for storage.
    */
   async create(clubId: string, dto: CreateFeeCategoryDto) {
-    const db = this.prisma.forClub(clubId);
-
-    // Use transaction when scope requires join table records
+    // All writes run through `tx` so the category and its join records are
+    // committed atomically. `tx` is NOT club-extended, so clubId is injected
+    // explicitly via FeeCategoryUncheckedCreateInput.
     const result = await this.prisma.$transaction(async (tx) => {
-      const category = await db.feeCategory.create({
+      const category = await tx.feeCategory.create({
         data: {
+          clubId,
           name: dto.name,
           description: dto.description,
           amount: new Decimal(dto.amount),
@@ -81,7 +87,7 @@ export class FeesService {
       }
 
       // Re-fetch with relations
-      return db.feeCategory.findUnique({
+      return tx.feeCategory.findUnique({
         where: { id: category.id },
         include: { feeCategoryMembershipTypes: true },
       });
@@ -104,8 +110,11 @@ export class FeesService {
       throw new NotFoundException('Beitragskategorie nicht gefunden');
     }
 
+    // The pre-check findFirst above already enforced club ownership, so an
+    // update/find by id inside `tx` is club-safe. All writes run through `tx`
+    // so the entity update and join-record rewrite are committed atomically.
     const result = await this.prisma.$transaction(async (tx) => {
-      const category = await db.feeCategory.update({
+      const category = await tx.feeCategory.update({
         where: { id },
         data: {
           ...(dto.name !== undefined && { name: dto.name }),
@@ -138,7 +147,7 @@ export class FeesService {
       }
 
       // Re-fetch with relations
-      return db.feeCategory.findUnique({
+      return tx.feeCategory.findUnique({
         where: { id: category.id },
         include: { feeCategoryMembershipTypes: true },
       });
@@ -179,6 +188,22 @@ export class FeesService {
   async createOverride(clubId: string, dto: CreateMemberFeeOverrideDto) {
     await this.validateMemberBelongsToClub(clubId, dto.memberId);
 
+    // Validate the referenced fee category belongs to this club, mirroring the
+    // member check. forClub() enforces the tenant scope on the lookup.
+    if (dto.feeCategoryId) {
+      const feeCategory = await this.prisma.forClub(clubId).feeCategory.findFirst({
+        where: { id: dto.feeCategoryId, deletedAt: null },
+      });
+      if (!feeCategory) {
+        throw new BadRequestException(
+          'Die gewählte Beitragskategorie gehört nicht zu diesem Verein'
+        );
+      }
+    }
+
+    // Tenant-safe: memberId is validated via validateMemberBelongsToClub above
+    // and feeCategoryId is validated against the club scope above, so this
+    // unscoped-model write cannot cross tenant boundaries.
     const override = await this.prisma.memberFeeOverride.create({
       data: {
         memberId: dto.memberId,
@@ -200,6 +225,8 @@ export class FeesService {
   async findOverridesForMember(clubId: string, memberId: string) {
     await this.validateMemberBelongsToClub(clubId, memberId);
 
+    // Tenant-safe: memberId is validated via validateMemberBelongsToClub above,
+    // so this unscoped-model query only returns overrides for an in-club member.
     const overrides = await this.prisma.memberFeeOverride.findMany({
       where: { memberId },
       include: { feeCategory: true },
@@ -213,6 +240,9 @@ export class FeesService {
    * Validates tenant isolation: override's member must belong to the specified club.
    */
   async deleteOverride(clubId: string, overrideId: string) {
+    // Tenant-safe: the unscoped lookup loads the override's member relation, and
+    // the member.clubId check below rejects any override outside this club
+    // before the delete runs.
     const override = await this.prisma.memberFeeOverride.findFirst({
       where: { id: overrideId },
       include: { member: true },

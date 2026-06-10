@@ -209,6 +209,17 @@ export class MembersService {
       }
     }
 
+    // Validate feeTypeId belongs to this club before persisting the FK
+    // (mirrors the membershipType validation below).
+    if (dto.feeTypeId) {
+      const feeType = await this.prisma.feeType.findFirst({
+        where: { id: dto.feeTypeId, clubId, deletedAt: null },
+      });
+      if (!feeType) {
+        throw new BadRequestException('Die gewählte Beitragsart gehört nicht zu diesem Verein');
+      }
+    }
+
     // Build create data with explicit clubId for TypeScript
     // (tenant extension also injects clubId at runtime)
     const createData: Prisma.MemberUncheckedCreateInput = {
@@ -332,6 +343,17 @@ export class MembersService {
         throw new ConflictException(
           `Mitgliedsnummer "${dtoFields.memberNumber}" ist bereits vergeben`
         );
+      }
+    }
+
+    // Validate feeTypeId belongs to this club before persisting the FK
+    // (mirrors the membershipType validation in create()).
+    if (dtoFields.feeTypeId) {
+      const feeType = await this.prisma.feeType.findFirst({
+        where: { id: dtoFields.feeTypeId, clubId, deletedAt: null },
+      });
+      if (!feeType) {
+        throw new BadRequestException('Die gewählte Beitragsart gehört nicht zu diesem Verein');
       }
     }
 
