@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import type { HouseholdBillingModel } from '@ktb/shared';
 import { useClubSettings, useUpdateClubSettings } from '@/hooks/use-club-settings';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,7 +66,8 @@ export function FeeModelSettingsClient() {
 
   async function handleBillingModelChange(value: string) {
     try {
-      await updateSettings.mutateAsync({ householdBillingModel: value });
+      // RadioGroup yields a string; the items are exactly the HouseholdBillingModel values.
+      await updateSettings.mutateAsync({ householdBillingModel: value as HouseholdBillingModel });
       toast({ title: 'Haushaltsbeitragsmodell gespeichert' });
     } catch {
       toast({
