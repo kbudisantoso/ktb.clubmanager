@@ -50,7 +50,9 @@ export class PaymentsService {
       throw new NotFoundException('Forderung nicht gefunden');
     }
 
-    // 2. Create payment
+    // 2. Create payment.
+    // Tenant-safe: Payment has no clubId and is excluded from TENANT_SCOPED_MODELS; the parent
+    // feeCharge was validated against clubId in step 1, so this write stays in-tenant.
     const payment = await this.prisma.payment.create({
       data: {
         feeChargeId: dto.feeChargeId,
@@ -62,7 +64,8 @@ export class PaymentsService {
       },
     });
 
-    // 3. Recompute charge status using SQL aggregate
+    // 3. Recompute charge status using SQL aggregate.
+    // Tenant-safe: filtered by the club-validated feeChargeId from step 1.
     const aggregate = await this.prisma.payment.aggregate({
       where: { feeChargeId: dto.feeChargeId, deletedAt: null },
       _sum: { amount: true },
@@ -92,6 +95,7 @@ export class PaymentsService {
       throw new NotFoundException('Forderung nicht gefunden');
     }
 
+    // Tenant-safe: feeChargeId was validated to belong to clubId above before this unscoped read.
     const payments = await this.prisma.payment.findMany({
       where: { feeChargeId, deletedAt: null },
       orderBy: { paidAt: 'desc' },
@@ -107,7 +111,9 @@ export class PaymentsService {
    * Validates club ownership via the fee charge relation.
    */
   async softDeletePayment(clubId: string, paymentId: string, userId: string) {
-    // 1. Find payment with feeCharge for club validation
+    // 1. Find payment with feeCharge for club validation.
+    // Tenant-safe: the row is unscoped here, but the club is enforced immediately below via
+    // payment.feeCharge.clubId !== clubId before any further use.
     const payment = await this.prisma.payment.findFirst({
       where: { id: paymentId, deletedAt: null },
       include: { feeCharge: true },
@@ -117,7 +123,8 @@ export class PaymentsService {
       throw new NotFoundException('Zahlung nicht gefunden');
     }
 
-    // 2. Soft-delete
+    // 2. Soft-delete.
+    // Tenant-safe: reached only after the feeCharge.clubId ownership check above.
     await this.prisma.payment.update({
       where: { id: paymentId },
       data: {
@@ -126,7 +133,8 @@ export class PaymentsService {
       },
     });
 
-    // 3. Recalculate status after deletion
+    // 3. Recalculate status after deletion.
+    // Tenant-safe: filtered by the club-validated payment.feeChargeId.
     const aggregate = await this.prisma.payment.aggregate({
       where: { feeChargeId: payment.feeChargeId, deletedAt: null },
       _sum: { amount: true },

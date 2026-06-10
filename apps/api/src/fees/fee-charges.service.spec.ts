@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ConflictException } from '@nestjs/common';
 import { FeeChargesService } from './fee-charges.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '../../../../prisma/generated/client/index.js';
@@ -141,6 +142,8 @@ describe('FeeChargesService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (mockPrisma.forClub as ReturnType<typeof vi.fn>).mockReturnValue(mockDb);
+    // Default: no existing charges for the period (executeBillingRun re-bill guard)
+    (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
     // Default cross-table entry: mt-1 x ft-1 = 120.00 ANNUALLY
     (mockDb.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 'mtft-1',
@@ -218,11 +221,17 @@ describe('FeeChargesService', () => {
       const baseFee = result.breakdown.find((b) => b.membershipType === 'Ordentliches Mitglied');
       const catFee = result.breakdown.find((b) => b.membershipType === 'Tennisabteilung');
       expect(baseFee).toEqual({
+        kind: 'membershipType',
         membershipType: 'Ordentliches Mitglied',
         count: 2,
         subtotal: '240.00',
       });
-      expect(catFee).toEqual({ membershipType: 'Tennisabteilung', count: 2, subtotal: '100.00' });
+      expect(catFee).toEqual({
+        kind: 'category',
+        membershipType: 'Tennisabteilung',
+        count: 2,
+        subtotal: '100.00',
+      });
     });
 
     it('should exclude exempt member: memberCount=2, exemptions=1', async () => {
@@ -364,6 +373,7 @@ describe('FeeChargesService', () => {
       expect(result.chargeCount).toBe(4);
       const catBreakdown = result.breakdown.find((b) => b.membershipType === 'Vereinszeitung');
       expect(catBreakdown).toEqual({
+        kind: 'category',
         membershipType: 'Vereinszeitung',
         count: 2,
         subtotal: '20.00',
@@ -421,6 +431,7 @@ describe('FeeChargesService', () => {
       expect(result.chargeCount).toBe(3);
       const catBreakdown = result.breakdown.find((b) => b.membershipType === 'Tennisabteilung');
       expect(catBreakdown).toEqual({
+        kind: 'category',
         membershipType: 'Tennisabteilung',
         count: 1,
         subtotal: '50.00',
@@ -679,6 +690,58 @@ describe('FeeChargesService', () => {
 
       expect(skipDuplicatesUsed).toBe(true);
     });
+
+    // ─── WR-01/02: reject re-billing a period that already has charges ──
+
+    it('should throw ConflictException when charges already exist for the period (WR-01/02)', async () => {
+      const members = [makeMember()];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      // A previous run already created charges for this exact period
+      (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(3);
+
+      const txSpy = vi.fn();
+      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(txSpy);
+
+      await expect(service.executeBillingRun(CLUB_ID, confirmDto)).rejects.toBeInstanceOf(
+        ConflictException
+      );
+      // Guard must run before any write
+      expect(txSpy).not.toHaveBeenCalled();
+      expect(mockDb.feeCharge.count).toHaveBeenCalledWith({
+        where: {
+          deletedAt: null,
+          periodStart: new Date(confirmDto.periodStart),
+          periodEnd: new Date(confirmDto.periodEnd),
+        },
+      });
+    });
+
+    it('should proceed and create charges when no existing charges for the period (WR-01/02)', async () => {
+      const members = [makeMember()];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+        async (fn: (tx: unknown) => Promise<unknown>) => {
+          const txClient = {
+            feeCharge: {
+              createMany: vi.fn().mockResolvedValue({ count: 1 }),
+            },
+          };
+          return fn(txClient);
+        }
+      );
+
+      const result = await service.executeBillingRun(CLUB_ID, confirmDto);
+
+      expect(result.chargesCreated).toBe(1);
+      expect(mockPrisma.$transaction).toHaveBeenCalled();
+    });
   });
 
   // ─── findAllWithStatus ──────────────────────────────────────────────
@@ -877,6 +940,142 @@ describe('FeeChargesService', () => {
 
       expect(result.total).toBe(2);
       expect(result.data).toHaveLength(2);
+    });
+  });
+
+  // ─── Pro-rata boundary behavior (WR-03) ─────────────────────────────
+  // Locks in the documented calendar-month-granular rule: day-of-month is ignored,
+  // a member joining any day of a month is treated as joining that whole month.
+
+  describe('pro-rata boundaries (WR-03)', () => {
+    const confirmDto = {
+      periodStart: '2026-01-01',
+      periodEnd: '2026-12-31',
+      billingInterval: 'ANNUALLY' as const,
+      dueDate: '2026-02-15',
+    };
+
+    // Runs a billing execute for a single member with the given join date and
+    // returns the produced charge amount as a fixed-2 string (null if no charge).
+    async function billOne(joinDate: string): Promise<string | null> {
+      const members = [
+        makeMember({
+          id: 'member-prorata',
+          membershipPeriods: [
+            {
+              id: 'mp-prorata',
+              joinDate: new Date(joinDate),
+              leaveDate: null,
+              membershipTypeId: 'mt-1',
+              membershipType: { id: 'mt-1', name: 'Ordentliches Mitglied' },
+            },
+          ],
+        }),
+      ];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeClub({ proRataMode: 'MONTHLY_PRO_RATA' })
+      );
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+
+      let capturedData: unknown[] = [];
+      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+        async (fn: (tx: unknown) => Promise<unknown>) => {
+          const txClient = {
+            feeCharge: {
+              createMany: vi.fn().mockImplementation(({ data }: { data: unknown[] }) => {
+                capturedData = data;
+                return { count: data.length };
+              }),
+            },
+          };
+          return fn(txClient);
+        }
+      );
+
+      await service.executeBillingRun(CLUB_ID, confirmDto);
+
+      if (capturedData.length === 0) return null;
+      return (capturedData[0] as { amount: Prisma.Decimal }).amount.toFixed(2);
+    }
+
+    it('charges the full amount when joining exactly on periodStart', async () => {
+      expect(await billOne('2026-01-01')).toBe('120.00');
+    });
+
+    it('charges the full amount when joining before periodStart', async () => {
+      expect(await billOne('2020-06-15')).toBe('120.00');
+    });
+
+    it('charges zero when joining after periodEnd', async () => {
+      expect(await billOne('2027-03-01')).toBe('0.00');
+    });
+
+    it('ignores day-of-month: 1st vs last day of the same month yield the same amount', async () => {
+      // July is month index 6 -> monthsElapsed=6 -> 120 * 6/12 = 60.00 for both
+      const firstOfJuly = await billOne('2026-07-01');
+      const lastOfJuly = await billOne('2026-07-31');
+      expect(firstOfJuly).toBe('60.00');
+      expect(lastOfJuly).toBe('60.00');
+      expect(firstOfJuly).toBe(lastOfJuly);
+    });
+
+    it('charges the correct fraction for a mid-period join month (April)', async () => {
+      // April is month index 3 -> monthsElapsed=3 -> remaining 9 -> 120 * 9/12 = 90.00
+      expect(await billOne('2026-04-10')).toBe('90.00');
+    });
+  });
+
+  // ─── Breakdown kind / name collision (WR-04) ────────────────────────
+
+  describe('breakdown kind (WR-04)', () => {
+    const previewDto = {
+      periodStart: '2026-01-01',
+      periodEnd: '2026-12-31',
+      billingInterval: 'ANNUALLY' as const,
+    };
+
+    it('does not merge a category that shares a name with a membership type', async () => {
+      // Membership type and category both named "Ordentliches Mitglied"
+      const members = [makeMember({ id: 'member-1', memberNumber: 'TSV-001' })];
+      const categories = [
+        {
+          id: 'cat-collide',
+          name: 'Ordentliches Mitglied',
+          amount: new Decimal('30.00'),
+          billingInterval: 'ANNUALLY',
+          isActive: true,
+          deletedAt: null,
+          scope: 'ALL_MEMBERS',
+          feeCategoryMembershipTypes: [],
+        },
+      ];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(categories);
+      (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+
+      const result = await service.previewBillingRun(CLUB_ID, previewDto);
+
+      // Two distinct breakdown rows despite the shared name
+      expect(result.breakdown).toHaveLength(2);
+      const baseRow = result.breakdown.find((b) => b.kind === 'membershipType');
+      const catRow = result.breakdown.find((b) => b.kind === 'category');
+      expect(baseRow).toEqual({
+        kind: 'membershipType',
+        membershipType: 'Ordentliches Mitglied',
+        count: 1,
+        subtotal: '120.00',
+      });
+      expect(catRow).toEqual({
+        kind: 'category',
+        membershipType: 'Ordentliches Mitglied',
+        count: 1,
+        subtotal: '30.00',
+      });
     });
   });
 });

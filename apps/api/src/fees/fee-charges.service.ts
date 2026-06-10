@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '../../../../prisma/generated/client/index.js';
 import type { BillingRunPreviewDto } from './dto/billing-run-preview.dto.js';
@@ -39,8 +39,11 @@ interface ChargeData {
   discountReason: string | null;
 }
 
-/** Breakdown entry per membership type for preview */
+/** Breakdown entry per membership type or category for preview */
 interface BreakdownEntry {
+  /** Distinguishes base-fee rows (membership type) from category rows so identically named entries do not merge */
+  kind: 'membershipType' | 'category';
+  /** Display name: the membership type name for base fees, the category name for category rows */
   membershipType: string;
   count: number;
   subtotal: Prisma.Decimal;
@@ -89,6 +92,7 @@ export class FeeChargesService {
       exemptions,
       warnings,
       breakdown: breakdown.map((b) => ({
+        kind: b.kind,
         membershipType: b.membershipType,
         count: b.count,
         subtotal: roundMoney(b.subtotal).toFixed(DECIMAL_PLACES),
@@ -106,6 +110,23 @@ export class FeeChargesService {
   async executeBillingRun(clubId: string, dto: BillingRunConfirmDto) {
     if (new Date(dto.periodStart) >= new Date(dto.periodEnd)) {
       throw new BadRequestException('Periodenbeginn muss vor dem Periodenende liegen');
+    }
+
+    // Reject re-billing a period that already has charges. The unique dedupe index
+    // alone is unreliable because NULL key columns are not deduplicated reliably,
+    // so guard explicitly before creating any new charges (WR-01/02).
+    const db = this.prisma.forClub(clubId);
+    const existing = await db.feeCharge.count({
+      where: {
+        deletedAt: null,
+        periodStart: new Date(dto.periodStart),
+        periodEnd: new Date(dto.periodEnd),
+      },
+    });
+    if (existing > 0) {
+      throw new ConflictException(
+        'Für diesen Zeitraum wurden bereits Beiträge berechnet. Bitte storniere die vorhandenen Beiträge, bevor du erneut abrechnest.'
+      );
     }
 
     const { charges } = await this.calculateBillingCharges(clubId, dto);
@@ -282,6 +303,10 @@ export class FeeChargesService {
   private async fetchPaymentSums(chargeIds: string[]): Promise<Map<string, Prisma.Decimal>> {
     if (chargeIds.length === 0) return new Map();
 
+    // Tenant-safe: Payment has no clubId and is excluded from the tenant extension by design.
+    // This unscoped groupBy is safe because chargeIds always originate from a club-scoped
+    // feeCharge query (forClub(clubId)) at every call site, so no cross-tenant payment ids
+    // can reach this filter.
     const paymentAggregates = await this.prisma.payment.groupBy({
       by: ['feeChargeId'],
       where: {
@@ -378,6 +403,11 @@ export class FeeChargesService {
     const db = this.prisma.forClub(clubId);
 
     // 1. Get club settings
+    // NOTE: householdBillingModel is intentionally NOT applied at billing time in this
+    // milestone. It currently only drives the FeeType suggestion in the member form.
+    // Automatic household-discount application (grouping by householdId, reduced/payer
+    // logic, populating discountAmount/discountReason) is deferred to a dedicated future
+    // phase, so it is deliberately not added to this select and the billing math is unchanged.
     const club = await this.prisma.club.findFirst({
       where: { id: clubId },
       select: {
@@ -541,14 +571,17 @@ export class FeeChargesService {
           discountReason,
         });
 
-        // Track breakdown
+        // Track breakdown (keyed by kind+name so a category sharing a name with a
+        // membership type does not collide into the same row)
         const typeName = membershipType.name;
-        const existing = breakdownMap.get(typeName);
+        const typeKey = `membershipType:${typeName}`;
+        const existing = breakdownMap.get(typeKey);
         if (existing) {
           existing.count++;
           existing.subtotal = existing.subtotal.plus(baseFee);
         } else {
-          breakdownMap.set(typeName, {
+          breakdownMap.set(typeKey, {
+            kind: 'membershipType',
             membershipType: typeName,
             count: 1,
             subtotal: baseFee,
@@ -607,14 +640,17 @@ export class FeeChargesService {
           discountReason: catDiscountReason,
         });
 
-        // Track category in breakdown
+        // Track category in breakdown (keyed by kind+name to avoid collisions
+        // with same-named membership types)
         const catName = category.name;
-        const existingCat = breakdownMap.get(catName);
+        const catKey = `category:${catName}`;
+        const existingCat = breakdownMap.get(catKey);
         if (existingCat) {
           existingCat.count++;
           existingCat.subtotal = existingCat.subtotal.plus(categoryFee);
         } else {
-          breakdownMap.set(catName, {
+          breakdownMap.set(catKey, {
+            kind: 'category',
             membershipType: catName,
             count: 1,
             subtotal: categoryFee,
@@ -637,6 +673,16 @@ export class FeeChargesService {
    * Calculate pro-rata fee based on member join date vs billing period.
    * For MONTHLY_PRO_RATA mode with ANNUALLY billing:
    *   amount = feeAmount * (totalMonths - monthsElapsed) / totalMonths
+   *
+   * PRO-RATA RULE (calendar-month granular, day-of-month intentionally ignored):
+   * The calculation works on whole calendar months via `monthDiff`. A member joining
+   * on any day of a month is treated as joining that entire month - joining on the
+   * 1st and joining on the last day of the same month produce the identical amount.
+   * Boundary behavior: join on/before periodStart => full amount, join after periodEnd => zero.
+   *
+   * Finer day-precision pro-rata is a deferred future enhancement. It is intentionally
+   * NOT implemented here because different clubs have different requirements, so it must
+   * become a PER-CLUB setting rather than a global change. See the .planning backlog.
    */
   private calculateProRata(
     feeAmount: Prisma.Decimal,
@@ -675,7 +721,10 @@ export class FeeChargesService {
   }
 
   /**
-   * Calculate the number of months between two dates (1-indexed from period start).
+   * Calculate the number of whole calendar months between two dates (year/month only).
+   * Day-of-month is intentionally ignored: this is the calendar-month-granular building
+   * block for `calculateProRata`. See that method's note for the documented rule and the
+   * deferred day-precision (per-club) enhancement.
    */
   private monthDiff(start: Date, end: Date): number {
     return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());

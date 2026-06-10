@@ -36,10 +36,12 @@ export const BillingRunPreviewResponseSchema = z.object({
   /** Number of members exempt from this billing */
   exemptions: z.number(),
 
-  /** Breakdown by membership type */
+  /** Breakdown by membership type or category */
   breakdown: z.array(
     z.object({
-      /** Membership type name */
+      /** Distinguishes base-fee rows from category rows so identically named entries do not merge */
+      kind: z.enum(['membershipType', 'category']),
+      /** Display name: membership type name for base fees, category name for category rows */
       membershipType: z.string(),
       /** Number of members in this type */
       count: z.number(),
