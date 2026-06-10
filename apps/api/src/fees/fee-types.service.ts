@@ -146,8 +146,23 @@ export class FeeTypesService {
   /**
    * Upsert a cross-table entry (create or update by membershipTypeId + feeTypeId unique).
    * Amount "0.00" is valid (Beitragsfrei).
+   * MembershipTypeFeeType has no clubId; tenant isolation is enforced by verifying
+   * both the feeType and membershipType belong to clubId before writing.
    */
-  async upsertCrossTableEntry(dto: UpsertCrossTableEntryDto) {
+  async upsertCrossTableEntry(clubId: string, dto: UpsertCrossTableEntryDto) {
+    const [feeType, membershipType] = await Promise.all([
+      this.prisma.feeType.findFirst({
+        where: { id: dto.feeTypeId, clubId, deletedAt: null },
+      }),
+      this.prisma.membershipType.findFirst({
+        where: { id: dto.membershipTypeId, clubId },
+      }),
+    ]);
+
+    if (!feeType || !membershipType) {
+      throw new NotFoundException('Beitragsart oder Mitgliedsart nicht gefunden');
+    }
+
     const amount = new Decimal(dto.amount);
     const billingInterval = dto.billingInterval ?? 'ANNUALLY';
 
@@ -175,8 +190,18 @@ export class FeeTypesService {
 
   /**
    * Delete a cross-table entry by ID (hard delete — join table, not domain entity).
+   * Tenant isolation: verify the entry belongs to clubId via the feeType relation
+   * before deleting, since MembershipTypeFeeType has no clubId column.
    */
-  async deleteCrossTableEntry(id: string) {
+  async deleteCrossTableEntry(clubId: string, id: string) {
+    const entry = await this.prisma.membershipTypeFeeType.findFirst({
+      where: { id, feeType: { clubId } },
+    });
+
+    if (!entry) {
+      throw new NotFoundException('Eintrag nicht gefunden');
+    }
+
     await this.prisma.membershipTypeFeeType.delete({
       where: { id },
     });

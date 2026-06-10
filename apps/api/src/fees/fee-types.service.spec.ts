@@ -18,8 +18,16 @@ const mockDb = {
 
 const mockPrisma = {
   forClub: vi.fn(() => mockDb),
+  // Raw (non-tenant-scoped) clients used by cross-table write/delete paths.
+  feeType: {
+    findFirst: vi.fn(),
+  },
+  membershipType: {
+    findFirst: vi.fn(),
+  },
   membershipTypeFeeType: {
     findMany: vi.fn(),
+    findFirst: vi.fn(),
     upsert: vi.fn(),
     delete: vi.fn(),
   },
@@ -260,12 +268,18 @@ describe('FeeTypesService', () => {
 
   describe('upsertCrossTableEntry()', () => {
     it('should upsert a cross-table entry', async () => {
+      (mockPrisma.feeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeFeeType());
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'mt-1',
+        clubId: CLUB_ID,
+        name: 'Erwachsene',
+      });
       const entry = makeCrossTableEntry();
       (mockPrisma.membershipTypeFeeType.upsert as ReturnType<typeof vi.fn>).mockResolvedValue(
         entry
       );
 
-      const result = await service.upsertCrossTableEntry({
+      const result = await service.upsertCrossTableEntry(CLUB_ID, {
         membershipTypeId: 'mt-1',
         feeTypeId: 'ft-1',
         amount: '120.00',
@@ -294,12 +308,18 @@ describe('FeeTypesService', () => {
     });
 
     it('should accept amount "0.00" (Beitragsfrei)', async () => {
+      (mockPrisma.feeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeFeeType());
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'mt-1',
+        clubId: CLUB_ID,
+        name: 'Erwachsene',
+      });
       const entry = makeCrossTableEntry({ amount: new Decimal('0.00') });
       (mockPrisma.membershipTypeFeeType.upsert as ReturnType<typeof vi.fn>).mockResolvedValue(
         entry
       );
 
-      const result = await service.upsertCrossTableEntry({
+      const result = await service.upsertCrossTableEntry(CLUB_ID, {
         membershipTypeId: 'mt-1',
         feeTypeId: 'ft-1',
         amount: '0.00',
@@ -307,17 +327,83 @@ describe('FeeTypesService', () => {
 
       expect(result.amount).toBe('0.00');
     });
+
+    // ─── Regression (CR-01): cross-tenant write rejection ─────────────
+    it('should throw NotFoundException and not write when feeType belongs to another club', async () => {
+      // Foreign-club feeType: scoped findFirst returns null.
+      (mockPrisma.feeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'mt-1',
+        clubId: CLUB_ID,
+        name: 'Erwachsene',
+      });
+
+      await expect(
+        service.upsertCrossTableEntry(CLUB_ID, {
+          membershipTypeId: 'mt-1',
+          feeTypeId: 'ft-foreign',
+          amount: '120.00',
+        })
+      ).rejects.toThrow(NotFoundException);
+
+      expect(mockPrisma.feeType.findFirst).toHaveBeenCalledWith({
+        where: { id: 'ft-foreign', clubId: CLUB_ID, deletedAt: null },
+      });
+      expect(mockPrisma.membershipTypeFeeType.upsert).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException and not write when membershipType belongs to another club', async () => {
+      (mockPrisma.feeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeFeeType());
+      // Foreign-club membershipType: scoped findFirst returns null.
+      (mockPrisma.membershipType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      await expect(
+        service.upsertCrossTableEntry(CLUB_ID, {
+          membershipTypeId: 'mt-foreign',
+          feeTypeId: 'ft-1',
+          amount: '120.00',
+        })
+      ).rejects.toThrow(NotFoundException);
+
+      expect(mockPrisma.membershipType.findFirst).toHaveBeenCalledWith({
+        where: { id: 'mt-foreign', clubId: CLUB_ID },
+      });
+      expect(mockPrisma.membershipTypeFeeType.upsert).not.toHaveBeenCalled();
+    });
   });
 
   describe('deleteCrossTableEntry()', () => {
     it('should delete a cross-table entry by id', async () => {
+      (mockPrisma.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeCrossTableEntry()
+      );
       (mockPrisma.membershipTypeFeeType.delete as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
-      await service.deleteCrossTableEntry('ct-1');
+      await service.deleteCrossTableEntry(CLUB_ID, 'ct-1');
 
+      expect(mockPrisma.membershipTypeFeeType.findFirst).toHaveBeenCalledWith({
+        where: { id: 'ct-1', feeType: { clubId: CLUB_ID } },
+      });
       expect(mockPrisma.membershipTypeFeeType.delete).toHaveBeenCalledWith({
         where: { id: 'ct-1' },
       });
+    });
+
+    // ─── Regression (CR-01): cross-tenant delete rejection ────────────
+    it('should throw NotFoundException and not delete when entry belongs to another club', async () => {
+      // Entry not found within club scope (belongs to a foreign club).
+      (mockPrisma.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null
+      );
+
+      await expect(service.deleteCrossTableEntry(CLUB_ID, 'ct-foreign')).rejects.toThrow(
+        NotFoundException
+      );
+
+      expect(mockPrisma.membershipTypeFeeType.findFirst).toHaveBeenCalledWith({
+        where: { id: 'ct-foreign', feeType: { clubId: CLUB_ID } },
+      });
+      expect(mockPrisma.membershipTypeFeeType.delete).not.toHaveBeenCalled();
     });
   });
 });

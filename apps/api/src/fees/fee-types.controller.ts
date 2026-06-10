@@ -31,8 +31,11 @@ export class FeeTypesController {
   @RequirePermissions([Permission.FINANCE_UPDATE])
   @ApiOperation({ summary: 'Upsert a cross-table entry (create or update)' })
   @ApiResponse({ status: 200, description: 'Cross-table entry upserted' })
-  async upsertCrossTableEntry(@Body() dto: UpsertCrossTableEntryDto) {
-    return this.feeTypesService.upsertCrossTableEntry(dto);
+  async upsertCrossTableEntry(
+    @GetClubContext() ctx: ClubContext,
+    @Body() dto: UpsertCrossTableEntryDto
+  ) {
+    return this.feeTypesService.upsertCrossTableEntry(ctx.clubId, dto);
   }
 
   @Delete('cross-table/:id')
@@ -40,8 +43,11 @@ export class FeeTypesController {
   @RequirePermissions([Permission.FINANCE_DELETE])
   @ApiOperation({ summary: 'Delete a cross-table entry' })
   @ApiResponse({ status: 204, description: 'Cross-table entry deleted' })
-  async removeCrossTableEntry(@Param('id') id: string): Promise<void> {
-    await this.feeTypesService.deleteCrossTableEntry(id);
+  async removeCrossTableEntry(
+    @GetClubContext() ctx: ClubContext,
+    @Param('id') id: string
+  ): Promise<void> {
+    await this.feeTypesService.deleteCrossTableEntry(ctx.clubId, id);
   }
 
   // ─── FeeType CRUD (parametric :id routes — AFTER static routes) ───
