@@ -13,7 +13,11 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { useFeeTypes } from '@/hooks/use-fee-types';
-import { useCrossTable, useUpsertCrossTableEntry } from '@/hooks/use-cross-table';
+import {
+  useCrossTable,
+  useUpsertCrossTableEntry,
+  useDeleteCrossTableEntry,
+} from '@/hooks/use-cross-table';
 import { useMembershipTypes } from '@/hooks/use-membership-types';
 import { useToast } from '@/hooks/use-toast';
 import type { CrossTableEntryResponse, FeeTypeResponse } from '@ktb/shared';
@@ -147,7 +151,7 @@ export function CrossTableMatrix({ slug }: CrossTableMatrixProps) {
         </div>
         <p className="mt-4 text-sm text-muted-foreground">
           Leere Zellen bedeuten, dass die Kombination nicht verfügbar ist. Trage einen Betrag ein,
-          um die Zuordnung zu aktivieren.
+          um die Zuordnung zu aktivieren, oder lösche den Betrag, um sie wieder zu entfernen.
         </p>
       </CardContent>
     </Card>
@@ -167,6 +171,7 @@ interface MatrixCellProps {
 
 function MatrixCell({ slug, membershipType, feeType, entry }: MatrixCellProps) {
   const upsertMutation = useUpsertCrossTableEntry(slug);
+  const deleteMutation = useDeleteCrossTableEntry(slug);
   const { toast } = useToast();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -195,9 +200,22 @@ function MatrixCell({ slug, membershipType, feeType, entry }: MatrixCellProps) {
   const saveValue = useCallback(async () => {
     const trimmed = localValue.trim();
 
-    // Empty value means remove the entry — just cancel
+    // Empty value: remove an existing entry so the combination is no longer
+    // billable. If there is no entry yet, there is nothing to delete — cancel.
     if (!trimmed) {
-      cancelEditing();
+      if (!entry) {
+        cancelEditing();
+        return;
+      }
+      setIsSaving(true);
+      try {
+        await deleteMutation.mutateAsync(entry.id);
+        setIsEditing(false);
+      } catch {
+        // Error toast is handled by the mutation hook
+      } finally {
+        setIsSaving(false);
+      }
       return;
     }
 
@@ -234,7 +252,16 @@ function MatrixCell({ slug, membershipType, feeType, entry }: MatrixCellProps) {
     } finally {
       setIsSaving(false);
     }
-  }, [localValue, entry, membershipType.id, feeType.id, upsertMutation, cancelEditing, toast]);
+  }, [
+    localValue,
+    entry,
+    membershipType.id,
+    feeType.id,
+    upsertMutation,
+    deleteMutation,
+    cancelEditing,
+    toast,
+  ]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -255,7 +282,7 @@ function MatrixCell({ slug, membershipType, feeType, entry }: MatrixCellProps) {
       <TableCell className="text-right p-1">
         <Input
           ref={inputRef}
-          className={`w-[100px] text-right text-sm tabular-nums ml-auto ${isSaving ? 'opacity-50' : ''} ${upsertMutation.isError ? 'border-destructive' : ''}`}
+          className={`w-[100px] text-right text-sm tabular-nums ml-auto ${isSaving ? 'opacity-50' : ''} ${upsertMutation.isError || deleteMutation.isError ? 'border-destructive' : ''}`}
           value={localValue}
           onChange={(e) => setLocalValue(e.target.value)}
           onBlur={saveValue}

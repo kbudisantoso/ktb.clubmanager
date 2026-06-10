@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { BillingRunPreviewResponse } from '@ktb/shared';
 
 // ============================================================================
@@ -21,6 +20,23 @@ import type { BillingRunPreviewResponse } from '@ktb/shared';
 interface BillingRunPreviewProps {
   data: BillingRunPreviewResponse;
 }
+
+/**
+ * A single breakdown row. Each entry carries a `kind` distinguishing
+ * membership-type base-fee rows from fee-category rows, so rows that share a
+ * display name are not conflated in the UI (see WR-04).
+ *
+ * `kind` is optional here for forward-compatibility: older preview responses
+ * without the field fall back to "membershipType".
+ */
+type BreakdownItem = BillingRunPreviewResponse['breakdown'][number] & {
+  kind?: 'membershipType' | 'category';
+};
+
+const KIND_LABELS: Record<'membershipType' | 'category', string> = {
+  membershipType: 'Mitgliedsart',
+  category: 'Kategorie',
+};
 
 // ============================================================================
 // Helpers
@@ -117,30 +133,15 @@ export function BillingRunPreview({ data }: BillingRunPreviewProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.breakdown.map((item) => {
-                  const memberWarning = warnings.find((w) => w.memberName === item.membershipType);
+                {(data.breakdown as BreakdownItem[]).map((item) => {
+                  const kind = item.kind ?? 'membershipType';
                   return (
-                    <TableRow key={item.membershipType}>
+                    <TableRow key={`${kind}-${item.membershipType}`}>
                       <TableCell>
                         <span>{item.membershipType}</span>
-                        {memberWarning && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge
-                                  variant="outline"
-                                  className="ml-2 bg-warning/15 text-warning"
-                                  role="status"
-                                >
-                                  Keine Beitragsart
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{memberWarning.reason}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
+                        <Badge variant="outline" className="ml-2 bg-muted text-muted-foreground">
+                          {KIND_LABELS[kind]}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{'—'}</TableCell>
                       <TableCell className="text-right tabular-nums">{item.count}</TableCell>
