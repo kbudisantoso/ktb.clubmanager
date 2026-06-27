@@ -61,6 +61,14 @@ export class UpdateFeeCategoryDto {
   isOneTime?: boolean;
 
   @ApiPropertyOptional({
+    description:
+      'Whether the fee is pro-rated for mid-period joins (only when the club uses MONTHLY_PRO_RATA)',
+  })
+  @IsBoolean()
+  @IsOptional()
+  proRataEligible?: boolean;
+
+  @ApiPropertyOptional({
     description: 'Whether this category is active',
   })
   @IsBoolean()

@@ -5,8 +5,9 @@ import type { BillingRunPreviewDto } from './dto/billing-run-preview.dto.js';
 import type { BillingRunConfirmDto } from './dto/billing-run-confirm.dto.js';
 import type { FeeChargeQueryDto } from './dto/fee-charge-query.dto.js';
 
-// Explicit rounding strategy for all money calculations
-// HALF_UP is the standard banker's rounding: 0.5 rounds up to 1
+// Explicit rounding strategy for all money calculations.
+// HALF_UP rounds halves away from zero (0.5 -> 1). This is NOT banker's rounding,
+// which is HALF_EVEN (rounds halves to the nearest even digit).
 const ROUNDING_MODE = Prisma.Decimal.ROUND_HALF_UP;
 const DECIMAL_PLACES = 2;
 
@@ -112,23 +113,6 @@ export class FeeChargesService {
       throw new BadRequestException('Periodenbeginn muss vor dem Periodenende liegen');
     }
 
-    // Reject re-billing a period that already has charges. The unique dedupe index
-    // alone is unreliable because NULL key columns are not deduplicated reliably,
-    // so guard explicitly before creating any new charges (WR-01/02).
-    const db = this.prisma.forClub(clubId);
-    const existing = await db.feeCharge.count({
-      where: {
-        deletedAt: null,
-        periodStart: new Date(dto.periodStart),
-        periodEnd: new Date(dto.periodEnd),
-      },
-    });
-    if (existing > 0) {
-      throw new ConflictException(
-        'Für diesen Zeitraum wurden bereits Beiträge berechnet. Bitte storniere die vorhandenen Beiträge, bevor du erneut abrechnest.'
-      );
-    }
-
     const { charges } = await this.calculateBillingCharges(clubId, dto);
 
     const chargeDataArray: ChargeData[] = charges.map((c) => ({
@@ -136,28 +120,60 @@ export class FeeChargesService {
       dueDate: new Date(dto.dueDate),
     }));
 
-    const totalAmount = chargeDataArray.reduce((sum, c) => sum.plus(c.amount), ZERO);
+    const periodStart = new Date(dto.periodStart);
+    const periodEnd = new Date(dto.periodEnd);
 
+    // Run the re-billing guard and the insert in one Serializable transaction so a
+    // concurrent run cannot slip charges in between the count check and createMany;
+    // the partial unique index (deletedAt IS NULL, NULLS NOT DISTINCT) is the hard
+    // backstop. totalAmount is summed from the charges actually persisted, so a
+    // skipDuplicates skip can never make it diverge from chargesCreated. clubId is
+    // filtered explicitly because tx is not club-scoped (no forClub on the tx client).
     const result = await this.prisma.$transaction(
       async (tx: {
         feeCharge: {
+          count: (args: {
+            where: { clubId: string; deletedAt: null; periodStart: Date; periodEnd: Date };
+          }) => Promise<number>;
           createMany: (args: {
             data: ChargeData[];
             skipDuplicates: boolean;
           }) => Promise<{ count: number }>;
+          findMany: (args: {
+            where: { clubId: string; deletedAt: null; periodStart: Date; periodEnd: Date };
+            select: { amount: true };
+          }) => Promise<{ amount: Prisma.Decimal }[]>;
         };
       }) => {
-        return tx.feeCharge.createMany({
+        const existing = await tx.feeCharge.count({
+          where: { clubId, deletedAt: null, periodStart, periodEnd },
+        });
+        if (existing > 0) {
+          throw new ConflictException(
+            'Für diesen Zeitraum wurden bereits Beiträge berechnet. Bitte storniere die vorhandenen Beiträge, bevor du erneut abrechnest.'
+          );
+        }
+
+        const created = await tx.feeCharge.createMany({
           data: chargeDataArray,
           skipDuplicates: true,
         });
-      }
+
+        const persisted = await tx.feeCharge.findMany({
+          where: { clubId, deletedAt: null, periodStart, periodEnd },
+          select: { amount: true },
+        });
+        const totalAmount = persisted.reduce((sum, c) => sum.plus(c.amount), ZERO);
+
+        return {
+          chargesCreated: created.count,
+          totalAmount: roundMoney(totalAmount).toFixed(DECIMAL_PLACES),
+        };
+      },
+      { isolationLevel: 'Serializable' }
     );
 
-    return {
-      chargesCreated: result.count,
-      totalAmount: roundMoney(totalAmount).toFixed(DECIMAL_PLACES),
-    };
+    return result;
   }
 
   // ─── FeeCharge Queries ──────────────────────────────────────────────
@@ -415,7 +431,11 @@ export class FeeChargesService {
       },
     });
 
-    // 2. Get active members with membership info, fee type, and overrides
+    // 2. Get active members with membership info, fee type, and overrides.
+    // NOTE: loaded in one query. For very large clubs this should move to cursor-based
+    // batching (compute + insert charges per chunk); deferred as it would restructure
+    // the executeBillingRun transaction. The per-member N+1 is already removed via the
+    // cross-table map below.
     const members = await this.prisma.member.findMany({
       where: {
         clubId,
@@ -452,6 +472,16 @@ export class FeeChargesService {
         feeCategoryMembershipTypes: true,
       },
     });
+
+    // 3b. Pre-load the MembershipType x FeeType cross-table for this interval into a
+    // map (membershipTypeId:feeTypeId -> entry) so the member loop does a map lookup
+    // instead of one findFirst query per member (avoids N+1).
+    const crossTableEntries = await db.membershipTypeFeeType.findMany({
+      where: { billingInterval: dto.billingInterval },
+    });
+    const crossTableMap = new Map(
+      crossTableEntries.map((e) => [`${e.membershipTypeId}:${e.feeTypeId}`, e])
+    );
 
     const periodStart = new Date(dto.periodStart);
     const periodEnd = new Date(dto.periodEnd);
@@ -491,14 +521,8 @@ export class FeeChargesService {
         continue;
       }
 
-      // Look up base fee from cross-table (MembershipType x FeeType)
-      const crossTableEntry = await db.membershipTypeFeeType.findFirst({
-        where: {
-          membershipTypeId: membershipType.id,
-          feeTypeId: member.feeTypeId,
-          billingInterval: dto.billingInterval,
-        },
-      });
+      // Look up base fee from the pre-loaded cross-table map (MembershipType x FeeType)
+      const crossTableEntry = crossTableMap.get(`${membershipType.id}:${member.feeTypeId}`) ?? null;
 
       if (!crossTableEntry) {
         warnings.push({
@@ -521,7 +545,10 @@ export class FeeChargesService {
         if (customOverride?.customAmount) {
           const originalFee = baseFee;
           baseFee = new Prisma.Decimal(customOverride.customAmount.toString());
-          discountAmount = roundMoney(originalFee.minus(baseFee));
+          const rawDiscount = roundMoney(originalFee.minus(baseFee));
+          // Clamp to >= 0: a custom amount above the regular fee is a surcharge, not a
+          // discount, so it lands fully in amount with no negative "discount".
+          discountAmount = rawDiscount.greaterThan(ZERO) ? rawDiscount : null;
           discountReason = `Individueller Betrag: ${customOverride.reason ?? ''}`.trim();
         }
 
@@ -543,7 +570,8 @@ export class FeeChargesService {
               periodEnd,
               dto.billingInterval
             );
-            discountAmount = roundMoney(originalProRata.minus(baseFee));
+            const rawProRataDiscount = roundMoney(originalProRata.minus(baseFee));
+            discountAmount = rawProRataDiscount.greaterThan(ZERO) ? rawProRataDiscount : null;
           }
         }
 
@@ -613,8 +641,33 @@ export class FeeChargesService {
         if (categoryOverride?.overrideType === 'CUSTOM_AMOUNT' && categoryOverride.customAmount) {
           const originalFee = categoryFee;
           categoryFee = new Prisma.Decimal(categoryOverride.customAmount.toString());
-          catDiscountAmount = roundMoney(originalFee.minus(categoryFee));
+          const rawCatDiscount = roundMoney(originalFee.minus(categoryFee));
+          catDiscountAmount = rawCatDiscount.greaterThan(ZERO) ? rawCatDiscount : null;
           catDiscountReason = `Individueller Betrag: ${categoryOverride.reason ?? ''}`.trim();
+        }
+
+        // Pro-rate category fees only when the club uses pro-rata AND the category opts in
+        // (e.g. recurring section fees). One-time/fixed categories keep the full amount.
+        if (club?.proRataMode === 'MONTHLY_PRO_RATA' && category.proRataEligible) {
+          categoryFee = this.calculateProRata(
+            categoryFee,
+            currentPeriod.joinDate,
+            periodStart,
+            periodEnd,
+            dto.billingInterval
+          );
+          // Recalculate discount against the pro-rated original if there was a custom override
+          if (categoryOverride?.overrideType === 'CUSTOM_AMOUNT' && categoryOverride.customAmount) {
+            const originalProRata = this.calculateProRata(
+              new Prisma.Decimal(category.amount.toString()),
+              currentPeriod.joinDate,
+              periodStart,
+              periodEnd,
+              dto.billingInterval
+            );
+            const rawCatDiscount = roundMoney(originalProRata.minus(categoryFee));
+            catDiscountAmount = rawCatDiscount.greaterThan(ZERO) ? rawCatDiscount : null;
+          }
         }
 
         categoryFee = roundMoney(categoryFee);

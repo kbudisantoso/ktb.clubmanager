@@ -62,6 +62,15 @@ export class CreateFeeCategoryDto {
   isOneTime?: boolean;
 
   @ApiPropertyOptional({
+    description:
+      'Whether the fee is pro-rated for mid-period joins (only when the club uses MONTHLY_PRO_RATA)',
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  proRataEligible?: boolean;
+
+  @ApiPropertyOptional({
     description: 'Display order in lists',
     default: 0,
     minimum: 0,
