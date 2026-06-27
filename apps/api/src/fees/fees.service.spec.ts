@@ -54,6 +54,7 @@ function makeCategory(overrides: Record<string, unknown> = {}) {
     billingInterval: 'ANNUALLY',
     isActive: true,
     isOneTime: true,
+    proRataEligible: false,
     sortOrder: 0,
     scope: 'ALL_MEMBERS',
     feeCategoryMembershipTypes: [],
@@ -150,6 +151,36 @@ describe('FeesService', () => {
       });
     });
 
+    it('should default proRataEligible to false when omitted', async () => {
+      const created = makeCategory({ id: 'fc-pr', proRataEligible: false });
+      (mockDb.feeCategory.create as ReturnType<typeof vi.fn>).mockResolvedValue(created);
+      (mockDb.feeCategory.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(created);
+
+      const result = await service.create(CLUB_ID, { name: 'Aufnahmegebühr', amount: '50.00' });
+
+      expect(result.proRataEligible).toBe(false);
+      expect(mockDb.feeCategory.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ proRataEligible: false }),
+      });
+    });
+
+    it('should persist proRataEligible=true when set', async () => {
+      const created = makeCategory({ id: 'fc-pr2', name: 'Spartenbeitrag', proRataEligible: true });
+      (mockDb.feeCategory.create as ReturnType<typeof vi.fn>).mockResolvedValue(created);
+      (mockDb.feeCategory.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(created);
+
+      const result = await service.create(CLUB_ID, {
+        name: 'Spartenbeitrag',
+        amount: '50.00',
+        proRataEligible: true,
+      });
+
+      expect(result.proRataEligible).toBe(true);
+      expect(mockDb.feeCategory.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ proRataEligible: true }),
+      });
+    });
+
     it('should create join records when scope is BY_MEMBERSHIP_TYPE', async () => {
       const created = makeCategory({
         id: 'fc-mt',
@@ -193,6 +224,22 @@ describe('FeesService', () => {
       const result = await service.update(CLUB_ID, 'fc-1', { amount: '75.00' });
 
       expect(result.amount).toBe('75.00');
+    });
+
+    it('should update proRataEligible', async () => {
+      const updated = makeCategory({ proRataEligible: true });
+      (mockDb.feeCategory.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeCategory());
+      (mockDb.feeCategory.update as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
+      (mockDb.feeCategory.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
+
+      const result = await service.update(CLUB_ID, 'fc-1', { proRataEligible: true });
+
+      expect(result.proRataEligible).toBe(true);
+      expect(mockDb.feeCategory.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ proRataEligible: true }),
+        })
+      );
     });
 
     it('should throw NotFoundException if category not found or deleted', async () => {
