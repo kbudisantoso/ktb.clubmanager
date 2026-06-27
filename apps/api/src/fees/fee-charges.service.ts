@@ -430,7 +430,11 @@ export class FeeChargesService {
       },
     });
 
-    // 2. Get active members with membership info, fee type, and overrides
+    // 2. Get active members with membership info, fee type, and overrides.
+    // NOTE: loaded in one query. For very large clubs this should move to cursor-based
+    // batching (compute + insert charges per chunk); deferred as it would restructure
+    // the executeBillingRun transaction. The per-member N+1 is already removed via the
+    // cross-table map below.
     const members = await this.prisma.member.findMany({
       where: {
         clubId,
@@ -467,6 +471,16 @@ export class FeeChargesService {
         feeCategoryMembershipTypes: true,
       },
     });
+
+    // 3b. Pre-load the MembershipType x FeeType cross-table for this interval into a
+    // map (membershipTypeId:feeTypeId -> entry) so the member loop does a map lookup
+    // instead of one findFirst query per member (avoids N+1).
+    const crossTableEntries = await db.membershipTypeFeeType.findMany({
+      where: { billingInterval: dto.billingInterval },
+    });
+    const crossTableMap = new Map(
+      crossTableEntries.map((e) => [`${e.membershipTypeId}:${e.feeTypeId}`, e])
+    );
 
     const periodStart = new Date(dto.periodStart);
     const periodEnd = new Date(dto.periodEnd);
@@ -506,14 +520,8 @@ export class FeeChargesService {
         continue;
       }
 
-      // Look up base fee from cross-table (MembershipType x FeeType)
-      const crossTableEntry = await db.membershipTypeFeeType.findFirst({
-        where: {
-          membershipTypeId: membershipType.id,
-          feeTypeId: member.feeTypeId,
-          billingInterval: dto.billingInterval,
-        },
-      });
+      // Look up base fee from the pre-loaded cross-table map (MembershipType x FeeType)
+      const crossTableEntry = crossTableMap.get(`${membershipType.id}:${member.feeTypeId}`) ?? null;
 
       if (!crossTableEntry) {
         warnings.push({

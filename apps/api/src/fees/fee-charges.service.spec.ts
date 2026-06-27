@@ -108,7 +108,7 @@ const mockDb = {
     createMany: vi.fn(),
   },
   membershipTypeFeeType: {
-    findFirst: vi.fn(),
+    findMany: vi.fn(),
   },
   feeCategoryMembershipType: {
     findMany: vi.fn(),
@@ -193,13 +193,15 @@ describe('FeeChargesService', () => {
     // Default: no existing charges for the period (executeBillingRun re-bill guard)
     (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
     // Default cross-table entry: mt-1 x ft-1 = 120.00 ANNUALLY
-    (mockDb.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 'mtft-1',
-      membershipTypeId: 'mt-1',
-      feeTypeId: 'ft-1',
-      amount: new Decimal('120.00'),
-      billingInterval: 'ANNUALLY',
-    });
+    (mockDb.membershipTypeFeeType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+      {
+        id: 'mtft-1',
+        membershipTypeId: 'mt-1',
+        feeTypeId: 'ft-1',
+        amount: new Decimal('120.00'),
+        billingInterval: 'ANNUALLY',
+      },
+    ]);
     service = new FeeChargesService(mockPrisma);
   });
 
@@ -362,7 +364,7 @@ describe('FeeChargesService', () => {
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
       (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
       // No cross-table entry for ft-unknown
-      (mockDb.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (mockDb.membershipTypeFeeType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       const result = await service.previewBillingRun(CLUB_ID, previewDto);
 
@@ -407,13 +409,22 @@ describe('FeeChargesService', () => {
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(categories);
       (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
       // Both members get cross-table entry
-      (mockDb.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: 'mtft-1',
-        membershipTypeId: 'mt-1',
-        feeTypeId: 'ft-1',
-        amount: new Decimal('120.00'),
-        billingInterval: 'ANNUALLY',
-      });
+      (mockDb.membershipTypeFeeType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+        {
+          id: 'mtft-1',
+          membershipTypeId: 'mt-1',
+          feeTypeId: 'ft-1',
+          amount: new Decimal('120.00'),
+          billingInterval: 'ANNUALLY',
+        },
+        {
+          id: 'mtft-2',
+          membershipTypeId: 'mt-2',
+          feeTypeId: 'ft-1',
+          amount: new Decimal('120.00'),
+          billingInterval: 'ANNUALLY',
+        },
+      ]);
 
       const result = await service.previewBillingRun(CLUB_ID, previewDto);
 
@@ -465,13 +476,22 @@ describe('FeeChargesService', () => {
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(categories);
       (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
-      (mockDb.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: 'mtft-1',
-        membershipTypeId: 'mt-1',
-        feeTypeId: 'ft-1',
-        amount: new Decimal('120.00'),
-        billingInterval: 'ANNUALLY',
-      });
+      (mockDb.membershipTypeFeeType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+        {
+          id: 'mtft-1',
+          membershipTypeId: 'mt-1',
+          feeTypeId: 'ft-1',
+          amount: new Decimal('120.00'),
+          billingInterval: 'ANNUALLY',
+        },
+        {
+          id: 'mtft-2',
+          membershipTypeId: 'mt-2',
+          feeTypeId: 'ft-1',
+          amount: new Decimal('120.00'),
+          billingInterval: 'ANNUALLY',
+        },
+      ]);
 
       const result = await service.previewBillingRun(CLUB_ID, previewDto);
 
