@@ -45,6 +45,7 @@ interface MemberDetail {
   userImage: string | null;
   householdId: string | null;
   householdRole: string | null;
+  feeTypeId: string | null;
   household: {
     id: string;
     name: string;

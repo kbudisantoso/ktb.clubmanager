@@ -97,6 +97,12 @@ model Club {
   /// Probezeit in Tagen / Probation period in days
   probationPeriodDays     Int?
 
+  // --- Beitragseinstellungen (Fee Settings) ---
+  /// Whether to pro-rate fees for mid-period joins
+  proRataMode            ProRataMode          @default(FULL)
+  /// Household billing model (determines FeeType auto-suggestion rules)
+  householdBillingModel  HouseholdBillingModel @default(NONE)
+
   // --- Logo ---
   /// Referenz zur Logo-Datei / Reference to the logo file
   logoFileId String? @unique
@@ -135,6 +141,9 @@ model Club {
   membershipTypes    MembershipType[]
   statusTransitions  MemberStatusTransition[]
   auditLogs          AuditLog[]
+  feeCategories      FeeCategory[]
+  feeCharges         FeeCharge[]
+  feeTypes           FeeType[]
 
   @@map("clubs")
 }
@@ -544,9 +553,15 @@ model MembershipType {
   updatedAt           DateTime        @updatedAt
 
   /// Membership periods using this type
-  membershipPeriods   MembershipPeriod[]
+  membershipPeriods           MembershipPeriod[]
   /// Clubs using this as default membership type
-  clubDefaults        Club[]   @relation("ClubDefaultMembershipType")
+  clubDefaults                Club[]   @relation("ClubDefaultMembershipType")
+  /// Fee charges referencing this membership type
+  feeCharges                  FeeCharge[]
+  /// Cross-table: fee amounts per FeeType for this membership type
+  membershipTypeFees          MembershipTypeFeeType[]
+  /// Fee categories scoped to this membership type
+  feeCategoryMembershipTypes  FeeCategoryMembershipType[]
 
   @@unique([clubId, code])
   @@index([clubId])
@@ -672,6 +687,12 @@ model Member {
   /// Relation to the linked user (for avatar image, etc.)
   user   User?   @relation(fields: [userId], references: [id])
 
+  // --- Beitragsart (Fee Type) ---
+  /// The fee type assigned to this member (determines billing amount via cross-table)
+  feeTypeId String?
+  /// Relation to the fee type
+  feeType   FeeType? @relation(fields: [feeTypeId], references: [id])
+
   // --- Household ---
   /// Household this member belongs to
   householdId   String?
@@ -696,9 +717,13 @@ model Member {
 
   // Relations
   /// Membership periods (supports membership type changes with multiple consecutive periods)
-  membershipPeriods  MembershipPeriod[]
+  membershipPeriods    MembershipPeriod[]
   /// Status transition history
-  statusTransitions  MemberStatusTransition[]
+  statusTransitions    MemberStatusTransition[]
+  /// Per-member fee overrides (exemptions, custom amounts)
+  memberFeeOverrides   MemberFeeOverride[]
+  /// Fee charges (Forderungen) for this member
+  feeCharges           FeeCharge[]
 
   @@unique([clubId, memberNumber])
   @@index([clubId])
@@ -881,6 +906,325 @@ model LedgerAccount {
   @@unique([clubId, code])
   @@index([clubId])
   @@map("ledger_accounts")
+}
+
+// =============================================================================
+// Fee Management Models (Phase 12)
+// =============================================================================
+// Fee categories, member overrides, billing charges, and payments.
+// Supports hybrid model: MembershipType defines base fee,
+// FeeCategory handles additional charges.
+
+/// Billing frequency for fees
+enum BillingInterval {
+  /// Monthly billing (Monatlich)
+  MONTHLY
+  /// Quarterly billing (Quartalsweise)
+  QUARTERLY
+  /// Annual billing (Jaehrlich)
+  ANNUALLY
+}
+
+/// Source of a payment recording
+enum PaymentSource {
+  /// Manually recorded by treasurer
+  MANUAL
+  /// Matched from bank statement import (Phase 15)
+  BANK_IMPORT
+  /// Generated via SEPA direct debit (Phase 16)
+  SEPA
+}
+
+/// Type of per-member fee override
+enum FeeOverrideType {
+  /// Member is exempt from this fee (Befreiung)
+  EXEMPT
+  /// Custom amount replaces the standard fee (Individueller Betrag)
+  CUSTOM_AMOUNT
+  /// Additional fee on top of standard (Zusatzbeitrag)
+  ADDITIONAL
+}
+
+/// Pro-rata mode for mid-period membership joins
+enum ProRataMode {
+  /// Full fee regardless of join date
+  FULL
+  /// Monthly pro-rata calculation
+  MONTHLY_PRO_RATA
+}
+
+/// Household billing model (determines FeeType auto-suggestion rules)
+enum HouseholdBillingModel {
+  /// No household-based billing (all members pay individual rate)
+  NONE
+  /// Non-HEAD household members get reduced rate
+  REDUCED_MEMBERS
+  /// HEAD pays family flat rate, others are fee-free
+  FAMILY_PAYER
+  /// All household members get reduced rate
+  ALL_REDUCED
+}
+
+/// Scope of a fee category (which members it applies to)
+enum FeeCategoryScope {
+  /// Applies to all members
+  ALL_MEMBERS
+  /// Applies only to members of specific membership types
+  BY_MEMBERSHIP_TYPE
+  /// Applied individually via MemberFeeOverride
+  INDIVIDUAL
+}
+
+/// Additional fee category beyond base MembershipType fee.
+/// Examples: Aufnahmegebuehr, Abteilungsbeitrag, Sonderbeitrag.
+model FeeCategory {
+  /// Unique identifier (CUID format)
+  id              String          @id @default(cuid())
+  /// Reference to the parent club (tenant)
+  clubId          String
+  /// The club this fee category belongs to
+  club            Club            @relation(fields: [clubId], references: [id])
+
+  /// Category name (e.g., "Aufnahmegebuehr", "Tennisabteilung")
+  name            String
+  /// Optional description
+  description     String?
+  /// Fee amount
+  amount          Decimal         @db.Decimal(10, 2)
+  /// Billing frequency
+  billingInterval BillingInterval @default(ANNUALLY)
+  /// Whether this category is active and available for billing
+  isActive        Boolean         @default(true)
+  /// Whether this is a one-time fee (e.g., enrollment fee)
+  isOneTime       Boolean         @default(false)
+  /// Display order in lists
+  sortOrder       Int             @default(0)
+  /// Scope: which members this category applies to
+  scope           FeeCategoryScope @default(ALL_MEMBERS)
+
+  /// Soft deletion timestamp (CONV-006)
+  deletedAt DateTime?
+  /// User ID who performed the soft deletion
+  deletedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  memberFeeOverrides          MemberFeeOverride[]
+  feeCharges                  FeeCharge[]
+  /// Membership types this category is scoped to (for BY_MEMBERSHIP_TYPE scope)
+  feeCategoryMembershipTypes  FeeCategoryMembershipType[]
+
+  @@index([clubId])
+  @@map("fee_categories")
+}
+
+/// Per-member fee adjustment (exemption, custom amount, additional fee).
+/// Overrides are replaced, not soft-deleted.
+model MemberFeeOverride {
+  /// Unique identifier (CUID format)
+  id            String          @id @default(cuid())
+  /// Reference to the member
+  memberId      String
+  /// The member this override applies to
+  member        Member          @relation(fields: [memberId], references: [id])
+  /// Reference to the fee category (null if overriding base fee)
+  feeCategoryId String?
+  /// The fee category being overridden (null = base membership fee)
+  feeCategory   FeeCategory?    @relation(fields: [feeCategoryId], references: [id])
+
+  /// Type of override
+  overrideType  FeeOverrideType
+  /// Custom amount (for CUSTOM_AMOUNT and ADDITIONAL types)
+  customAmount  Decimal?        @db.Decimal(10, 2)
+  /// Reason for the override
+  reason        String?
+  /// Whether this override applies to the base membership fee
+  isBaseFee     Boolean         @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([memberId])
+  @@map("member_fee_overrides")
+}
+
+/// A fee demand (Forderung) generated by a billing run.
+/// Represents what a member owes for a specific period.
+model FeeCharge {
+  /// Unique identifier (CUID format)
+  id               String       @id @default(cuid())
+  /// Reference to the parent club (tenant)
+  clubId           String
+  /// The club this charge belongs to
+  club             Club         @relation(fields: [clubId], references: [id])
+  /// Reference to the member
+  memberId         String
+  /// The member this charge is for
+  member           Member       @relation(fields: [memberId], references: [id])
+  /// Reference to the fee category (null for base membership fee)
+  feeCategoryId    String?
+  /// The fee category (null = base membership fee from MembershipType)
+  feeCategory      FeeCategory? @relation(fields: [feeCategoryId], references: [id])
+  /// Reference to the membership type (for base fee charges)
+  membershipTypeId String?
+  /// The membership type (for base fee charges)
+  membershipType   MembershipType? @relation(fields: [membershipTypeId], references: [id])
+  /// Reference to the fee type used at billing time (for traceability)
+  feeTypeId        String?
+  /// The fee type used at billing time
+  feeType          FeeType?        @relation(fields: [feeTypeId], references: [id])
+
+  /// Human-readable description of the charge
+  description   String
+  /// Start of the billing period (date-only)
+  periodStart   DateTime    @db.Date
+  /// End of the billing period (date-only)
+  periodEnd     DateTime    @db.Date
+  /// Charged amount
+  amount        Decimal     @db.Decimal(10, 2)
+  /// Due date for payment (date-only)
+  dueDate       DateTime    @db.Date
+
+  // --- Discount traceability (review concern: override traceability) ---
+  /// Amount of discount applied (e.g., household discount, override reduction)
+  discountAmount Decimal?   @db.Decimal(10, 2)
+  /// Human-readable reason for the discount
+  discountReason String?
+
+  /// Soft deletion timestamp (CONV-006)
+  deletedAt DateTime?
+  /// User ID who performed the soft deletion
+  deletedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  payments Payment[]
+
+  @@index([clubId])
+  @@index([memberId])
+  @@index([clubId, dueDate])
+  /// Prevents duplicate charges for same member + fee source + fee type + period
+  @@unique([memberId, feeCategoryId, membershipTypeId, feeTypeId, periodStart, periodEnd], map: "fee_charges_billing_unique")
+  @@map("fee_charges")
+}
+
+/// A fee type defines how a member pays (e.g., Einzelbeitrag, Familientarif, Beitragsfrei).
+/// Combined with MembershipType via MembershipTypeFeeType cross-table to determine actual amounts.
+model FeeType {
+  /// Unique identifier (CUID format)
+  id          String   @id @default(cuid())
+  /// Reference to the parent club (tenant)
+  clubId      String
+  /// The club this fee type belongs to
+  club        Club     @relation(fields: [clubId], references: [id])
+  /// Display name (e.g., "Einzelbeitrag", "Familientarif")
+  name        String
+  /// Optional description explaining when this fee type applies
+  description String?
+  /// Whether this fee type is currently available for selection
+  isActive    Boolean  @default(true)
+
+  /// Soft deletion timestamp (CONV-006)
+  deletedAt   DateTime?
+  /// User ID who performed the soft deletion
+  deletedBy   String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  /// Cross-table: fee amounts per MembershipType for this fee type
+  membershipTypeFees  MembershipTypeFeeType[]
+  /// Members assigned to this fee type
+  members             Member[]
+  /// Fee charges that used this fee type at billing time
+  feeCharges          FeeCharge[]
+
+  @@unique([clubId, name])
+  @@index([clubId])
+  @@map("fee_types")
+}
+
+/// Cross-table entry: defines the fee amount for a specific MembershipType x FeeType combination.
+/// This is the core of the two-dimensional fee model.
+model MembershipTypeFeeType {
+  /// Unique identifier (CUID format)
+  id               String          @id @default(cuid())
+  /// Reference to the membership type
+  membershipTypeId String
+  /// The membership type
+  membershipType   MembershipType  @relation(fields: [membershipTypeId], references: [id])
+  /// Reference to the fee type
+  feeTypeId        String
+  /// The fee type
+  feeType          FeeType         @relation(fields: [feeTypeId], references: [id])
+  /// Fee amount for this combination
+  amount           Decimal         @db.Decimal(10, 2)
+  /// Billing frequency for this combination
+  billingInterval  BillingInterval @default(ANNUALLY)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([membershipTypeId, feeTypeId])
+  @@map("membership_type_fee_types")
+}
+
+/// Join table for scoping fee categories to specific membership types.
+/// Used when FeeCategory.scope is BY_MEMBERSHIP_TYPE.
+model FeeCategoryMembershipType {
+  /// Unique identifier (CUID format)
+  id               String          @id @default(cuid())
+  /// Reference to the fee category
+  feeCategoryId    String
+  /// The fee category
+  feeCategory      FeeCategory     @relation(fields: [feeCategoryId], references: [id])
+  /// Reference to the membership type
+  membershipTypeId String
+  /// The membership type
+  membershipType   MembershipType  @relation(fields: [membershipTypeId], references: [id])
+
+  @@unique([feeCategoryId, membershipTypeId])
+  @@map("fee_category_membership_types")
+}
+
+/// Payment recorded against a fee charge.
+/// Status is derived: sum(payments.amount) vs FeeCharge.amount.
+model Payment {
+  /// Unique identifier (CUID format)
+  id          String        @id @default(cuid())
+  /// Reference to the fee charge
+  feeChargeId String
+  /// The fee charge this payment is for
+  feeCharge   FeeCharge     @relation(fields: [feeChargeId], references: [id])
+
+  /// Payment amount
+  amount      Decimal       @db.Decimal(10, 2)
+  /// Date the payment was made (date-only)
+  paidAt      DateTime      @db.Date
+  /// Source of the payment
+  source      PaymentSource @default(MANUAL)
+  /// Reference number (bank transaction ID, SEPA end-to-end ID)
+  reference   String?
+  /// Optional notes
+  notes       String?
+  /// User ID who recorded this payment
+  recordedBy  String
+
+  /// Soft deletion timestamp (CONV-006)
+  deletedAt DateTime?
+  /// User ID who performed the soft deletion
+  deletedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([feeChargeId])
+  @@map("payments")
 }
 
 // =============================================================================

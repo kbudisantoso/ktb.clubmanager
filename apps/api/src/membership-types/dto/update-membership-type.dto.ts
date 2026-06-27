@@ -93,6 +93,6 @@ export class UpdateMembershipTypeDto {
   })
   @IsString()
   @IsOptional()
-  @IsIn([...MEMBER_TYPE_COLORS], { message: 'Ungueltige Farbe' })
+  @IsIn([...MEMBER_TYPE_COLORS], { message: 'Ungültige Farbe' })
   color?: string;
 }

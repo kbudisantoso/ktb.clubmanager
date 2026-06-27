@@ -67,14 +67,14 @@ describe('validateAndLookupIBAN', () => {
     const result = validateAndLookupIBAN('DE00370400440532013000');
 
     expect(result.valid).toBe(false);
-    expect(result.error).toBe('Ungueltige IBAN');
+    expect(result.error).toBe('Ungültige IBAN');
   });
 
   it('should reject a malformed IBAN', () => {
     const result = validateAndLookupIBAN('INVALIDIBAN12345');
 
     expect(result.valid).toBe(false);
-    expect(result.error).toBe('Ungueltige IBAN');
+    expect(result.error).toBe('Ungültige IBAN');
   });
 });
 

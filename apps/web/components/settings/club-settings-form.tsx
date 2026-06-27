@@ -74,6 +74,8 @@ function clubToFormValues(club: ClubSettingsResponse): SettingsFormValues {
     defaultMembershipTypeId:
       (club.defaultMembershipTypeId as SettingsFormValues['defaultMembershipTypeId']) ?? undefined,
     probationPeriodDays: club.probationPeriodDays ?? undefined,
+    // Beitragseinstellungen
+    proRataMode: (club.proRataMode as SettingsFormValues['proRataMode']) ?? undefined,
     // Sichtbarkeit
     visibility: club.visibility,
     // Logo & Avatar

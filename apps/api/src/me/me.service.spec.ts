@@ -472,14 +472,14 @@ describe('MeService', () => {
 
       const result = await service.deleteAccount('user-1');
 
-      expect(result.message).toBe('Konto wurde geloescht');
+      expect(result.message).toBe('Konto wurde gelöscht');
 
       // Verify anonymization
       expect(mockPrisma.user.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'user-1' },
           data: expect.objectContaining({
-            name: 'Geloeschter Benutzer',
+            name: 'Gelöschter Benutzer',
             email: 'deleted_user-1@anonymized.local',
             image: null,
             emailVerified: false,
@@ -537,7 +537,7 @@ describe('MeService', () => {
 
       const result = await service.deleteAccount('user-1');
 
-      expect(result.message).toBe('Konto wurde geloescht');
+      expect(result.message).toBe('Konto wurde gelöscht');
       expect(mockPrisma.file.updateMany).not.toHaveBeenCalled();
     });
   });

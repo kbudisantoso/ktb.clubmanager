@@ -53,7 +53,7 @@ export const CreateMemberSchema = z
     vatId: z.string().max(50).optional(),
 
     /** Club communication email (independent from User login email) */
-    email: z.string().email('Ungueltige E-Mail-Adresse').optional().or(z.literal('')),
+    email: z.string().email('Ungültige E-Mail-Adresse').optional().or(z.literal('')),
 
     /** Phone number (landline or general) */
     phone: z.string().max(30).optional(),
@@ -71,10 +71,13 @@ export const CreateMemberSchema = z
     status: MemberStatusSchema.default('PENDING'),
 
     /** Join/entry date as ISO date string YYYY-MM-DD (NOT z.coerce.date()) */
-    joinDate: z.string().date('Ungueltiges Datum (YYYY-MM-DD erwartet)').optional(),
+    joinDate: z.string().date('Ungültiges Datum (YYYY-MM-DD erwartet)').optional(),
 
     /** Membership type ID (FK to MembershipType entity) for initial membership period */
     membershipTypeId: z.string().optional(),
+
+    /** Fee type ID (FK to FeeType entity) for billing amount determination */
+    feeTypeId: z.string().cuid().optional().nullable(),
   })
   .merge(AddressSchema)
   .refine(
@@ -116,6 +119,9 @@ export const UpdateMemberSchema = z
     // dedicated ChangeStatusSchema endpoint (see C-3 consistency requirement)
     joinDate: z.string().date().optional(),
     membershipTypeId: z.string().optional(),
+
+    /** Fee type ID (FK to FeeType entity) for billing amount determination */
+    feeTypeId: z.string().cuid().optional().nullable(),
   })
   .merge(AddressSchema.partial());
 
@@ -158,6 +164,7 @@ export const MemberResponseSchema = z.object({
   status: MemberStatusSchema,
   joinDate: z.string().nullable().optional(),
   membershipTypeId: z.string().nullable().optional(),
+  feeTypeId: z.string().nullable().optional(),
 
   statusChangedAt: z.string().nullable().optional(),
   statusChangedBy: z.string().nullable().optional(),

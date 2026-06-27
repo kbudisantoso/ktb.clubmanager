@@ -12,6 +12,7 @@ const segmentLabels: Record<string, string> = {
   // Settings sub-pages
   users: 'Benutzer',
   'number-ranges': 'Nummernkreise',
+  'fee-model': 'Beiträge',
   clubs: 'Vereine',
   tiers: 'Tarife',
   invites: 'Einladungen',

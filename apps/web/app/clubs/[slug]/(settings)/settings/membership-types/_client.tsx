@@ -515,6 +515,8 @@ export function MembershipTypesSettingsClient() {
                 }
               />
             </div>
+
+            {/* Note: Fee amounts are now configured in the Beitragsmodell section (FeeType x MembershipType cross-table) */}
           </div>
 
           <DialogFooter>

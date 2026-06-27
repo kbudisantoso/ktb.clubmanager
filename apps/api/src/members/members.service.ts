@@ -170,6 +170,7 @@ export class MembersService {
           orderBy: { createdAt: 'desc' },
           take: 20,
         },
+        feeType: { select: { id: true, name: true } },
         user: { select: { image: true } },
       },
     });
@@ -208,6 +209,17 @@ export class MembersService {
       }
     }
 
+    // Validate feeTypeId belongs to this club before persisting the FK
+    // (mirrors the membershipType validation below).
+    if (dto.feeTypeId) {
+      const feeType = await this.prisma.feeType.findFirst({
+        where: { id: dto.feeTypeId, clubId, deletedAt: null },
+      });
+      if (!feeType) {
+        throw new BadRequestException('Die gewählte Beitragsart gehört nicht zu diesem Verein');
+      }
+    }
+
     // Build create data with explicit clubId for TypeScript
     // (tenant extension also injects clubId at runtime)
     const createData: Prisma.MemberUncheckedCreateInput = {
@@ -235,6 +247,7 @@ export class MembersService {
       phone: dto.phone,
       mobile: dto.mobile,
       notes: dto.notes,
+      feeTypeId: dto.feeTypeId,
       status: dto.status ?? 'PENDING',
       statusChangedAt: new Date(),
       statusChangedBy: userId,
@@ -333,6 +346,17 @@ export class MembersService {
       }
     }
 
+    // Validate feeTypeId belongs to this club before persisting the FK
+    // (mirrors the membershipType validation in create()).
+    if (dtoFields.feeTypeId) {
+      const feeType = await this.prisma.feeType.findFirst({
+        where: { id: dtoFields.feeTypeId, clubId, deletedAt: null },
+      });
+      if (!feeType) {
+        throw new BadRequestException('Die gewählte Beitragsart gehört nicht zu diesem Verein');
+      }
+    }
+
     // Build update data, only including provided fields
     const updateData: Record<string, unknown> = {};
     const fields = [
@@ -359,6 +383,7 @@ export class MembersService {
       'mobile',
       'notes',
       'memberNumber',
+      'feeTypeId',
     ] as const;
 
     for (const field of fields) {
@@ -506,7 +531,7 @@ export class MembersService {
 
     if (member.status !== 'LEFT' && !member.deletedAt) {
       throw new BadRequestException(
-        'Anonymisierung ist nur moeglich, wenn der Status "Ausgetreten" oder das Mitglied geloescht ist'
+        'Anonymisierung ist nur möglich, wenn der Status "Ausgetreten" oder das Mitglied gelöscht ist'
       );
     }
 
@@ -753,6 +778,8 @@ export class MembersService {
       dsgvoRequestDate: toDateString(member.dsgvoRequestDate),
       anonymizedAt: toISOStringOrNull(member.anonymizedAt),
       anonymizedBy: member.anonymizedBy ?? null,
+      feeTypeId: member.feeTypeId ?? null,
+      feeType: member.feeType ?? null,
       userId: member.userId ?? null,
       userImage: member.user?.image ?? null,
       householdId: member.householdId ?? null,

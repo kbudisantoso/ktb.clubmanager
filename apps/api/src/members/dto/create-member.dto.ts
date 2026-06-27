@@ -248,4 +248,12 @@ export class CreateMemberDto {
   @IsString()
   @IsOptional()
   userId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Fee type ID (FK to FeeType entity) for billing',
+    example: 'clxyz...',
+  })
+  @IsString()
+  @IsOptional()
+  feeTypeId?: string;
 }

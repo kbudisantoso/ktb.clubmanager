@@ -51,11 +51,11 @@ describe('AllExceptionsFilter', () => {
   });
 
   it('passes through HttpException status and message', () => {
-    filter.catch(new BadRequestException('Ungueltige Daten'), mockHost as never);
+    filter.catch(new BadRequestException('Ungültige Daten'), mockHost as never);
 
     expect(mockReply).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ statusCode: 400, message: 'Ungueltige Daten' }),
+      expect.objectContaining({ statusCode: 400, message: 'Ungültige Daten' }),
       400
     );
   });
@@ -137,7 +137,7 @@ describe('AllExceptionsFilter', () => {
 
     expect(mockReply).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ statusCode: 400, message: 'Ungueltige Referenz' }),
+      expect.objectContaining({ statusCode: 400, message: 'Ungültige Referenz' }),
       400
     );
   });

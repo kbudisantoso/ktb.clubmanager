@@ -9,10 +9,10 @@ import { z } from 'zod';
 export const CreateMembershipPeriodSchema = z
   .object({
     /** Start date of the membership period (ISO date string YYYY-MM-DD) */
-    joinDate: z.string().date('Ungueltiges Eintrittsdatum (YYYY-MM-DD erwartet)'),
+    joinDate: z.string().date('Ungültiges Eintrittsdatum (YYYY-MM-DD erwartet)'),
 
     /** End date of the membership period (null = current/ongoing) */
-    leaveDate: z.string().date('Ungueltiges Austrittsdatum (YYYY-MM-DD erwartet)').optional(),
+    leaveDate: z.string().date('Ungültiges Austrittsdatum (YYYY-MM-DD erwartet)').optional(),
 
     /** Membership type ID (FK to MembershipType entity) */
     membershipTypeId: z.string().optional(),

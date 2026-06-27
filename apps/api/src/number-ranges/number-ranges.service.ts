@@ -60,7 +60,7 @@ export class NumberRangesService {
     });
 
     if (existing) {
-      throw new ConflictException(`Nummernkreis fuer Typ "${dto.entityType}" existiert bereits`);
+      throw new ConflictException(`Nummernkreis für Typ "${dto.entityType}" existiert bereits`);
     }
 
     // Use raw prisma with explicit clubId (forClub extension adds clubId
@@ -119,7 +119,7 @@ export class NumberRangesService {
 
     if (existing.currentValue > 0) {
       throw new BadRequestException(
-        'Nummernkreis kann nicht geloescht werden, da bereits Nummern vergeben wurden'
+        'Nummernkreis kann nicht gelöscht werden, da bereits Nummern vergeben wurden'
       );
     }
 
@@ -148,7 +148,7 @@ export class NumberRangesService {
       });
 
       if (!current) {
-        throw new NotFoundException(`Nummernkreis fuer Typ "${entityType}" nicht gefunden`);
+        throw new NotFoundException(`Nummernkreis für Typ "${entityType}" nicht gefunden`);
       }
 
       // Handle year reset: compare lastResetYear with current year

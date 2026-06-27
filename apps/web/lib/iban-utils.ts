@@ -30,7 +30,7 @@ export function validateAndLookupIBAN(ibanInput: string): IBANValidationResult {
   if (!validation.valid) {
     return {
       valid: false,
-      error: 'Ungueltige IBAN',
+      error: 'Ungültige IBAN',
       bankName: null,
       bic: null,
       electronic,

@@ -73,3 +73,6 @@ temp/
 # SBOM / VEX (generated in CI)
 sbom.json
 vex.json
+
+# UAT prompts (ephemeral)
+.uat/

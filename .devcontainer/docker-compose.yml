@@ -13,6 +13,8 @@ services:
       - ..:/workspace:cached
       - node_modules:/workspace/node_modules
       - pnpm-store:/home/node/.local/share/pnpm
+      - gemini-config:/home/node/.gemini
+      - codex-config:/home/node/.codex
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://clubmanager:clubmanager@postgres:5432/clubmanager
@@ -40,3 +42,5 @@ services:
 volumes:
   node_modules:
   pnpm-store:
+  gemini-config:
+  codex-config:

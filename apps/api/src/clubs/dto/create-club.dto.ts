@@ -288,6 +288,29 @@ export class CreateClubDto {
   @Max(365)
   probationPeriodDays?: number;
 
+  // --- Beitragseinstellungen (Fee Settings) ---
+
+  @ApiPropertyOptional({
+    description: 'Pro-rata mode for mid-period membership joins',
+    enum: ['FULL', 'MONTHLY_PRO_RATA'],
+  })
+  @IsEnum({ FULL: 'FULL', MONTHLY_PRO_RATA: 'MONTHLY_PRO_RATA' })
+  @IsOptional()
+  proRataMode?: 'FULL' | 'MONTHLY_PRO_RATA';
+
+  @ApiPropertyOptional({
+    description: 'Household billing model (determines FeeType auto-suggestion)',
+    enum: ['NONE', 'REDUCED_MEMBERS', 'FAMILY_PAYER', 'ALL_REDUCED'],
+  })
+  @IsEnum({
+    NONE: 'NONE',
+    REDUCED_MEMBERS: 'REDUCED_MEMBERS',
+    FAMILY_PAYER: 'FAMILY_PAYER',
+    ALL_REDUCED: 'ALL_REDUCED',
+  })
+  @IsOptional()
+  householdBillingModel?: 'NONE' | 'REDUCED_MEMBERS' | 'FAMILY_PAYER' | 'ALL_REDUCED';
+
   // --- Logo ---
 
   @ApiPropertyOptional({ description: 'Reference to uploaded logo file ID' })

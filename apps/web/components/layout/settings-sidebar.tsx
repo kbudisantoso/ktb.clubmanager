@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Bell,
   Building2,
+  Coins,
   Hash,
   IdCard,
   Key,
@@ -76,6 +77,7 @@ export function SettingsSidebar() {
           { href: `${clubBasePath}/invites`, title: 'Einladungen', icon: Key },
           { href: `${clubBasePath}/number-ranges`, title: 'Nummernkreise', icon: Hash },
           { href: `${clubBasePath}/membership-types`, title: 'Mitgliedsarten', icon: IdCard },
+          { href: `${clubBasePath}/fee-model`, title: 'Beiträge', icon: Coins },
         ]
       : [];
 
