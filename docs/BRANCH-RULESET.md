@@ -45,6 +45,27 @@ After configuration:
 3. Verify the `CI Success` status check is required
 4. Check that the ruleset appears in Settings > Rules > Rulesets
 
+## Dependabot & Auto-Merge
+
+Dependabot updates are configured in `.github/dependabot.yml` to minimise PRs that
+block each other on `pnpm-lock.yaml` and shared workflow files (e.g. `sbom.yml`):
+
+- **Grouping** – npm version updates are grouped (minor/patch and major separately),
+  github-actions updates are grouped into a single PR, and security updates (npm +
+  actions) are bundled via `applies-to: security-updates`. This collapses what used
+  to be many single-package PRs into a few.
+- **Lower PR limits** (`open-pull-requests-limit`: npm 5, actions 3) and
+  `rebase-strategy: auto` keep the number of simultaneously open, lockfile-touching
+  PRs small and let Dependabot regenerate the lockfile after each merge.
+- **Auto-merge** – `.github/workflows/dependabot-auto-merge.yml` waits for CI and
+  enables auto-merge for non-major updates. Grouped PRs are evaluated by their
+  highest update type, so a group containing a major bump needs manual review.
+
+**Required repo setting:** "Allow auto-merge" must be enabled under
+**Settings > General > Pull Requests**, otherwise `gh pr merge --auto` is a no-op and
+PRs accumulate again. Combined with the required `CI Success` check above, auto-merge
+only completes once CI is green.
+
 ## Notes
 
 - Rulesets with code scanning merge protection are available for public repos on GitHub Free
