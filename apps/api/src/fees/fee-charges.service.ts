@@ -646,6 +646,30 @@ export class FeeChargesService {
           catDiscountReason = `Individueller Betrag: ${categoryOverride.reason ?? ''}`.trim();
         }
 
+        // Pro-rate category fees only when the club uses pro-rata AND the category opts in
+        // (e.g. recurring section fees). One-time/fixed categories keep the full amount.
+        if (club?.proRataMode === 'MONTHLY_PRO_RATA' && category.proRataEligible) {
+          categoryFee = this.calculateProRata(
+            categoryFee,
+            currentPeriod.joinDate,
+            periodStart,
+            periodEnd,
+            dto.billingInterval
+          );
+          // Recalculate discount against the pro-rated original if there was a custom override
+          if (categoryOverride?.overrideType === 'CUSTOM_AMOUNT' && categoryOverride.customAmount) {
+            const originalProRata = this.calculateProRata(
+              new Prisma.Decimal(category.amount.toString()),
+              currentPeriod.joinDate,
+              periodStart,
+              periodEnd,
+              dto.billingInterval
+            );
+            const rawCatDiscount = roundMoney(originalProRata.minus(categoryFee));
+            catDiscountAmount = rawCatDiscount.greaterThan(ZERO) ? rawCatDiscount : null;
+          }
+        }
+
         categoryFee = roundMoney(categoryFee);
 
         const description = this.generateChargeDescription(

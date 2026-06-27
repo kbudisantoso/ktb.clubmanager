@@ -1001,6 +1001,11 @@ model FeeCategory {
   sortOrder       Int             @default(0)
   /// Scope: which members this category applies to
   scope           FeeCategoryScope @default(ALL_MEMBERS)
+  /// Whether this category's fee is pro-rated for mid-period joins (only applied when
+  /// the club uses MONTHLY_PRO_RATA). Default false: one-time/fixed fees (enrollment,
+  /// deposits) are always charged in full; set true for recurring add-ons such as
+  /// section/division fees.
+  proRataEligible Boolean          @default(false)
 
   /// Soft deletion timestamp (CONV-006)
   deletedAt DateTime?

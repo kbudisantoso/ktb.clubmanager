@@ -506,6 +506,63 @@ describe('FeeChargesService', () => {
       });
     });
 
+    it('pro-rates only proRataEligible categories for mid-period joins (MONTHLY_PRO_RATA)', async () => {
+      // Member joined July 1 => 6/12 of the year remaining
+      const members = [
+        makeMember({
+          id: 'member-prorata-cat',
+          membershipPeriods: [
+            {
+              id: 'mp-pc',
+              joinDate: new Date('2026-07-01'),
+              leaveDate: null,
+              membershipTypeId: 'mt-1',
+              membershipType: { id: 'mt-1', name: 'Ordentliches Mitglied' },
+            },
+          ],
+        }),
+      ];
+      const categories = [
+        {
+          id: 'cat-prorata',
+          name: 'Tennisabteilung',
+          amount: new Decimal('100.00'),
+          billingInterval: 'ANNUALLY',
+          isActive: true,
+          deletedAt: null,
+          scope: 'ALL_MEMBERS',
+          proRataEligible: true,
+          feeCategoryMembershipTypes: [],
+        },
+        {
+          id: 'cat-full',
+          name: 'Aufnahmegebuehr',
+          amount: new Decimal('30.00'),
+          billingInterval: 'ANNUALLY',
+          isActive: true,
+          deletedAt: null,
+          scope: 'ALL_MEMBERS',
+          proRataEligible: false,
+          feeCategoryMembershipTypes: [],
+        },
+      ];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeClub({ proRataMode: 'MONTHLY_PRO_RATA' })
+      );
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(categories);
+      (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+
+      const result = await service.previewBillingRun(CLUB_ID, previewDto);
+
+      const tennis = result.breakdown.find((b) => b.membershipType === 'Tennisabteilung');
+      const aufnahme = result.breakdown.find((b) => b.membershipType === 'Aufnahmegebuehr');
+      // eligible category is pro-rated: 100 * 6/12 = 50.00; non-eligible stays full at 30.00
+      expect(tennis?.subtotal).toBe('50.00');
+      expect(aufnahme?.subtotal).toBe('30.00');
+    });
+
     it('should skip FeeCategory with scope INDIVIDUAL (only via override)', async () => {
       const members = [makeMember({ id: 'member-1', memberNumber: 'TSV-001' })];
       const categories = [

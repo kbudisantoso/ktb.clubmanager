@@ -42,6 +42,9 @@ export const CreateFeeCategorySchema = z.object({
   /** Whether this is a one-time fee (e.g., enrollment fee) */
   isOneTime: z.boolean().default(false),
 
+  /** Whether the fee is pro-rated for mid-period joins (only when the club uses MONTHLY_PRO_RATA) */
+  proRataEligible: z.boolean().default(false),
+
   /** Display order in lists */
   sortOrder: z.number().int().min(0).default(0),
 
@@ -77,6 +80,7 @@ export const FeeCategoryResponseSchema = z.object({
   billingInterval: BillingIntervalEnum,
   isActive: z.boolean(),
   isOneTime: z.boolean(),
+  proRataEligible: z.boolean(),
   sortOrder: z.number(),
   scope: FeeCategoryScopeEnum,
   /** Membership types this category is scoped to (for BY_MEMBERSHIP_TYPE scope) */

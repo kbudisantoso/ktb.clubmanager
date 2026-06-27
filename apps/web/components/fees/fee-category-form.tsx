@@ -46,6 +46,7 @@ const DEFAULT_VALUES: FeeCategoryFormValues = {
   amount: '',
   billingInterval: 'ANNUALLY',
   isOneTime: false,
+  proRataEligible: false,
   sortOrder: 0,
   scope: 'ALL_MEMBERS',
   membershipTypeIds: [],
@@ -99,6 +100,7 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
           amount: editingCategory.amount,
           billingInterval: editingCategory.billingInterval,
           isOneTime: editingCategory.isOneTime,
+          proRataEligible: editingCategory.proRataEligible,
           sortOrder: editingCategory.sortOrder,
           scope: editingCategory.scope,
           membershipTypeIds: existingMtIds,
@@ -119,6 +121,7 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
       amount: data.amount,
       billingInterval: data.billingInterval ?? 'ANNUALLY',
       isOneTime: data.isOneTime ?? false,
+      proRataEligible: data.proRataEligible ?? false,
       sortOrder: data.sortOrder ?? 0,
       scope,
       membershipTypeIds: scope === 'BY_MEMBERSHIP_TYPE' ? selectedMembershipTypeIds : undefined,
@@ -138,6 +141,7 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
   const name = watch('name');
   const amount = watch('amount');
   const isOneTime = watch('isOneTime');
+  const proRataEligible = watch('proRataEligible');
   const billingInterval = watch('billingInterval');
   const watchedScope = watch('scope') as FeeCategoryScope | undefined;
 
@@ -241,6 +245,24 @@ export function FeeCategoryForm({ open, onOpenChange, editingCategory }: FeeCate
                 id="fc-isOneTime"
                 checked={isOneTime}
                 onCheckedChange={(checked) => setValue('isOneTime', checked)}
+              />
+            </div>
+
+            {/* Anteilige Berechnung (pro rata) */}
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5 pr-4">
+                <Label htmlFor="fc-proRataEligible" className="text-sm font-medium">
+                  Anteilig bei unterjährigem Eintritt berechnen
+                </Label>
+                <p className="text-muted-foreground text-sm">
+                  Nur wirksam, wenn der Verein anteilige Beiträge nutzt. Für laufende Zusatzbeiträge
+                  (z.B. Spartenbeitrag); einmalige Gebühren bleiben voll.
+                </p>
+              </div>
+              <Switch
+                id="fc-proRataEligible"
+                checked={proRataEligible}
+                onCheckedChange={(checked) => setValue('proRataEligible', checked)}
               />
             </div>
 
