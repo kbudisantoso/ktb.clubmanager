@@ -108,7 +108,7 @@ const mockDb = {
     createMany: vi.fn(),
   },
   membershipTypeFeeType: {
-    findFirst: vi.fn(),
+    findMany: vi.fn(),
   },
   feeCategoryMembershipType: {
     findMany: vi.fn(),
@@ -134,6 +134,54 @@ const mockPrisma = {
   $transaction: vi.fn(),
 } as unknown as PrismaService;
 
+// Runs the executeBillingRun $transaction callback against a tx client whose feeCharge:
+//  - count    -> existingCount (the in-transaction re-bill guard)
+//  - createMany -> captures data + skipDuplicates, reports createCount (default data.length)
+//  - findMany -> serves persisted active charges back (default = captured),
+//                so totalAmount is derived from what was actually persisted.
+// Returns a state object exposing the captured charge data and the createMany spy.
+function mockBillingTx(
+  opts: {
+    existingCount?: number;
+    createCount?: number;
+    persisted?: { amount: Prisma.Decimal }[];
+  } = {}
+) {
+  const state: {
+    captured: unknown[];
+    skipDuplicates?: boolean;
+    createMany: ReturnType<typeof vi.fn>;
+  } = { captured: [], createMany: vi.fn() };
+  (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+    async (fn: (tx: unknown) => Promise<unknown>) => {
+      state.createMany = vi
+        .fn()
+        .mockImplementation(
+          ({ data, skipDuplicates }: { data: unknown[]; skipDuplicates: boolean }) => {
+            state.captured = data;
+            state.skipDuplicates = skipDuplicates;
+            return { count: opts.createCount ?? data.length };
+          }
+        );
+      const txClient = {
+        feeCharge: {
+          count: vi.fn().mockResolvedValue(opts.existingCount ?? 0),
+          createMany: state.createMany,
+          findMany: vi
+            .fn()
+            .mockImplementation(
+              () =>
+                opts.persisted ??
+                (state.captured as { amount: Prisma.Decimal }[]).map((c) => ({ amount: c.amount }))
+            ),
+        },
+      };
+      return fn(txClient);
+    }
+  );
+  return state;
+}
+
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
 describe('FeeChargesService', () => {
@@ -145,13 +193,15 @@ describe('FeeChargesService', () => {
     // Default: no existing charges for the period (executeBillingRun re-bill guard)
     (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
     // Default cross-table entry: mt-1 x ft-1 = 120.00 ANNUALLY
-    (mockDb.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 'mtft-1',
-      membershipTypeId: 'mt-1',
-      feeTypeId: 'ft-1',
-      amount: new Decimal('120.00'),
-      billingInterval: 'ANNUALLY',
-    });
+    (mockDb.membershipTypeFeeType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+      {
+        id: 'mtft-1',
+        membershipTypeId: 'mt-1',
+        feeTypeId: 'ft-1',
+        amount: new Decimal('120.00'),
+        billingInterval: 'ANNUALLY',
+      },
+    ]);
     service = new FeeChargesService(mockPrisma);
   });
 
@@ -314,7 +364,7 @@ describe('FeeChargesService', () => {
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
       (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
       // No cross-table entry for ft-unknown
-      (mockDb.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (mockDb.membershipTypeFeeType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       const result = await service.previewBillingRun(CLUB_ID, previewDto);
 
@@ -359,13 +409,22 @@ describe('FeeChargesService', () => {
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(categories);
       (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
       // Both members get cross-table entry
-      (mockDb.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: 'mtft-1',
-        membershipTypeId: 'mt-1',
-        feeTypeId: 'ft-1',
-        amount: new Decimal('120.00'),
-        billingInterval: 'ANNUALLY',
-      });
+      (mockDb.membershipTypeFeeType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+        {
+          id: 'mtft-1',
+          membershipTypeId: 'mt-1',
+          feeTypeId: 'ft-1',
+          amount: new Decimal('120.00'),
+          billingInterval: 'ANNUALLY',
+        },
+        {
+          id: 'mtft-2',
+          membershipTypeId: 'mt-2',
+          feeTypeId: 'ft-1',
+          amount: new Decimal('120.00'),
+          billingInterval: 'ANNUALLY',
+        },
+      ]);
 
       const result = await service.previewBillingRun(CLUB_ID, previewDto);
 
@@ -417,13 +476,22 @@ describe('FeeChargesService', () => {
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(categories);
       (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
-      (mockDb.membershipTypeFeeType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: 'mtft-1',
-        membershipTypeId: 'mt-1',
-        feeTypeId: 'ft-1',
-        amount: new Decimal('120.00'),
-        billingInterval: 'ANNUALLY',
-      });
+      (mockDb.membershipTypeFeeType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+        {
+          id: 'mtft-1',
+          membershipTypeId: 'mt-1',
+          feeTypeId: 'ft-1',
+          amount: new Decimal('120.00'),
+          billingInterval: 'ANNUALLY',
+        },
+        {
+          id: 'mtft-2',
+          membershipTypeId: 'mt-2',
+          feeTypeId: 'ft-1',
+          amount: new Decimal('120.00'),
+          billingInterval: 'ANNUALLY',
+        },
+      ]);
 
       const result = await service.previewBillingRun(CLUB_ID, previewDto);
 
@@ -436,6 +504,63 @@ describe('FeeChargesService', () => {
         count: 1,
         subtotal: '50.00',
       });
+    });
+
+    it('pro-rates only proRataEligible categories for mid-period joins (MONTHLY_PRO_RATA)', async () => {
+      // Member joined July 1 => 6/12 of the year remaining
+      const members = [
+        makeMember({
+          id: 'member-prorata-cat',
+          membershipPeriods: [
+            {
+              id: 'mp-pc',
+              joinDate: new Date('2026-07-01'),
+              leaveDate: null,
+              membershipTypeId: 'mt-1',
+              membershipType: { id: 'mt-1', name: 'Ordentliches Mitglied' },
+            },
+          ],
+        }),
+      ];
+      const categories = [
+        {
+          id: 'cat-prorata',
+          name: 'Tennisabteilung',
+          amount: new Decimal('100.00'),
+          billingInterval: 'ANNUALLY',
+          isActive: true,
+          deletedAt: null,
+          scope: 'ALL_MEMBERS',
+          proRataEligible: true,
+          feeCategoryMembershipTypes: [],
+        },
+        {
+          id: 'cat-full',
+          name: 'Aufnahmegebuehr',
+          amount: new Decimal('30.00'),
+          billingInterval: 'ANNUALLY',
+          isActive: true,
+          deletedAt: null,
+          scope: 'ALL_MEMBERS',
+          proRataEligible: false,
+          feeCategoryMembershipTypes: [],
+        },
+      ];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeClub({ proRataMode: 'MONTHLY_PRO_RATA' })
+      );
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(categories);
+      (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+
+      const result = await service.previewBillingRun(CLUB_ID, previewDto);
+
+      const tennis = result.breakdown.find((b) => b.membershipType === 'Tennisabteilung');
+      const aufnahme = result.breakdown.find((b) => b.membershipType === 'Aufnahmegebuehr');
+      // eligible category is pro-rated: 100 * 6/12 = 50.00; non-eligible stays full at 30.00
+      expect(tennis?.subtotal).toBe('50.00');
+      expect(aufnahme?.subtotal).toBe('30.00');
     });
 
     it('should skip FeeCategory with scope INDIVIDUAL (only via override)', async () => {
@@ -485,16 +610,7 @@ describe('FeeChargesService', () => {
       (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
-        async (fn: (tx: unknown) => Promise<unknown>) => {
-          const txClient = {
-            feeCharge: {
-              createMany: vi.fn().mockResolvedValue({ count: 2 }),
-            },
-          };
-          return fn(txClient);
-        }
-      );
+      mockBillingTx();
 
       const result = await service.executeBillingRun(CLUB_ID, confirmDto);
 
@@ -529,27 +645,14 @@ describe('FeeChargesService', () => {
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
-      let capturedData: unknown[] = [];
-      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
-        async (fn: (tx: unknown) => Promise<unknown>) => {
-          const txClient = {
-            feeCharge: {
-              createMany: vi.fn().mockImplementation(({ data }: { data: unknown[] }) => {
-                capturedData = data;
-                return { count: data.length };
-              }),
-            },
-          };
-          return fn(txClient);
-        }
-      );
+      const tx = mockBillingTx();
 
       const result = await service.executeBillingRun(CLUB_ID, confirmDto);
 
       expect(result.chargesCreated).toBe(1);
       // 120 * 6/12 = 60.00
       expect(result.totalAmount).toBe('60.00');
-      expect((capturedData[0] as { amount: Prisma.Decimal }).amount.toFixed(2)).toBe('60.00');
+      expect((tx.captured[0] as { amount: Prisma.Decimal }).amount.toFixed(2)).toBe('60.00');
     });
 
     it('should store discountAmount and discountReason on charges with CUSTOM_AMOUNT overrides', async () => {
@@ -564,24 +667,11 @@ describe('FeeChargesService', () => {
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
-      let capturedData: unknown[] = [];
-      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
-        async (fn: (tx: unknown) => Promise<unknown>) => {
-          const txClient = {
-            feeCharge: {
-              createMany: vi.fn().mockImplementation(({ data }: { data: unknown[] }) => {
-                capturedData = data;
-                return { count: data.length };
-              }),
-            },
-          };
-          return fn(txClient);
-        }
-      );
+      const tx = mockBillingTx();
 
       await service.executeBillingRun(CLUB_ID, confirmDto);
 
-      const charge = capturedData[0] as {
+      const charge = tx.captured[0] as {
         amount: Prisma.Decimal;
         discountAmount: Prisma.Decimal;
         discountReason: string;
@@ -590,6 +680,41 @@ describe('FeeChargesService', () => {
       expect(charge.amount.toFixed(2)).toBe('60.00');
       expect(charge.discountAmount.toFixed(2)).toBe('60.00');
       expect(charge.discountReason).toContain('Individueller Betrag');
+    });
+
+    it('clamps discountAmount to null when a CUSTOM_AMOUNT exceeds the regular fee (surcharge)', async () => {
+      // Regular fee 120, custom amount 150 => surcharge, not a discount
+      const members = [
+        makeMember({
+          id: 'member-surcharge',
+          memberNumber: 'TSV-011',
+          memberFeeOverrides: [
+            {
+              id: 'override-surcharge',
+              overrideType: 'CUSTOM_AMOUNT',
+              customAmount: new Decimal('150.00'),
+              reason: 'Förderbeitrag',
+              isBaseFee: true,
+              feeCategoryId: null,
+            },
+          ],
+        }),
+      ];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      const tx = mockBillingTx();
+
+      await service.executeBillingRun(CLUB_ID, confirmDto);
+
+      const charge = tx.captured[0] as {
+        amount: Prisma.Decimal;
+        discountAmount: Prisma.Decimal | null;
+      };
+      // Higher custom amount lands fully in amount; no negative discount
+      expect(charge.amount.toFixed(2)).toBe('150.00');
+      expect(charge.discountAmount).toBeNull();
     });
 
     it('should exclude members without feeTypeId (D-17)', async () => {
@@ -612,26 +737,13 @@ describe('FeeChargesService', () => {
       ]);
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
-      let capturedData: unknown[] = [];
-      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
-        async (fn: (tx: unknown) => Promise<unknown>) => {
-          const txClient = {
-            feeCharge: {
-              createMany: vi.fn().mockImplementation(({ data }: { data: unknown[] }) => {
-                capturedData = data;
-                return { count: data.length };
-              }),
-            },
-          };
-          return fn(txClient);
-        }
-      );
+      const tx = mockBillingTx();
 
       await service.executeBillingRun(CLUB_ID, confirmDto);
 
       // Only member with feeTypeId should be charged
-      expect(capturedData).toHaveLength(1);
-      expect((capturedData[0] as { memberId: string }).memberId).toBe('member-with');
+      expect(tx.captured).toHaveLength(1);
+      expect((tx.captured[0] as { memberId: string }).memberId).toBe('member-with');
     });
 
     it('should include feeTypeId in charge data', async () => {
@@ -641,25 +753,12 @@ describe('FeeChargesService', () => {
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
-      let capturedData: unknown[] = [];
-      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
-        async (fn: (tx: unknown) => Promise<unknown>) => {
-          const txClient = {
-            feeCharge: {
-              createMany: vi.fn().mockImplementation(({ data }: { data: unknown[] }) => {
-                capturedData = data;
-                return { count: data.length };
-              }),
-            },
-          };
-          return fn(txClient);
-        }
-      );
+      const tx = mockBillingTx();
 
       await service.executeBillingRun(CLUB_ID, confirmDto);
 
-      expect(capturedData).toHaveLength(1);
-      expect((capturedData[0] as { feeTypeId: string }).feeTypeId).toBe('ft-1');
+      expect(tx.captured).toHaveLength(1);
+      expect((tx.captured[0] as { feeTypeId: string }).feeTypeId).toBe('ft-1');
     });
 
     it('should skip duplicates via createMany skipDuplicates (idempotent)', async () => {
@@ -669,26 +768,11 @@ describe('FeeChargesService', () => {
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
-      let skipDuplicatesUsed = false;
-      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
-        async (fn: (tx: unknown) => Promise<unknown>) => {
-          const txClient = {
-            feeCharge: {
-              createMany: vi
-                .fn()
-                .mockImplementation(({ skipDuplicates }: { skipDuplicates: boolean }) => {
-                  skipDuplicatesUsed = skipDuplicates;
-                  return { count: 1 };
-                }),
-            },
-          };
-          return fn(txClient);
-        }
-      );
+      const tx = mockBillingTx();
 
       await service.executeBillingRun(CLUB_ID, confirmDto);
 
-      expect(skipDuplicatesUsed).toBe(true);
+      expect(tx.skipDuplicates).toBe(true);
     });
 
     // ─── WR-01/02: reject re-billing a period that already has charges ──
@@ -699,24 +783,15 @@ describe('FeeChargesService', () => {
       (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-      // A previous run already created charges for this exact period
-      (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(3);
-
-      const txSpy = vi.fn();
-      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(txSpy);
+      // A previous run already created charges for this exact period; the guard now
+      // runs inside the transaction and must abort before any insert.
+      const tx = mockBillingTx({ existingCount: 3 });
 
       await expect(service.executeBillingRun(CLUB_ID, confirmDto)).rejects.toBeInstanceOf(
         ConflictException
       );
-      // Guard must run before any write
-      expect(txSpy).not.toHaveBeenCalled();
-      expect(mockDb.feeCharge.count).toHaveBeenCalledWith({
-        where: {
-          deletedAt: null,
-          periodStart: new Date(confirmDto.periodStart),
-          periodEnd: new Date(confirmDto.periodEnd),
-        },
-      });
+      expect(mockPrisma.$transaction).toHaveBeenCalled();
+      expect(tx.createMany).not.toHaveBeenCalled();
     });
 
     it('should proceed and create charges when no existing charges for the period (WR-01/02)', async () => {
@@ -725,22 +800,33 @@ describe('FeeChargesService', () => {
       (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
       (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-      (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
-      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
-        async (fn: (tx: unknown) => Promise<unknown>) => {
-          const txClient = {
-            feeCharge: {
-              createMany: vi.fn().mockResolvedValue({ count: 1 }),
-            },
-          };
-          return fn(txClient);
-        }
-      );
+      mockBillingTx({ existingCount: 0 });
 
       const result = await service.executeBillingRun(CLUB_ID, confirmDto);
 
       expect(result.chargesCreated).toBe(1);
       expect(mockPrisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('derives totalAmount from persisted charges, not the computed array (skipDuplicates)', async () => {
+      // Two members computed (2 x 120 = 240), but a concurrent run already persisted
+      // one of them, so createMany only inserts 1 and findMany returns a single active
+      // charge. totalAmount must reflect what is actually persisted for this run.
+      const members = [
+        makeMember({ id: 'member-1', memberNumber: 'TSV-001' }),
+        makeMember({ id: 'member-2', firstName: 'Anna', memberNumber: 'TSV-002' }),
+      ];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      // createMany reports 1 inserted; findMany returns the single persisted charge.
+      mockBillingTx({ createCount: 1, persisted: [{ amount: new Decimal('120.00') }] });
+
+      const result = await service.executeBillingRun(CLUB_ID, confirmDto);
+
+      expect(result.chargesCreated).toBe(1);
+      expect(result.totalAmount).toBe('120.00');
     });
   });
 
@@ -980,25 +1066,12 @@ describe('FeeChargesService', () => {
       (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
       (mockDb.feeCharge.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
 
-      let capturedData: unknown[] = [];
-      (mockPrisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
-        async (fn: (tx: unknown) => Promise<unknown>) => {
-          const txClient = {
-            feeCharge: {
-              createMany: vi.fn().mockImplementation(({ data }: { data: unknown[] }) => {
-                capturedData = data;
-                return { count: data.length };
-              }),
-            },
-          };
-          return fn(txClient);
-        }
-      );
+      const tx = mockBillingTx();
 
       await service.executeBillingRun(CLUB_ID, confirmDto);
 
-      if (capturedData.length === 0) return null;
-      return (capturedData[0] as { amount: Prisma.Decimal }).amount.toFixed(2);
+      if (tx.captured.length === 0) return null;
+      return (tx.captured[0] as { amount: Prisma.Decimal }).amount.toFixed(2);
     }
 
     it('charges the full amount when joining exactly on periodStart', async () => {
