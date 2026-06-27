@@ -7,14 +7,26 @@ updates:
       day: 'monday'
       time: '03:00'
       timezone: 'Europe/Berlin'
-    open-pull-requests-limit: 10
+    # Lower limit reduces how many PRs touch pnpm-lock.yaml at once, shrinking the
+    # window in which they conflict with each other.
+    open-pull-requests-limit: 5
+    # Let Dependabot rebase open PRs after each merge and regenerate the lockfile.
+    rebase-strategy: 'auto'
     groups:
-      minor-and-patch:
+      # Version updates: bundle minor/patch into one PR, majors into another.
+      npm-minor-patch:
+        applies-to: version-updates
         patterns: ['*']
         update-types: ['minor', 'patch']
-      major:
+      npm-major:
+        applies-to: version-updates
         patterns: ['*']
         update-types: ['major']
+      # Security updates (incl. transitive) bundled so they don't arrive as many
+      # single-package PRs (e.g. ajv, minimatch, brace-expansion).
+      npm-security:
+        applies-to: security-updates
+        patterns: ['*']
     labels:
       - 'dependencies'
 
@@ -23,7 +35,17 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'monday'
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    rebase-strategy: 'auto'
+    groups:
+      # One PR for all action bumps instead of one per action; several actions
+      # share the same workflow file (e.g. sbom.yml), so separate PRs collided.
+      github-actions:
+        applies-to: version-updates
+        patterns: ['*']
+      github-actions-security:
+        applies-to: security-updates
+        patterns: ['*']
     labels:
       - 'dependencies'
       - 'github-actions'
