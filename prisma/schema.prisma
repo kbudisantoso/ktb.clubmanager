@@ -1107,7 +1107,9 @@ model FeeCharge {
   @@index([clubId])
   @@index([memberId])
   @@index([clubId, dueDate])
-  /// Prevents duplicate charges for same member + fee source + fee type + period
+  /// Prevents duplicate charges for same member + fee source + fee type + period.
+  /// In the DB this is a partial index (NULLS NOT DISTINCT, WHERE deletedAt IS NULL)
+  /// managed via raw SQL migration so soft-deleted charges don't block re-billing.
   @@unique([memberId, feeCategoryId, membershipTypeId, feeTypeId, periodStart, periodEnd], map: "fee_charges_billing_unique")
   @@map("fee_charges")
 }
