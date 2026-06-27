@@ -112,23 +112,6 @@ export class FeeChargesService {
       throw new BadRequestException('Periodenbeginn muss vor dem Periodenende liegen');
     }
 
-    // Reject re-billing a period that already has charges. The unique dedupe index
-    // alone is unreliable because NULL key columns are not deduplicated reliably,
-    // so guard explicitly before creating any new charges (WR-01/02).
-    const db = this.prisma.forClub(clubId);
-    const existing = await db.feeCharge.count({
-      where: {
-        deletedAt: null,
-        periodStart: new Date(dto.periodStart),
-        periodEnd: new Date(dto.periodEnd),
-      },
-    });
-    if (existing > 0) {
-      throw new ConflictException(
-        'Für diesen Zeitraum wurden bereits Beiträge berechnet. Bitte storniere die vorhandenen Beiträge, bevor du erneut abrechnest.'
-      );
-    }
-
     const { charges } = await this.calculateBillingCharges(clubId, dto);
 
     const chargeDataArray: ChargeData[] = charges.map((c) => ({
@@ -136,28 +119,60 @@ export class FeeChargesService {
       dueDate: new Date(dto.dueDate),
     }));
 
-    const totalAmount = chargeDataArray.reduce((sum, c) => sum.plus(c.amount), ZERO);
+    const periodStart = new Date(dto.periodStart);
+    const periodEnd = new Date(dto.periodEnd);
 
+    // Run the re-billing guard and the insert in one Serializable transaction so a
+    // concurrent run cannot slip charges in between the count check and createMany;
+    // the partial unique index (deletedAt IS NULL, NULLS NOT DISTINCT) is the hard
+    // backstop. totalAmount is summed from the charges actually persisted, so a
+    // skipDuplicates skip can never make it diverge from chargesCreated. clubId is
+    // filtered explicitly because tx is not club-scoped (no forClub on the tx client).
     const result = await this.prisma.$transaction(
       async (tx: {
         feeCharge: {
+          count: (args: {
+            where: { clubId: string; deletedAt: null; periodStart: Date; periodEnd: Date };
+          }) => Promise<number>;
           createMany: (args: {
             data: ChargeData[];
             skipDuplicates: boolean;
           }) => Promise<{ count: number }>;
+          findMany: (args: {
+            where: { clubId: string; deletedAt: null; periodStart: Date; periodEnd: Date };
+            select: { amount: true };
+          }) => Promise<{ amount: Prisma.Decimal }[]>;
         };
       }) => {
-        return tx.feeCharge.createMany({
+        const existing = await tx.feeCharge.count({
+          where: { clubId, deletedAt: null, periodStart, periodEnd },
+        });
+        if (existing > 0) {
+          throw new ConflictException(
+            'Für diesen Zeitraum wurden bereits Beiträge berechnet. Bitte storniere die vorhandenen Beiträge, bevor du erneut abrechnest.'
+          );
+        }
+
+        const created = await tx.feeCharge.createMany({
           data: chargeDataArray,
           skipDuplicates: true,
         });
-      }
+
+        const persisted = await tx.feeCharge.findMany({
+          where: { clubId, deletedAt: null, periodStart, periodEnd },
+          select: { amount: true },
+        });
+        const totalAmount = persisted.reduce((sum, c) => sum.plus(c.amount), ZERO);
+
+        return {
+          chargesCreated: created.count,
+          totalAmount: roundMoney(totalAmount).toFixed(DECIMAL_PLACES),
+        };
+      },
+      { isolationLevel: 'Serializable' }
     );
 
-    return {
-      chargesCreated: result.count,
-      totalAmount: roundMoney(totalAmount).toFixed(DECIMAL_PLACES),
-    };
+    return result;
   }
 
   // ─── FeeCharge Queries ──────────────────────────────────────────────
