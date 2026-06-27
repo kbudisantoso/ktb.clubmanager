@@ -234,7 +234,7 @@ export class MemberStatusService {
       const period = allPeriods[i]!;
       const nextPeriod = allPeriods[i + 1] ?? null;
 
-      let expectedLeaveDate: Date | null = null;
+      let expectedLeaveDate: Date | null;
 
       if (
         terminalReached &&
