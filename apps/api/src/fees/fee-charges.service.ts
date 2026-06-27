@@ -5,8 +5,9 @@ import type { BillingRunPreviewDto } from './dto/billing-run-preview.dto.js';
 import type { BillingRunConfirmDto } from './dto/billing-run-confirm.dto.js';
 import type { FeeChargeQueryDto } from './dto/fee-charge-query.dto.js';
 
-// Explicit rounding strategy for all money calculations
-// HALF_UP is the standard banker's rounding: 0.5 rounds up to 1
+// Explicit rounding strategy for all money calculations.
+// HALF_UP rounds halves away from zero (0.5 -> 1). This is NOT banker's rounding,
+// which is HALF_EVEN (rounds halves to the nearest even digit).
 const ROUNDING_MODE = Prisma.Decimal.ROUND_HALF_UP;
 const DECIMAL_PLACES = 2;
 
@@ -544,7 +545,10 @@ export class FeeChargesService {
         if (customOverride?.customAmount) {
           const originalFee = baseFee;
           baseFee = new Prisma.Decimal(customOverride.customAmount.toString());
-          discountAmount = roundMoney(originalFee.minus(baseFee));
+          const rawDiscount = roundMoney(originalFee.minus(baseFee));
+          // Clamp to >= 0: a custom amount above the regular fee is a surcharge, not a
+          // discount, so it lands fully in amount with no negative "discount".
+          discountAmount = rawDiscount.greaterThan(ZERO) ? rawDiscount : null;
           discountReason = `Individueller Betrag: ${customOverride.reason ?? ''}`.trim();
         }
 
@@ -566,7 +570,8 @@ export class FeeChargesService {
               periodEnd,
               dto.billingInterval
             );
-            discountAmount = roundMoney(originalProRata.minus(baseFee));
+            const rawProRataDiscount = roundMoney(originalProRata.minus(baseFee));
+            discountAmount = rawProRataDiscount.greaterThan(ZERO) ? rawProRataDiscount : null;
           }
         }
 
@@ -636,7 +641,8 @@ export class FeeChargesService {
         if (categoryOverride?.overrideType === 'CUSTOM_AMOUNT' && categoryOverride.customAmount) {
           const originalFee = categoryFee;
           categoryFee = new Prisma.Decimal(categoryOverride.customAmount.toString());
-          catDiscountAmount = roundMoney(originalFee.minus(categoryFee));
+          const rawCatDiscount = roundMoney(originalFee.minus(categoryFee));
+          catDiscountAmount = rawCatDiscount.greaterThan(ZERO) ? rawCatDiscount : null;
           catDiscountReason = `Individueller Betrag: ${categoryOverride.reason ?? ''}`.trim();
         }
 

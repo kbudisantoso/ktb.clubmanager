@@ -625,6 +625,41 @@ describe('FeeChargesService', () => {
       expect(charge.discountReason).toContain('Individueller Betrag');
     });
 
+    it('clamps discountAmount to null when a CUSTOM_AMOUNT exceeds the regular fee (surcharge)', async () => {
+      // Regular fee 120, custom amount 150 => surcharge, not a discount
+      const members = [
+        makeMember({
+          id: 'member-surcharge',
+          memberNumber: 'TSV-011',
+          memberFeeOverrides: [
+            {
+              id: 'override-surcharge',
+              overrideType: 'CUSTOM_AMOUNT',
+              customAmount: new Decimal('150.00'),
+              reason: 'Förderbeitrag',
+              isBaseFee: true,
+              feeCategoryId: null,
+            },
+          ],
+        }),
+      ];
+
+      (mockPrisma.club.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(makeClub());
+      (mockPrisma.member.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(members);
+      (mockDb.feeCategory.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      const tx = mockBillingTx();
+
+      await service.executeBillingRun(CLUB_ID, confirmDto);
+
+      const charge = tx.captured[0] as {
+        amount: Prisma.Decimal;
+        discountAmount: Prisma.Decimal | null;
+      };
+      // Higher custom amount lands fully in amount; no negative discount
+      expect(charge.amount.toFixed(2)).toBe('150.00');
+      expect(charge.discountAmount).toBeNull();
+    });
+
     it('should exclude members without feeTypeId (D-17)', async () => {
       const memberWithFeeType = makeMember({
         id: 'member-with',
