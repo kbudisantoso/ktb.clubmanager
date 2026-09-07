@@ -127,8 +127,8 @@ export function useUnlinkAccount() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (providerId: string) => {
-      const result = await authClient.unlinkAccount({ providerId });
+    mutationFn: async (accountId: string) => {
+      const result = await authClient.unlinkAccount({ accountId });
       if (result.error) throw new Error(result.error.message);
     },
     onSuccess: () => {
