@@ -324,41 +324,56 @@ describe('MemberStatusService', () => {
 
   describe('setCancellation()', () => {
     it('should set cancellation for ACTIVE member with audit trail (future date)', async () => {
-      mockTx.member.findFirst.mockResolvedValue(makeMember({ status: 'ACTIVE' }));
-      mockTx.memberStatusTransition.create.mockResolvedValue({});
-      mockTx.member.update.mockResolvedValue(
-        makeMember({
-          status: 'ACTIVE',
-          cancellationDate: new Date('2026-06-30'),
-        })
-      );
-      // Future dates return tx.member.findFirstOrThrow within the same transaction
-      mockTx.member.findFirstOrThrow.mockResolvedValueOnce(
-        makeMember({ status: 'ACTIVE', cancellationDate: new Date('2026-06-30') })
-      );
+      const now = new Date();
+      const futureDate = new Date(now);
+      futureDate.setUTCDate(futureDate.getUTCDate() + 30);
+      const receivedDate = new Date(now);
+      receivedDate.setUTCDate(receivedDate.getUTCDate() - 1);
+      const futureDateString = futureDate.toISOString().slice(0, 10);
+      const receivedDateString = receivedDate.toISOString().slice(0, 10);
 
-      const result = await service.setCancellation(
-        'club-1',
-        'member-1',
-        '2026-06-30',
-        '2026-01-15',
-        'user-1',
-        'Kündigung per Brief'
-      );
+      vi.useFakeTimers();
+      vi.setSystemTime(now);
 
-      expect(result.status).toBe('ACTIVE');
-      // Future cancellation creates self-transition audit entry
-      expect(mockTx.memberStatusTransition.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            toStatus: 'ACTIVE',
-            reason: 'Kündigung per Brief',
-          }),
-        })
-      );
-      // fromStatus should NOT be in the create call
-      const createCall = mockTx.memberStatusTransition.create.mock.calls[0]![0];
-      expect(createCall.data).not.toHaveProperty('fromStatus');
+      try {
+        mockTx.member.findFirst.mockResolvedValue(makeMember({ status: 'ACTIVE' }));
+        mockTx.memberStatusTransition.create.mockResolvedValue({});
+        mockTx.member.update.mockResolvedValue(
+          makeMember({
+            status: 'ACTIVE',
+            cancellationDate: new Date(futureDateString),
+          })
+        );
+        // Future dates return tx.member.findFirstOrThrow within the same transaction
+        mockTx.member.findFirstOrThrow.mockResolvedValueOnce(
+          makeMember({ status: 'ACTIVE', cancellationDate: new Date(futureDateString) })
+        );
+
+        const result = await service.setCancellation(
+          'club-1',
+          'member-1',
+          futureDateString,
+          receivedDateString,
+          'user-1',
+          'Kündigung per Brief'
+        );
+
+        expect(result.status).toBe('ACTIVE');
+        // Future cancellation creates self-transition audit entry
+        expect(mockTx.memberStatusTransition.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              toStatus: 'ACTIVE',
+              reason: 'Kündigung per Brief',
+            }),
+          })
+        );
+        // fromStatus should NOT be in the create call
+        const createCall = mockTx.memberStatusTransition.create.mock.calls[0]![0];
+        expect(createCall.data).not.toHaveProperty('fromStatus');
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('should reject cancellation for PENDING member', async () => {
