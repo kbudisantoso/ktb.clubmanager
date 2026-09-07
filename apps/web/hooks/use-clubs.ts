@@ -238,11 +238,7 @@ export function useCreateClubMutation() {
  * Access request rejection reasons
  */
 export type AccessRejectionReason =
-  | 'BOARD_ONLY'
-  | 'UNIDENTIFIED'
-  | 'WRONG_CLUB'
-  | 'CONTACT_DIRECTLY'
-  | 'OTHER';
+  'BOARD_ONLY' | 'UNIDENTIFIED' | 'WRONG_CLUB' | 'CONTACT_DIRECTLY' | 'OTHER';
 
 /**
  * Access request type (user's own requests)
@@ -490,11 +486,7 @@ export function useClubAccessRequestsQuery(slug: string) {
  * Rejection reasons for access requests
  */
 export type RejectionReason =
-  | 'BOARD_ONLY'
-  | 'UNIDENTIFIED'
-  | 'WRONG_CLUB'
-  | 'CONTACT_DIRECTLY'
-  | 'OTHER';
+  'BOARD_ONLY' | 'UNIDENTIFIED' | 'WRONG_CLUB' | 'CONTACT_DIRECTLY' | 'OTHER';
 
 /**
  * Hook for approving an access request.
