@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
-import yaml from 'js-yaml';
+import { load } from 'js-yaml';
 import { createPrismaClient, disconnect } from '../lib/prisma.js';
 import { resolvePassword } from '../lib/password.js';
 import type { ClubExportData } from '../lib/types.js';
@@ -14,7 +14,7 @@ const FIXTURES_DIR = path.join(__dirname, 'fixtures');
 
 function loadFixture(name: string): ClubExportData {
   const raw = fs.readFileSync(path.join(FIXTURES_DIR, name), 'utf-8');
-  return yaml.load(raw) as ClubExportData;
+  return load(raw) as ClubExportData;
 }
 
 const prisma = createPrismaClient();

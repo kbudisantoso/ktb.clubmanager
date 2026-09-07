@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import yaml from 'js-yaml';
+import { dump } from 'js-yaml';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 @Injectable()
@@ -203,12 +203,12 @@ export class ClubExportService {
       ...(exportMembers.length > 0 && { members: exportMembers }),
     };
 
-    return yaml.dump(data, {
+    return dump(data, {
       indent: 2,
       lineWidth: 120,
       noRefs: true,
       sortKeys: false,
-      quotingType: '"',
+      quoteStyle: 'double',
       forceQuotes: false,
     });
   }

@@ -114,12 +114,12 @@ function DateInput({
             <Calendar
               mode="single"
               captionLayout="dropdown"
-              fromYear={fromYear}
-              toYear={effectiveToYear}
+              startMonth={new Date(fromYear, 0)}
+              endMonth={new Date(effectiveToYear, 11)}
               selected={value ? new Date(value + 'T00:00:00') : undefined}
               onSelect={handleCalendarSelect}
               defaultMonth={value ? new Date(value + 'T00:00:00') : undefined}
-              initialFocus
+              autoFocus
             />
           </PopoverContent>
         </Popover>

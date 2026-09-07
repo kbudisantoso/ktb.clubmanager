@@ -1,4 +1,4 @@
-import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core';
+import { ZxcvbnFactory } from '@zxcvbn-ts/core';
 import * as zxcvbnCommonPackage from '@zxcvbn-ts/language-common';
 import * as zxcvbnDePackage from '@zxcvbn-ts/language-de';
 
@@ -11,7 +11,7 @@ const options = {
   graphs: zxcvbnCommonPackage.adjacencyGraphs,
   translations: zxcvbnDePackage.translations,
 };
-zxcvbnOptions.setOptions(options);
+const zxcvbn = new ZxcvbnFactory(options);
 
 export interface PasswordValidationResult {
   valid: boolean;
@@ -57,7 +57,7 @@ export async function validatePassword(
   }
 
   // Strength analysis (zxcvbn) - PRIMARY CHECK
-  const result = zxcvbn(password, userInputs);
+  const result = zxcvbn.check(password, userInputs);
 
   // Require minimum strength score
   if (result.score < minScore) {
@@ -87,7 +87,7 @@ export function checkPasswordStrength(
   password: string,
   userInputs: string[] = []
 ): { score: number; warning?: string; suggestions: string[] } {
-  const result = zxcvbn(password, userInputs);
+  const result = zxcvbn.check(password, userInputs);
   return {
     score: result.score,
     warning: result.feedback.warning || undefined,

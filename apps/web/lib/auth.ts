@@ -5,7 +5,7 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { PrismaClient } from '../../../prisma/generated/client/index.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
-import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core';
+import { ZxcvbnFactory } from '@zxcvbn-ts/core';
 import * as zxcvbnCommonPackage from '@zxcvbn-ts/language-common';
 import * as zxcvbnDePackage from '@zxcvbn-ts/language-de';
 import {
@@ -17,7 +17,7 @@ import {
 } from './rate-limit';
 
 // Initialize zxcvbn with German + common dictionaries (runs once at module load)
-zxcvbnOptions.setOptions({
+const zxcvbn = new ZxcvbnFactory({
   dictionary: {
     ...zxcvbnCommonPackage.dictionary,
     ...zxcvbnDePackage.dictionary,
@@ -135,7 +135,7 @@ export const auth = betterAuth({
         const email = ctx.body?.email;
         if (password) {
           const userInputs = email ? [email] : [];
-          const result = zxcvbn(password, userInputs);
+          const result = zxcvbn.check(password, userInputs);
           if (result.score < 3) {
             throw new APIError('BAD_REQUEST', {
               message: 'Passwort ist zu schwach. Bitte wähle ein stärkeres Passwort.',
