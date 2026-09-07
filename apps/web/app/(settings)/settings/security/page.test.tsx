@@ -241,6 +241,26 @@ describe('SecurityClient', () => {
   });
 
   // --------------------------------------------------------------------------
+  // Connected accounts card
+  // --------------------------------------------------------------------------
+
+  describe('ConnectedAccountsCard', () => {
+    it('unlinks an OAuth account by its local account id', async () => {
+      const user = userEvent.setup();
+      mockAccounts = [
+        { id: 'credential-account', providerId: 'credential', accountId: 'test@test.de' },
+        { id: 'google-account', providerId: 'google', accountId: 'external-google-id' },
+      ];
+
+      render(<SecurityClient />);
+
+      await user.click(screen.getByRole('button', { name: 'Trennen' }));
+
+      expect(mockUnlinkMutate).toHaveBeenCalledWith('google-account');
+    });
+  });
+
+  // --------------------------------------------------------------------------
   // Password card
   // --------------------------------------------------------------------------
 

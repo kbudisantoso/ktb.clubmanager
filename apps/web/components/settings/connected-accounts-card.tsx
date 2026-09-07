@@ -50,7 +50,7 @@ function AccountRow({
 }: {
   account: ConnectedAccount;
   isLastAccount: boolean;
-  onUnlink: (providerId: string) => void;
+  onUnlink: (accountId: string) => void;
   isUnlinking: boolean;
 }) {
   const { label, icon } = getProviderInfo(account.providerId);
@@ -71,7 +71,7 @@ function AccountRow({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onUnlink(account.providerId)}
+                  onClick={() => onUnlink(account.id)}
                   disabled={!canUnlink || isUnlinking}
                 >
                   {isUnlinking && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
@@ -117,10 +117,8 @@ export function ConnectedAccountsCard() {
                 key={account.id}
                 account={account}
                 isLastAccount={isLastAccount}
-                onUnlink={(providerId) => unlinkAccount.mutate(providerId)}
-                isUnlinking={
-                  unlinkAccount.isPending && unlinkAccount.variables === account.providerId
-                }
+                onUnlink={(accountId) => unlinkAccount.mutate(accountId)}
+                isUnlinking={unlinkAccount.isPending && unlinkAccount.variables === account.id}
               />
             ))}
           </div>
