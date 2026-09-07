@@ -416,11 +416,7 @@ export class AccessRequestsService {
       data: {
         status: 'REJECTED',
         rejectionReason: reason as
-          | 'BOARD_ONLY'
-          | 'UNIDENTIFIED'
-          | 'WRONG_CLUB'
-          | 'CONTACT_DIRECTLY'
-          | 'OTHER',
+          'BOARD_ONLY' | 'UNIDENTIFIED' | 'WRONG_CLUB' | 'CONTACT_DIRECTLY' | 'OTHER',
         rejectionNote: note,
         processedById: adminUserId,
         processedAt: new Date(),

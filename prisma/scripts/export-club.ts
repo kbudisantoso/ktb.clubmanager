@@ -7,7 +7,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import yaml from 'js-yaml';
+import { dump } from 'js-yaml';
 import { createPrismaClient, disconnect } from './lib/prisma.js';
 import type {
   ClubExportData,
@@ -247,7 +247,7 @@ async function main() {
     };
 
     // Write YAML
-    const yamlStr = yaml.dump(data, {
+    const yamlStr = dump(data, {
       indent: 2,
       lineWidth: 120,
       noRefs: true,

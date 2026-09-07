@@ -6,7 +6,7 @@
  */
 
 import * as fs from 'node:fs';
-import yaml from 'js-yaml';
+import { load } from 'js-yaml';
 import { createPrismaClient, disconnect } from './lib/prisma.js';
 import { resolvePassword } from './lib/password.js';
 import type { ClubExportData } from './lib/types.js';
@@ -26,7 +26,7 @@ async function main() {
   }
 
   const raw = fs.readFileSync(filePath, 'utf-8');
-  const data = yaml.load(raw) as ClubExportData;
+  const data = load(raw) as ClubExportData;
 
   // Validate structure
   if (!data?.meta?.slug || !data?.club?.name || !data?.club?.slug) {
