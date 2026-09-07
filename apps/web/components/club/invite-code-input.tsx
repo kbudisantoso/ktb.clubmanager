@@ -73,7 +73,7 @@ export function InviteCodeInput() {
       const wasTypedAtEnd = isAddition && cappedCleaned.startsWith(codePart1);
 
       if (cappedCleaned.length === 4 && wasTypedAtEnd) {
-        requestAnimationFrame(() => {
+        queueMicrotask(() => {
           part2Ref.current?.focus();
           part2Ref.current?.setSelectionRange(0, 0);
         });
