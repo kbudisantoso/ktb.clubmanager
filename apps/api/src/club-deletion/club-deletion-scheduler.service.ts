@@ -99,7 +99,8 @@ export class ClubDeletionSchedulerService {
       // T-7: 7 days remaining (skip if grace period <= 7 days)
       if (daysRemaining <= 7 && daysRemaining > 1 && !eventTypes.includes('T-7')) {
         // Only add T-7 if the original grace period was > 7 days
-        const gracePeriodDays = Math.ceil(
+        // Deactivation uses calendar days, so a DST hour must not add a grace day.
+        const gracePeriodDays = Math.round(
           (scheduledDate.getTime() - new Date(log.deactivatedAt).getTime()) / (1000 * 60 * 60 * 24)
         );
         if (gracePeriodDays > 7) {

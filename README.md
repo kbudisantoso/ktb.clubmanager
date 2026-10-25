@@ -76,8 +76,8 @@ If you prefer not to use DevContainers, set up manually:
 
 ### Prerequisites
 
-- Node.js 20+
-- pnpm 10+
+- Node.js 24.15+ or 26+ (the same supported runtime family as CI)
+- pnpm 10 (the exact version is pinned in `packageManager`)
 - Docker (for PostgreSQL, Redis, S3-compatible storage)
 
 ### Installation
@@ -135,7 +135,7 @@ See [.devcontainer/README.md](.devcontainer/README.md) for details.
 ```mermaid
 graph TB
     subgraph "Frontend (apps/web)"
-        WEB[Next.js 14+]
+        WEB[Next.js 16.4 / React 19.3]
     end
 
     subgraph "Backend (apps/api)"
@@ -166,14 +166,14 @@ The project is a **pnpm monorepo** with two applications (`web` and `api`) shari
 
 ## Tech Stack
 
-| Component | Technology                                   | Why                                                 |
-| --------- | -------------------------------------------- | --------------------------------------------------- |
-| Frontend  | Next.js 14+, TypeScript, Tailwind, shadcn/ui | Modern React with full-stack TypeScript             |
-| Backend   | NestJS, TypeScript, Prisma                   | Type safety for financial data                      |
-| Database  | PostgreSQL 17 + pgvector                     | ACID for accounting, vectors for AI semantic search |
-| Storage   | S3-compatible (MinIO, AWS S3, Cloudflare R2) | Document uploads, receipt images, profile photos    |
-| Cache     | Redis 7                                      | Session storage, background jobs                    |
-| Auth      | NextAuth.js + OIDC                           | Passwordless OAuth login                            |
+| Component | Technology                                                  | Why                                                 |
+| --------- | ----------------------------------------------------------- | --------------------------------------------------- |
+| Frontend  | Next.js 16.4, React 19.3, TypeScript 6, Tailwind, shadcn/ui | Modern React with full-stack TypeScript             |
+| Backend   | NestJS 12, TypeScript 6, Prisma 7                           | Type safety for financial data                      |
+| Database  | PostgreSQL 17 + pgvector                                    | ACID for accounting, vectors for AI semantic search |
+| Storage   | S3-compatible (MinIO, AWS S3, Cloudflare R2)                | Document uploads, receipt images, profile photos    |
+| Cache     | Redis 7                                                     | Session storage, background jobs                    |
+| Auth      | Better Auth                                                 | Email/password and OAuth login                      |
 
 ## Roadmap
 

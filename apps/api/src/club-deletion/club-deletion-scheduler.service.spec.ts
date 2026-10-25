@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ClubDeletionSchedulerService } from './club-deletion-scheduler.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import type { ClubDeletionService } from './club-deletion.service.js';
@@ -29,6 +29,10 @@ describe('ClubDeletionSchedulerService', () => {
       mockClubDeletionService,
       mockClubDeletionLogService
     );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('handlePermanentDeletions()', () => {
@@ -150,6 +154,24 @@ describe('ClubDeletionSchedulerService', () => {
         const events = calls[0]![1] as Array<{ type: string }>;
         expect(events.every((e) => e.type !== 'T-7')).toBe(true);
       }
+    });
+
+    it('should not treat the extra DST hour as an eighth grace day', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-10-25T12:00:00Z'));
+      (mockClubDeletionLogService.findPending as ReturnType<typeof vi.fn>).mockResolvedValue([
+        {
+          id: 'log-dst',
+          clubSlug: 'test-club',
+          deactivatedAt: new Date('2026-10-23T10:00:00+02:00'),
+          scheduledDeletionAt: new Date('2026-10-30T10:00:00+01:00'),
+          notificationEvents: [],
+        },
+      ]);
+
+      await service.handleNotificationMilestones();
+
+      expect(mockClubDeletionLogService.updateNotificationEvents).not.toHaveBeenCalled();
     });
 
     it('should handle no pending logs gracefully', async () => {
