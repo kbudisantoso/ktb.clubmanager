@@ -41,8 +41,8 @@
   "packageManager": "pnpm@10.34.7+sha512.ba98abc585539933375b5971f4bc6d6c73a1b4b7edc4a879e7d102fe5423d1e02309d67c60a11f04955093a96e521ad9c3b138cdd654ca5be563f378b3ae48bd",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "better-auth": "^1.7.13",
-    "dotenv-cli": "^11.0.0",
+    "better-auth": "^1.7.14",
+    "dotenv-cli": "^11.1.0",
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
     "js-yaml": "^5.5.0",
@@ -51,7 +51,7 @@
     "simple-git-hooks": "^2.14.0",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.0",
+    "typescript-eslint": "^8.72.1",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
   },
