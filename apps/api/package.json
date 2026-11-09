@@ -17,12 +17,12 @@
   },
   "dependencies": {
     "@ktb/shared": "workspace:*",
-    "@nestjs/common": "^12.2.0",
-    "@nestjs/config": "^12.0.1",
-    "@nestjs/core": "^12.2.0",
-    "@nestjs/platform-express": "^12.2.0",
+    "@nestjs/common": "^12.3.3",
+    "@nestjs/config": "^12.1.0",
+    "@nestjs/core": "^12.3.3",
+    "@nestjs/platform-express": "^12.3.3",
     "@nestjs/schedule": "^12.0.2",
-    "@nestjs/swagger": "^12.0.4",
+    "@nestjs/swagger": "^12.1.0",
     "@nestjs/throttler": "^6.7.1",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
@@ -38,14 +38,14 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "@nestjs/cli": "^12.0.10",
-    "@nestjs/testing": "^12.2.0",
+    "@nestjs/cli": "^12.0.11",
+    "@nestjs/testing": "^12.3.3",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
     "supertest": "^7.3.1",
-    "vitest": "^5.0.5",
+    "vitest": "^5.1.0",
     "webpack": "^5.112.2"
   }
 }
